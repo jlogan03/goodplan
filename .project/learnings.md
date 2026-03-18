@@ -2,6 +2,26 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Sharing files across skills requires long-term alignment, not just current similarity
+_Source: maturity-invariants-fitness_
+
+Shared reviewer files forced context-agnostic language and conditional criteria. The deeper question is whether consumers will stay aligned long-term — if their needs diverge, the shared file becomes a constraint. Prefer independent copies with occasional manual sync over forced generalization when alignment is uncertain.
+
+## Convention files must be loaded by all consumers, not just producers
+_Source: maturity-invariants-fitness_
+
+Consumers that read artifacts need the convention definitions to correctly interpret format and semantics, even if they don't produce the artifacts. Verify consumer lists end-to-end during planning, not just implementation.
+
+## Report/output templates and analysis steps are a coupled pair
+_Source: maturity-invariants-fitness_
+
+Adding analysis steps without updating the output template creates a gap where agents improvise. Any plan that adds analysis steps should include a corresponding template update task.
+
+## Blast radius analysis should be standard for shared reference file changes
+_Source: maturity-invariants-fitness_
+
+Before modifying shared reference files, map all consumers with a codebase exploration agent. This prevents both over-reach (changing files that should stay independent) and under-reach (missing consumers that need updates).
+
 ## Pointer stubs preserve navigability when extracting shared content
 _Source: refine-plan-shared-loop_
 
