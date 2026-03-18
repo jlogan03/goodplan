@@ -2,6 +2,16 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Archive prefix sort order depends on the tool, not just ASCII
+_Source: archived-prefix-migration_
+
+The `~~archived~~` prefix sorts after active items in terminal `ls` (tilde > lowercase in ASCII) but may sort before them in file explorers (VS Code, Finder) that use locale-aware collation. When choosing prefix conventions for filesystem sorting, test in the actual tools users will see — not just the terminal.
+
+## Simple mechanical quests don't need /implement-plan
+_Source: archived-prefix-migration_
+
+Find-and-replace quests with <60-line plans and all mechanical tasks work fine with direct implementation and a single commit. The `/implement-plan` review cycle adds value for complex implementations but is overhead for straightforward migrations.
+
 ## Sharing files across skills requires long-term alignment, not just current similarity
 _Source: maturity-invariants-fitness_
 

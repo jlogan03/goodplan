@@ -13,8 +13,9 @@
 ### Known fragile areas
 - Cross-skill reference paths (e.g., refine-slices references refine-plan's shared-preamble.md): if refine-plan files move, refine-slices breaks silently
 - refine-plan's shared-preamble.md borrowed by refine-architecture and refine-slices: plan-specific framing ("Plan Location") doesn't match non-plan consumers
+- `~~archived~~` prefix sort order: sorts correctly in terminal but may sort above active items in file explorers (VS Code, Finder) due to locale-aware collation
 
-<!-- Last updated by: complete-slice for side-quests/maturity-invariants-fitness, 2026-03-18 -->
+<!-- Last updated by: complete-slice for side-quests/archived-prefix-migration, 2026-03-18 -->
 
 ## Performance Characteristics
 
@@ -45,7 +46,8 @@
 
 ## Recent Changes
 
+- **archived-prefix-migration** (2026-03-18): Renamed 13 `__done__` directories to `~~archived~~` and updated 3 skill files (complete-slice, project-status). Convention rename only — no architectural changes.
 - **maturity-invariants-fitness** (2026-03-18): Added maturity tracking, system invariants, and fitness functions to define-architecture (Steps 8f/8g/8h), refine-architecture (maturity evaluation), audit-architecture (Steps 3b/3c/3d), and plan refinement reviewers (criteria 12/13). Created shared maturity-conventions.md.
 - **refine-plan-shared-loop** (2026-03-18): Refactored refine-plan SKILL.md to reference shared iteration-loop.md with Loop Parameters table. All 3 iteration-loop consumers now use the same pattern.
 
-<!-- Last updated by: complete-slice for side-quests/maturity-invariants-fitness, 2026-03-18 -->
+<!-- Last updated by: complete-slice for side-quests/archived-prefix-migration, 2026-03-18 -->
