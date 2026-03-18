@@ -14,7 +14,7 @@ This repo builds a suite of Claude Code skills implementing the development work
 
 Skills implementing the development workflow:
 
-- `/start-project` — initialize `.project/` and first initiative, capture idea
+- `/create-initiative` — initialize `.project/` and first initiative, or add new initiative to existing project
 - `/explore` — brainstorm & research loop (initiative-scoped or side-quest-scoped)
 - `/define-architecture` — interactive architecture definition, writes to initiative's `architecture/`
 - `/define-slices` — ordered vertical slices within an initiative

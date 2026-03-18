@@ -16,7 +16,7 @@ A set of standalone skills (no plugin required initially), a CLAUDE.md that wire
 
 | Skill | Phase | Purpose |
 |---|---|---|
-| `/start-project` | 1 | Initialize `.project/` filesystem, capture idea, ask clarifying questions to flesh it out |
+| `/create-initiative` | 1 | Initialize `.project/` filesystem, capture idea, ask clarifying questions to flesh it out |
 | `/explore` | 2 | Brainstorming & research loop scoped to an initiative or side quest — iterates until the user decides enough has been captured. Handles research (spawns sub-agents), brainstorming (interactive), and prototyping (interactive). Writes to the appropriate scope's `research/` and `brainstorm/` directories. |
 | `/define-architecture` | 3 | Use goal + exploration output to interactively drive architecture decisions until `architecture/` is fully populated and the user is satisfied. Also captures project conventions (`conventions.md`) and updates `CLAUDE.md` with references to architecture files. |
 | `/define-slices` | 4 | Look at current repo state and define an ordered set of vertical slices with concrete, verifiable success criteria — success defined not just by tests but by actually running code (scripts, functions, web apps in browser, etc.). Writes to the active initiative's `vertical-slices/sequencing.md` and each slice's `goal.md`. |
@@ -64,7 +64,7 @@ Sub-agents get CLAUDE.md loaded automatically but receive minimal explicit promp
 
 The Project Context section is written incrementally by skills as files are created:
 
-- `/start-project` → adds `idea.md`
+- `/create-initiative` → adds `idea.md`
 - `/define-architecture` → adds `conventions.md`, `architecture/` references
 - `/complete` → updates if new architecture files were added during the slice
 
