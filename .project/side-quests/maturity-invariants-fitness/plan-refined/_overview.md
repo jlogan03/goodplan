@@ -1,5 +1,8 @@
 # Plan: Architectural Maturity, Invariants, and Fitness Functions
 
+**Status**: COMPLETE
+**Completed**: 2026-03-18
+
 ## Overview
 
 Establish conventions for tracking architectural maturity (experimental → foundational), documenting system invariants, and mapping fitness functions to tests. Update `/define-architecture`, `/refine-architecture`, `/audit-architecture`, and plan refinement reviewers to work with these concepts.
