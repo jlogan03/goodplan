@@ -25,11 +25,11 @@ Add tracer bullet framing, three-lens internal evaluation loop, and integration 
 
 ### Tasks
 
-- [ ] **Update `SKILL.md` Step 4 — Tracer bullet framing**: Add explicit language that each slice is a "tracer bullet" — a thin vertical cut through all integration layers, demoable/verifiable on its own. First slice proves the architecture works. Each subsequent slice adds a new verifiable flow. Add warning against orderings that produce large amounts of unexercised code.
+- [x] **Update `SKILL.md` Step 4 — Tracer bullet framing**: Add explicit language that each slice is a "tracer bullet" — a thin vertical cut through all integration layers, demoable/verifiable on its own. First slice proves the architecture works. Each subsequent slice adds a new verifiable flow. Add warning against orderings that produce large amounts of unexercised code.
 
-- [ ] **Add new Step 4b — Three-lens evaluation loop**: After the agent drafts an initial slice ordering (but before presenting to user), evaluate against three lenses: tracer bullet quality, risk front-loading, and observability front-loading. The agent iterates internally (cap at 3 iterations), then always presents at least 2 alternatives with trade-off summaries. For projects with 2-3 or 10+ slices, the agent should adapt thresholds accordingly. Full criteria, iteration behavior, conflict handling, and output format go in guidance.md (see below).
+- [x] **Add new Step 4b — Three-lens evaluation loop**: After the agent drafts an initial slice ordering (but before presenting to user), evaluate against three lenses: tracer bullet quality, risk front-loading, and observability front-loading. The agent iterates internally (cap at 3 iterations), then always presents at least 2 alternatives with trade-off summaries. For projects with 2-3 or 10+ slices, the agent should adapt thresholds accordingly. Full criteria, iteration behavior, conflict handling, and output format go in guidance.md (see below).
 
-- [ ] **Update `references/guidance.md`**: Add a "Three-Lens Evaluation" section documenting:
+- [x] **Update `references/guidance.md`**: Add a "Three-Lens Evaluation" section documenting:
   - Concrete criteria per lens:
     - **Tracer bullet**: every slice has at least one verification step that runs actual code
     - **Risk**: first 50% of slices cover all high-risk architecture items
@@ -42,7 +42,7 @@ Add tracer bullet framing, three-lens internal evaluation loop, and integration 
 
   Add a "Tracer Bullet Framing" section with the framing language and integration failure warning.
 
-- [ ] **Adjust Step 5 (Write sequencing.md Draft)**: Move sequencing.md write to after the user has picked their preferred ordering from the alternatives. The agent writes the chosen ordering, not the first draft.
+- [x] **Adjust Step 5 (Write sequencing.md Draft)**: Move sequencing.md write to after the user has picked their preferred ordering from the alternatives. The agent writes the chosen ordering, not the first draft.
 
 ### Verification
 
@@ -59,7 +59,7 @@ Create a new skill that iteratively reviews and improves slice goals using the s
 
 ### Tasks
 
-- [ ] **Create `~/.claude/skills/refine-slices/SKILL.md`**: Orchestrator skill using the shared iteration loop (`~/.claude/skills/_shared/references/iteration-loop.md`). Include frontmatter:
+- [x] **Create `~/.claude/skills/refine-slices/SKILL.md`**: Orchestrator skill using the shared iteration loop (`~/.claude/skills/_shared/references/iteration-loop.md`). Include frontmatter:
   ```
   name: refine-slices
   description: Refines vertical slice definitions, sequencing, and goal clarity. Runs after /define-slices to iteratively improve slice quality. Triggers include: "review slices", "improve slice goals", "slice quality", "are these slices good", "refine slices", "are my slices well-ordered", "check slice dependencies", "slice ordering review", "improve slice sequencing", "reorder slices"
@@ -88,14 +88,14 @@ Create a new skill that iteratively reviews and improves slice goals using the s
   4. On exit: rename working copies to originals (overwrite)
   5. State write-back + flow-log
 
-- [ ] **Create `~/.claude/skills/refine-slices/references/reviewer-registry.md`**: List all 4 reviewers with their focus areas, prompt file paths, and section names. Format matches refine-plan's registry. Include a `## review_context Value` section with value `"slice goal definitions and sequencing"` (required for the orchestrator to fill the `{review_context}` placeholder in shared prompts). The three slice-specific reviewers (Architecture Alignment, Tracer Bullet Quality, Risk/Dependency Analysis) do not use `{review_context}` — their prompts are self-contained with baked-in context. The Context column in the registry table should be empty for these three reviewers and populated only for Software Architecture (which uses the shared prompt from `reviewers-cross-cutting.md`): `{review_context}` = `"slice goal definitions and sequencing"`.
+- [x] **Create `~/.claude/skills/refine-slices/references/reviewer-registry.md`**: List all 4 reviewers with their focus areas, prompt file paths, and section names. Format matches refine-plan's registry. Include a `## review_context Value` section with value `"slice goal definitions and sequencing"` (required for the orchestrator to fill the `{review_context}` placeholder in shared prompts). The three slice-specific reviewers (Architecture Alignment, Tracer Bullet Quality, Risk/Dependency Analysis) do not use `{review_context}` — their prompts are self-contained with baked-in context. The Context column in the registry table should be empty for these three reviewers and populated only for Software Architecture (which uses the shared prompt from `reviewers-cross-cutting.md`): `{review_context}` = `"slice goal definitions and sequencing"`.
 
-- [ ] **Create `~/.claude/skills/refine-slices/references/reviewers-slices.md`**: Three slice-specific reviewer prompts:
+- [x] **Create `~/.claude/skills/refine-slices/references/reviewers-slices.md`**: Three slice-specific reviewer prompts:
   - **Architecture Alignment Reviewer**: Do slices map cleanly to subsystem boundaries? Are dependencies between slices consistent with architecture? Are any slices crossing too many subsystem boundaries (sign of poor scoping)?
   - **Tracer Bullet Quality Reviewer**: Is each slice independently verifiable end-to-end? Does the Verification section describe something the agent can actually execute? Are there slices that produce code without exercising it? Would implementing this slice give confidence the architecture works for its domain?
   - **Risk/Dependency Analysis Reviewer**: Are unknowns front-loaded? Are there circular dependencies between slices? Is the ordering robust — could a slice fail without cascading? Are dependencies between slices minimal and explicit?
 
-- [ ] **Create `~/.claude/skills/refine-slices/references/sub-agent-prompts.md`**: This file contains **only** the editor prompt section, customized for multi-file slice editing. The SKILL.md must explicitly instruct the orchestrator to read `~/.claude/skills/refine-plan/references/sub-agent-prompts.md` for bootstrap and synthesis prompt templates, and read `references/sub-agent-prompts.md` (local) for the editor template only. The editor sub-agent edits sequencing-refining.md and goal-refining.md files based on synthesized feedback.
+- [x] **Create `~/.claude/skills/refine-slices/references/sub-agent-prompts.md`**: This file contains **only** the editor prompt section, customized for multi-file slice editing. The SKILL.md must explicitly instruct the orchestrator to read `~/.claude/skills/refine-plan/references/sub-agent-prompts.md` for bootstrap and synthesis prompt templates, and read `references/sub-agent-prompts.md` (local) for the editor template only. The editor sub-agent edits sequencing-refining.md and goal-refining.md files based on synthesized feedback.
 
   **Multi-file editing strategy**: The editor receives a manifest listing all working copy paths (one sequencing-refining.md + N goal-refining.md). Reviewer prompts must prefix each issue with the target filename. The `{plan_file_paths}` placeholder receives a newline-separated list of all working copy paths. Use the existing `"directory-based"` plan type format: treat `sequencing-refining.md` as the "overview" file and the `goal-refining.md` files as "phase files". This avoids introducing a new plan_type value and is compatible with the shared preamble's existing Plan Location handling. The bootstrap prompt's "Plan Location" section should list sequencing-refining.md as the overview and goal files in slice order as phase files.
 
@@ -105,9 +105,9 @@ Create a new skill that iteratively reviews and improves slice goals using the s
 
   Note: The skill references `~/.claude/skills/refine-plan/references/shared-preamble.md` directly — no separate shared-preamble.md is created.
 
-- [ ] **Define state machine integration**: Specify the state.md transition after refine-slices completes: `Current Phase: refine-slices complete — slice goals and sequencing refined`, `Next Step: /create-plan for the first unplanned slice`. The flow-log entry should use `"phase":"refine-slices"` with scope, status, and summary fields consistent with existing entries.
+- [x] **Define state machine integration**: Specify the state.md transition after refine-slices completes: `Current Phase: refine-slices complete — slice goals and sequencing refined`, `Next Step: /create-plan for the first unplanned slice`. The flow-log entry should use `"phase":"refine-slices"` with scope, status, and summary fields consistent with existing entries.
 
-- [ ] **Update `workflow.md`**: Add `/refine-slices` between phase 4 (Plan Vertical Slices) and phase 5 (per-slice Explore Loop) as an optional step: "4b. Refine Slices (optional — iterative review of slice goals)". Add `system-profile.md` to the file structure section at the top level of `.project/` alongside `learnings.md` and `conventions.md`, with comment `# system health and quality profile`.
+- [x] **Update `workflow.md`**: Add `/refine-slices` between phase 4 (Plan Vertical Slices) and phase 5 (per-slice Explore Loop) as an optional step: "4b. Refine Slices (optional — iterative review of slice goals)". Add `system-profile.md` to the file structure section at the top level of `.project/` alongside `learnings.md` and `conventions.md`, with comment `# system health and quality profile`.
 
 ### Verification
 
@@ -129,7 +129,7 @@ Define the system-profile.md format and add three new steps to `/complete-slice`
 
 ### Tasks
 
-- [ ] **Create `_shared/references/system-profile-format.md`**: Define the canonical section structure for system-profile.md with its five sections and their sub-structures:
+- [x] **Create `_shared/references/system-profile-format.md`**: Define the canonical section structure for system-profile.md with its five sections and their sub-structures:
   - **Health**: Well-tested areas, Undertested areas, Known fragile areas
   - **Performance Characteristics**: Observed characteristics with context
   - **Extensibility**: Easy to extend, Hard to extend
@@ -138,7 +138,7 @@ Define the system-profile.md format and add three new steps to `/complete-slice`
 
   `/complete-slice` is the primary owner (highest write frequency). Both `/complete-slice` and `/audit-architecture` reference this shared format. `/audit-architecture` appends rather than overwrites when sections were recently updated. Recency is determined by a comment marker at the end of each section: `<!-- Last updated by: <skill> for <scope>, <date> -->`. Both skills must write this marker when updating a section. `/audit-architecture` checks this marker to decide append vs overwrite — if the marker date is within the last 2 completed slices, append; otherwise overwrite. Note: format changes require testing both consuming skills.
 
-- [ ] **Update `/complete-slice` SKILL.md — Add Step 6b (Update system-profile.md)**: After architecture review (Step 6), add a new step that reads `.project/system-profile.md` (create if missing using the format from `_shared/references/system-profile-format.md`) and updates it based on what was learned in this slice:
+- [x] **Update `/complete-slice` SKILL.md — Add Step 6b (Update system-profile.md)**: After architecture review (Step 6), add a new step that reads `.project/system-profile.md` (create if missing using the format from `_shared/references/system-profile-format.md`) and updates it based on what was learned in this slice:
   - **Health**: Which areas were tested, which have gaps
   - **Performance Characteristics**: Any characteristics observed during verification
   - **Extensibility**: Did implementation reveal areas easy or hard to extend?
@@ -147,13 +147,13 @@ Define the system-profile.md format and add three new steps to `/complete-slice`
 
   If system-profile.md doesn't exist, create it with initial content from this slice's artifacts. If it exists, update sections with new information (don't overwrite unrelated sections).
 
-- [ ] **Update `/complete-slice` SKILL.md — Add Step 6c (Explicit debt evaluation)**: After Step 6b, explicitly evaluate: "Did this slice reveal architectural debt?" Present findings with classification:
+- [x] **Update `/complete-slice` SKILL.md — Add Step 6c (Explicit debt evaluation)**: After Step 6b, explicitly evaluate: "Did this slice reveal architectural debt?" Present findings with classification:
   - **Localized debt**: Propose inline fix (specific files, what to change)
   - **Systemic debt**: Describe the debt, recommend a side quest, but do not auto-create goal.md — propose only, let user decide
 
   Use AskUserQuestion for each debt finding: "Fix now (localized) / Propose side quest (systemic) / Acknowledge and defer / Skip".
 
-- [ ] **Update `/complete-slice` SKILL.md — Add Step 6d (Signal tracking)**: After Step 6c, examine artifact directories for the last 3 completed slices. Discovery logic:
+- [x] **Update `/complete-slice` SKILL.md — Add Step 6d (Signal tracking)**: After Step 6c, examine artifact directories for the last 3 completed slices. Discovery logic:
   1. **Discover completed scopes**: Scan for `.project/vertical-slices/*/completion/learnings.md` and `.project/side-quests/*/completion/learnings.md`.
   2. **Derive scope values**: For each path, strip the `.project/` prefix and `/completion/learnings.md` suffix to get the scope value (e.g., `vertical-slices/03-my-slice`).
   3. **Correlate with flow-log**: Filter `flow-log.jsonl` entries matching both `phase: "complete-slice"` AND the derived `scope` value. Use the entry's timestamp to sort.
@@ -166,9 +166,9 @@ Define the system-profile.md format and add three new steps to `/complete-slice`
 
   If any metric is strictly increasing across all 3 data points (a < b < c), surface it: "The last 3 slices have required increasing [metric]. Consider running `/audit-architecture`." Only surface when strictly increasing — not just one high value, and not flat-then-up (e.g., [3, 2, 3] does not trigger).
 
-- [ ] **Update `references/guidance.md`**: Add sections for system-profile.md format, debt evaluation protocol, and signal tracking algorithm.
+- [x] **Update `references/guidance.md`**: Add sections for system-profile.md format, debt evaluation protocol, and signal tracking algorithm.
 
-- [ ] **Update graceful stop cases**: Add handling for the new steps — if stopped during 6b/6c/6d, note partial completion in state.md (system-profile updated but debt evaluation not done, etc.).
+- [x] **Update graceful stop cases**: Add handling for the new steps — if stopped during 6b/6c/6d, note partial completion in state.md (system-profile updated but debt evaluation not done, etc.).
 
 ### Verification
 
@@ -186,7 +186,7 @@ Update `/audit-architecture` to create or refresh `.project/system-profile.md` f
 
 ### Tasks
 
-- [ ] **Add Step 5b to `~/.claude/skills/audit-architecture/SKILL.md`**: After writing the audit report (Step 5), add a step to refresh system-profile.md:
+- [x] **Add Step 5b to `~/.claude/skills/audit-architecture/SKILL.md`**: After writing the audit report (Step 5), add a step to refresh system-profile.md:
   1. Read `.project/system-profile.md` (if exists)
   2. If missing, create it using the format from `_shared/references/system-profile-format.md` with initial content derived from audit findings
   3. If exists, update relevant sections. Write the `<!-- Last updated by: audit-architecture, <date> -->` marker at the end of each updated section (per the convention in `system-profile-format.md`):
@@ -196,13 +196,13 @@ Update `/audit-architecture` to create or refresh `.project/system-profile.md` f
      - **Recent Changes**: Not updated by audit (this is slice-driven)
   4. Always present a brief summary of proposed changes before writing. Proceed unless the user objects — consistent with audit-architecture's existing pattern.
 
-- [ ] **Remove the TODO comment** from audit-architecture SKILL.md. Search for the content marker containing `TODO: When system-profile.md is implemented` (the full text is `<!-- TODO: When system-profile.md is implemented (slice-quality-and-health quest), refresh it here -->`). Search by content, not line number.
+- [x] **Remove the TODO comment** from audit-architecture SKILL.md. Search for the content marker containing `TODO: When system-profile.md is implemented` (the full text is `<!-- TODO: When system-profile.md is implemented (slice-quality-and-health quest), refresh it here -->`). Search by content, not line number.
 
-- [ ] **Update `references/guidance.md`** (audit-architecture's): Add a section on system-profile.md refresh logic, describing which audit findings map to which profile sections. Explicitly document both finding type mappings:
+- [x] **Update `references/guidance.md`** (audit-architecture's): Add a section on system-profile.md refresh logic, describing which audit findings map to which profile sections. Explicitly document both finding type mappings:
   - **Gap analysis findings** (code drifts from architecture): map to Health (fragile areas) and Technical Debt (drift = debt)
   - **Reassessment findings** (architecture needing change): map to Technical Debt (design debt) and Extensibility (module depth, boundary quality)
 
-- [ ] **Update graceful stop cases** in audit-architecture SKILL.md: Add handling for interruption during Step 5b (system-profile refresh). If stopped during system-profile write, note partial completion in state.md. This falls into the same pattern as the existing "quest proposal" partial case — document it explicitly rather than relying on implicit coverage.
+- [x] **Update graceful stop cases** in audit-architecture SKILL.md: Add handling for interruption during Step 5b (system-profile refresh). If stopped during system-profile write, note partial completion in state.md. This falls into the same pattern as the existing "quest proposal" partial case — document it explicitly rather than relying on implicit coverage.
 
 ### Verification
 
