@@ -2,6 +2,21 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Shared reference files with placeholders enable partial consolidation
+_Source: architecture-quality_
+
+When files differ only in framing (e.g., "reviewing a plan" vs "reviewing code"), use a shared file with a `{placeholder}` that each consumer fills in. This keeps the substantive content (evaluation criteria, protocols) in one place while preserving context-specific framing. Better than full duplication or forced uniformity.
+
+## Shared orchestration skeletons need explicit parameter interfaces
+_Source: architecture-quality_
+
+When extracting a shared pattern (like an iteration loop), define how consumers plug in their specifics: a "Loop Parameters" section listing reviewer list, exit criteria, editor prompt path, etc. Without a concrete interface contract, "use the shared loop" is too vague for implementing agents.
+
+## In-place editing with backup beats working copies for referenced files
+_Source: architecture-quality_
+
+Files referenced by other artifacts (CLAUDE.md, decisions, plans) should be edited in-place with a timestamped backup, not copied to a working directory. Working copies create ambiguity about which version is canonical. Plans are different — nothing references them mid-refinement, so `-refining` copies are safe.
+
 ## Shared references need a consolidation criterion and extension policies
 _Source: decisions-and-expertise_
 

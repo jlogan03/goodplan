@@ -23,6 +23,8 @@ A set of standalone skills (no plugin required initially), a CLAUDE.md that wire
 | `/create-plan` | 6 | Take a slice/quest goal and produce a plan document compatible with `/refine-plan` and `/implement-plan`. Reads all available context (exploration, architecture, conventions, learnings, other slice goals). Asks the user questions to fill gaps before writing. |
 | `/complete-slice` | 10 | After implementation and any QA: roll up learnings to `completion/learnings.md` and top-level `learnings.md`; propose architecture updates based on what was learned; review remaining slices to see if goals need updating or new work is warranted; ask about cleanup/refactor pass. No git automation — branching, pushing, and PRs are handled conversationally. |
 | `/project-status` | any | Read `state.md`, `flow-log.jsonl`, and the `.project/` filesystem to determine what was last done and what should happen next. Present a clear status summary and recommended next skill to run. |
+| `/refine-architecture` | any | Iteratively review and improve `.project/architecture/` files using specialized review sub-agents. Evaluates module depth, subsystem boundaries, API surfaces, and alignment with decisions. |
+| `/audit-architecture` | any | Compare intended architecture against actual code, evaluate whether the target architecture should evolve, and propose side quests for gaps and improvements. Run before `/refine-architecture`. |
 
 ### Reusing Existing Skills
 

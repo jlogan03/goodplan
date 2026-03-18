@@ -72,6 +72,8 @@ Qualitative snapshot of the system, complementing the structural architecture fi
 
 Updated by `/complete-slice` and `/audit-architecture`. Not a repeat of architecture files (those are structural) — this is the qualitative complement.
 
+**Integration with `/audit-architecture`**: The architecture-quality side quest builds `/audit-architecture` without system-profile.md (deferred here). When this quest implements system-profile.md, also update `/audit-architecture` to refresh it as part of its audit report step — incorporating gap analysis findings (areas where code drifts from architecture) and reassessment findings (areas where the architecture itself should change) into the Health, Technical Debt, and Recent Changes sections.
+
 ### Updated Skill: `/complete-slice` — System Health Tracking
 
 Strengthen the existing skill to:
