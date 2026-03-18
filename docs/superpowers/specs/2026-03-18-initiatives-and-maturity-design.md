@@ -33,7 +33,9 @@ Side quests cover both infrastructure work and small user-facing features. If so
 6. **Execute slices** — plan → refine → implement → QA → complete per slice
 7. **Complete initiative** — retrospective, learnings rollup, promote broadly useful research/brainstorm/prototype artifacts to top-level directories
 
-**Multiple active initiatives:** Several initiatives can be in phases 1-3 simultaneously — exploring different directions the software could go. Phase 4 (pull the trigger) is where you commit to building, and conflicts with other active initiatives need consideration.
+**Multiple initiatives can be explored simultaneously:** Several initiatives can be in phases 1-3 — exploring different directions the software could go. But only one initiative can be approved and actively being built at a time. When an initiative is approved (phase 4), its directory is renamed with an `__active__` prefix (e.g., `__active__realtime-collab/`) to make it immediately visible in the file explorer.
+
+**One active initiative constraint:** This prevents spreading implementation effort across competing architectural changes. Other initiatives stay in exploration/proposal phases until the active one completes or is abandoned.
 
 **Initiative state machine (file existence):**
 
@@ -48,7 +50,13 @@ Side quests cover both infrastructure work and small user-facing features. If so
 - `completion/learnings.md` exists → initiative complete
 - `abandoned.md` exists → abandoned (takes precedence over all other states, same as slices/quests)
 
-**Naming convention:** Completed, superseded, or discarded initiatives use the `__done__` prefix, same as vertical slices and side quests: `__done__realtime-collab/`.
+**Naming conventions:**
+- `__active__<name>/` — the one initiative currently being built (only one at a time)
+- `__archived__<name>/` — completed, superseded, or abandoned initiatives
+
+The `__archived__` prefix replaces the existing `__done__` prefix across all containers (initiatives, vertical slices, and side quests). "Archived" better captures the range of reasons something is no longer active — completed, abandoned, or superseded.
+
+**`approved.md` contents:** Records the decision rationale — why we're proceeding, any conditions or concerns noted during review, what architectural changes were committed to the top-level architecture, and references to the specific architecture files modified.
 
 ### File Structure
 
@@ -62,7 +70,7 @@ Side quests cover both infrastructure work and small user-facing features. If so
 ├── brainstorm/                # Project-level (curated — includes promoted initiative brainstorms)
 ├── prototypes/                # Project-level (curated — includes promoted initiative prototypes)
 ├── initiatives/
-│   ├── __done__initial-mvp/   # The first initiative (retroactive)
+│   ├── __archived__initial-mvp/   # The first initiative (retroactive)
 │   └── <initiative-name>/
 │       ├── goal.md
 │       ├── abandoned.md       # If present, initiative is abandoned
@@ -214,6 +222,8 @@ Not a hard gate — a nudge.
 6. **Explore phase removed from individual slices** — exploration happens at initiative level; narrow research handled by `/create-plan`
 7. **Research promotion** — broadly useful initiative research/brainstorm/prototypes promoted to top-level during initiative completion
 8. **Retrospectives periodic, not terminal** — recommended by signals, not end-of-project
+9. **`__active__` prefix** — the one initiative currently being built is visually distinct in the file explorer
+10. **`__archived__` replaces `__done__`** — across initiatives, slices, and side quests. Better captures completed, abandoned, and superseded states
 
 ## What Stays the Same
 
@@ -227,5 +237,6 @@ Not a hard gate — a nudge.
 ## Implementation Scope Notes
 
 - `/audit-architecture` and `/project-status` are referenced as consumers of maturity data and fitness functions. Changes to these skills to support the new concepts are part of this design's implementation scope.
-- The retroactive treatment of the initial MVP as the first initiative (creating `__done__initial-mvp/`) is a migration step — mechanics to be determined during planning.
+- The retroactive treatment of the initial MVP as the first initiative (creating `__archived__initial-mvp/`) is a migration step — mechanics to be determined during planning.
+- The `__done__` → `__archived__` prefix rename applies to all existing slices, side quests, and references in workflow.md and skill files. This is a cross-cutting migration.
 - Existing side quest explore phases (in workflow.md) are unaffected — only per-slice explore phases within initiatives are removed.
