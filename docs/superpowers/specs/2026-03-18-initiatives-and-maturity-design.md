@@ -52,9 +52,9 @@ Side quests cover both infrastructure work and small user-facing features. If so
 
 **Naming conventions:**
 - `__active__<name>/` — the one initiative currently being built (only one at a time)
-- `__archived__<name>/` — completed, superseded, or abandoned initiatives
+- `~~archived~~<name>/` — completed, superseded, or abandoned initiatives
 
-The `__archived__` prefix replaces the existing `__done__` prefix across all containers (initiatives, vertical slices, and side quests). "Archived" better captures the range of reasons something is no longer active — completed, abandoned, or superseded.
+The `~~archived~~` prefix replaces the existing `__done__` prefix across all containers (initiatives, vertical slices, and side quests). "Archived" better captures the range of reasons something is no longer active — completed, abandoned, or superseded.
 
 **`approved.md` contents:** Records the decision rationale — why we're proceeding, any conditions or concerns noted during review, what architectural changes were committed to the top-level architecture, and references to the specific architecture files modified.
 
@@ -70,7 +70,7 @@ The `__archived__` prefix replaces the existing `__done__` prefix across all con
 ├── brainstorm/                # Project-level (curated — includes promoted initiative brainstorms)
 ├── prototypes/                # Project-level (curated — includes promoted initiative prototypes)
 ├── initiatives/
-│   ├── __archived__initial-mvp/   # The first initiative (retroactive)
+│   ├── ~~archived~~initial-mvp/   # The first initiative (retroactive)
 │   └── <initiative-name>/
 │       ├── goal.md
 │       ├── abandoned.md       # If present, initiative is abandoned
@@ -223,7 +223,7 @@ Not a hard gate — a nudge.
 7. **Research promotion** — broadly useful initiative research/brainstorm/prototypes promoted to top-level during initiative completion
 8. **Retrospectives periodic, not terminal** — recommended by signals, not end-of-project
 9. **`__active__` prefix** — the one initiative currently being built is visually distinct in the file explorer
-10. **`__archived__` replaces `__done__`** — across initiatives, slices, and side quests. Better captures completed, abandoned, and superseded states
+10. **`~~archived~~` replaces `__done__`** — across initiatives, slices, and side quests. Better captures completed, abandoned, and superseded states
 11. **`/complete` renamed to `/complete`** — now handles slices, side quests, and initiatives. Scope inferred from context.
 
 ## What Stays the Same
@@ -238,6 +238,6 @@ Not a hard gate — a nudge.
 ## Implementation Scope Notes
 
 - `/audit-architecture` and `/project-status` are referenced as consumers of maturity data and fitness functions. Changes to these skills to support the new concepts are part of this design's implementation scope.
-- The retroactive treatment of the initial MVP as the first initiative (creating `__archived__initial-mvp/`) is a migration step — mechanics to be determined during planning.
-- The `__done__` → `__archived__` prefix rename applies to all existing slices, side quests, and references in workflow.md and skill files. This is a cross-cutting migration.
+- The retroactive treatment of the initial MVP as the first initiative (creating `~~archived~~initial-mvp/`) is a migration step — mechanics to be determined during planning.
+- The `__done__` → `~~archived~~` prefix rename applies to all existing slices, side quests, and references in workflow.md and skill files. This is a cross-cutting migration.
 - Existing side quest explore phases (in workflow.md) are unaffected — only per-slice explore phases within initiatives are removed.
