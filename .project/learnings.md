@@ -2,6 +2,21 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Multi-file review skills need explicit file-matching protocols
+_Source: slice-quality-and-health_
+
+When a review skill operates on scattered files across directories (not a single file/directory), define a file-matching protocol: filename prefixes on reviewer issues, editor inference fallback for missing prefixes, and a manifest listing all working copy paths. The iteration loop's single-file/directory convention doesn't cover this natively.
+
+## Signal tracking algorithms need precise trigger conditions
+_Source: slice-quality-and-health_
+
+Trend detection language like "trending upward" is ambiguous for agents. Specify exact conditions (e.g., "strictly increasing across all 3 data points: a < b < c") with explicit non-triggers. Without precision, different agent runs will interpret the same instruction differently.
+
+## Skill-file-only quests need manual scope for complete-slice
+_Source: slice-quality-and-health_
+
+Quests that modify only skill files (outside the repo, in ~/.claude/skills/) don't produce standard implementation/ artifacts. The auto-detect heuristic won't find them. Pass the scope explicitly when running /complete-slice for such quests.
+
 ## Shared reference files with placeholders enable partial consolidation
 _Source: architecture-quality_
 
