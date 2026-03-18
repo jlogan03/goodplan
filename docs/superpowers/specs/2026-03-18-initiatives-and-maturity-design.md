@@ -37,14 +37,16 @@ Side quests cover both infrastructure work and small user-facing features. If so
 
 **Initiative state machine (file existence):**
 
-- Only `goal.md` → needs exploration or architecture proposal
+- Only `goal.md` → ready for exploration (or skip to architecture proposal if no exploration needed)
 - `research/` or `brainstorm/` but no `explore-complete.md` → explore in progress
-- `explore-complete.md`, no `architecture-proposal/` → needs architecture proposal (or skip if no arch changes needed)
+- `explore-complete.md` or `explore-skipped.md` exists, no `architecture-proposal/` and no `architecture-proposal-skipped.md` → needs architecture proposal (or skip if no arch changes needed)
+- `architecture-proposal-skipped.md` exists → no arch changes needed, advance to slice planning
 - `architecture-proposal/` exists, no `approved.md` → proposal pending review
-- `approved.md` exists, no `vertical-slices/sequencing.md` → needs slice planning
+- `approved.md` or `architecture-proposal-skipped.md` exists, no `vertical-slices/sequencing.md` → needs slice planning
 - Slices in progress → same per-slice state machine as today
 - All slices complete, no `completion/` → needs initiative completion
 - `completion/learnings.md` exists → initiative complete
+- `abandoned.md` exists → abandoned (takes precedence over all other states, same as slices/quests)
 
 **Naming convention:** Completed, superseded, or discarded initiatives use the `__done__` prefix, same as vertical slices and side quests: `__done__realtime-collab/`.
 
@@ -73,10 +75,11 @@ Side quests cover both infrastructure work and small user-facing features. If so
 │       │   ├── _overview.md   # Summary of proposed changes
 │       │   ├── <subsystem>-changes.md
 │       │   └── new-<subsystem>.md
+│       ├── architecture-proposal-skipped.md  # If no arch changes needed
 │       ├── approved.md        # "Trigger pulled" — proposal accepted
 │       ├── vertical-slices/
 │       │   ├── sequencing.md
-│       │   └── <NN-slice-name>/
+│       │   └── <NN-slice-name>/       # No explore phase — exploration is initiative-level
 │       │       ├── goal.md
 │       │       ├── plan.md
 │       │       ├── plan-refined.md
@@ -214,9 +217,15 @@ Not a hard gate — a nudge.
 
 ## What Stays the Same
 
-- Side quests — same as today
+- Side quests — same structure as today, but triage behavior changes: side quests that touch maturing+ subsystems get flagged for potential re-scoping as initiatives
 - Per-slice lifecycle — goal → plan → refine → implement → QA → complete (minus explore phase)
 - File-existence state machine — extended for initiatives but same principle
 - Learning loop — learnings roll up from slices to initiatives to top-level
 - Git workflow — branch per slice/quest
 - All existing skills — work the same with additional maturity context loaded
+
+## Implementation Scope Notes
+
+- `/audit-architecture` and `/project-status` are referenced as consumers of maturity data and fitness functions. Changes to these skills to support the new concepts are part of this design's implementation scope.
+- The retroactive treatment of the initial MVP as the first initiative (creating `__done__initial-mvp/`) is a migration step — mechanics to be determined during planning.
+- Existing side quest explore phases (in workflow.md) are unaffected — only per-slice explore phases within initiatives are removed.
