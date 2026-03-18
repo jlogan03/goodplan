@@ -145,7 +145,7 @@ Each subsystem in the top-level architecture has a maturity designation. Maturit
 | Notifications | Experimental | — | — | Exploring channel abstractions. |
 ```
 
-**Graduating maturity:** Promotions are suggested by `/complete-slice` and `/audit-architecture` when they observe stability, fitness functions in place, multiple dependents, and generic-enough design. But the promotion is always a human decision, captured as a decision record.
+**Graduating maturity:** Promotions are suggested by `/complete` and `/audit-architecture` when they observe stability, fitness functions in place, multiple dependents, and generic-enough design. But the promotion is always a human decision, captured as a decision record.
 
 ### Maturity Integration Points
 
@@ -182,7 +182,7 @@ Fitness functions live as actual tests in the codebase but are documented in the
 **Where they enter the workflow:**
 - `/define-architecture` and initiative architecture proposals identify candidates: "when this subsystem matures, these properties should be tested"
 - `/create-plan` for slices that graduate a subsystem includes writing fitness functions as plan steps
-- `/complete-slice` checks: did this slice graduate any subsystems? Are fitness functions in place?
+- `/complete` checks: did this slice graduate any subsystems? Are fitness functions in place?
 - Plan refinement reviewers check that plans don't violate existing fitness functions
 - `/audit-architecture` compares fitness functions against actual code
 
@@ -224,6 +224,7 @@ Not a hard gate — a nudge.
 8. **Retrospectives periodic, not terminal** — recommended by signals, not end-of-project
 9. **`__active__` prefix** — the one initiative currently being built is visually distinct in the file explorer
 10. **`__archived__` replaces `__done__`** — across initiatives, slices, and side quests. Better captures completed, abandoned, and superseded states
+11. **`/complete` renamed to `/complete`** — now handles slices, side quests, and initiatives. Scope inferred from context.
 
 ## What Stays the Same
 
