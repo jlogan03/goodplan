@@ -12,14 +12,18 @@ This repo builds a suite of Claude Code skills implementing the development work
 
 ## What We're Building
 
-Six new skills + wiring:
+Skills implementing the development workflow:
 
-- `/start-project` — initialize `.project/`, capture and flesh out idea
-- `/explore-project` — brainstorm & research loop (project-level or slice-scoped)
-- `/define-architecture` — interactive architecture definition, populates `architecture/`
-- `/define-slices` — ordered vertical slices with concrete verifiable success criteria
-- `/create-plan` — produce a plan document for a slice/quest (format compatible with `/refine-plan` and `/implement-plan`)
-- `/synthesize-learnings` — roll up slice/quest learnings back into repo-level state
+- `/start-project` — initialize `.project/` and first initiative, capture idea
+- `/explore` — brainstorm & research loop (initiative-scoped or side-quest-scoped)
+- `/define-architecture` — interactive architecture definition, writes to initiative's `architecture/`
+- `/define-slices` — ordered vertical slices within an initiative
+- `/create-plan` — produce a plan document for a slice/quest
+- `/complete` — roll up learnings, propose architecture updates, review remaining work (slices, side quests, initiatives)
+- `/project-status` — read `.project/` state, report status and next step
+- `/refine-architecture` — iteratively review and improve architecture files
+- `/audit-architecture` — compare intended architecture against actual code
+- `/refine-slices` — iteratively improve slice definitions and sequencing
 
 Existing skills `/refine-plan` and `/implement-plan` are used as-is.
 

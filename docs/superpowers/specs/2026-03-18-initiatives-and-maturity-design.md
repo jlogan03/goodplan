@@ -58,11 +58,33 @@ The `~~archived~~` prefix replaces the existing `__done__` prefix across all con
 
 **`approved.md` contents:** Records the decision rationale — why we're proceeding, any conditions or concerns noted during review, what architectural changes were committed to the top-level architecture, and references to the specific architecture files modified.
 
+### Two-Layer Architecture Model
+
+Architecture lives in two places with distinct purposes:
+
+- **Top-level `.project/architecture/`** = current reality (what the repo looks like right now). Updated incrementally as slices and side quests complete.
+- **Initiative `architecture/`** = target state (where we're heading when this initiative completes). Stays focused on what the initiative set out to do — does NOT get updated when side quests change the top-level.
+
+**How they interact:**
+- Side quests read both layers: top-level for planning against current reality, active initiative architecture for compatibility with the target.
+- `/complete` (for slices and side quests) writes approved architecture updates to the top-level, keeping it in sync with reality.
+- Initiative completion reconciles the two: any gaps between target and reality are surfaced as incomplete work or intentional scope reductions.
+
+**First initiative:** `/define-architecture` writes to the initiative's `architecture/` directory. Top-level gets a minimal scaffold ("no architecture built yet — see active initiative"). As slices complete, top-level gets populated incrementally. No "pull the trigger" gate — the first initiative is approved by definition.
+
+**Subsequent initiatives:** The initiative's `architecture/` directory contains an architecture proposal — what changes this initiative wants to make. Top-level continues to reflect current reality. When a slice implements part of the proposal, `/complete` updates the top-level.
+
+**Stale assumption detection:** `/create-plan` and `/refine-plan` check whether the top-level architecture has been modified since a slice's `goal.md` was written. If it has (e.g., a side quest changed things), the user is prompted to verify whether the goal or plan needs updating.
+
+### Archive Numbering
+
+When archiving, directories include a completion-order number: `~~archived~~01_initial/`, `~~archived~~02_realtime-collab/`, etc. Count existing `~~archived~~` directories in the same container to determine the next number. Applies to initiatives; side quests optionally get the same treatment.
+
 ### File Structure
 
 ```
 .project/
-├── architecture/              # Top-level: current truth about the system
+├── architecture/              # Top-level: current reality (updated as slices/quests complete)
 │   ├── _overview.md           # Includes subsystem maturity table
 │   ├── invariants.md          # System-wide invariants
 │   └── ...                    # Existing architecture files
@@ -70,8 +92,9 @@ The `~~archived~~` prefix replaces the existing `__done__` prefix across all con
 ├── brainstorm/                # Project-level (curated — includes promoted initiative brainstorms)
 ├── prototypes/                # Project-level (curated — includes promoted initiative prototypes)
 ├── initiatives/
-│   ├── ~~archived~~initial-mvp/   # The first initiative (retroactive)
-│   └── <initiative-name>/
+│   ├── __active__<initiative-name>/  # The one initiative currently being built
+│   ├── ~~archived~~01_initial/       # First initiative (auto-created by /start-project)
+│   └── <initiative-name>/            # Initiatives in exploration/proposal phase
 │       ├── goal.md
 │       ├── abandoned.md       # If present, initiative is abandoned
 │       ├── research/
@@ -79,7 +102,10 @@ The `~~archived~~` prefix replaces the existing `__done__` prefix across all con
 │       ├── prototypes/
 │       ├── explore-complete.md
 │       ├── explore-skipped.md
-│       ├── architecture-proposal/
+│       ├── architecture/             # Target architecture for this initiative
+│       │   ├── _overview.md
+│       │   └── ...
+│       ├── architecture-proposal/    # For subsequent initiatives: proposed changes to top-level
 │       │   ├── _overview.md   # Summary of proposed changes
 │       │   ├── <subsystem>-changes.md
 │       │   └── new-<subsystem>.md
@@ -98,7 +124,6 @@ The `~~archived~~` prefix replaces the existing `__done__` prefix across all con
 │           ├── learnings.md
 │           └── architecture-updates.md
 ├── side-quests/               # Unchanged — small self-contained work
-└── vertical-slices/           # Initial MVP slices (part of first initiative retroactively)
 ```
 
 ### Per-Slice Lifecycle (Simplified)
@@ -215,16 +240,19 @@ Not a hard gate — a nudge.
 ## What Changes from the Current Workflow
 
 1. **Initiatives** — new first-class concept with directory structure, own explore loop, architecture proposals, and slices
-2. **Architecture proposal as staging area** — initiative-scoped architectural thinking that doesn't touch top-level architecture until approved
-3. **Architectural maturity spectrum** — subsystems tracked as experimental → developing → maturing → foundational, loaded at every decision point
-4. **Fitness functions** — automated tests of architectural properties, written as subsystems mature
-5. **System invariants** — documented constraints checked during plan refinement
-6. **Explore phase removed from individual slices** — exploration happens at initiative level; narrow research handled by `/create-plan`
-7. **Research promotion** — broadly useful initiative research/brainstorm/prototypes promoted to top-level during initiative completion
-8. **Retrospectives periodic, not terminal** — recommended by signals, not end-of-project
-9. **`__active__` prefix** — the one initiative currently being built is visually distinct in the file explorer
-10. **`~~archived~~` replaces `__done__`** — across initiatives, slices, and side quests. Better captures completed, abandoned, and superseded states
-11. **`/complete` renamed to `/complete`** — now handles slices, side quests, and initiatives. Scope inferred from context.
+2. **Two-layer architecture** — top-level architecture tracks current reality (updated as slices/quests complete); initiative architecture tracks target state (where we're heading). Side quests read both layers for compatibility.
+3. **First initiative created upfront** — `/start-project` creates `initiatives/__active__initial/` immediately, not retroactively. `/define-architecture` writes to the initiative. Top-level architecture starts as a scaffold, populated incrementally as slices complete.
+4. **Stale assumption detection** — `/create-plan` and `/refine-plan` check if top-level architecture changed since the slice's goal was written, prompting review if so
+5. **Archive numbering** — `~~archived~~01_<name>` format with completion-order numbers for initiatives (optional for side quests)
+6. **Architectural maturity spectrum** — subsystems tracked as experimental → developing → maturing → foundational, loaded at every decision point
+7. **Fitness functions** — automated tests of architectural properties, written as subsystems mature
+8. **System invariants** — documented constraints checked during plan refinement
+9. **Explore phase removed from individual slices** — exploration happens at initiative level; narrow research handled by `/create-plan`
+10. **Research promotion** — broadly useful initiative research/brainstorm/prototypes promoted to top-level during initiative completion
+11. **Retrospectives periodic, not terminal** — recommended by signals, not end-of-project
+12. **`__active__` prefix** — the one initiative currently being built is visually distinct in the file explorer
+13. **`~~archived~~` replaces `__done__`** — across initiatives, slices, and side quests. Better captures completed, abandoned, and superseded states
+14. **`/complete` renamed from `/complete-slice`** — now handles slices, side quests, and initiatives. Scope inferred from context.
 
 ## What Stays the Same
 
@@ -238,6 +266,6 @@ Not a hard gate — a nudge.
 ## Implementation Scope Notes
 
 - `/audit-architecture` and `/project-status` are referenced as consumers of maturity data and fitness functions. Changes to these skills to support the new concepts are part of this design's implementation scope.
-- The retroactive treatment of the initial MVP as the first initiative (creating `~~archived~~initial-mvp/`) is a migration step — mechanics to be determined during planning.
-- The `__done__` → `~~archived~~` prefix rename applies to all existing slices, side quests, and references in workflow.md and skill files. This is a cross-cutting migration.
+- The first initiative is created upfront by `/start-project` (auto-named "initial"), not retroactively. For existing repos, `/upgrade-workflow` handles migration from top-level `vertical-slices/` to the initiatives model.
+- The `__done__` → `~~archived~~` prefix rename applies to all existing slices, side quests, and references in workflow.md and skill files. This is a cross-cutting migration. (**Done** — see archived-prefix-migration side quest.)
 - Existing side quest explore phases (in workflow.md) are unaffected — only per-slice explore phases within initiatives are removed.

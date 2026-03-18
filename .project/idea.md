@@ -17,11 +17,11 @@ A set of standalone skills (no plugin required initially), a CLAUDE.md that wire
 | Skill | Phase | Purpose |
 |---|---|---|
 | `/start-project` | 1 | Initialize `.project/` filesystem, capture idea, ask clarifying questions to flesh it out |
-| `/explore` | 2 / 5 | Brainstorming & research loop for either the whole project or a specific slice/quest — iterates until the user decides enough has been captured. Handles research (spawns sub-agents), brainstorming (interactive), and prototyping (interactive). Writes to the appropriate scope's `research/` and `brainstorm/` directories. |
+| `/explore` | 2 | Brainstorming & research loop scoped to an initiative or side quest — iterates until the user decides enough has been captured. Handles research (spawns sub-agents), brainstorming (interactive), and prototyping (interactive). Writes to the appropriate scope's `research/` and `brainstorm/` directories. |
 | `/define-architecture` | 3 | Use goal + exploration output to interactively drive architecture decisions until `architecture/` is fully populated and the user is satisfied. Also captures project conventions (`conventions.md`) and updates `CLAUDE.md` with references to architecture files. |
-| `/define-slices` | 4 | Look at current repo state and define an ordered set of vertical slices with concrete, verifiable success criteria — success defined not just by tests but by actually running code (scripts, functions, web apps in browser, etc.). Writes `vertical-slices/sequencing.md` and each slice's `goal.md`. |
+| `/define-slices` | 4 | Look at current repo state and define an ordered set of vertical slices with concrete, verifiable success criteria — success defined not just by tests but by actually running code (scripts, functions, web apps in browser, etc.). Writes to the active initiative's `vertical-slices/sequencing.md` and each slice's `goal.md`. |
 | `/create-plan` | 6 | Take a slice/quest goal and produce a plan document compatible with `/refine-plan` and `/implement-plan`. Reads all available context (exploration, architecture, conventions, learnings, other slice goals). Asks the user questions to fill gaps before writing. |
-| `/complete-slice` | 10 | After implementation and any QA: roll up learnings to `completion/learnings.md` and top-level `learnings.md`; propose architecture updates based on what was learned; review remaining slices to see if goals need updating or new work is warranted; ask about cleanup/refactor pass. No git automation — branching, pushing, and PRs are handled conversationally. |
+| `/complete` | 10 | After implementation and any QA: roll up learnings to `completion/learnings.md` and top-level `learnings.md`; propose architecture updates (approved changes written to top-level architecture); review remaining slices to see if goals need updating or new work is warranted; ask about cleanup/refactor pass. Handles slices, side quests, and initiatives. |
 | `/project-status` | any | Read `state.md`, `flow-log.jsonl`, and the `.project/` filesystem to determine what was last done and what should happen next. Present a clear status summary and recommended next skill to run. |
 | `/refine-architecture` | any | Iteratively review and improve `.project/architecture/` files using specialized review sub-agents. Evaluates module depth, subsystem boundaries, API surfaces, and alignment with decisions. |
 | `/audit-architecture` | any | Compare intended architecture against actual code, evaluate whether the target architecture should evolve, and propose side quests for gaps and improvements. Run before `/refine-architecture`. |
@@ -48,13 +48,13 @@ A set of standalone skills (no plugin required initially), a CLAUDE.md that wire
 
 ### `/explore` Invocation
 
-`/explore` uses Option C: reads `state.md` to infer the active scope, announces what it's about to explore, and asks for confirmation before starting. Can be overridden explicitly: `/explore slice/user-auth` or `/explore quest/setup-test-infra`.
+`/explore` reads `state.md` to infer the active scope, announces what it's about to explore, and asks for confirmation before starting. Can be overridden explicitly: `/explore initiative/realtime-collab` or `/explore quest/setup-test-infra`.
 
-- No argument + no active scope in `state.md` → explores project-level
-- No argument + active slice/quest in `state.md` → explores that slice/quest
+- No argument + active initiative in `state.md` → explores that initiative
+- No argument + active side quest in `state.md` → explores that side quest
 - Explicit argument → uses that scope regardless of `state.md`
 
-The skill announces its inferred scope at the start: "Exploring [project-level / slice: user-auth]. Correct?" so the user can redirect if needed.
+The skill announces its inferred scope at the start: "Exploring [initiative: initial / quest: setup-test-infra]. Correct?" so the user can redirect if needed.
 
 ### CLAUDE.md Project Context Section
 
@@ -65,8 +65,8 @@ Sub-agents get CLAUDE.md loaded automatically but receive minimal explicit promp
 The Project Context section is written incrementally by skills as files are created:
 
 - `/start-project` → adds `idea.md`
-- `/define-architecture` → adds `conventions.md`, `architecture/` references, `sequencing.md`
-- `/complete-slice` → updates if new architecture files were added during the slice
+- `/define-architecture` → adds `conventions.md`, `architecture/` references
+- `/complete` → updates if new architecture files were added during the slice
 
 **Final format:**
 
@@ -77,16 +77,16 @@ Read these before doing any significant work in this repo:
 
 - `.project/idea.md` — project goal, scope, constraints
 - `.project/conventions.md` — tech stack, repo structure, coding style
-- `.project/architecture/_overview.md` — system architecture
+- `.project/architecture/_overview.md` — system architecture (current reality)
 - `.project/architecture/conventions.md` — architectural patterns
 - `.project/learnings.md` — accumulated learnings across completed slices
-- `.project/vertical-slices/sequencing.md` — slice ordering and rationale
 
 Also check if relevant to your task:
-- `.project/brainstorm/` — project-level brainstorming output
-- `.project/research/` — project-level research findings
-- `.project/prototypes/` — exploratory prototypes
+- `.project/initiatives/` — large bodies of work with their own exploration, architecture, and slices
 - `.project/side-quests/` — deferred and in-progress side quests
+- `.project/brainstorm/` — project-level brainstorming output (curated from initiatives)
+- `.project/research/` — project-level research findings (curated from initiatives)
+- `.project/prototypes/` — exploratory prototypes (curated from initiatives)
 ```
 
 ## Constraints
@@ -99,5 +99,4 @@ Also check if relevant to your task:
 
 ## Open Questions
 
-- What's the exact plan document format expected by `/refine-plan` and `/implement-plan`? Need to inspect those skills before writing `/create-plan`.
-- Should `/define-slices` write `sequencing.md` in the format `workflow.md` specifies, or something simpler to start?
+*(All original open questions have been resolved through implementation.)*
