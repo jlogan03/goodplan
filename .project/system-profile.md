@@ -24,7 +24,7 @@
 
 ### Easy to extend
 - Reviewer infrastructure: adding a new reviewer to any skill requires only a prompt section in the reviewers file + a registry entry
-- Iteration loop: new skills plug in via Loop Parameters table — architecture-quality proved this, slice-quality-and-health confirmed it
+- Iteration loop: new skills plug in via Loop Parameters table — architecture-quality proved this, slice-quality-and-health confirmed it, refine-plan-shared-loop completed the consolidation (all 3 consumers now use the shared pattern)
 
 ### Hard to extend
 - Multi-file review pattern: the iteration loop assumes single-file or single-directory plans. Scattered working copies (as in refine-slices) require custom editor prompts and file-matching protocols
@@ -34,15 +34,16 @@
 ## Technical Debt
 
 ### Localized items
-- None identified
+- shared-preamble.md asymmetry: lives in refine-plan/references/ while iteration-loop.md lives in _shared/references/ — candidate for future consolidation
 
 ### Systemic items
 - None identified
 
-<!-- Last updated by: complete-slice for side-quests/slice-quality-and-health, 2026-03-17 -->
+<!-- Last updated by: complete-slice for side-quests/refine-plan-shared-loop, 2026-03-18 -->
 
 ## Recent Changes
 
+- **refine-plan-shared-loop** (2026-03-18): Refactored refine-plan SKILL.md to reference shared iteration-loop.md with Loop Parameters table. All 3 iteration-loop consumers now use the same pattern.
 - **slice-quality-and-health** (2026-03-17): Added tracer bullet framing and three-lens evaluation to /define-slices, created /refine-slices skill with 4 reviewers, added system-profile.md + debt evaluation + signal tracking to /complete-slice, added system-profile refresh to /audit-architecture
 
-<!-- Last updated by: complete-slice for side-quests/slice-quality-and-health, 2026-03-17 -->
+<!-- Last updated by: complete-slice for side-quests/refine-plan-shared-loop, 2026-03-18 -->

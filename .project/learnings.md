@@ -2,6 +2,11 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Pointer stubs preserve navigability when extracting shared content
+_Source: refine-plan-shared-loop_
+
+When refactoring a skill to reference shared infrastructure, keep removed sub-steps as 1-sentence pointer stubs rather than deleting them entirely. This preserves lettering continuity (a-m) and top-to-bottom scannability. Fully removing steps creates confusing gaps that break the reader's mental model.
+
 ## Multi-file review skills need explicit file-matching protocols
 _Source: slice-quality-and-health_
 
