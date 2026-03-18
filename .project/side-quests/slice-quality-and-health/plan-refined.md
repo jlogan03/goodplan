@@ -1,5 +1,8 @@
 # Plan: Slice Quality & System Health
 
+**Status**: COMPLETE
+**Completed**: 2026-03-17
+
 ## Overview
 
 Upgrade the slice definition and completion workflow to produce higher-quality slices and track system health over time. Four changes: (1) `/define-slices` gains tracer bullet framing with a three-lens evaluation that the agent iterates internally before presenting alternatives to the user, (2) a new `/refine-slices` skill uses the shared iteration loop with 4 reviewers to iteratively improve slice goals, (3) `/complete-slice` gains system-profile.md updates, explicit debt evaluation, and signal tracking across the last 3 slices, and (4) `/audit-architecture` gains a step to create or refresh system-profile.md from audit findings.
