@@ -4,7 +4,7 @@ Create `~/.claude/skills/_shared/references/maturity-conventions.md` defining al
 
 ### Tasks
 
-- [ ] **Create `maturity-conventions.md`** with a table of contents at the top (linking to each of the 6 sections below), followed by sections:
+- [x] **Create `maturity-conventions.md`** with a table of contents at the top (linking to each of the 6 sections below), followed by sections:
   - **Maturity Levels**: Table with 4 levels (Experimental, Developing, Maturing, Foundational), descriptions, and change protocols per level. Use the table from the design spec (`docs/superpowers/specs/2026-03-18-initiatives-and-maturity-design.md` lines 120-128). Include "What maturity captures" bullets.
   - **Maturity Table Format**: Lives in `architecture/_overview.md` under `## Subsystem Maturity`. Columns: Subsystem, Maturity, Dependents, Fitness Functions, Notes. Include the example table from the design spec.
   - **Maturity Promotion Criteria**: Evidence justifying a promotion: stability (no significant bugs/changes over recent slices), fitness functions in place, multiple dependents, generic-enough design. Promotions are always user decisions captured as decision records. Demotions when subsystems regress (new gaps, broken fitness functions, reduced confidence).
