@@ -1,5 +1,8 @@
 # Plan: Refine-Plan Shared Loop Refactoring
 
+**Status**: COMPLETE
+**Completed**: 2026-03-18
+
 ## Overview
 
 Refactor `/refine-plan`'s SKILL.md to replace its inline iteration loop with a reference to the shared `iteration-loop.md` + a Loop Parameters table. This matches the pattern already used by `/refine-architecture` and `/refine-slices`. Pure refactoring — no behavioral change.
@@ -14,7 +17,7 @@ Replace refine-plan's inline loop orchestration with a Loop Parameters table + r
 
 ### Tasks
 
-- [ ] **Add Loop Parameters table** after the "Reviewer Roles" section (before "## Workflow"), following the refine-architecture pattern:
+- [x] **Add Loop Parameters table** after the "Reviewer Roles" section (before "## Workflow"), following the refine-architecture pattern:
 
   | Parameter | Value |
   |---|---|
@@ -30,9 +33,9 @@ Replace refine-plan's inline loop orchestration with a Loop Parameters table + r
   | **Backup directory** | N/A (original plan is preserved as backup) |
   | **review_context** | `an implementation plan` |
 
-- [ ] **Add shared loop reference** at the top of Step 3, after the heading and before "Enter a review loop" (matching refine-architecture's Step 2 placement): "Read `~/.claude/skills/_shared/references/iteration-loop.md` for the shared orchestration structure. This step fills in the plan-specific parameters." This is a two-sentence reference, not an explanatory paragraph — matching refine-architecture's brevity.
+- [x] **Add shared loop reference** at the top of Step 3, after the heading and before "Enter a review loop" (matching refine-architecture's Step 2 placement): "Read `~/.claude/skills/_shared/references/iteration-loop.md` for the shared orchestration structure. This step fills in the plan-specific parameters." This is a two-sentence reference, not an explanatory paragraph — matching refine-architecture's brevity.
 
-- [ ] **Verify iteration-loop.md completeness** (do this BEFORE removing inline content — if gaps are found, the removal scope changes): For each sub-step being removed (3c, 3d, 3f, 3h, 3i, 3j), read the corresponding iteration-loop.md section and confirm every sentence in the original sub-step is either (a) covered by iteration-loop.md, or (b) identified as refine-plan-specific and listed as "surviving" below. Concrete checklist:
+- [x] **Verify iteration-loop.md completeness** (do this BEFORE removing inline content — if gaps are found, the removal scope changes): For each sub-step being removed (3c, 3d, 3f, 3h, 3i, 3j), read the corresponding iteration-loop.md section and confirm every sentence in the original sub-step is either (a) covered by iteration-loop.md, or (b) identified as refine-plan-specific and listed as "surviving" below. Concrete checklist:
   - 3c sentences → "Reviewer Spawn Pattern" sections 1-5
   - 3d sentences → "Synthesis Prompt Skeleton" sections 1-4
   - 3f sentences → "Exit Criteria Evaluation" (Full Pass, Early Exit, Final Cleanup Pass, Max Iterations)
@@ -42,7 +45,7 @@ Replace refine-plan's inline loop orchestration with a Loop Parameters table + r
 
   If a gap is found (refine-plan has content that iteration-loop.md doesn't cover and should), add it to iteration-loop.md. Then re-read refine-architecture and refine-slices SKILL.md files to confirm neither is broken by the addition.
 
-- [ ] **Shorten inline content that duplicates iteration-loop.md**: Following refine-architecture's pattern, keep all sub-steps as inline headings but shorten each to 1-2 sentences + a reference to the iteration-loop.md section. Specific surviving sentences per sub-step:
+- [x] **Shorten inline content that duplicates iteration-loop.md**: Following refine-architecture's pattern, keep all sub-steps as inline headings but shorten each to 1-2 sentences + a reference to the iteration-loop.md section. Specific surviving sentences per sub-step:
   - Step 3c (reviewer spawn mechanics) — shorten to reference iteration-loop.md "Reviewer Spawn Pattern". Surviving sentences: (1) "do NOT read the reviewer prompt files yourself" (line 105 — refine-plan guardrail not in iteration-loop.md). Remove: the general parallel-launch rationale and bootstrap mechanics (covered by iteration-loop.md §§ 1-4). The model downgrade sentence is covered by iteration-loop.md § 5.
   - Step 3d (synthesis) — shorten to reference iteration-loop.md "Synthesis Prompt Skeleton". Surviving content: (1) the "Plan editor" row of the model selection policy table — opus default, sonnet when only MINOR DIRECTLY_ACTIONABLE items (refine-plan-specific editor downgrade condition) and (2) the "Synthesis" row — opus default, sonnet when all reviewer scores 8+ and no CRITICAL/IMPORTANT (this downgrade condition is NOT in iteration-loop.md). Remove: the "Domain reviewer" row (covered by iteration-loop.md "Reviewer Spawn Pattern" § 5). Remove: the general collect-and-synthesize mechanics (covered by iteration-loop.md §§ 1-4).
   - Step 3f (exit criteria) — shorten to reference iteration-loop.md "Exit Criteria Evaluation". Surviving sentences: the early exit user warning text ("report which reviewers scored below 9, their reasons, and whether the plan may need to be restructured, split into smaller plans, or have its scope reconsidered" — refine-plan-specific guidance not in iteration-loop.md). Remove: the full/early exit threshold definitions and final cleanup pass description (covered by iteration-loop.md).
@@ -50,7 +53,7 @@ Replace refine-plan's inline loop orchestration with a Loop Parameters table + r
   - Step 3i (RESEARCH_NEEDED handling) — shorten to reference iteration-loop.md "Handling RESEARCH_NEEDED". Surviving sentences: (1) "Uses Context7 MCP tools first, falls back to WebSearch" (2) "Writes results to `<scope_dir>/research/<topic>.md`". Remove: the general spawn-and-append mechanics (covered by iteration-loop.md §§ 1-5) and the CODEBASE_EXPLORATION sentence (covered by iteration-loop.md § 5 verbatim).
   - Step 3j (editor spawn) — reduce to 1-sentence pointer stub: "Follow iteration-loop.md § Editor Sub-Agent Pattern." No refine-plan-specific sentences survive.
 
-- [ ] **Keep refine-plan-specific steps inline unchanged** (these have no equivalent in iteration-loop.md):
+- [x] **Keep refine-plan-specific steps inline unchanged** (these have no equivalent in iteration-loop.md):
   - Step 3a: Reviewer scope determination with conditional specialist re-evaluation
   - Step 3b: Create iteration directory
   - Step 3e: Display iteration summary (uses refine-plan's Output Templates)
@@ -58,13 +61,13 @@ Replace refine-plan's inline loop orchestration with a Loop Parameters table + r
   - Step 3k: Plan size check and directory conversion
   - Step 3l/3m: Increment/max iterations (brief — references Loop Parameters)
 
-- [ ] **Confirm Reviewer Roles section is unchanged**: The Reviewer Roles section (lines 29-38) partially overlaps with iteration-loop.md's "Reviewer Spawn Pattern" but is retained as-is, consistent with refine-architecture's treatment of its own Reviewer Roles section.
+- [x] **Confirm Reviewer Roles section is unchanged**: The Reviewer Roles section (lines 29-38) partially overlaps with iteration-loop.md's "Reviewer Spawn Pattern" but is retained as-is, consistent with refine-architecture's treatment of its own Reviewer Roles section.
 
-- [ ] **Add iteration-loop.md to References section**: Add a line to the References section at the bottom of SKILL.md: `- **Shared iteration loop**: \`~/.claude/skills/_shared/references/iteration-loop.md\` — orchestration pattern shared with refine-architecture and refine-slices`. Match refine-architecture's References format.
+- [x] **Add iteration-loop.md to References section**: Add a line to the References section at the bottom of SKILL.md: `- **Shared iteration loop**: \`~/.claude/skills/_shared/references/iteration-loop.md\` — orchestration pattern shared with refine-architecture and refine-slices`. Match refine-architecture's References format.
 
-- [ ] **Measure line reduction**: Compare before/after line count of SKILL.md. Step 3 is currently ~89 lines. Verify meaningful reduction (expect ~20-25 lines removed and ~17-20 lines added for Loop Parameters table, reference text, and iteration-loop.md References entry — net reduction ~1-8 lines). If net reduction is under 1 line (i.e., the file grew), investigate — the shortening may not have been aggressive enough.
+- [x] **Measure line reduction**: Compare before/after line count of SKILL.md. Step 3 is currently ~89 lines. Verify meaningful reduction (expect ~20-25 lines removed and ~17-20 lines added for Loop Parameters table, reference text, and iteration-loop.md References entry — net reduction ~1-8 lines). If net reduction is under 1 line (i.e., the file grew), investigate — the shortening may not have been aggressive enough.
 
-- [ ] **Atomic edit**: Work on the `-refining` working copy and only replace the original at the end. The original SKILL.md serves as the rollback — if the refactoring is interrupted, the original is untouched. This atomic edit guidance applies to the SKILL.md refactoring specifically; any iteration-loop.md additions required by task "Verify iteration-loop.md completeness" are a separate prerequisite step completed before this atomic edit.
+- [x] **Atomic edit**: Work on the `-refining` working copy and only replace the original at the end. The original SKILL.md serves as the rollback — if the refactoring is interrupted, the original is untouched. This atomic edit guidance applies to the SKILL.md refactoring specifically; any iteration-loop.md additions required by task "Verify iteration-loop.md completeness" are a separate prerequisite step completed before this atomic edit.
 
 ### Verification
 
