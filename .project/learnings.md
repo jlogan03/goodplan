@@ -2,6 +2,16 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Re-entry paths must be checked before guardrails that reject the same state
+_Source: complete-rename_
+
+When a condition (e.g., "completion/learnings.md exists") is both a rejection criterion for first-time runs and a resume indicator for re-entry, the resume check must run first. Otherwise, graceful-stop recovery paths are blocked by the very guardrail they need to bypass.
+
+## Archive naming conventions with embedded counters need explicit stripping rules
+_Source: complete-rename_
+
+Simple prefix stripping (`~~archived~~` → name) breaks for archives that embed structured metadata like numbering (`~~archived~~NN_<name>`). When adding counters or other metadata to prefix conventions, document the full stripping algorithm alongside the naming convention.
+
 ## Convention-first ordering enables consistent cross-skill infrastructure
 _Source: initiatives-infrastructure_
 
