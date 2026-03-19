@@ -19,10 +19,10 @@ A set of standalone skills (no plugin required initially), a CLAUDE.md that wire
 | `/create-epic` | 1 | Initialize `.project/` filesystem, capture idea, ask clarifying questions to flesh it out |
 | `/explore` | 2 | Brainstorming & research loop scoped to an epic or side quest — iterates until the user decides enough has been captured. Handles research (spawns sub-agents), brainstorming (interactive), and prototyping (interactive). Writes to the appropriate scope's `research/` and `brainstorm/` directories. |
 | `/create-architecture` | 3 | Use goal + exploration output to interactively drive architecture decisions until `architecture/` is fully populated and the user is satisfied. Also captures project conventions (`conventions.md`) and updates `CLAUDE.md` with references to architecture files. |
-| `/create-slices` | 4 | Look at current repo state and define an ordered set of vertical slices with concrete, verifiable success criteria — success defined not just by tests but by actually running code (scripts, functions, web apps in browser, etc.). Writes to the active epic's `vertical-slices/sequencing.md` and each slice's `goal.md`. |
+| `/create-slices` | 4 | Look at current repo state and define an ordered set of vertical slices with concrete, verifiable success criteria — success defined not just by tests but by actually running code (scripts, functions, web apps in browser, etc.). Writes to the active epic's `slices/sequencing.md` and each slice's `goal.md`. |
 | `/create-plan` | 6 | Take a slice/quest goal and produce a plan document compatible with `/refine-plan` and `/implement-plan`. Reads all available context (exploration, architecture, conventions, learnings, other slice goals). Asks the user questions to fill gaps before writing. |
 | `/complete` | 10 | After implementation and any QA: roll up learnings to `completion/learnings.md` and top-level `learnings.md`; propose architecture updates (approved changes written to top-level architecture); review remaining slices to see if goals need updating or new work is warranted; ask about cleanup/refactor pass. Handles slices, side quests, and initiatives. |
-| `/project-status` | any | Read `state.md`, `flow-log.jsonl`, and the `.project/` filesystem to determine what was last done and what should happen next. Present a clear status summary and recommended next skill to run. |
+| `/project-status` | any | Read `state.md`, `activity-log.jsonl`, and the `.project/` filesystem to determine what was last done and what should happen next. Present a clear status summary and recommended next skill to run. |
 | `/refine-architecture` | any | Iteratively review and improve `.project/architecture/` files using specialized review sub-agents. Evaluates module depth, subsystem boundaries, API surfaces, and alignment with decisions. |
 | `/audit-architecture` | any | Compare intended architecture against actual code, evaluate whether the target architecture should evolve, and propose side quests for gaps and improvements. Run before `/refine-architecture`. |
 
@@ -43,7 +43,7 @@ A set of standalone skills (no plugin required initially), a CLAUDE.md that wire
 ### Cross-Cutting Conventions (applied consistently across all skills)
 
 - **`state.md`** — read at skill start for fast resume context; write current phase/step/scope on completion so the next session can orient immediately.
-- **`flow-log.jsonl`** — append a JSONL entry at each significant transition. Format: `{"ts":"...","phase":"...","scope":"...","status":"...","summary":"..."}`. Detail files in `flow-log/` only for retries, failures, or circuit breaker events.
+- **`activity-log.jsonl`** — append a JSONL entry at each significant transition. Format: `{"ts":"...","phase":"...","scope":"...","status":"...","summary":"..."}`. Detail files in `activity-log/` only for retries, failures, or circuit breaker events.
 - **`CLAUDE.md` project context section** — maintained incrementally by skills as new files are created (see below).
 
 ### `/explore` Invocation

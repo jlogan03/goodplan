@@ -11,7 +11,7 @@
 - Refactor Intelligence Protocol (Step 9 in complete): new detection algorithm, batch table presentation, inline fix application, side quest proposal — all untested on a real codebase
 - Maturity/invariants/fitness workflow: Steps 8f/8g/8h in define-architecture, Steps 3b/3c/3d in audit-architecture, maturity evaluation in refine-architecture, reviewer criteria 12/13 — all untested on a real project
 - Initiative workflow end-to-end: all initiative-aware skills updated but never exercised on a real initiative. First-initiative flow (auto-active __active__initial/) and subsequent-initiative flow (proposal → approval → activation) both untested
-- /start-initiative skill: brand new, never executed. Architecture-proposal copying, approved.md writing, directory rename all need live testing
+- /start-epic skill: brand new, never executed. Architecture-proposal copying, approved.md writing, directory rename all need live testing
 - Initiative completion mode in /complete: new initiative scope type, architecture reconciliation, artifact promotion, archive numbering — all untested on a real initiative
 
 ### Known fragile areas

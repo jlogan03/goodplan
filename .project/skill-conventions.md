@@ -19,7 +19,7 @@
 
 ## Work Stack
 <LIFO entries or "(empty)">
-- side-quest/<name> (interrupted vertical-slices/<name> at <phase>)
+- side-quest/<name> (interrupted slices/<name> at <phase>)
 
 ## Next Step
 <Actionable one-sentence instruction>
@@ -27,11 +27,11 @@
 
 All four sections required. Active scope: Work Stack top → Active Slice → project level.
 
-## flow-log.jsonl Format
+## activity-log.jsonl Format
 
-One JSON object per line. Required fields: `ts` (timestamp), `phase` (e.g. `capture-idea`), `scope` (`project` or path like `vertical-slices/01-start-project`), `status` (`complete`|`started`|`failed`|`abandoned`), `summary` (one sentence).
+One JSON object per line. Required fields: `ts` (timestamp), `phase` (e.g. `capture-idea`), `scope` (`project` or path like `slices/01-start-project`), `status` (`complete`|`started`|`failed`|`abandoned`), `summary` (one sentence).
 
-Optional: `detail` — path to file in `flow-log/` for notable events (retries, failures). Naming: `flow-log/<phase>-<scope-slug>-<YYYYMMDDTHHmmss>.md`. Routine completions need no detail file.
+Optional: `detail` — path to file in `activity-log/` for notable events (retries, failures). Naming: `activity-log/<phase>-<scope-slug>-<YYYYMMDDTHHmmss>.md`. Routine completions need no detail file.
 
 Example:
 ```json
