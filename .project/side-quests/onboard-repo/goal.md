@@ -7,11 +7,11 @@ A skill that brings existing repos (with code but no `.project/`) into the goodp
 ## Dependencies
 
 - **decisions-and-expertise** side quest must be complete (for decisions/ convention and expertise tracking)
-- **initiatives-infrastructure** side quest must be complete (for initiative directory structure)
+- **initiatives-infrastructure** side quest must be complete (for epic directory structure)
 
 ## What Changes
 
-### New Skill: `/onboard-repo` (or extend `/start-project`)
+### New Skill: `/onboard-repo` (or extend `/create-epic`)
 
 Handles the scenario where a repo has code but no `.project/` directory. Skill design decision (new skill vs extend start-project) to be made during planning.
 
@@ -24,15 +24,15 @@ Handles the scenario where a repo has code but no `.project/` directory. Skill d
 6. Extract domain model — entities, relationships, business rules, terminology. Goes into architecture files.
 7. Detect deployment/runtime context — Docker, K8s, serverless, service topology, external deps, local dev setup.
 8. Identify hot spots — churn × complexity analysis. Informs slice prioritization.
-9. Scaffold `.project/` — idea.md, state.md, flow-log.jsonl, create first initiative (`initiatives/__active__initial/`) with architecture extracted from existing code
-10. Top-level `.project/architecture/` populated from existing code (this IS the current reality). Initiative architecture represents where we're headed (may be same as current if no changes planned yet).
+9. Scaffold `.project/` — idea.md, state.md, flow-log.jsonl, create first epic (`epics/__active__initial/`) with architecture extracted from existing code
+10. Top-level `.project/architecture/` populated from existing code (this IS the current reality). Epic architecture represents where we're headed (may be same as current if no changes planned yet).
 
 **Key principle**: Extract and organize information that already exists in the repo. Only ask the user about things that can't be inferred.
 
 ## Success Criteria
 
 - [ ] `.project/idea.md` populated from existing repo artifacts
-- [ ] First initiative created (`initiatives/__active__initial/`) — not top-level `vertical-slices/`
+- [ ] First epic created (`epics/__active__initial/`) — not top-level `vertical-slices/`
 - [ ] Top-level architecture populated from existing code (current reality)
 - [ ] User only asked about information that couldn't be inferred
 - [ ] Conventions detected from code and written to conventions.md

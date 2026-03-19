@@ -14,12 +14,12 @@ This repo builds a suite of Claude Code skills implementing the development work
 
 Skills implementing the development workflow:
 
-- `/create-initiative` — initialize `.project/` and first initiative, or add new initiative to existing project
-- `/explore` — brainstorm & research loop (initiative-scoped or side-quest-scoped)
-- `/define-architecture` — interactive architecture definition, writes to initiative's `architecture/`
-- `/define-slices` — ordered vertical slices within an initiative
+- `/create-epic` — initialize `.project/` and first epic, or add new epic to existing project
+- `/explore` — brainstorm & research loop (epic-scoped or side-quest-scoped)
+- `/create-architecture` — interactive architecture definition, writes to epic's `architecture/`
+- `/create-slices` — ordered vertical slices within an epic
 - `/create-plan` — produce a plan document for a slice/quest
-- `/complete` — roll up learnings, propose architecture updates, review remaining work (slices, side quests, initiatives)
+- `/complete` — roll up learnings, propose architecture updates, review remaining work (slices, side quests, epics)
 - `/project-status` — read `.project/` state, report status and next step
 - `/refine-architecture` — iteratively review and improve architecture files
 - `/audit-architecture` — compare intended architecture against actual code
