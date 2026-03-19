@@ -2,6 +2,21 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Convention-first ordering enables consistent cross-skill infrastructure
+_Source: initiatives-infrastructure_
+
+When updating many skills to share a new concept (like initiatives), create the shared convention file first. Every subsequent skill update codes against the same reference, and reviewers catch inconsistencies by comparing against it. Without this, each skill invents its own conventions requiring reconciliation later.
+
+## Integration review catches cross-cutting gaps per-phase reviews miss
+_Source: initiatives-infrastructure_
+
+Per-phase reviews validated each skill in isolation but missed system-level gaps (e.g., implement-plan and create-plan not reading initiative architecture). A final integration review across all phases caught 5 IMPORTANT issues. Budget for integration review when plans span many files.
+
+## Scope resolution preambles (Step 0) should be a standard skill pattern
+_Source: initiatives-infrastructure_
+
+Skills that branch behavior based on context (initiative vs top-level vs side quest) benefit from resolving scope variables in a Step 0 preamble, then referencing those variables throughout. This pattern emerged through reviewer feedback and should be prescribed in future skill infrastructure work.
+
 ## Archive prefix sort order depends on the tool, not just ASCII
 _Source: archived-prefix-migration_
 
