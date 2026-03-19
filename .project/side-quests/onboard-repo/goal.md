@@ -48,4 +48,4 @@ Handles the scenario where a repo has code but no `.project/` directory. Skill d
 
 **In scope**: Onboarding repos with no `.project/` directory, convention detection, migration detection, debt surfacing, domain extraction, deployment detection, hot spot analysis
 
-**Out of scope**: Upgrading repos with old `.project/` (upgrade-workflow quest), complete-slice refactor intelligence (refactor-intelligence quest), changes to the core workflow
+**Out of scope**: Upgrading repos with old `.project/` (upgrade-workflow quest), complete refactor intelligence (refactor-intelligence quest), changes to the core workflow

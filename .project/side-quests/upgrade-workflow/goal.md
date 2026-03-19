@@ -37,4 +37,4 @@ Handles the scenario where `.project/` exists but is missing current conventions
 ## Scope Boundaries
 
 **In scope**: Detecting workflow version gaps, incremental migration, vertical-slices-to-initiatives migration
-**Out of scope**: Onboarding new repos (onboard-repo quest), complete-slice changes (refactor-intelligence quest)
+**Out of scope**: Onboarding new repos (onboard-repo quest), complete changes (refactor-intelligence quest)

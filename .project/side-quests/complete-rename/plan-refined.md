@@ -19,11 +19,11 @@ Rename `complete-slice/` to `complete/` and update all references across skills 
 
 ### Tasks
 
-- [ ] **Rename skill directory**: `mv ~/.claude/skills/complete-slice ~/.claude/skills/complete`. Update SKILL.md frontmatter: `name: complete`, update description to: "Complete a slice, side quest, or initiative. For slices/quests: synthesizes learnings, rolls up to project learnings, updates architecture and system profile, archives scope. For initiatives: validates all slices are done, synthesizes cross-slice initiative learnings, reconciles initiative architecture against project architecture, promotes artifacts, archives with numbering." Add trigger phrases: 'complete initiative', 'finish initiative', 'initiative is done', 'wrap up the initiative', 'close out the initiative', 'initiative complete'. Note: SKILL.md description has a 1024-character limit (proposed text is ~379 chars, well within limit).
+- [x] **Rename skill directory**: `mv ~/.claude/skills/complete-slice ~/.claude/skills/complete`. Update SKILL.md frontmatter: `name: complete`, update description to: "Complete a slice, side quest, or initiative. For slices/quests: synthesizes learnings, rolls up to project learnings, updates architecture and system profile, archives scope. For initiatives: validates all slices are done, synthesizes cross-slice initiative learnings, reconciles initiative architecture against project architecture, promotes artifacts, archives with numbering." Add trigger phrases: 'complete initiative', 'finish initiative', 'initiative is done', 'wrap up the initiative', 'close out the initiative', 'initiative complete'. Note: SKILL.md description has a 1024-character limit (proposed text is ~379 chars, well within limit).
 
-- [ ] **Update references/guidance.md**: Replace any `complete-slice` self-references with `complete`. Also update flow-log signal tracking filter (Step 6d) to match entries where `phase` is either `"complete-slice"` or `"complete"` — historical entries used the old phase value.
+- [x] **Update references/guidance.md**: Replace any `complete-slice` self-references with `complete`. Also update flow-log signal tracking filter (Step 6d) to match entries where `phase` is either `"complete-slice"` or `"complete"` — historical entries used the old phase value.
 
-- [ ] **Update cross-skill references in `~/.claude/skills/`**: Grep for `complete-slice` and `/complete-slice` (excluding `~~archived~~` dirs). Update:
+- [x] **Update cross-skill references in `~/.claude/skills/`**: Grep for `complete-slice` and `/complete-slice` (excluding `~~archived~~` dirs). Update:
   - `project-status/references/status-logic.md` — state-to-next-skill mapping
   - `_shared/references/expertise-tracking.md`
   - `_shared/references/decisions-format.md`
@@ -37,17 +37,17 @@ Rename `complete-slice/` to `complete/` and update all references across skills 
     - Graceful stop state strings
   - Any other files found by grep
 
-- [ ] **Update repo files**: Grep `/Users/iwhite/Repos/goodplan/` for `complete-slice` and `/complete-slice` (excluding `~~archived~~` dirs). Note: `workflow.md`, `CLAUDE.md`, and `.project/idea.md` already use `/complete` — verify they have no residual references but expect no changes needed. Update:
+- [x] **Update repo files**: Grep `/Users/iwhite/Repos/goodplan/` for `complete-slice` and `/complete-slice` (excluding `~~archived~~` dirs). Note: `workflow.md`, `CLAUDE.md`, and `.project/idea.md` already use `/complete` — verify they have no residual references but expect no changes needed. Update:
   - Side quest goal files: `onboard-repo/goal.md`, `refactor-intelligence/goal.md`, `maturity-context-loading/goal.md`, `upgrade-workflow/goal.md`
   - Any other non-archived files found by grep
 
-- [ ] **Leave historical provenance markers unchanged**: Do NOT update `_Source: 07-complete-slice_` tags in `.project/learnings.md` or recency markers in `.project/system-profile.md` — these are historical records of which skill version produced the output. Also exclude `.project/vertical-slices/sequencing.md` (historical slice name `07-complete-slice`) and `docs/superpowers/specs/2026-03-18-initiatives-and-maturity-design.md` (contains "renamed from `/complete-slice`" provenance note). Document this rationale in a code comment or guidance note.
+- [x] **Leave historical provenance markers unchanged**: Do NOT update `_Source: 07-complete-slice_` tags in `.project/learnings.md` or recency markers in `.project/system-profile.md` — these are historical records of which skill version produced the output. Also exclude `.project/vertical-slices/sequencing.md` (historical slice name `07-complete-slice`) and `docs/superpowers/specs/2026-03-18-initiatives-and-maturity-design.md` (contains "renamed from `/complete-slice`" provenance note). Document this rationale in a code comment or guidance note.
 
 ### Convention + State Mapping Cleanup (included in Phase 1)
 
-- [ ] **Update `status-logic.md` state-to-next-skill**: Remove the parenthetical note about `/complete-slice` naming. Clean reference should just say `/complete`.
+- [x] **Update `status-logic.md` state-to-next-skill**: Remove the parenthetical note about `/complete-slice` naming. Clean reference should just say `/complete`.
 
-- [ ] **Grep for remaining parenthetical notes**: Search `~/.claude/skills/` for patterns like "(currently /complete-slice)", "(currently named /complete-slice)", "(may be renamed)" and remove them.
+- [x] **Grep for remaining parenthetical notes**: Search `~/.claude/skills/` for patterns like "(currently /complete-slice)", "(currently named /complete-slice)", "(may be renamed)" and remove them.
 
 ### Verification
 

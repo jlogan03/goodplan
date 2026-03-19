@@ -2,15 +2,15 @@
 
 ## What We're Building
 
-Upgrade `/complete-slice` Step 9 from a generic "want a cleanup pass?" to proactive identification of specific refactoring opportunities with scope/risk classification and side quest proposals.
+Upgrade `/complete` Step 9 from a generic "want a cleanup pass?" to proactive identification of specific refactoring opportunities with scope/risk classification and side quest proposals.
 
 ## Dependencies
 
-- None (operates on existing complete-slice infrastructure)
+- None (operates on existing complete infrastructure)
 
 ## What Changes
 
-### Updated Skill: `/complete-slice` — Step 9
+### Updated Skill: `/complete` — Step 9
 
 Replace the generic cleanup question with:
 
@@ -28,5 +28,5 @@ Replace the generic cleanup question with:
 
 ## Scope Boundaries
 
-**In scope**: Complete-slice Step 9 upgrade
+**In scope**: Complete Step 9 upgrade
 **Out of scope**: Onboarding (onboard-repo quest), workflow upgrades (upgrade-workflow quest)
