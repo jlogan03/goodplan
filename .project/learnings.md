@@ -2,6 +2,16 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Flow-log is not a universal audit trail — verify which skills write to it
+_Source: refactor-intelligence_
+
+`implement-plan` and `refine-plan` do not write flow-log entries. Protocols that reference flow-log for cross-skill state (e.g., finding pre-implementation commits) should verify the referenced skill actually writes the expected entries during plan creation, not during implementation.
+
+## Verify assumptions about cross-skill contracts during planning
+_Source: refactor-intelligence_
+
+When a plan references another skill's output format or behavior (flow-log entries, commit message patterns, state files), verify the assumption by reading the source skill's code during `/create-plan` or `/refine-plan`. Catching mismatches during planning is cheaper than pivoting during implementation.
+
 ## Re-entry paths must be checked before guardrails that reject the same state
 _Source: complete-rename_
 
