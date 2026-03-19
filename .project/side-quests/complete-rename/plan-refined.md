@@ -5,6 +5,8 @@
 Rename the `/complete-slice` skill to `/complete` and extend it to handle initiative completion alongside the existing slice and side quest completion. The skill already handles initiative-scoped slices (from the initiatives-infrastructure quest); this plan adds initiative-level completion as a new scope type.
 
 **Slug**: `complete-rename`
+**Status**: COMPLETE
+**Completed**: 2026-03-19
 
 **Approach**: Rename first (Phase 1, including convention cleanup), then add initiative completion mode (Phase 2). The rename is mechanical; the initiative completion mode is the substantive new work.
 
