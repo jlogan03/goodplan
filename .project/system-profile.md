@@ -8,6 +8,7 @@
 ### Undertested areas
 - Runtime behavior of new skills (refine-slices, updated define-slices three-lens evaluation): not yet exercised on a real project
 - Signal tracking algorithm (Step 6d in complete): requires 3+ completed slices to produce data
+- Refactor Intelligence Protocol (Step 9 in complete): new detection algorithm, batch table presentation, inline fix application, side quest proposal — all untested on a real codebase
 - Maturity/invariants/fitness workflow: Steps 8f/8g/8h in define-architecture, Steps 3b/3c/3d in audit-architecture, maturity evaluation in refine-architecture, reviewer criteria 12/13 — all untested on a real project
 - Initiative workflow end-to-end: all initiative-aware skills updated but never exercised on a real initiative. First-initiative flow (auto-active __active__initial/) and subsequent-initiative flow (proposal → approval → activation) both untested
 - /start-initiative skill: brand new, never executed. Architecture-proposal copying, approved.md writing, directory rename all need live testing
@@ -19,7 +20,7 @@
 - `~~archived~~` prefix sort order: sorts correctly in terminal but may sort above active items in file explorers (VS Code, Finder) due to locale-aware collation
 - initiative-conventions.md is consumed by 12+ skills: changes require updating all consumers. Stale Assumption Detection Algorithm section added here is a single point of change (good) but also a single point of failure if the file moves
 
-<!-- Last updated by: complete for side-quests/complete-rename, 2026-03-19 -->
+<!-- Last updated by: complete for side-quests/refactor-intelligence, 2026-03-19 -->
 
 ## Performance Characteristics
 
@@ -52,8 +53,8 @@
 
 ## Recent Changes
 
+- **refactor-intelligence** (2026-03-19): Upgraded /complete Step 9 from generic cleanup question to proactive refactor detection with scope/risk classification, batch table presentation, inline fix application (capped at 5), and side quest proposals.
 - **complete-rename** (2026-03-19): Renamed /complete-slice to /complete, updated all cross-references across 10 skill files and 3 side quest goals. Added initiative completion mode: architecture reconciliation, artifact promotion, archive numbering, graceful stop cases (e)/(f).
 - **initiatives-infrastructure** (2026-03-18): Added initiative support across 25 skill files. Created initiative-conventions.md, /create-initiative (renamed from /start-project), /start-initiative. Updated 10 existing skills with initiative scope resolution, two-layer architecture, stale assumption detection.
-- **archived-prefix-migration** (2026-03-18): Renamed 13 `__done__` directories to `~~archived~~` and updated 3 skill files (complete-slice, project-status). Convention rename only — no architectural changes.
 
-<!-- Last updated by: complete for side-quests/complete-rename, 2026-03-19 -->
+<!-- Last updated by: complete for side-quests/refactor-intelligence, 2026-03-19 -->
