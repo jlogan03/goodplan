@@ -27,20 +27,25 @@ A standalone compiled TypeScript binary built with `bun build --compile`. Ships 
 
 **Resource layer** — stable CRUD operations on project entities:
 
-- `goodplan epic list|show|create`
-- `goodplan slice list|show|create`
-- `goodplan quest list|show|create`
-- `goodplan decision list|show|create`
-- `goodplan learning list|show|create`
-- `goodplan state show|transition`
+- `goodplan epic list|show|create|update|start|abandon`
+- `goodplan slice list|show|create|update|start|abandon`
+- `goodplan quest list|show|create|update|start|abandon`
+- `goodplan decision list|show|create|update`
+- `goodplan learning list|show|create|update`
 - `goodplan activity list|show`
 - `goodplan architecture show`
+- `goodplan status` — project health, active work, work stack, recommendations
+
+Key verbs beyond basic CRUD:
+- **`start`** — begins active work on an entity. If another entity of the same type is already active, the CLI automatically pushes it onto the work stack (interruption is implicit). When the started entity completes or is abandoned, the CLI pops the stack and the previously interrupted entity becomes active again.
+- **`abandon`** — marks an entity as abandoned with a reason (`--reason "..."`). Triggers work stack pop if the abandoned entity was active. Learnings from abandoned work are preserved.
+- **`update`** — modifies metadata (name, tags, resequencing for slices, decision status changes like active → superseded).
 
 **RPC layer** — workflow-specific commands that compose resource operations:
 
 - `goodplan context <phase> [target]` — returns bundled context for a specific workflow phase
 - `goodplan begin <phase> [target]` — validates the transition, updates state, returns context
-- `goodplan complete <phase> [target]` — records completion, updates state/activity-log, returns next valid actions
+- `goodplan complete <phase> [target]` — records completion, updates state/activity-log, pops work stack if applicable, returns next valid actions
 - `goodplan <entity> write-<field> [target]` — writes content to a specific entity field (e.g., `goodplan slice write-plan 01-auth`, `goodplan quest write-goal fix-logging`) while handling all bookkeeping (state updates, activity log, timestamp updates)
 - `goodplan learning rollup --from <source> --to <target>` — merges learnings up the hierarchy
 
@@ -98,13 +103,14 @@ Single quotes around the heredoc delimiter prevent shell interpolation, so conte
 
 Structural and state data that benefits from typed access, validation, and scriptable operations.
 
-- `project.json` — project-level metadata, state, learnings, system profile (health/quality metrics)
-- `decisions.json` — project-level decisions (one entry per decision with status, rationale, date, tags). Separate from `project.json` because decisions are frequently queried independently and may be numerous.
+- `project.json` — project-level metadata, state, work stack, system profile (health/quality metrics)
+- `decisions.jsonl` — project-level decisions (one line per decision with status, rationale, date, tags). JSONL for clean git merges when multiple branches add decisions concurrently.
+- `learnings.jsonl` — project-level accumulated learnings. JSONL for the same merge reason.
 - `overview.json` (per collection) — index of all epics/slices/quests with metadata: created, last-touched, completed-at, status, sequencing (for slices). Replaces the separate `sequencing.md`.
-- `epic.json` / `slice.json` / `quest.json` (per entity) — metadata, status, timestamps, relationships (e.g., slice → epic reference), learnings, architecture update proposals
+- `epic.json` / `slice.json` / `quest.json` (per entity) — metadata, status, timestamps, relationships (e.g., slice → epic reference), architecture update proposals. Entity-level learnings are also JSONL (`learnings.jsonl` within the entity directory).
 - `activity-log.jsonl` — append-only audit trail (stays separate from project.json since it's append-only and can grow large)
 
-One JSON file per level. The CLI reads/writes atomically — no risk of partial updates.
+JSON files are read/written atomically by the CLI. JSONL files (decisions, learnings, activity-log) are append-friendly and merge cleanly across branches.
 
 **State and work stack:** `project.json` contains the current state and work stack (replacing the gitignored `state.md`). The work stack tracks interruptions — when a side quest preempts a slice, the interrupted slice is pushed onto the stack with its phase at the time of interruption. When the quest completes, the stack pops and the skill knows where to resume. The CLI enforces LIFO ordering and validates that the stack is empty before allowing pushes to main.
 
@@ -131,7 +137,7 @@ Several concepts from the current workflow carry forward but are worth calling o
 
 ### Structured Learnings
 
-Learnings are JSON from the start at every level (slice, epic, project). Each learning entry:
+Learnings are JSONL from the start at every level (slice, epic, project) — one JSON object per line for clean git merges. Each learning entry:
 
 ```json
 {
@@ -144,7 +150,7 @@ Learnings are JSON from the start at every level (slice, epic, project). Each le
 }
 ```
 
-The LLM writes structured entries during `/complete` and marks which ones should roll up. The CLI handles the mechanical rollup: `goodplan learning rollup --from slices/01-auth --to epics/initial` merges marked entries, preserving provenance.
+The LLM writes structured entries during `/complete` and marks which ones should roll up. The CLI handles the mechanical rollup: `goodplan learning rollup --from slices/01-auth --to epics/initial` appends marked entries to the target JSONL file, preserving provenance.
 
 ### Structured Architecture Updates
 
@@ -168,8 +174,9 @@ Flattened compared to the current layout. No `__active__` or `~~archived~~` pref
 
 ```
 .project/
-├── project.json              # project-level metadata, state, work stack, learnings, system profile
-├── decisions.json            # project-level decisions with status tracking
+├── project.json              # project-level metadata, state, work stack, system profile
+├── decisions.jsonl           # project-level decisions (append-friendly, merges cleanly)
+├── learnings.jsonl           # project-level accumulated learnings (append-friendly)
 ├── activity-log.jsonl        # append-only audit trail
 ├── idea.md
 ├── conventions.md            # coding standards (LLM-managed, CLI reads for context bundling)
@@ -189,7 +196,8 @@ Flattened compared to the current layout. No `__active__` or `~~archived~~` pref
 │   ├── overview.json         # index + sequencing (array order = sequence)
 │   ├── 01-auth/
 │   │   ├── slice.json        # metadata, status, epic ref, timestamps,
-│   │   │                     # learnings, architecture update proposals
+│   │   │                     # architecture update proposals
+│   │   ├── learnings.jsonl   # slice-level learnings
 │   │   ├── goal.md
 │   │   ├── plan.md
 │   │   ├── plan-refining.md
