@@ -90,8 +90,6 @@ Single quotes around the heredoc delimiter prevent shell interpolation, so conte
 
 - `goodplan status` — project health, active work, recommendations
 - `goodplan init` — initialize a new `.project/` directory
-- `goodplan install` — install/update skills into `~/.claude/skills/`
-- `goodplan update` — pull latest version and reinstall
 
 ---
 
@@ -110,7 +108,7 @@ Structural and state data that benefits from typed access, validation, and scrip
 - `epic.json` / `slice.json` / `quest.json` (per entity) — metadata, status, timestamps, relationships (e.g., slice → epic reference), architecture update proposals. Entity-level learnings are also JSONL (`learnings.jsonl` within the entity directory).
 - `activity-log.jsonl` — append-only audit trail (stays separate from project.json since it's append-only and can grow large)
 
-JSON files are read/written atomically by the CLI. JSONL files (decisions, learnings, activity-log) are append-friendly and merge cleanly across branches.
+JSON files are read/written atomically by the CLI with deterministic key ordering to minimize merge conflicts. JSONL files (decisions, learnings, activity-log) are append-friendly and merge cleanly across branches.
 
 **State and work stack:** `project.json` contains the current state and work stack (replacing the gitignored `state.md`). The work stack tracks interruptions — when a side quest preempts a slice, the interrupted slice is pushed onto the stack with its phase at the time of interruption. When the quest completes, the stack pops and the skill knows where to resume. The CLI enforces LIFO ordering and validates that the stack is empty before allowing pushes to main.
 
@@ -311,7 +309,6 @@ If you invoke `/build` and the CLI reports that slice 01-auth is mid-implementat
 2. RPC commands must exist before consolidated skills can call them
 3. Skill consolidation must be done before retiring the old individual skills
 4. Migration can happen incrementally — the CLI could support reading both old and new formats during transition
-5. Distribution (`install`/`update`) comes last since it's independent of the workflow logic
 
 Exact slice boundaries are deferred to epic planning. The ordering above gives us the dependency graph; slice planning will decide how thin to cut each piece.
 
@@ -333,13 +330,11 @@ The LLM handles interpretation of old content; the CLI handles writing to the ne
 
 ---
 
-## Distribution
+## Distribution (Future — Out of Scope for This Epic)
 
-The CLI is the install and update mechanism:
+Distribution is a separate concern to be addressed after the core CLI and skill consolidation are complete:
 
-- `goodplan install` — installs/updates skills into `~/.claude/skills/`
-- `goodplan update` — pulls latest version and reinstalls both the binary and skills
+- `goodplan install` — install/update skills into `~/.claude/skills/`
+- `goodplan update` — pull latest version and reinstall both the binary and skills
 - Platform binaries: darwin-arm64, darwin-x64, linux-x64, windows-x64
-- Future: Homebrew formula or similar package manager integration
-
-The CLI and skills are always in sync since the CLI manages both. Version coherence is guaranteed.
+- Homebrew formula or similar package manager integration
