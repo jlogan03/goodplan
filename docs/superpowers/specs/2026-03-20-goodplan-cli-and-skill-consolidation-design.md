@@ -41,7 +41,7 @@ A standalone compiled TypeScript binary built with `bun build --compile`. Ships 
 - `goodplan context <phase> [target]` — returns bundled context for a specific workflow phase
 - `goodplan begin <phase> [target]` — validates the transition, updates state, returns context
 - `goodplan complete <phase> [target]` — records completion, updates state/activity-log, returns next valid actions
-- `goodplan write <entity> [target]` — writes content files (plans, goals, etc.) while handling all bookkeeping
+- `goodplan <entity> write-<field> [target]` — writes content to a specific entity field (e.g., `goodplan slice write-plan 01-auth`, `goodplan quest write-goal fix-logging`) while handling all bookkeeping (state updates, activity log, timestamp updates)
 - `goodplan learning rollup --from <source> --to <target>` — merges learnings up the hierarchy
 
 ### Output Modes
@@ -49,8 +49,25 @@ A standalone compiled TypeScript binary built with `bun build --compile`. Ships 
 - **Default**: human-readable, colored terminal output
 - **`--json`**: structured JSON for LLM consumption
 - **`--query`**: jq-style query to extract specific portions of JSON output (subsumes pagination — e.g., `.learnings[5:15]`)
-- **`--depth=summary|standard|full`**: progressive disclosure — controls how much context is returned. The CLI knows what "standard context for planning" means and returns exactly that.
+- **`--depth=summary|standard|full`**: progressive disclosure — controls how much context is returned. See Context Depth Levels below.
 - **`--quiet`**: minimal output for scripting
+
+### Context Depth Levels
+
+The `--depth` flag controls how much context `goodplan context` and `goodplan begin` return. Each phase has a defined set of content per depth level:
+
+| Phase | `summary` | `standard` (default) | `full` |
+|---|---|---|---|
+| **plan** | Slice goal, epic name, active decisions (titles only) | Goal, architecture (overview + relevant subsystems), conventions, recent learnings, active decisions, maturity flags for affected subsystems | Everything in standard + all learnings, all research, all brainstorm notes, full architecture |
+| **refinement** | Plan summary, slice goal | Plan, goal, architecture, conventions, learnings, decisions | Everything in standard + all exploration artifacts |
+| **implementation** | Refined plan summary, current phase | Refined plan, goal, architecture, conventions, relevant learnings, relevant decisions | Everything in standard + full refinement history |
+| **complete** | Slice status, implementation summary | Goal, plan, implementation results, current learnings at all levels, architecture (both layers), remaining slice overview | Everything in standard + full refinement + implementation history |
+| **explore** | Epic goal, research done so far (titles) | Goal, existing research, brainstorm, prototypes, conventions | Everything in standard + project-level research/brainstorm |
+| **architecture** | Epic goal, exploration summary | Goal, exploration output, conventions, existing architecture (if any) | Everything in standard + all research + all prototypes |
+| **slices** | Epic goal, architecture overview | Goal, full architecture, conventions, learnings | Everything in standard + all exploration artifacts |
+| **status** | Active work, phase, next action | Active work, recent activity, work stack, decisions (active/revisiting), health metrics | Everything in standard + full learnings, all decisions, full activity log |
+
+The `--query` flag can further narrow any depth level to specific fields.
 
 ### Content Input
 
@@ -81,12 +98,15 @@ Single quotes around the heredoc delimiter prevent shell interpolation, so conte
 
 Structural and state data that benefits from typed access, validation, and scriptable operations.
 
-- `project.json` — project-level metadata, state, decisions, learnings
+- `project.json` — project-level metadata, state, learnings, system profile (health/quality metrics)
+- `decisions.json` — project-level decisions (one entry per decision with status, rationale, date, tags). Separate from `project.json` because decisions are frequently queried independently and may be numerous.
 - `overview.json` (per collection) — index of all epics/slices/quests with metadata: created, last-touched, completed-at, status, sequencing (for slices). Replaces the separate `sequencing.md`.
 - `epic.json` / `slice.json` / `quest.json` (per entity) — metadata, status, timestamps, relationships (e.g., slice → epic reference), learnings, architecture update proposals
 - `activity-log.jsonl` — append-only audit trail (stays separate from project.json since it's append-only and can grow large)
 
 One JSON file per level. The CLI reads/writes atomically — no risk of partial updates.
+
+**State and work stack:** `project.json` contains the current state and work stack (replacing the gitignored `state.md`). The work stack tracks interruptions — when a side quest preempts a slice, the interrupted slice is pushed onto the stack with its phase at the time of interruption. When the quest completes, the stack pops and the skill knows where to resume. The CLI enforces LIFO ordering and validates that the stack is empty before allowing pushes to main.
 
 **Markdown (written by the LLM, managed alongside JSON by the CLI):**
 
@@ -94,10 +114,20 @@ Content that the LLM authors and humans read. Free-form, creative, judgment-driv
 
 - `idea.md` — project problem and scope
 - `goal.md` — per slice/quest/epic
-- `plan.md` / `plan-refining.md` / `plan-refined.md` — implementation plans
+- `plan.md` / `plan-refining.md` / `plan-refined.md` — implementation plans (`plan-refining.md` is the working copy during active refinement; `plan-refined.md` is the final output written when refinement passes)
 - `architecture/*.md` — architecture docs (managed directly by LLM, not through CLI)
-- `conventions.md` — coding standards
+- `conventions.md` — coding standards (LLM-managed content, CLI knows it exists for context bundling)
 - `research/*.md`, `brainstorm/*.md` — exploration output
+
+### Carried-Forward Workflow Concepts
+
+Several concepts from the current workflow carry forward but are worth calling out explicitly:
+
+**Expertise tracking:** The two-layer expertise system (`~/.claude/CLAUDE.md` expertise section + auto-memory files) continues as-is. This is user-profile state, not project state — the CLI doesn't manage it. Skills continue to check and update expertise signals during interactive phases.
+
+**Architectural maturity:** Maturity levels (experimental → developing → maturing → foundational) are tracked per subsystem in the architecture markdown files, which the LLM manages directly. The CLI's context bundling includes maturity information when relevant (e.g., planning context flags maturing+ subsystems). Fitness functions and system invariants remain in architecture markdown — they're content, not state.
+
+**System profile:** Project health and quality metrics live in `project.json` (replacing the current `system-profile.md`). The CLI exposes this via `goodplan status` and includes it in context bundles at appropriate depths.
 
 ### Structured Learnings
 
@@ -138,10 +168,11 @@ Flattened compared to the current layout. No `__active__` or `~~archived~~` pref
 
 ```
 .project/
-├── project.json              # project-level metadata, state, decisions, learnings
+├── project.json              # project-level metadata, state, work stack, learnings, system profile
+├── decisions.json            # project-level decisions with status tracking
 ├── activity-log.jsonl        # append-only audit trail
 ├── idea.md
-├── conventions.md
+├── conventions.md            # coding standards (LLM-managed, CLI reads for context bundling)
 ├── architecture/             # current-reality architecture (markdown, LLM-managed)
 ├── epics/
 │   ├── overview.json         # index of all epics + status
@@ -194,7 +225,7 @@ Key changes from current structure:
 
 | Skill | Type | Description |
 |---|---|---|
-| `/create-epic` | Flow | Full epic setup: explore → create-arch → refine-arch → create-slices → refine-slices |
+| `/create-epic` | Flow | Full epic setup: init (if needed) → explore → create-arch → refine-arch → create-slices → refine-slices |
 | `/build` | Flow | Full build cycle: create-plan → refine-plan → implement-plan → complete |
 | `/project-status` | Utility | `goodplan status --json` + LLM judgment and recommendations |
 | `/audit-architecture` | Utility | Compare intended architecture vs actual code |
@@ -208,7 +239,7 @@ Key changes from current structure:
 
 When the user invokes `/create-epic` or `/build`, the skill asks up front how far to go:
 
-- `/create-epic`: default is all phases (explore through refine-slices). User can say "stop after architecture" or similar.
+- `/create-epic`: default is all phases (explore through refine-slices). User can say "stop after architecture" or similar. If no `.project/` exists, `/create-epic` calls `goodplan init` internally as its first step — users never need to run `init` separately.
 - `/build`: two modes — "plan only" (create-plan + refine-plan) or "all" (plan + refine + implement + complete). "Plan only" supports the case where another session is implementing in a different branch.
 
 **Front-loading questions:**
