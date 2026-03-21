@@ -32,15 +32,15 @@ Set up the Bun project with all dependencies, TypeScript config, Biome, and dire
 
 ### Tasks
 
-- [ ] Create `package.json` with name `goodplan`, type `module`, Bun as runtime
-- [ ] Add dependencies: citty, zod, picocolors, @michaelhomer/jqjs
-- [ ] Add dev dependencies: vitest, @biomejs/biome, typescript
-- [ ] Add scripts: `check` (biome check), `test` (vitest), `install:skills` (placeholder). Note: `build` script is added in Phase 6 when it can be verified
-- [ ] Create `tsconfig.json` with strict mode + noUncheckedIndexedAccess + exactOptionalPropertyTypes + verbatimModuleSyntax
-- [ ] Create `biome.json` with formatting and linting rules
-- [ ] Create directory structure: `src/commands/`, `src/core/data/`, `src/schemas/`, `src/util/`, `tests/unit/`, `tests/integration/`, `tests/fixtures/`. Only create directories needed for this slice — do not create empty placeholders like `src/core/state/` or `src/core/context/`. Note: `conventions.md` directory listing needs updating to match architecture docs
-- [ ] Create `src/index.ts` — empty entry point (citty setup in Phase 3)
-- [ ] Run `bun install`, verify clean install
+- [x] Create `package.json` with name `goodplan`, type `module`, Bun as runtime
+- [x] Add dependencies: citty, zod, picocolors, @michaelhomer/jqjs
+- [x] Add dev dependencies: vitest, @biomejs/biome, typescript
+- [x] Add scripts: `check` (biome check), `test` (vitest), `install:skills` (placeholder). Note: `build` script is added in Phase 6 when it can be verified
+- [x] Create `tsconfig.json` with strict mode + noUncheckedIndexedAccess + exactOptionalPropertyTypes + verbatimModuleSyntax
+- [x] Create `biome.json` with formatting and linting rules
+- [x] Create directory structure: `src/commands/`, `src/core/data/`, `src/schemas/`, `src/util/`, `tests/unit/`, `tests/integration/`, `tests/fixtures/`. Only create directories needed for this slice — do not create empty placeholders like `src/core/state/` or `src/core/context/`. Note: `conventions.md` directory listing needs updating to match architecture docs
+- [x] Create `src/index.ts` — empty entry point (citty setup in Phase 3)
+- [x] Run `bun install`, verify clean install
 
 ### Verification
 Run `bun install && bun run check` — both exit 0.
