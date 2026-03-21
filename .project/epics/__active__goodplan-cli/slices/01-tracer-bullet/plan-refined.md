@@ -91,14 +91,14 @@ Set up citty with colon-namespace routing, global --json flag, shared output for
 
 ### Tasks
 
-- [ ] Create `src/commands/main.ts` — citty main command definition with global flags: `--json` (boolean), `--help`
-- [ ] Create `src/util/output.ts` — `output(data, args)` function: JSON mode (deterministic stringify), human-readable mode (picocolors), error output (JSON to stdout or message to stderr based on --json flag)
-- [ ] Create `src/util/stdin.ts` — `readStdin()`: TTY detection (return `{}` if TTY, don't hang), read stdin as string, parse JSON, 1 MB size limit, error on invalid JSON with VALIDATION_INVALID_STDIN code. Add unit tests for TTY detection, JSON parsing, and size limit enforcement (stdin has no callers in this slice, so tests are the only verification)
-- [ ] Create `src/util/validate.ts` — `validateInput(schema, args, stdin)`: merge CLI args and stdin, validate with Zod, return typed result or throw VALIDATION_* error. Merge semantics: stdin values are the base object, CLI flags override stdin values, merged object is validated through Zod schema which handles coercion
-- [ ] Wire `src/index.ts` to use `runCommand` (NOT `runMain`) as the entrypoint. Build a custom top-level runner that: (1) calls `runCommand` programmatically, (2) catches errors and inspects error type/code, (3) sets `process.exitCode` with the correct code (1 generic, 2 validation, 3 state) and lets the process exit naturally after cleanup, (4) handles `--help` for the main command using citty's `showUsage` (subcommand `--help` like `goodplan init --help` is handled automatically by `runCommand`). This also avoids citty's `--version`/`-v` conflict
-- [ ] Parse global flags (like `--json`) before dispatching to subcommands so that `badcommand --json` can return structured JSON errors
-- [ ] Handle unknown commands: catch citty's unknown command error, return exit 2 with VALIDATION_UNKNOWN_COMMAND. Error code mapping for the custom runner's try/catch: `CLIError` with `E_UNKNOWN_COMMAND` -> exit 2, `EARG` (missing/invalid argument) -> exit 2, `GoodplanError` -> exit based on error code (1 generic, 2 validation, 3 state), all other errors -> exit 1
-- [ ] Handle all uncaught errors: wrap in structured error format, exit 1
+- [x] Create `src/commands/main.ts` — citty main command definition with global flags: `--json` (boolean), `--help`
+- [x] Create `src/util/output.ts` — `output(data, args)` function: JSON mode (deterministic stringify), human-readable mode (picocolors), error output (JSON to stdout or message to stderr based on --json flag)
+- [x] Create `src/util/stdin.ts` — `readStdin()`: TTY detection (return `{}` if TTY, don't hang), read stdin as string, parse JSON, 1 MB size limit, error on invalid JSON with VALIDATION_INVALID_STDIN code. Add unit tests for TTY detection, JSON parsing, and size limit enforcement (stdin has no callers in this slice, so tests are the only verification)
+- [x] Create `src/util/validate.ts` — `validateInput(schema, args, stdin)`: merge CLI args and stdin, validate with Zod, return typed result or throw VALIDATION_* error. Merge semantics: stdin values are the base object, CLI flags override stdin values, merged object is validated through Zod schema which handles coercion
+- [x] Wire `src/index.ts` to use `runCommand` (NOT `runMain`) as the entrypoint. Build a custom top-level runner that: (1) calls `runCommand` programmatically, (2) catches errors and inspects error type/code, (3) sets `process.exitCode` with the correct code (1 generic, 2 validation, 3 state) and lets the process exit naturally after cleanup, (4) handles `--help` for the main command using citty's `showUsage` (subcommand `--help` like `goodplan init --help` is handled automatically by `runCommand`). This also avoids citty's `--version`/`-v` conflict
+- [x] Parse global flags (like `--json`) before dispatching to subcommands so that `badcommand --json` can return structured JSON errors
+- [x] Handle unknown commands: catch citty's unknown command error, return exit 2 with VALIDATION_UNKNOWN_COMMAND. Error code mapping for the custom runner's try/catch: `CLIError` with `E_UNKNOWN_COMMAND` -> exit 2, `EARG` (missing/invalid argument) -> exit 2, `GoodplanError` -> exit based on error code (1 generic, 2 validation, 3 state), all other errors -> exit 1
+- [x] Handle all uncaught errors: wrap in structured error format, exit 1
 
 ### Verification
 Run `bun run src/index.ts --help` — shows command list. Run with `badcommand` and `badcommand --json` — verify exit codes and error format.

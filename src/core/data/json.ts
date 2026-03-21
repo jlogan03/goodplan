@@ -1,31 +1,7 @@
 import * as fs from "node:fs";
 import type { z } from "zod";
 import { GoodplanError } from "../../util/errors.js";
-
-/**
- * Deterministic JSON.stringify with alphabetically sorted keys.
- * Uses a replacer that recursively sorts object keys via Object.entries().
- */
-export function deterministicStringify(data: unknown): string {
-	return JSON.stringify(sortKeys(data), null, "\t");
-}
-
-function sortKeys(value: unknown): unknown {
-	if (value === null || typeof value !== "object") {
-		return value;
-	}
-	if (Array.isArray(value)) {
-		return value.map(sortKeys);
-	}
-	const sorted: Record<string, unknown> = {};
-	const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) =>
-		a < b ? -1 : a > b ? 1 : 0,
-	);
-	for (const [key, val] of entries) {
-		sorted[key] = sortKeys(val);
-	}
-	return sorted;
-}
+import { deterministicStringify } from "../../util/json.js";
 
 /**
  * Read a JSON file, parse, and validate against a Zod schema.

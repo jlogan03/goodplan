@@ -3,14 +3,13 @@ import { z } from "zod";
 export const errorSchema = z.object({
 	code: z.string(),
 	message: z.string(),
-	detail: z.string().optional(),
+	detail: z.union([z.string(), z.record(z.string(), z.unknown())]).optional(),
 });
 
 /**
- * Note on exactOptionalPropertyTypes: The inferred type has `detail?: string | undefined`,
- * which means callers may pass `detail: undefined` explicitly. This differs from
- * GoodplanError.detail (always present as `string | undefined`). This is acceptable
- * because the schema is used for JSON output validation, where the field may be absent.
+ * The `detail` field is `string | Record<string, unknown>`, optional (absent from output when
+ * not provided). With `exactOptionalPropertyTypes: true`, callers must omit the field rather
+ * than passing `detail: undefined`.
  */
 
 export type ErrorOutput = z.infer<typeof errorSchema>;

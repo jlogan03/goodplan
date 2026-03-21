@@ -10,6 +10,12 @@ describe("GoodplanError", () => {
 		expect(err.name).toBe("GoodplanError");
 	});
 
+	it("stores Record detail", () => {
+		const detail = { field: "name", issue: "required" };
+		const err = new GoodplanError("VALIDATION_INVALID_INPUT", "Validation failed", detail);
+		expect(err.detail).toEqual({ field: "name", issue: "required" });
+	});
+
 	it("has undefined detail when not provided", () => {
 		const err = new GoodplanError("DATA_READ_ERROR", "Something went wrong");
 		expect(err.detail).toBeUndefined();

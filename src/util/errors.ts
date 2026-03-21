@@ -9,21 +9,35 @@ type DataErrorCode =
 	| "DATA_WRITE_ERROR";
 
 /** Error codes for the STATE namespace (state machine). Expand as needed. */
-type StateErrorCode = "STATE_INVALID_TRANSITION";
+type StateErrorCode = "STATE_ALREADY_INITIALIZED" | "STATE_INVALID_TRANSITION";
 
 /** Error codes for the VALIDATION namespace (input validation). Expand as needed. */
 type ValidationErrorCode =
 	| "VALIDATION_INVALID_INPUT"
+	| "VALIDATION_INVALID_QUERY"
 	| "VALIDATION_INVALID_STDIN"
+	| "VALIDATION_STDIN_TOO_LARGE"
 	| "VALIDATION_UNKNOWN_COMMAND";
 
-export type GoodplanErrorCode = DataErrorCode | StateErrorCode | ValidationErrorCode;
+/** Catch-all error code for unexpected internal failures. */
+type InternalErrorCode = "INTERNAL_ERROR";
+
+export type GoodplanErrorCode =
+	| DataErrorCode
+	| InternalErrorCode
+	| StateErrorCode
+	| ValidationErrorCode;
 
 export class GoodplanError extends Error {
 	readonly code: GoodplanErrorCode;
-	readonly detail: string | undefined;
+	readonly detail: string | Record<string, unknown> | undefined;
 
-	constructor(code: GoodplanErrorCode, message: string, detail?: string, cause?: unknown) {
+	constructor(
+		code: GoodplanErrorCode,
+		message: string,
+		detail?: string | Record<string, unknown>,
+		cause?: unknown,
+	) {
 		super(message, cause !== undefined ? { cause } : undefined);
 		this.name = "GoodplanError";
 		this.code = code;

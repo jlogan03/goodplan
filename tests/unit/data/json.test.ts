@@ -3,7 +3,8 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
-import { deterministicStringify, readEntity, writeEntity } from "../../../src/core/data/json.js";
+import { readEntity, writeEntity } from "../../../src/core/data/json.js";
+import { deterministicStringify } from "../../../src/util/json.js";
 
 const testSchema = z.object({
 	alpha: z.string(),
