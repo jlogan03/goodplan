@@ -148,12 +148,12 @@ Implement `goodplan status` (JSON + human-readable) and a minimal `--query` flag
 
 ### Tasks
 
-- [ ] Create `src/commands/global/status.ts` — citty command: `--json`, `--query <expr>` flags
-- [ ] Implement status logic: read project.json via data layer, build StatusResult (all active pointers null for fresh project, empty artifacts, recommendation: "Run epic:create to start")
-- [ ] Implement human-readable output: project name in bold, version, "No active work" section, recommendations list
-- [ ] Implement `--query <expr>`: import jqjs, apply the given jq expression to the StatusResult JSON, output the raw result. `--query` requires `--json` (error if used without it). Error handling: invalid jq expression -> exit 2 with `VALIDATION_INVALID_QUERY`; expression matches nothing -> exit 0, prints `null`; expression returns multiple results -> output as JSON array. Note: goal.md says `.name` but the correct filter is `.project.name` since StatusResult nests it under `project`. This minimal implementation validates the jqjs integration pattern that slice 05 uses at scale
-- [ ] Register status command in main.ts
-- [ ] Write unit tests for status logic and output formatting
+- [x] Create `src/commands/global/status.ts` — citty command: `--json`, `--query <expr>` flags
+- [x] Implement status logic: read project.json via data layer, build StatusResult (all active pointers null for fresh project, empty artifacts, recommendation: "Run epic:create to start")
+- [x] Implement human-readable output: project name in bold, version, "No active work" section, recommendations list
+- [x] Implement `--query <expr>`: import jqjs, apply the given jq expression to the StatusResult JSON, output the raw result. `--query` requires `--json` (error if used without it). Error handling: invalid jq expression -> exit 2 with `VALIDATION_INVALID_QUERY`; expression matches nothing -> exit 0, prints `null`; expression returns multiple results -> output as JSON array. Note: goal.md says `.name` but the correct filter is `.project.name` since StatusResult nests it under `project`. This minimal implementation validates the jqjs integration pattern that slice 05 uses at scale
+- [x] Register status command in main.ts
+- [x] Write unit tests for status logic and output formatting
 
 ### Verification
 `bun run src/index.ts init --name smoke-test && bun run src/index.ts status --json` — valid JSON. `bun run src/index.ts status` — colored output. `bun run src/index.ts status --json --query '.project.name'` — returns `"smoke-test"`. `NO_COLOR=1 bun run src/index.ts status` — uncolored output.

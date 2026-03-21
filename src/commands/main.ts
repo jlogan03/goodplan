@@ -1,6 +1,7 @@
 import { defineCommand } from "citty";
 import { globalArgs } from "./global-args.js";
 import { initCommand } from "./global/init.js";
+import { statusCommand } from "./global/status.js";
 
 /**
  * Main goodplan command. Subcommands are registered here.
@@ -16,5 +17,6 @@ export const mainCommand = defineCommand({
 	},
 	subCommands: {
 		init: initCommand,
+		status: statusCommand,
 	},
 });
