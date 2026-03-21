@@ -1,6 +1,6 @@
 # Decision: Command Surface Conventions for goodplan CLI
 
-**Status**: active
+**Status**: superseded by [2026-03-20-entity-namespaced-commands.md](2026-03-20-entity-namespaced-commands.md)
 **Date**: 2026-03-20
 **Domain**: architecture
 **Context**: explore for epics/goodplan-cli — brainstorming command surface design
