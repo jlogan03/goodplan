@@ -16,6 +16,8 @@ function assembleState(): ProjectState;
 
 Reads all JSON/JSONL files from `.project/`, computes `_derived` fields (file/directory existence checks), and returns the unified state object. Used on cache miss or first invocation.
 
+**Empty/missing `.project/`**: If `.project/` does not exist or contains no entity files, `assembleState()` returns a "zero state" — a valid `ProjectState` with empty collections, no active pointers, and all `_derived` fields false. This is not an error condition. The zero state can be passed to the state machine's `INIT_PROJECT` event to produce the initial project state, which `commitState()` then materializes on the filesystem. This makes project initialization a normal state machine transition rather than a special case in the commands layer.
+
 ```typescript
 function loadState(): ProjectState;
 ```
@@ -27,11 +29,14 @@ function commitState(oldState: ProjectState, newState: ProjectState): void;
 ```
 
 Diffs `oldState` vs `newState` by key. For each changed key:
-1. **Verify**: read the current on-disk file and compare against `oldState[key]`. If they differ, another process or the user modified the file — throw a `DATA_CONCURRENT_MODIFICATION` error identifying the conflicting file rather than silently overwriting.
-2. **Write**: JSON files are written in full with deterministic key ordering. JSONL files detect new entries (appended by the reducer) and append only those lines.
-3. `_derived` fields are ignored (never written).
+1. **Verify**: read the current on-disk file and compare against `oldState[key]`. If they differ, another process or the user modified the file — throw a `DATA_CONCURRENT_MODIFICATION` error identifying the conflicting file rather than silently overwriting. For new keys (present in `newState` but absent in `oldState`), skip verification — the file doesn't exist yet.
+2. **Create directories**: if the target file's parent directory doesn't exist, create it recursively (`mkdirSync` with `recursive: true`). This is how entity directories (e.g., `epics/<name>/`, `slices/<name>/`) and LLM content directories (e.g., `epics/<name>/research/`, `epics/<name>/architecture/`) are created on the filesystem. The state machine decides what directories should exist by producing state keys with those paths; `commitState()` materializes them.
+3. **Write**: JSON files are written in full with deterministic key ordering. JSONL files detect new entries (appended by the reducer) and append only those lines.
+4. `_derived` fields are ignored (never written).
 
 Updates the state cache after all writes succeed.
+
+**Filesystem as materialized state**: The state machine is the authority on what files and directories should exist in `.project/`. `commitState()` is the mechanism that makes the filesystem match the state machine's output. When the state machine produces a new key (e.g., `epics/my-epic/epic.json`), `commitState()` creates the directory and writes the file. When a key is removed (e.g., entity abandoned), `commitState()` could remove the file — though in practice, abandoned entities are kept for audit trail purposes.
 
 ### Entity CRUD
 

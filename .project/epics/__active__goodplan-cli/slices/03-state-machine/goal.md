@@ -10,7 +10,7 @@ The complete transition specification is in `architecture/transition-tables.md`.
 2. If no guard passes for a matching `(from, on)` pair, returns `StateError` with `STATE_INVALID_TRANSITION`.
 3. Guards return `true` (pass), `'skip'` (try next row), or `StateError` (reject with specific code).
 4. Apply functions produce new `ProjectState` including activity log entries — no side effects.
-5. `_derived` fields are read-only in guards (e.g., `planContentProvided`, `refinedPlanExists`).
+5. Directory `files` arrays are read-only in guards (e.g., `dirHasFile(state, "slices/<name>", "plan.md")`) — replaces the old `_derived` boolean map.
 6. `override: true` on refinement completion events bypasses score threshold guards.
 7. Cross-entity guards enforce: one active epic, sequential slice execution, verification criteria at activation, verification passed at completion.
 8. Implicit transition detection: after COMPLETE_SLICE, check if all sibling slices are complete and flag in response.
@@ -49,4 +49,5 @@ The complete transition specification is in `architecture/transition-tables.md`.
 
 ## Scope Boundaries
 **In scope:** Reducer function, all transition tables per `architecture/transition-tables.md`, all guards per Cross-Cutting Guards table, entity status enums (EpicStatus, SliceStatus, QuestStatus), `StateEvent` discriminated union type, `StateError` types, activity log entry generation in apply functions, supporting types (DeferredItem, Verification, VerificationResult, ArchitectureDelta, DecisionEntry), comprehensive unit tests, lifecycle smoke test. Consumes Zod schemas from `src/schemas/` (defined in slice 02). Fitness function for transition table completeness should derive expected counts from the `StateEvent` discriminated union type rather than parsing the markdown table. The fitness function must also cross-validate the discriminated union member count against the transition table row count to detect missing events in the union.
-**Out of scope:** File I/O, RPC orchestration, CLI commands, defining entity/JSONL schemas (slice 02 owns those).
+**Also in scope:** `INIT_PROJECT` event handler that produces the initial project state from zero state (empty ProjectState). This includes project.json, empty overview.json collections, and initial activity-log entry. The tracer bullet's `init` command is refactored to use the state machine path (`assembleState()` → `reduce(state, INIT_PROJECT)` → `commitState()`) once the state machine is available. This validates the "state machine owns filesystem structure" pattern end-to-end.
+**Out of scope:** File I/O, RPC orchestration, CLI commands (except init refactoring), defining entity/JSONL schemas (slice 02 owns those).

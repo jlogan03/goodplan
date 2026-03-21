@@ -156,52 +156,152 @@ Append-only audit trail at `.project/activity-log.jsonl`.
 
 ## Unified State Object
 
-All JSON entity files are assembled into a single in-memory state object for the state machine. The state machine operates on this unified object and returns a new version. The data layer diffs old vs new and writes only changed files back to disk.
+All filesystem entries within `.project/` are assembled into a single in-memory state object. The state machine operates on this unified object and returns a new version. The data layer diffs old vs new and materializes changes back to the filesystem — creating directories, writing new files, updating changed files.
 
-### Structure
+### StateEntry — Discriminated Union
+
+Every entry in the state object is a `StateEntry`, discriminated by `type`:
 
 ```typescript
-interface ProjectState {
-  // Keyed by relative file path within .project/
-  "project.json": ProjectEntity;
-  "epics/overview.json": OverviewEntity;
-  "epics/goodplan-cli/epic.json": EpicEntity;
-  "slices/overview.json": OverviewEntity;
-  "slices/01-data-layer/slice.json": SliceEntity;
-  "quests/overview.json": OverviewEntity;
-  // ... all entity JSON files
+type StateEntry =
+  | DirectoryEntry
+  | JsonEntry<unknown>
+  | JsonlEntry<unknown>;
 
-  // JSONL records (append-only — reducer can add entries, never remove)
-  "activity-log.jsonl": ActivityEntry[];
-  "decisions.jsonl": DecisionEntry[];
-  "learnings.jsonl": LearningEntry[];
-  "slices/01-data-layer/learnings.jsonl": LearningEntry[];
+// Directory that should exist on the filesystem.
+// `files` lists the directory's known contents (filenames, not full paths).
+// Used by state machine guards for existence checks (replaces _derived booleans).
+// `assembleState()` populates `files` by scanning the directory.
+// `commitState()` creates the directory if it doesn't exist.
+interface DirectoryEntry {
+  type: "directory";
+  files: string[];  // e.g., ["plan.md", "plan-refined.md", "slice.json"]
+}
 
-  // Derived from filesystem (read-only, not written back).
-  // Used by state machine guards to validate content prerequisites.
-  _derived: {
-    "slices/01-data-layer/planExists": boolean;
-    "slices/01-data-layer/planContentProvided": boolean;
-    "slices/01-data-layer/refinedPlanExists": boolean;
-    "epics/goodplan-cli/architectureExists": boolean;
-    "epics/goodplan-cli/explorationExists": boolean;
-    "quests/fix-logging/planContentProvided": boolean;
-    // ... file/directory existence checks for all entities
-  };
+// JSON entity file. Content is a concrete Zod-inferred type.
+// `commitState()` validates with the schema (looked up by path pattern),
+// serializes with deterministic key ordering, writes atomically.
+interface JsonEntry<T> {
+  type: "json";
+  content: T;
+}
+
+// JSONL append-only record file. Content is an array of concrete typed records.
+// `commitState()` detects new entries (appended by the reducer) and appends
+// only those lines — does not rewrite the file.
+interface JsonlEntry<T> {
+  type: "jsonl";
+  content: T[];
 }
 ```
 
+### ProjectState
+
+The state object is a `Record<string, StateEntry>` keyed by relative path within `.project/`. The state machine and data layer use typed accessors for known paths.
+
+```typescript
+// The runtime type — a dynamic map of path → StateEntry.
+// assembleState() discovers all entries; the state machine adds new ones.
+type ProjectState = Record<string, StateEntry>;
+
+// Typed accessors for known paths (compile-time safety for state machine code).
+// These are helper functions, not part of the ProjectState type itself.
+function getJson<T>(state: ProjectState, path: string, schema: ZodSchema<T>): T;
+function getJsonl<T>(state: ProjectState, path: string, schema: ZodSchema<T>): T[];
+function getDir(state: ProjectState, path: string): DirectoryEntry;
+function dirHasFile(state: ProjectState, dirPath: string, filename: string): boolean;
+```
+
+Example state for a project with one epic and one slice:
+
+```typescript
+const state: ProjectState = {
+  // Root directory
+  ".":                           { type: "directory", files: ["project.json", "activity-log.jsonl", "decisions.jsonl", "learnings.jsonl", "idea.md", "conventions.md"] },
+
+  // Fixed JSON entities
+  "project.json":                { type: "json", content: { name: "my-project", version: "1.0.0", activeEpic: "goodplan-cli", ... } },
+
+  // JSONL records
+  "activity-log.jsonl":          { type: "jsonl", content: [{ ts: "...", phase: "init", ... }] },
+  "decisions.jsonl":             { type: "jsonl", content: [] },
+  "learnings.jsonl":             { type: "jsonl", content: [] },
+
+  // Epic collection
+  "epics":                       { type: "directory", files: ["overview.json", "goodplan-cli"] },
+  "epics/overview.json":         { type: "json", content: { items: [{ name: "goodplan-cli", status: "executing", ... }] } },
+  "epics/goodplan-cli":          { type: "directory", files: ["epic.json", "architecture", "research", "brainstorm"] },
+  "epics/goodplan-cli/epic.json": { type: "json", content: { name: "goodplan-cli", status: "executing", ... } },
+  "epics/goodplan-cli/architecture": { type: "directory", files: ["_overview.md", "data-model.md", ...] },
+  "epics/goodplan-cli/research": { type: "directory", files: [] },
+  "epics/goodplan-cli/brainstorm": { type: "directory", files: [] },
+
+  // Slice collection
+  "slices":                      { type: "directory", files: ["overview.json", "01-data-layer"] },
+  "slices/overview.json":        { type: "json", content: { items: [...] } },
+  "slices/01-data-layer":        { type: "directory", files: ["slice.json", "plan.md", "plan-refined.md", "learnings.jsonl"] },
+  "slices/01-data-layer/slice.json": { type: "json", content: { name: "01-data-layer", status: "implementing", ... } },
+  "slices/01-data-layer/learnings.jsonl": { type: "jsonl", content: [] },
+
+  // Quest collection (empty)
+  "quests":                      { type: "directory", files: ["overview.json"] },
+  "quests/overview.json":        { type: "json", content: { items: [] } },
+};
+```
+
+### State Machine Guards (replaces _derived)
+
+The old `_derived` map of booleans is replaced by directory `files` arrays. Guards use `dirHasFile()`:
+
+```typescript
+// Old: state._derived["slices/01-data-layer/planExists"]
+// New: dirHasFile(state, "slices/01-data-layer", "plan.md")
+
+// Old: state._derived["epics/goodplan-cli/architectureExists"]
+// New: dirHasFile(state, "epics/goodplan-cli/architecture", "_overview.md")
+
+// Old: state._derived["slices/01-data-layer/planContentProvided"]
+// New: dirHasFile(state, "slices/01-data-layer", "plan.md")
+```
+
+This is cleaner: no separate `_derived` namespace, no boolean fields to maintain. Directory entries are populated by `assembleState()` scanning the filesystem, and recomputed on cache load (cheap `readdirSync` calls).
+
+### Schema Registry
+
+`commitState()` needs to validate JSON entries before writing. A schema registry maps path patterns to Zod schemas:
+
+```typescript
+const schemaRegistry: Array<{ pattern: RegExp; schema: ZodSchema }> = [
+  { pattern: /^project\.json$/, schema: projectSchema },
+  { pattern: /^epics\/overview\.json$/, schema: overviewSchema },
+  { pattern: /^epics\/[^/]+\/epic\.json$/, schema: epicSchema },
+  { pattern: /^slices\/overview\.json$/, schema: overviewSchema },
+  { pattern: /^slices\/[^/]+\/slice\.json$/, schema: sliceSchema },
+  { pattern: /^quests\/overview\.json$/, schema: overviewSchema },
+  { pattern: /^quests\/[^/]+\/quest\.json$/, schema: questSchema },
+  { pattern: /^activity-log\.jsonl$/, schema: activityEntrySchema },
+  { pattern: /^decisions\.jsonl$/, schema: decisionEntrySchema },
+  { pattern: /^learnings\.jsonl$/, schema: learningEntrySchema },
+  { pattern: /.*\/learnings\.jsonl$/, schema: learningEntrySchema },
+  { pattern: /.*\/architecture-deltas\.jsonl$/, schema: architectureDeltaSchema },
+];
+```
+
+### Zero State
+
+When `.project/` doesn't exist or contains no files, `assembleState()` returns an empty `ProjectState` (`{}`). This is a valid state — it represents "no project initialized." The state machine's `INIT_PROJECT` event operates on this zero state to produce the initial project structure, which `commitState()` then materializes.
+
 ### State Cache
 
-The assembled state is cached to `.project/.state-cache.json` (gitignored). On subsequent calls, the cache is read and only `_derived` fields are recomputed (cheap `fs.existsSync` checks). The cache is purely an optimization — deleting it triggers a full reassembly from the source-of-truth individual files.
+The assembled state is cached to `.project/.state-cache.json` (gitignored). On subsequent calls, the cache is read and directory `files` arrays are recomputed (cheap `readdirSync` calls replacing the old `_derived` boolean recomputation). The cache is purely an optimization — deleting it triggers a full reassembly from the source-of-truth individual files.
 
 ```
-First call:    assemble from files → compute derived → cache → reduce → write changes + update cache
-Subsequent:    read cache → recompute derived → reduce → write changes + update cache
+First call:    assemble from files → cache → reduce → commitState + update cache
+Subsequent:    read cache → recompute dir files → reduce → commitState + update cache
 Cache miss:    fall back to full assembly
 ```
 
-The cache is valid because the CLI is the only writer of JSON state. The only external changes are LLM-written files, which only affect `_derived` fields that are recomputed on every call.
+The cache is valid because the CLI is the only writer of JSON/JSONL state. The only external changes are LLM-written files within CLI-owned directories, which are captured by directory `files` recomputation on every call.
 
 ## Storage
 
@@ -223,9 +323,10 @@ The cache is valid because the CLI is the only writer of JSON state. The only ex
 
 ### Free-Form Markdown
 
-- Root directories created by the CLI, internal structure owned by the LLM
+- Root directories created by `commitState()` when the state machine produces them (e.g., `CREATE_EPIC` adds `epics/<name>/research/` as a `DirectoryEntry`)
+- Internal structure owned by the LLM — the CLI doesn't write markdown content
 - Read by the CLI for context bundling
-- Existence tracked in `_derived` fields of the unified state object
+- Existence tracked in directory `files` arrays (e.g., `dirHasFile(state, "epics/my-epic/research", "topic.md")`)
 - Not validated by schemas — content is free-form
 
 ### Directory Structure

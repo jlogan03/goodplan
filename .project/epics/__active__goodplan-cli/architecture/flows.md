@@ -17,6 +17,22 @@ If the State Machine returns an error at step 4, nothing is written — the RPC 
 
 The state machine may update multiple files in a single transition — e.g., updating `slice.json` status, appending to `activity-log.jsonl`, and updating `project.json` active pointers. Individual file writes are atomic (write-to-temp + rename), but the set of writes is not transactional. If the process crashes mid-write, some files may be updated and others not. Recovery: the state cache is written last; on cache miss, `assembleState()` rebuilds from individual files and reconciles. Write ordering: entity JSON files first, JSONL appends second, state cache last.
 
+## `goodplan init --name my-project`
+
+Project initialization goes through the state machine like any other transition. This ensures the state machine is the single authority on what the initial `.project/` structure looks like.
+
+1. Commands parses flags: `--name my-project`
+2. Commands checks `cwd/.project/` directly (NOT `resolveProjectDir()` walk-up). If exists, returns `STATE_ALREADY_INITIALIZED` immediately — no need to load state.
+3. Data Layer: `assembleState()` — `.project/` doesn't exist, returns zero state (empty `ProjectState`, no files, all `_derived` false)
+4. RPC calls State Machine: `reduce(zeroState, { type: 'INIT_PROJECT', name: 'my-project' })`
+5. State Machine:
+   - Validates no project exists in state (guard: `project.json` key absent)
+   - Returns new state with `project.json` populated (name, version, timestamps, null active pointers), `epics/overview.json`, `slices/overview.json`, `quests/overview.json` (all empty collections), and `activity-log.jsonl` with init entry
+6. Data Layer: `commitState(zeroState, newState)` — for each new key, creates parent directories and writes files. This creates `.project/`, `.project/epics/`, `.project/slices/`, `.project/quests/`, and all initial JSON/JSONL files.
+7. Commands outputs result
+
+**Note**: The tracer bullet's `init` implementation writes `project.json` directly (bypassing state machine and RPC). This is refactored in slice 03/04 when the state machine is available. The data layer (slice 02) prepares for this by implementing `assembleState()` zero-state behavior and `commitState()` directory creation.
+
 ## `goodplan slice:plan --slice 01-auth --json`
 
 1. Commands parses flags: `--slice 01-auth`, `--json`

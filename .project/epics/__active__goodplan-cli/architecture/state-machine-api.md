@@ -27,7 +27,9 @@ Each event type carries exactly the data it needs. TypeScript enforces correct p
 
 ```typescript
 type StateEvent =
-  // Project
+  // Project — INIT_PROJECT operates on zero state (empty ProjectState from assembleState on
+  // uninitialized project). Produces initial project.json, empty overview.json collections,
+  // and initial activity-log entry. commitState() materializes the directories and files.
   | { type: 'INIT_PROJECT'; name: string }
   // Epic lifecycle
   | { type: 'CREATE_EPIC'; name: string; goal: string }
@@ -247,15 +249,15 @@ Quest events mirror slice events but operate on `quests/<name>/` paths. Represen
 
 Other events follow the same pattern: they read the target entity's JSON plus any cross-entity dependencies (e.g., sequential slice enforcement reads sibling slice statuses).
 
-### Derived Fields
+### Directory-Based Guards (replaces _derived)
 
-`_derived` fields (file existence, artifact counts) are read-only. The state machine uses them in guards (e.g., "plan content must exist before completing plan phase") but never modifies them. The RPC layer recomputes them from the filesystem on each call.
+File existence checks use directory `files` arrays via `dirHasFile(state, dirPath, filename)` instead of a separate `_derived` map. The state machine reads directory entries to validate content prerequisites — it never modifies them. The data layer recomputes directory `files` arrays from the filesystem on each `loadState()` call.
 
-Key derived fields used in guards:
-- `planContentProvided`: true when `submit-plan` has written plan content — guards `COMPLETE_PLAN`
-- `refinedPlanExists`: true when refined plan exists — guards `BEGIN_IMPLEMENTATION`
-- `architectureExists`: true when architecture directory has content — guards `COMPLETE_ARCHITECTURE`
-- `explorationExists`: true when research/brainstorm content exists — guards `COMPLETE_EXPLORE`
+Key guards:
+- `dirHasFile(state, "slices/<name>", "plan.md")` — guards `COMPLETE_PLAN`
+- `dirHasFile(state, "slices/<name>", "plan-refined.md")` — guards `BEGIN_IMPLEMENTATION`
+- `dirHasFile(state, "epics/<name>/architecture", "_overview.md")` — guards `COMPLETE_ARCHITECTURE`
+- `dirHasFile(state, "epics/<name>/research", ...)` or checking `files.length > 0` — guards `COMPLETE_EXPLORE`
 
 ## Dependencies
 

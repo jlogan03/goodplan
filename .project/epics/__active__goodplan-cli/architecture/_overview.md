@@ -34,7 +34,7 @@ Pure rules engine with no I/O. Implements a reducer pattern over declarative tra
 
 ### Data Layer
 
-Entity CRUD and all filesystem I/O. Reads and writes JSON/JSONL with Zod schema validation. Enforces deterministic key ordering for git merge friendliness. Handles atomic file operations. Lifecycle-bound markdown (goals, plans) is written through CLI `submit-*` commands with state validation (see commands-api.md Sub-Agent Commands). Free-form markdown (architecture, research, brainstorm) is read by the CLI for context bundling but written directly by the LLM.
+Entity CRUD and all filesystem I/O. Reads and writes JSON/JSONL with Zod schema validation. Enforces deterministic key ordering for git merge friendliness. Handles atomic file operations. Materializes state machine output onto the filesystem — creates directories and files as needed, including LLM content directories (research/, brainstorm/, architecture/). `assembleState()` handles uninitialized projects by returning a zero state. Lifecycle-bound markdown (goals, plans) is written through CLI `submit-*` commands with state validation (see commands-api.md Sub-Agent Commands). Free-form markdown (architecture, research, brainstorm) is read by the CLI for context bundling but written directly by the LLM.
 
 **Dependencies:** Filesystem
 
