@@ -61,15 +61,15 @@ Define Zod schemas for project.json and StatusResult. Build minimal data layer: 
 
 ### Tasks
 
-- [ ] Create `src/schemas/shared.ts` — timestamp schema, version schema
-- [ ] Create `src/schemas/entities/project.ts` — projectSchema with Zod, infer `Project` type. Fields: version, name, activeEpic (nullable), activeSlice (nullable), activeQuest (nullable), created, updated
-- [ ] Create `src/schemas/commands/status.ts` — statusResultSchema. Fields: project (name, version), activeEpic/Slice/Quest (nullable objects with name, status, phase), artifacts (empty for now), recommendations (string[]), warnings (string[]). Note: activeEpic/Slice/Quest are projections requiring entity lookup — in this slice they are always null since entities don't exist yet. Document this in the schema file to prevent implementers from trying to populate them
-- [ ] Create `src/schemas/error-output.ts` — errorSchema (code, message, detail optional)
-- [ ] Convention: every schema file exports both the schema and its inferred type (e.g., `export type StatusResult = z.infer<typeof statusResultSchema>`, `export type Project = z.infer<typeof projectSchema>`). Establish this pattern for all schema files in this phase
-- [ ] Create `src/core/data/json.ts` — `readEntity<T>(path, schema)` and `writeEntity<T>(path, data, schema)` with deterministic key ordering using `JSON.stringify` replacer with sorted `Object.entries()`, Zod validation on both read and write
-- [ ] Create `src/core/data/project.ts` — `resolveProjectDir()` using GOODPLAN_DIR env var or walk up from cwd, `readProject()` and `writeProject()` wrapping json.ts as convenience layer
-- [ ] Create `src/util/errors.ts` — `GoodplanError` class with code, message, detail. `isGoodplanError()` type guard
-- [ ] Write unit tests: schema validation (valid/invalid), JSON round-trip (deterministic keys), GOODPLAN_DIR resolution, and a test that creates `.project/` two levels up and verifies `resolveProjectDir()` finds it from a nested subdirectory
+- [x] Create `src/schemas/shared.ts` — timestamp schema, version schema
+- [x] Create `src/schemas/entities/project.ts` — projectSchema with Zod, infer `Project` type. Fields: version, name, activeEpic (nullable), activeSlice (nullable), activeQuest (nullable), created, updated
+- [x] Create `src/schemas/commands/status.ts` — statusResultSchema. Fields: project (name, version), activeEpic/Slice/Quest (nullable objects with name, status, phase), artifacts (empty for now), recommendations (string[]), warnings (string[]). Note: activeEpic/Slice/Quest are projections requiring entity lookup — in this slice they are always null since entities don't exist yet. Document this in the schema file to prevent implementers from trying to populate them
+- [x] Create `src/schemas/error-output.ts` — errorSchema (code, message, detail optional)
+- [x] Convention: every schema file exports both the schema and its inferred type (e.g., `export type StatusResult = z.infer<typeof statusResultSchema>`, `export type Project = z.infer<typeof projectSchema>`). Establish this pattern for all schema files in this phase
+- [x] Create `src/core/data/json.ts` — `readEntity<T>(path, schema)` and `writeEntity<T>(path, data, schema)` with deterministic key ordering using `JSON.stringify` replacer with sorted `Object.entries()`, Zod validation on both read and write
+- [x] Create `src/core/data/project.ts` — `resolveProjectDir()` using GOODPLAN_DIR env var or walk up from cwd, `readProject()` and `writeProject()` wrapping json.ts as convenience layer
+- [x] Create `src/util/errors.ts` — `GoodplanError` class with code, message, detail. `isGoodplanError()` type guard
+- [x] Write unit tests: schema validation (valid/invalid), JSON round-trip (deterministic keys), GOODPLAN_DIR resolution, and a test that creates `.project/` two levels up and verifies `resolveProjectDir()` finds it from a nested subdirectory
 
 ### Verification
 `bun test tests/unit/` — all pass. Manually verify: create a fixture project.json, read it, write it, confirm byte-identical output (deterministic keys).
