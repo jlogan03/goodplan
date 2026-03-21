@@ -27,3 +27,11 @@ When running in dangerously-skip-permissions mode, Claude Code still asks the us
 `/refine-plan` displays a well-structured iteration summary after each round: a table of issues (severity, description, reviewer source, resolution action) plus a structured completion summary. `/refine-architecture` and `/refine-slices` don't match this format.
 
 **Expected**: All three refine-* skills produce identical iteration summary and completion summary formats — the same table structure, same severity/source/action columns, same end-of-refinement score progression table.
+
+### 4. `/complete` asks user to confirm learnings instead of just saving them
+
+**Skill**: `/complete`
+
+During slice/quest completion, the skill presents the learnings it gathered during implementation and asks the user whether they're correct. The user doesn't have enough context to judge — these are the agent's own observations from implementation. If the agent thinks the learnings are useful enough to propose, it should just save them.
+
+**Expected**: Present the learnings for visibility (showing what was learned is good), but don't ask for confirmation — just write them. The agent is the authority on what it learned during implementation.

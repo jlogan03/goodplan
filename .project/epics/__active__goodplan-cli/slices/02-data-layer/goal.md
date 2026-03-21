@@ -36,5 +36,5 @@ The complete data layer subsystem: the only code that touches the filesystem. Bu
 6. Binary regression test: compile binary, run `goodplan init` + `goodplan status --json` — verify tracer bullet commands still work with the full data layer.
 
 ## Scope Boundaries
-**In scope:** Full Data Layer API (assembleState, loadState, commitState, entity CRUD, JSONL ops, content ops), all Zod schemas in `src/schemas/` (entity types, JSONL records, `ProjectState`), state cache, concurrent modification detection, atomic writes, deterministic key ordering, debug logging infrastructure, GOODPLAN_DIR support.
+**In scope:** Full Data Layer API (assembleState, loadState, commitState, entity CRUD, JSONL ops, content ops), all Zod schemas in `src/schemas/` (entity types, JSONL records, `ProjectState`), state cache, concurrent modification detection, atomic writes, deterministic key ordering, debug logging infrastructure, GOODPLAN_DIR support. Also: reconcile `.project/conventions.md` repo structure section with actual repo structure and architecture docs (tracer bullet revealed staleness — lists directories that don't exist, misses `global-args.ts` and `src/util/json.ts`).
 **Out of scope:** State machine (slice 03), RPC layer (slice 04), new CLI commands (slices 05-06). The tracer bullet's init/status commands continue to work but use the deeper data layer.

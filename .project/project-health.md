@@ -4,23 +4,24 @@
 
 ### Well-tested areas
 - Skill file structure (SKILL.md frontmatter, step numbering, reference paths): verified across 4 skill files during slice-quality-and-health implementation with 28-point checklist
+- goodplan CLI tracer bullet: 99 unit tests covering schemas, data layer, command framework, init, and status commands. Binary compilation verified with 9-check end-to-end verification. Type-clean against `tsc --noEmit`.
 
 ### Undertested areas
 - Runtime behavior of new skills (refine-slices, updated define-slices three-lens evaluation): not yet exercised on a real project
 - Signal tracking algorithm (Step 6d in complete): requires 3+ completed slices to produce data
 - Refactor Intelligence Protocol (Step 9 in complete): new detection algorithm, batch table presentation, inline fix application, side quest proposal — all untested on a real codebase
 - Maturity/invariants/fitness workflow: Steps 8f/8g/8h in define-architecture, Steps 3b/3c/3d in audit-architecture, maturity evaluation in refine-architecture, reviewer criteria 12/13 — all untested on a real project
-- Epic workflow end-to-end: all epic-aware skills updated but never exercised on a real epic. First-epic flow (auto-active `__active__initial/`) and subsequent-epic flow (proposal → approval → activation) both untested
-- /start-epic skill: brand new, never executed. Architecture-proposal copying, approved.md writing, directory rename all need live testing
 - Epic completion mode in /complete: new epic scope type, architecture reconciliation, artifact promotion, archive numbering — all untested on a real epic
+- goodplan CLI main runner (`src/index.ts`): no automated integration tests — only verified via manual CLI invocation. Pre-dispatch regression (exit 0 for unknown commands) was caught by review, not tests. Scoped for slice 08.
 
 ### Known fragile areas
 - Cross-skill reference paths (e.g., refine-slices references refine-plan's shared-preamble.md): if refine-plan files move, refine-slices breaks silently
 - refine-plan's shared-preamble.md borrowed by refine-architecture and refine-slices: plan-specific framing ("Plan Location") doesn't match non-plan consumers
 - `~~archived~~` prefix sort order: sorts correctly in terminal but may sort above active items in file explorers (VS Code, Finder) due to locale-aware collation
-- epic-conventions.md is consumed by 12+ skills: changes require updating all consumers. Stale Assumption Detection Algorithm section added here is a single point of change (good) but also a single point of failure if the file moves
+- epic-conventions.md is consumed by 12+ skills: changes require updating all consumers
+- citty + `exactOptionalPropertyTypes`: requires `as unknown as CommandDef` casts in `src/index.ts`. May break on citty upgrade.
 
-<!-- Last updated by: complete for side-quests/refactor-intelligence, 2026-03-19 -->
+<!-- Last updated by: complete for epics/__active__goodplan-cli/slices/01-tracer-bullet, 2026-03-21 -->
 
 ## Performance Characteristics
 
@@ -34,12 +35,14 @@
 - Reviewer infrastructure: adding a new reviewer to any skill requires only a prompt section in the reviewers file + a registry entry
 - Iteration loop: new skills plug in via Loop Parameters table — architecture-quality proved this, slice-quality-and-health confirmed it, refine-plan-shared-loop completed the consolidation (all 3 consumers now use the shared pattern)
 - Epic scope resolution: the Step 0 preamble pattern ($SCOPE_TYPE, $SLICES_DIR, $EPIC_DIR) provides a consistent template for adding epic awareness to any new skill
-- Scope-type branching in /complete: the "For epic scope" / "For slices/quests" pattern cleanly separates epic completion from per-slice completion within the same skill
+- goodplan CLI command registration: adding a new command requires creating a file in `src/commands/<namespace>/`, importing in `main.ts`, and adding to `subCommands`. Global flags are shared via `global-args.ts`.
+- goodplan CLI schemas: convention of exporting both schema and `z.infer` type from every schema file makes adding new entities straightforward
 
 ### Hard to extend
 - Multi-file review pattern: the iteration loop assumes single-file or single-directory plans. Scattered working copies (as in refine-slices) require custom editor prompts and file-matching protocols
+- citty colon-namespace routing: requires manual pre-dispatch unknown command detection and `as unknown as CommandDef` casts. Adding commands must keep the pre-dispatch check in sync.
 
-<!-- Last updated by: complete for side-quests/complete-rename, 2026-03-19 -->
+<!-- Last updated by: complete for epics/__active__goodplan-cli/slices/01-tracer-bullet, 2026-03-21 -->
 
 ## Technical Debt
 
@@ -53,8 +56,8 @@
 
 ## Recent Changes
 
+- **01-tracer-bullet** (2026-03-21): First goodplan CLI implementation — Bun project scaffolding, Zod schemas, data layer (readEntity/writeEntity), citty command framework with custom runner, init and status commands, --query via jqjs, compiled to 58MB binary. 99 tests, type-clean.
 - **refactor-intelligence** (2026-03-19): Upgraded /complete Step 9 from generic cleanup question to proactive refactor detection with scope/risk classification, batch table presentation, inline fix application (capped at 5), and side quest proposals.
 - **complete-rename** (2026-03-19): Renamed /complete-slice to /complete, updated all cross-references across 10 skill files and 3 side quest goals. Added epic completion mode: architecture reconciliation, artifact promotion, archive numbering, graceful stop cases (e)/(f).
-- **initiatives-infrastructure** (2026-03-18): Added epic support across 25 skill files. Created epic-conventions.md, /create-epic (renamed from /start-project), /start-epic. Updated 10 existing skills with epic scope resolution, two-layer architecture, stale assumption detection.
 
-<!-- Last updated by: complete for side-quests/refactor-intelligence, 2026-03-19 -->
+<!-- Last updated by: complete for epics/__active__goodplan-cli/slices/01-tracer-bullet, 2026-03-21 -->

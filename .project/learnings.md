@@ -2,6 +2,26 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## citty requires runCommand + manual pre-dispatch for exit code control
+_Source: 01-tracer-bullet_
+
+`runMain` forces exit 1 for all errors. `runCommand` allows custom exit codes but doesn't throw `E_UNKNOWN_COMMAND` when `subCommands` is `{}` — requires manual pre-dispatch detection. Future commands must stay in sync with the pre-dispatch check.
+
+## exactOptionalPropertyTypes conflicts with citty's generics — cast required
+_Source: 01-tracer-bullet_
+
+citty's `CommandDef<ArgsDef>` + `exactOptionalPropertyTypes: true` causes contravariance errors in `runCommand`/`showUsage` calls. Requires `as unknown as CommandDef` casts. Re-check on citty upgrades.
+
+## Cross-layer utilities belong in src/util/, not in the layer that first needed them
+_Source: 01-tracer-bullet_
+
+`deterministicStringify` was placed in `src/core/data/` but needed by `src/util/output.ts` — a cross-layer import violation. Start shared utilities in `src/util/` from the beginning.
+
+## Main runner regressions are invisible without integration tests
+_Source: 01-tracer-bullet_
+
+Removing the pre-dispatch check caused `badcommand` to silently exit 0. Only caught by code review, not the test suite. Process-spawning integration tests for `src/index.ts` are needed — scoped for slice 08.
+
 ## Flow-log is not a universal audit trail — verify which skills write to it
 _Source: refactor-intelligence_
 
