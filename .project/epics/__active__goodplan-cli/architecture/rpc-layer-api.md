@@ -292,7 +292,8 @@ On completion operations, the RPC Layer returns the root directories where the L
 ## Dependencies
 
 - State Machine: `reduce()`
-- Data Layer: `loadState()`, `commitState()`, content read operations
+- Data Layer: `loadState()`, `commitState()`. All state reads (entity data, JSONL records, markdown content) come from the in-memory `ProjectState` tree returned by `loadState()` — no individual read functions needed. Context bundling reads markdown content directly from `MarkdownEntry` nodes in the state tree.
+- Tree navigation helpers: `resolve()`, `getJson()`, `getDir()`, `hasChild()`, etc.
 - Zod schemas from `src/schemas/` (for response types)
 
 ## Fitness Functions
