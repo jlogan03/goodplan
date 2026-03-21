@@ -181,11 +181,16 @@ Compile to binary and verify everything works as a standalone executable.
 
 ### Tasks
 
-- [ ] Add `build` script to package.json: `bun build --compile src/index.ts --outfile goodplan`
-- [ ] Add `goodplan` to .gitignore
-- [ ] Run `bun run build` — verify binary is created
-- [ ] Run full 9-check verification sequence (per Phase 6 verification list below) against the compiled binary
-- [ ] Document binary size for baseline tracking in the slice's completion notes
+- [x] Add `build` script to package.json: `bun build --compile src/index.ts --outfile goodplan`
+- [x] Add `goodplan` to .gitignore
+- [x] Run `bun run build` — verify binary is created
+- [x] Run full 9-check verification sequence (per Phase 6 verification list below) against the compiled binary
+- [x] Document binary size for baseline tracking in the slice's completion notes
+
+### Notes
+- Binary size: 58 MB (60,512,880 bytes) — baseline for tracking
+- All 9 verification checks pass against compiled binary
+- Compiled in ~66ms (bundle 13ms + compile 66ms)
 
 ### Verification
 Full 9-check verification sequence (per plan verification list), executed against `./goodplan` (not `bun run src/index.ts`):
