@@ -1,26 +1,6 @@
 import { defineCommand } from "citty";
-
-/**
- * Global flags shared across all commands.
- * Spread into each command's args definition.
- */
-export const globalArgs = {
-	json: {
-		type: "boolean" as const,
-		description: "Output as structured JSON",
-		default: false,
-	},
-	quiet: {
-		type: "boolean" as const,
-		description: "Minimal output",
-		default: false,
-	},
-	verbose: {
-		type: "boolean" as const,
-		description: "Enable diagnostic output on stderr",
-		default: false,
-	},
-} as const;
+import { globalArgs } from "./global-args.js";
+import { initCommand } from "./global/init.js";
 
 /**
  * Main goodplan command. Subcommands are registered here.
@@ -34,5 +14,7 @@ export const mainCommand = defineCommand({
 	args: {
 		...globalArgs,
 	},
-	subCommands: {},
+	subCommands: {
+		init: initCommand,
+	},
 });

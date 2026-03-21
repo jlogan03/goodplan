@@ -121,10 +121,10 @@ Implement `goodplan init` — creates .project/ with valid project.json.
 
 ### Tasks
 
-- [ ] Create `src/commands/global/init.ts` — citty command: `--name` flag (optional, defaults to `path.basename(cwd)`), `--json` inherited
-- [ ] Implement init logic: check if `cwd/.project/` exists via direct `fs.existsSync` (NOT `resolveProjectDir()`, which walks up and could find a parent's `.project/`; init must only check the current directory). Error if exists, otherwise create .project/ directory, write project.json via data layer with name, version "1.0.0", null active pointers, current timestamps
-- [ ] Register init command in main.ts
-- [ ] Write unit test for init logic (uses temp directory)
+- [x] Create `src/commands/global/init.ts` — citty command: `--name` flag (optional, defaults to `path.basename(cwd)`), `--json` inherited
+- [x] Implement init logic: check if `cwd/.project/` exists via direct `fs.existsSync` (NOT `resolveProjectDir()`, which walks up and could find a parent's `.project/`; init must only check the current directory). Error if exists, otherwise create .project/ directory, write project.json via data layer with name, version "1.0.0", null active pointers, current timestamps
+- [x] Register init command in main.ts
+- [x] Write unit test for init logic (uses temp directory)
 
 ### Verification
 In a fresh temp directory: `bun run src/index.ts init --name my-project && cat .project/project.json` — valid JSON with correct fields. Run again — exit 3 with STATE_ALREADY_INITIALIZED.
