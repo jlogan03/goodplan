@@ -156,30 +156,30 @@ Append-only audit trail at `.project/activity-log.jsonl`.
 
 ## Unified State Object
 
-All filesystem entries within `.project/` are assembled into a single in-memory state object. The state machine operates on this unified object and returns a new version. The data layer diffs old vs new and materializes changes back to the filesystem — creating directories, writing new files, updating changed files.
+The entire `.project/` filesystem is assembled into a single recursive in-memory tree. The state machine operates on this tree and returns a new version. The data layer diffs old vs new and materializes changes back to the filesystem — creating directories, writing new files, updating changed files.
 
 ### StateEntry — Discriminated Union
 
-Every entry in the state object is a `StateEntry`, discriminated by `type`:
+Every node in the state tree is a `StateEntry`, discriminated by `type`:
 
 ```typescript
 type StateEntry =
   | DirectoryEntry
   | JsonEntry<unknown>
-  | JsonlEntry<unknown>;
+  | JsonlEntry<unknown>
+  | MarkdownEntry;
 
-// Directory that should exist on the filesystem.
-// `files` lists the directory's known contents (filenames, not full paths).
-// Used by state machine guards for existence checks (replaces _derived booleans).
-// `assembleState()` populates `files` by scanning the directory.
+// Directory node. `contents` maps child names to their entries — the keys
+// ARE the file/directory listing (no separate `files` array needed).
+// `assembleState()` populates by recursively scanning the filesystem.
 // `commitState()` creates the directory if it doesn't exist.
 interface DirectoryEntry {
   type: "directory";
-  files: string[];  // e.g., ["plan.md", "plan-refined.md", "slice.json"]
+  contents: Record<string, StateEntry>;
 }
 
 // JSON entity file. Content is a concrete Zod-inferred type.
-// `commitState()` validates with the schema (looked up by path pattern),
+// `commitState()` validates with the schema (looked up via schema registry),
 // serializes with deterministic key ordering, writes atomically.
 interface JsonEntry<T> {
   type: "json";
@@ -193,82 +193,126 @@ interface JsonlEntry<T> {
   type: "jsonl";
   content: T[];
 }
+
+// Markdown/text file. Content is the raw file text.
+// Used for LLM-managed content (goals, plans, architecture docs, research).
+// `assembleState()` reads the file contents into the state tree.
+// The state machine treats these as read-only (never modifies markdown content).
+// Context bundling in the RPC layer uses these directly — no separate
+// filesystem read pass needed since the content is already in state.
+// `commitState()` does NOT write markdown entries — the LLM writes these
+// files directly to the filesystem. They appear in state for read access only.
+interface MarkdownEntry {
+  type: "markdown";
+  content: string;
+}
 ```
 
-### ProjectState
+### ProjectState — Recursive Tree
 
-The state object is a `Record<string, StateEntry>` keyed by relative path within `.project/`. The state machine and data layer use typed accessors for known paths.
+The state object mirrors the `.project/` filesystem as a recursive tree rooted at a single `DirectoryEntry`. Navigation uses filesystem-style paths resolved by walking the tree.
 
 ```typescript
-// The runtime type — a dynamic map of path → StateEntry.
-// assembleState() discovers all entries; the state machine adds new ones.
-type ProjectState = Record<string, StateEntry>;
+// The state is a single root directory entry representing .project/
+type ProjectState = DirectoryEntry;
 
-// Typed accessors for known paths (compile-time safety for state machine code).
-// These are helper functions, not part of the ProjectState type itself.
-function getJson<T>(state: ProjectState, path: string, schema: ZodSchema<T>): T;
-function getJsonl<T>(state: ProjectState, path: string, schema: ZodSchema<T>): T[];
-function getDir(state: ProjectState, path: string): DirectoryEntry;
-function dirHasFile(state: ProjectState, dirPath: string, filename: string): boolean;
+// Path resolution — walks the tree by splitting on "/"
+function resolve(state: ProjectState, path: string): StateEntry | undefined;
+
+// Typed accessors for common operations
+function getJson<T>(state: ProjectState, path: string): JsonEntry<T> | undefined;
+function getJsonl<T>(state: ProjectState, path: string): JsonlEntry<T> | undefined;
+function getDir(state: ProjectState, path: string): DirectoryEntry | undefined;
+
+// Guard helper — checks if a file exists in a directory
+function hasChild(state: ProjectState, dirPath: string, childName: string): boolean;
 ```
+
+**jq-style navigation**: Since the state tree is a plain JavaScript object, the jqjs library (already a project dependency) can be used to query it. This is useful for complex guards and for the `--query` flag on `status`. Example: `.contents.slices.contents["01-data-layer"].contents["plan.md"]` would check if a plan exists. Path-based helpers are preferred for simple lookups; jq is available for complex queries.
 
 Example state for a project with one epic and one slice:
 
 ```typescript
 const state: ProjectState = {
-  // Root directory
-  ".":                           { type: "directory", files: ["project.json", "activity-log.jsonl", "decisions.jsonl", "learnings.jsonl", "idea.md", "conventions.md"] },
+  type: "directory",
+  contents: {
+    "project.json": {
+      type: "json",
+      content: { name: "my-project", version: "1.0.0", activeEpic: "goodplan-cli", activeSlice: "01-data-layer", activeQuest: null, created: "2026-03-20T00:00:00Z", updated: "2026-03-20T12:00:00Z" }
+    },
+    "activity-log.jsonl": { type: "jsonl", content: [{ ts: "...", phase: "init", scope: "project", status: "complete", summary: "..." }] },
+    "decisions.jsonl": { type: "jsonl", content: [] },
+    "learnings.jsonl": { type: "jsonl", content: [] },
+    "idea.md": { type: "markdown", content: "# Project Idea\n\n..." },
+    "conventions.md": { type: "markdown", content: "# Project Conventions\n\n..." },
 
-  // Fixed JSON entities
-  "project.json":                { type: "json", content: { name: "my-project", version: "1.0.0", activeEpic: "goodplan-cli", ... } },
+    "epics": {
+      type: "directory",
+      contents: {
+        "overview.json": { type: "json", content: { items: [{ name: "goodplan-cli", status: "executing", created: "...", completed: null }] } },
+        "goodplan-cli": {
+          type: "directory",
+          contents: {
+            "epic.json": { type: "json", content: { name: "goodplan-cli", status: "executing", goal: "...", verifications: [...], sliceSequence: [...], created: "...", activated: "...", updated: "..." } },
+            "architecture": { type: "directory", contents: { "_overview.md": ..., "data-model.md": ... } },
+            "research": { type: "directory", contents: {} },
+            "brainstorm": { type: "directory", contents: {} },
+            "prototypes": { type: "directory", contents: {} },
+          }
+        }
+      }
+    },
 
-  // JSONL records
-  "activity-log.jsonl":          { type: "jsonl", content: [{ ts: "...", phase: "init", ... }] },
-  "decisions.jsonl":             { type: "jsonl", content: [] },
-  "learnings.jsonl":             { type: "jsonl", content: [] },
+    "slices": {
+      type: "directory",
+      contents: {
+        "overview.json": { type: "json", content: { items: [...] } },
+        "01-data-layer": {
+          type: "directory",
+          contents: {
+            "slice.json": { type: "json", content: { name: "01-data-layer", status: "implementing", epic: "goodplan-cli", ... } },
+            "learnings.jsonl": { type: "jsonl", content: [] },
+            "architecture-deltas.jsonl": { type: "jsonl", content: [] },
+            // LLM-written files appear as entries when they exist on disk:
+            "plan.md": { type: "markdown", content: "# Plan: Data Layer\n\n..." }
+            "plan-refined.md": { type: "json", content: "..." },
+          }
+        }
+      }
+    },
 
-  // Epic collection
-  "epics":                       { type: "directory", files: ["overview.json", "goodplan-cli"] },
-  "epics/overview.json":         { type: "json", content: { items: [{ name: "goodplan-cli", status: "executing", ... }] } },
-  "epics/goodplan-cli":          { type: "directory", files: ["epic.json", "architecture", "research", "brainstorm"] },
-  "epics/goodplan-cli/epic.json": { type: "json", content: { name: "goodplan-cli", status: "executing", ... } },
-  "epics/goodplan-cli/architecture": { type: "directory", files: ["_overview.md", "data-model.md", ...] },
-  "epics/goodplan-cli/research": { type: "directory", files: [] },
-  "epics/goodplan-cli/brainstorm": { type: "directory", files: [] },
-
-  // Slice collection
-  "slices":                      { type: "directory", files: ["overview.json", "01-data-layer"] },
-  "slices/overview.json":        { type: "json", content: { items: [...] } },
-  "slices/01-data-layer":        { type: "directory", files: ["slice.json", "plan.md", "plan-refined.md", "learnings.jsonl"] },
-  "slices/01-data-layer/slice.json": { type: "json", content: { name: "01-data-layer", status: "implementing", ... } },
-  "slices/01-data-layer/learnings.jsonl": { type: "jsonl", content: [] },
-
-  // Quest collection (empty)
-  "quests":                      { type: "directory", files: ["overview.json"] },
-  "quests/overview.json":        { type: "json", content: { items: [] } },
+    "quests": {
+      type: "directory",
+      contents: {
+        "overview.json": { type: "json", content: { items: [] } },
+      }
+    },
+  }
 };
 ```
 
-### State Machine Guards (replaces _derived)
+**Markdown files in state**: Markdown files (idea.md, plan.md, architecture docs, research) use `{ type: "markdown", content: "..." }` with the full file text. `assembleState()` reads them into the tree, making their content available for state machine existence checks and for context bundling in the RPC layer (no separate filesystem read needed). The state machine treats markdown entries as read-only. `commitState()` does NOT write markdown entries — the LLM writes these files directly.
 
-The old `_derived` map of booleans is replaced by directory `files` arrays. Guards use `dirHasFile()`:
+### State Machine Guards
+
+Guards navigate the tree using `resolve()` and `hasChild()`:
 
 ```typescript
-// Old: state._derived["slices/01-data-layer/planExists"]
-// New: dirHasFile(state, "slices/01-data-layer", "plan.md")
+// Does plan.md exist in slices/01-data-layer/?
+hasChild(state, "slices/01-data-layer", "plan.md")
 
-// Old: state._derived["epics/goodplan-cli/architectureExists"]
-// New: dirHasFile(state, "epics/goodplan-cli/architecture", "_overview.md")
+// Does the epic have architecture content?
+const archDir = getDir(state, "epics/goodplan-cli/architecture");
+archDir !== undefined && Object.keys(archDir.contents).length > 0
 
-// Old: state._derived["slices/01-data-layer/planContentProvided"]
-// New: dirHasFile(state, "slices/01-data-layer", "plan.md")
+// Get a specific entity
+const epic = getJson<Epic>(state, "epics/goodplan-cli/epic.json");
+epic?.content.status === "executing"
 ```
-
-This is cleaner: no separate `_derived` namespace, no boolean fields to maintain. Directory entries are populated by `assembleState()` scanning the filesystem, and recomputed on cache load (cheap `readdirSync` calls).
 
 ### Schema Registry
 
-`commitState()` needs to validate JSON entries before writing. A schema registry maps path patterns to Zod schemas:
+`commitState()` needs to validate JSON entries before writing. A schema registry maps path patterns to Zod schemas. The path is derived by walking the tree and building the filesystem path from the nesting:
 
 ```typescript
 const schemaRegistry: Array<{ pattern: RegExp; schema: ZodSchema }> = [
@@ -289,19 +333,35 @@ const schemaRegistry: Array<{ pattern: RegExp; schema: ZodSchema }> = [
 
 ### Zero State
 
-When `.project/` doesn't exist or contains no files, `assembleState()` returns an empty `ProjectState` (`{}`). This is a valid state — it represents "no project initialized." The state machine's `INIT_PROJECT` event operates on this zero state to produce the initial project structure, which `commitState()` then materializes.
+When `.project/` doesn't exist or contains no files, `assembleState()` returns an empty tree:
+
+```typescript
+const zeroState: ProjectState = { type: "directory", contents: {} };
+```
+
+This is a valid state — it represents "no project initialized." The state machine's `INIT_PROJECT` event operates on this zero state to produce the initial project structure (project.json, overview files, collection directories), which `commitState()` then materializes on the filesystem.
+
+### Recursive Diff in commitState
+
+`commitState()` performs a recursive tree diff between old and new state:
+
+1. **New key in new tree** → create (directory: `mkdirSync`, file: validate + write)
+2. **Key in both, content changed** → verify old matches on-disk (concurrent modification detection), then update
+3. **Key in both, unchanged** → skip
+4. **Key in old but not new** → entity removed (generally kept for audit trail; implementation decides policy)
+5. **Recurse into directories** — diff `contents` recursively, building the filesystem path as we go
 
 ### State Cache
 
-The assembled state is cached to `.project/.state-cache.json` (gitignored). On subsequent calls, the cache is read and directory `files` arrays are recomputed (cheap `readdirSync` calls replacing the old `_derived` boolean recomputation). The cache is purely an optimization — deleting it triggers a full reassembly from the source-of-truth individual files.
+The assembled state is cached to `.project/.state-cache.json` (gitignored). On subsequent calls, the cache is read and directory `contents` keys are recomputed by scanning the filesystem (cheap `readdirSync` calls). This captures LLM-written files that appeared since the last cache write. The cache is purely an optimization — deleting it triggers a full reassembly from the source-of-truth individual files.
 
 ```
 First call:    assemble from files → cache → reduce → commitState + update cache
-Subsequent:    read cache → recompute dir files → reduce → commitState + update cache
+Subsequent:    read cache → recompute dir contents → reduce → commitState + update cache
 Cache miss:    fall back to full assembly
 ```
 
-The cache is valid because the CLI is the only writer of JSON/JSONL state. The only external changes are LLM-written files within CLI-owned directories, which are captured by directory `files` recomputation on every call.
+The cache is valid because the CLI is the only writer of JSON/JSONL state. The only external changes are LLM-written files within CLI-owned directories, which are captured by directory contents recomputation on every call.
 
 ## Storage
 
