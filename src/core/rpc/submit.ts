@@ -7,14 +7,15 @@
  */
 
 import type { Epic } from "../../schemas/entities/epic.js";
+import type { Slice } from "../../schemas/entities/slice.js";
 import type { StateEvent } from "../../schemas/state-events.js";
 import { GoodplanError } from "../../util/errors.js";
 import { commitState } from "../data/commit.js";
 import { loadState } from "../data/load.js";
-import { getJson } from "../tree.js";
-import type { ProjectState } from "../tree.js";
 import { reduce } from "../state/reduce.js";
 import { isStateError } from "../state/types.js";
+import { getJson } from "../tree.js";
+import type { ProjectState } from "../tree.js";
 import type { SubmitInput, SubmitPhase, SubmitResult, Target, WorkflowOptions } from "./types.js";
 import { resolveEntityJsonPath, resolveEntityName } from "./types.js";
 
@@ -104,10 +105,7 @@ function buildSubmitEvent(
 		}
 		default: {
 			const _exhaustive: never = phase;
-			throw new GoodplanError(
-				"INTERNAL_ERROR",
-				`Unknown submit phase: ${String(_exhaustive)}`,
-			);
+			throw new GoodplanError("INTERNAL_ERROR", `Unknown submit phase: ${String(_exhaustive)}`);
 		}
 	}
 }
@@ -210,10 +208,16 @@ function resolveStatuses(
 		};
 	}
 
-	// Slice/quest submit phases (plan, refinement, implementation) always advance
-	// the entity status. Status resolution for these types is deferred to slices 04-05,
-	// but we return advanced: true via distinct sentinel values to avoid lying about
-	// whether a transition occurred.
+	if (target.type === "slice") {
+		const oldSlice = getJson<Slice>(oldState, entityPath);
+		const newSlice = getJson<Slice>(newState, entityPath);
+		return {
+			previousStatus: oldSlice?.status ?? "none",
+			newStatus: newSlice?.status ?? "unknown",
+		};
+	}
+
+	// Quest submit phases — deferred to slice 05.
 	return { previousStatus: "pre-submit", newStatus: "post-submit" };
 }
 
@@ -232,10 +236,7 @@ function spreadOverride(options?: WorkflowOptions): { override: boolean } | Reco
 
 function requireEpicName(target: Target): string {
 	if (target.type !== "epic") {
-		throw new GoodplanError(
-			"VALIDATION_INVALID_INPUT",
-			`Expected epic target, got ${target.type}`,
-		);
+		throw new GoodplanError("VALIDATION_INVALID_INPUT", `Expected epic target, got ${target.type}`);
 	}
 	return target.name;
 }

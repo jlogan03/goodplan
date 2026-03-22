@@ -8,6 +8,8 @@ import type { DeferredItem } from "../../schemas/entities/slice.js";
 import type { ArchitectureDeltaInput } from "../../schemas/records/architecture-delta.js";
 import type { LearningInput } from "../../schemas/records/learning.js";
 
+export type { DeferredItem } from "../../schemas/entities/slice.js";
+
 // ── Phase types ──────────────────────────────────────────────
 
 export type BeginPhase =
@@ -64,7 +66,7 @@ export interface WorkflowOptions {
  * by exactOptionalPropertyTypes — undefined is not a valid positional arg.
  */
 export interface BeginPayloadMap {
-	create: { name: string; goal?: string };
+	create: { name: string; goal?: string; epic?: string };
 	explore: Record<string, never>;
 	"define-architecture": Record<string, never>;
 	"refine-architecture": Record<string, never>;
@@ -94,6 +96,15 @@ export interface CompleteResult {
 	entity: string;
 	previousStatus: string;
 	newStatus: string;
+	deferredRouted?: DeferredItem[];
+	deferredSkipped?: number;
+	/** State-tree-relative paths (e.g., "epics/my-epic/architecture/"). The Commands layer resolves these to absolute filesystem paths. */
+	architecturePaths?: {
+		currentArchitecture: string;
+		targetArchitecture?: string;
+	};
+	epicComplete?: boolean;
+	learningsRolledUp?: { epic: number; project: number };
 }
 
 export interface SubmitResult {

@@ -12,6 +12,7 @@ import { getJsonl, setEntry } from "../../tree.js";
 import type { StateError, StateEvent } from "../types.js";
 import { isStateError } from "../types.js";
 import {
+	ACTIVITY_PHASE_DEFERRED_SKIP,
 	appendActivityLog,
 	getProject,
 	getSlice,
@@ -54,7 +55,7 @@ export function handleCompleteSlice(
 			tree = appendActivityLog(
 				tree,
 				event.ts,
-				"deferred-skip",
+				ACTIVITY_PHASE_DEFERRED_SKIP,
 				`slices/${event.slice}`,
 				`Deferred item skipped — target slice "${item.targetSlice}" not found: ${item.description}`,
 			);
@@ -107,7 +108,7 @@ export function handleCompleteSlice(
 
 	// 3. Architecture deltas: write to per-slice architecture-deltas.jsonl
 	if (event.architectureDelta.length > 0) {
-		// Each delta arrives with ts already injected by the RPC layer
+		// Inject ts from the event timestamp onto each delta
 		const deltas: ArchitectureDelta[] = event.architectureDelta.map((d) => ({
 			...d,
 			ts: event.ts,

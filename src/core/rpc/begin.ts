@@ -5,13 +5,14 @@
 
 import type { Epic } from "../../schemas/entities/epic.js";
 import type { Project } from "../../schemas/entities/project.js";
+import type { Slice } from "../../schemas/entities/slice.js";
 import type { StateEvent } from "../../schemas/state-events.js";
 import { GoodplanError } from "../../util/errors.js";
 import { commitState } from "../data/commit.js";
 import { loadState } from "../data/load.js";
-import { getJson } from "../tree.js";
 import { reduce } from "../state/reduce.js";
 import { isStateError } from "../state/types.js";
+import { getJson } from "../tree.js";
 import type { ProjectState } from "../tree.js";
 import type { BeginPayloadMap, BeginPhase, BeginResult, Target, WorkflowOptions } from "./types.js";
 import { resolveEntityJsonPath, resolveEntityName } from "./types.js";
@@ -89,20 +90,17 @@ function buildBeginEvent<P extends BeginPhase>(
 			};
 		}
 		case "plan":
+			return buildPlanPhaseEvent(target, ts);
 		case "refine-plan":
+			return buildRefinePlanEvent(target, ts);
 		case "implement":
+			return buildImplementEvent(target, ts);
 		case "update-decision":
 		case "rollup":
-			throw new GoodplanError(
-				"INTERNAL_ERROR",
-				`begin('${phase}') is not yet implemented`,
-			);
+			throw new GoodplanError("INTERNAL_ERROR", `begin('${phase}') is not yet implemented`);
 		default: {
 			const _exhaustive: never = phase;
-			throw new GoodplanError(
-				"INTERNAL_ERROR",
-				`Unknown begin phase: ${String(_exhaustive)}`,
-			);
+			throw new GoodplanError("INTERNAL_ERROR", `Unknown begin phase: ${String(_exhaustive)}`);
 		}
 	}
 }
@@ -129,7 +127,24 @@ function buildCreateEvent(
 				ts,
 			};
 		}
-		case "slice":
+		case "slice": {
+			if (payload.epic === undefined) {
+				throw new GoodplanError("VALIDATION_INVALID_INPUT", "slice:create requires --epic <name>");
+			}
+			if (payload.goal === undefined) {
+				throw new GoodplanError(
+					"VALIDATION_INVALID_INPUT",
+					"goal is required when creating a slice",
+				);
+			}
+			return {
+				type: "CREATE_SLICE",
+				name: payload.name,
+				epic: payload.epic,
+				goal: payload.goal,
+				ts,
+			};
+		}
 		case "quest":
 		case "decision":
 			throw new GoodplanError(
@@ -155,15 +170,49 @@ function buildAbandonEvent(
 		case "epic":
 			return { type: "ABANDON_EPIC", epic: target.name, ts, reason: payload.reason };
 		case "slice":
+			return { type: "ABANDON_SLICE", slice: target.name, ts, reason: payload.reason };
 		case "quest":
 			throw new GoodplanError(
 				"INTERNAL_ERROR",
 				`begin('abandon', {type:'${target.type}'}) is not yet implemented`,
 			);
 		default:
+			throw new GoodplanError("INTERNAL_ERROR", `Cannot abandon target type: ${target.type}`);
+	}
+}
+
+function buildPlanPhaseEvent(target: Target, ts: string): StateEvent {
+	switch (target.type) {
+		case "slice":
+			return { type: "BEGIN_PLAN", slice: target.name, ts };
+		default:
 			throw new GoodplanError(
 				"INTERNAL_ERROR",
-				`Cannot abandon target type: ${target.type}`,
+				`begin('plan') requires slice target, got ${target.type}`,
+			);
+	}
+}
+
+function buildRefinePlanEvent(target: Target, ts: string): StateEvent {
+	switch (target.type) {
+		case "slice":
+			return { type: "BEGIN_REFINEMENT", slice: target.name, ts };
+		default:
+			throw new GoodplanError(
+				"INTERNAL_ERROR",
+				`begin('refine-plan') requires slice target, got ${target.type}`,
+			);
+	}
+}
+
+function buildImplementEvent(target: Target, ts: string): StateEvent {
+	switch (target.type) {
+		case "slice":
+			return { type: "BEGIN_IMPLEMENTATION", slice: target.name, ts };
+		default:
+			throw new GoodplanError(
+				"INTERNAL_ERROR",
+				`begin('implement') requires slice target, got ${target.type}`,
 			);
 	}
 }
@@ -191,6 +240,11 @@ function buildBeginResult(
 		const newEpic = getJson<Epic>(newState, entityPath);
 		previousStatus = oldEpic?.status ?? "none";
 		newStatus = newEpic?.status ?? "unknown";
+	} else if (target.type === "slice") {
+		const oldSlice = getJson<Slice>(oldState, entityPath);
+		const newSlice = getJson<Slice>(newState, entityPath);
+		previousStatus = oldSlice?.status ?? "none";
+		newStatus = newSlice?.status ?? "unknown";
 	}
 
 	return { entity, phase, previousStatus, newStatus };
@@ -200,10 +254,7 @@ function buildBeginResult(
 
 function requireEpicName(target: Target): string {
 	if (target.type !== "epic") {
-		throw new GoodplanError(
-			"VALIDATION_INVALID_INPUT",
-			`Expected epic target, got ${target.type}`,
-		);
+		throw new GoodplanError("VALIDATION_INVALID_INPUT", `Expected epic target, got ${target.type}`);
 	}
 	return target.name;
 }

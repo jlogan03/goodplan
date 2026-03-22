@@ -4,8 +4,8 @@ import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { begin } from "../../../src/core/rpc/begin.js";
 import { rpcInit } from "../../../src/core/rpc/init.js";
-import { GoodplanError } from "../../../src/util/errors.js";
 import type { Verification } from "../../../src/schemas/entities/epic.js";
+import { GoodplanError } from "../../../src/util/errors.js";
 
 let tmpDir: string;
 let projectDir: string;
@@ -27,10 +27,15 @@ describe("begin — CREATE_EPIC", () => {
 	it("creates epic tree via begin('create', {type:'epic'})", () => {
 		initProject();
 
-		const result = begin(projectDir, "create", { type: "epic", name: "my-epic" }, {
-			name: "my-epic",
-			goal: "Build something great",
-		});
+		const result = begin(
+			projectDir,
+			"create",
+			{ type: "epic", name: "my-epic" },
+			{
+				name: "my-epic",
+				goal: "Build something great",
+			},
+		);
 
 		expect(result.entity).toBe("my-epic");
 		expect(result.phase).toBe("create");
@@ -51,9 +56,14 @@ describe("begin — CREATE_EPIC", () => {
 		initProject();
 
 		expect(() =>
-			begin(projectDir, "create", { type: "epic", name: "no-goal" }, {
-				name: "no-goal",
-			}),
+			begin(
+				projectDir,
+				"create",
+				{ type: "epic", name: "no-goal" },
+				{
+					name: "no-goal",
+				},
+			),
 		).toThrow(GoodplanError);
 	});
 });
@@ -61,10 +71,15 @@ describe("begin — CREATE_EPIC", () => {
 describe("begin — BEGIN_EXPLORE", () => {
 	it("transitions epic from created to exploring", () => {
 		initProject();
-		begin(projectDir, "create", { type: "epic", name: "e1" }, {
-			name: "e1",
-			goal: "Test",
-		});
+		begin(
+			projectDir,
+			"create",
+			{ type: "epic", name: "e1" },
+			{
+				name: "e1",
+				goal: "Test",
+			},
+		);
 
 		const result = begin(projectDir, "explore", { type: "epic", name: "e1" }, {});
 
@@ -107,9 +122,14 @@ describe("begin — ABANDON_EPIC", () => {
 		initProject();
 		begin(projectDir, "create", { type: "epic", name: "e1" }, { name: "e1", goal: "G" });
 
-		const result = begin(projectDir, "abandon", { type: "epic", name: "e1" }, {
-			reason: "No longer needed",
-		});
+		const result = begin(
+			projectDir,
+			"abandon",
+			{ type: "epic", name: "e1" },
+			{
+				reason: "No longer needed",
+			},
+		);
 
 		expect(result.entity).toBe("e1");
 		expect(result.phase).toBe("abandon");
@@ -137,15 +157,139 @@ describe("begin — UPDATE_VERIFICATION", () => {
 			addedDuring: "exploring",
 			modifiedDuring: "defining-architecture",
 		};
-		begin(projectDir, "update-verification", { type: "epic", name: "e1" }, {
-			index: 0,
-			verification: v2,
-		});
+		begin(
+			projectDir,
+			"update-verification",
+			{ type: "epic", name: "e1" },
+			{
+				index: 0,
+				verification: v2,
+			},
+		);
 
 		const epicJson = path.join(projectDir, "epics", "e1", "epic.json");
 		const epic = JSON.parse(fs.readFileSync(epicJson, "utf-8"));
 		expect(epic.verifications[0].description).toBe("Updated");
 		expect(epic.verifications[0].status).toBe("passed");
+	});
+});
+
+describe("begin — CREATE_SLICE", () => {
+	it("creates slice via begin('create', {type:'slice'})", () => {
+		initProject();
+		begin(projectDir, "create", { type: "epic", name: "e1" }, { name: "e1", goal: "G" });
+
+		const result = begin(
+			projectDir,
+			"create",
+			{ type: "slice", name: "s1" },
+			{
+				name: "s1",
+				goal: "First slice",
+				epic: "e1",
+			},
+		);
+
+		expect(result.entity).toBe("s1");
+		expect(result.phase).toBe("create");
+		expect(result.previousStatus).toBe("none");
+		expect(result.newStatus).toBe("created");
+
+		const sliceJson = path.join(projectDir, "slices", "s1", "slice.json");
+		expect(fs.existsSync(sliceJson)).toBe(true);
+
+		const slice = JSON.parse(fs.readFileSync(sliceJson, "utf-8"));
+		expect(slice.name).toBe("s1");
+		expect(slice.epic).toBe("e1");
+		expect(slice.status).toBe("created");
+		expect(slice.goal).toBe("First slice");
+	});
+
+	it("rejects slice creation without --epic", () => {
+		initProject();
+
+		expect(() =>
+			begin(
+				projectDir,
+				"create",
+				{ type: "slice", name: "s1" },
+				{
+					name: "s1",
+					goal: "G",
+				},
+			),
+		).toThrow("slice:create requires --epic");
+	});
+
+	it("rejects slice creation without goal", () => {
+		initProject();
+
+		expect(() =>
+			begin(
+				projectDir,
+				"create",
+				{ type: "slice", name: "s1" },
+				{
+					name: "s1",
+					epic: "e1",
+				},
+			),
+		).toThrow("goal is required");
+	});
+});
+
+describe("begin — BEGIN_PLAN for slice", () => {
+	it("transitions slice from created to planning", () => {
+		initProject();
+		begin(projectDir, "create", { type: "epic", name: "e1" }, { name: "e1", goal: "G" });
+		begin(
+			projectDir,
+			"create",
+			{ type: "slice", name: "s1" },
+			{
+				name: "s1",
+				goal: "G",
+				epic: "e1",
+			},
+		);
+
+		const result = begin(projectDir, "plan", { type: "slice", name: "s1" }, {});
+
+		expect(result.entity).toBe("s1");
+		expect(result.phase).toBe("plan");
+		expect(result.previousStatus).toBe("created");
+		expect(result.newStatus).toBe("planning");
+	});
+});
+
+describe("begin — ABANDON_SLICE", () => {
+	it("transitions slice to abandoned with reason", () => {
+		initProject();
+		begin(projectDir, "create", { type: "epic", name: "e1" }, { name: "e1", goal: "G" });
+		begin(
+			projectDir,
+			"create",
+			{ type: "slice", name: "s1" },
+			{
+				name: "s1",
+				goal: "G",
+				epic: "e1",
+			},
+		);
+
+		const result = begin(
+			projectDir,
+			"abandon",
+			{ type: "slice", name: "s1" },
+			{
+				reason: "No longer needed",
+			},
+		);
+
+		expect(result.entity).toBe("s1");
+		expect(result.phase).toBe("abandon");
+		expect(result.previousStatus).toBe("created");
+		expect(result.newStatus).toBe("abandoned");
 	});
 });
 
@@ -164,12 +308,12 @@ describe("begin — error propagation", () => {
 		}
 	});
 
-	it("throws for not-yet-implemented phases", () => {
+	it("throws state error for slice begin when slice does not exist", () => {
 		initProject();
 
-		expect(() =>
-			begin(projectDir, "plan", { type: "slice", name: "s1" }, {}),
-		).toThrow("not yet implemented");
+		expect(() => begin(projectDir, "plan", { type: "slice", name: "s1" }, {})).toThrow(
+			GoodplanError,
+		);
 	});
 });
 

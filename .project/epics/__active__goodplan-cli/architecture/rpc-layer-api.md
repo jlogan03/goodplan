@@ -240,9 +240,10 @@ interface CompleteResult {
   entity: string;
   previousStatus: string;
   newStatus: string;
-  deferredRouted?: { item: DeferredItem; target: string }[];
+  deferredRouted?: DeferredItem[];   // items routed to existing target slices (DeferredItem already contains targetSlice)
+  deferredSkipped?: number;          // count of deferred items whose targetSlice was not found
   architecturePaths?: {
-    currentArchitecture: string;   // project-level directory for LLM to update
+    currentArchitecture: string;   // state-tree-relative path (e.g., "epics/my-epic/architecture/"); Commands layer resolves to filesystem path
     targetArchitecture?: string;   // epic-level directory (for reference)
   };
   epicComplete?: boolean;          // true if all slices in epic are now done

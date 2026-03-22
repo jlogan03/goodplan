@@ -3,11 +3,11 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { begin } from "../../../src/core/rpc/begin.js";
-import { submit } from "../../../src/core/rpc/submit.js";
 import { complete } from "../../../src/core/rpc/complete.js";
 import { rpcInit } from "../../../src/core/rpc/init.js";
-import { GoodplanError } from "../../../src/util/errors.js";
+import { submit } from "../../../src/core/rpc/submit.js";
 import type { Verification, VerificationResult } from "../../../src/schemas/entities/epic.js";
+import { GoodplanError } from "../../../src/util/errors.js";
 
 let tmpDir: string;
 let projectDir: string;
@@ -36,17 +36,27 @@ function setupActivatedEpic() {
 	begin(projectDir, "define-architecture", { type: "epic", name: "e1" }, {});
 	submit(projectDir, "architecture", { type: "epic", name: "e1" }, { phase: "architecture" });
 	begin(projectDir, "refine-architecture", { type: "epic", name: "e1" }, {});
-	submit(projectDir, "refine-architecture", { type: "epic", name: "e1" }, {
-		phase: "refine-architecture",
-		scores: { q: 10 },
-	});
+	submit(
+		projectDir,
+		"refine-architecture",
+		{ type: "epic", name: "e1" },
+		{
+			phase: "refine-architecture",
+			scores: { q: 10 },
+		},
+	);
 	begin(projectDir, "define-slices", { type: "epic", name: "e1" }, {});
 	submit(projectDir, "slices", { type: "epic", name: "e1" }, { phase: "slices" });
 	begin(projectDir, "refine-slices", { type: "epic", name: "e1" }, {});
-	submit(projectDir, "refine-slices", { type: "epic", name: "e1" }, {
-		phase: "refine-slices",
-		scores: { q: 10 },
-	});
+	submit(
+		projectDir,
+		"refine-slices",
+		{ type: "epic", name: "e1" },
+		{
+			phase: "refine-slices",
+			scores: { q: 10 },
+		},
+	);
 	begin(projectDir, "add-verification", { type: "epic", name: "e1" }, { verification });
 	begin(projectDir, "activate", { type: "epic", name: "e1" }, {});
 }
@@ -78,27 +88,236 @@ describe("complete — COMPLETE_EPIC", () => {
 		];
 
 		expect(() =>
-			complete(
-				projectDir,
-				{ type: "epic", name: "e1" },
-				{ type: "epic", verificationResults },
-			),
+			complete(projectDir, { type: "epic", name: "e1" }, { type: "epic", verificationResults }),
 		).toThrow(GoodplanError);
 
 		try {
-			complete(
-				projectDir,
-				{ type: "epic", name: "e1" },
-				{ type: "epic", verificationResults },
-			);
+			complete(projectDir, { type: "epic", name: "e1" }, { type: "epic", verificationResults });
 		} catch (err) {
 			expect((err as GoodplanError).code).toBe("STATE_VERIFICATION_FAILED");
 		}
 	});
 });
 
-describe("complete — not yet implemented", () => {
-	it("throws for slice completion", () => {
+/** Remove the state cache so that the next loadState does a fresh assembleState.
+ *  Necessary when writing files directly to disk (simulating sub-agent writes)
+ *  because directory mtime granularity can cause stale cache hits. */
+function invalidateCache() {
+	const cachePath = path.join(projectDir, ".state-cache.json");
+	if (fs.existsSync(cachePath)) {
+		fs.unlinkSync(cachePath);
+	}
+}
+
+function setupSliceInImplementationComplete(sliceName = "s1", epicName = "e1") {
+	setupActivatedEpic();
+	begin(
+		projectDir,
+		"create",
+		{ type: "slice", name: sliceName },
+		{
+			name: sliceName,
+			goal: "First slice goal",
+			epic: epicName,
+		},
+	);
+	begin(projectDir, "plan", { type: "slice", name: sliceName }, {});
+	// Write plan.md (required by COMPLETE_PLAN guard) — simulates sub-agent write
+	const sliceDir = path.join(projectDir, "slices", sliceName);
+	fs.writeFileSync(path.join(sliceDir, "plan.md"), "# Plan\nDo stuff");
+	invalidateCache();
+	submit(projectDir, "plan", { type: "slice", name: sliceName }, { phase: "plan" });
+	// Skip refinement via high scores (advances to plan-refined)
+	submit(
+		projectDir,
+		"refinement",
+		{ type: "slice", name: sliceName },
+		{
+			phase: "refinement",
+			scores: { q: 10 },
+		},
+	);
+	// Write plan-refined.md (required by BEGIN_IMPLEMENTATION guard) — simulates sub-agent write
+	fs.writeFileSync(path.join(sliceDir, "plan-refined.md"), "# Refined Plan\nDo stuff better");
+	invalidateCache();
+	begin(projectDir, "implement", { type: "slice", name: sliceName }, {});
+	submit(
+		projectDir,
+		"implementation",
+		{ type: "slice", name: sliceName },
+		{ phase: "implementation" },
+	);
+}
+
+describe("complete — COMPLETE_SLICE", () => {
+	it("completes slice with verification passed", () => {
+		setupSliceInImplementationComplete();
+
+		const result = complete(
+			projectDir,
+			{ type: "slice", name: "s1" },
+			{ type: "slice", verificationPassed: true },
+		);
+
+		expect(result.entity).toBe("s1");
+		expect(result.previousStatus).toBe("implementation-complete");
+		expect(result.newStatus).toBe("completed");
+	});
+
+	it("rejects completion when verificationPassed is false", () => {
+		setupSliceInImplementationComplete();
+
+		expect(() =>
+			complete(
+				projectDir,
+				{ type: "slice", name: "s1" },
+				{ type: "slice", verificationPassed: false },
+			),
+		).toThrow(GoodplanError);
+
+		try {
+			complete(
+				projectDir,
+				{ type: "slice", name: "s1" },
+				{ type: "slice", verificationPassed: false },
+			);
+		} catch (err) {
+			expect((err as GoodplanError).code).toBe("STATE_VERIFICATION_FAILED");
+		}
+	});
+
+	it("completes slice with full payload (deferred, learnings, architectureDelta)", () => {
+		setupSliceInImplementationComplete("s1");
+		// Create second slice for deferred routing
+		begin(
+			projectDir,
+			"create",
+			{ type: "slice", name: "s2" },
+			{
+				name: "s2",
+				goal: "Second slice",
+				epic: "e1",
+			},
+		);
+
+		const result = complete(
+			projectDir,
+			{ type: "slice", name: "s1" },
+			{
+				type: "slice",
+				verificationPassed: true,
+				deferred: [{ description: "Handle edge case", targetSlice: "s2" }],
+				learnings: [
+					{
+						category: "domain",
+						summary: "Caching is needed",
+						detail: "Disk I/O too slow",
+						tags: ["perf"],
+						rollupTo: ["epic", "project"],
+					},
+				],
+				architectureDelta: [
+					{
+						subsystem: "data-layer",
+						type: "modify",
+						description: "Added caching layer",
+					},
+				],
+			},
+		);
+
+		expect(result.entity).toBe("s1");
+		expect(result.newStatus).toBe("completed");
+
+		// deferredRouted should contain the routed item
+		expect(result.deferredRouted).toHaveLength(1);
+		expect(result.deferredRouted?.[0]?.targetSlice).toBe("s2");
+
+		// learningsRolledUp should show counts
+		expect(result.learningsRolledUp).toEqual({ epic: 1, project: 1 });
+
+		// architecturePaths should be present since we provided deltas
+		expect(result.architecturePaths).toBeDefined();
+		expect(result.architecturePaths?.currentArchitecture).toBe("epics/e1/architecture");
+
+		// Verify deferred item was actually routed to s2 on disk
+		const s2Json = JSON.parse(
+			fs.readFileSync(path.join(projectDir, "slices", "s2", "slice.json"), "utf-8"),
+		);
+		expect(s2Json.deferred).toHaveLength(1);
+		expect(s2Json.deferred[0].description).toBe("Handle edge case");
+	});
+
+	it("detects epicComplete when all slices are done", () => {
+		setupSliceInImplementationComplete("s1");
+
+		const result = complete(
+			projectDir,
+			{ type: "slice", name: "s1" },
+			{ type: "slice", verificationPassed: true },
+		);
+
+		// Only one slice in epic, and it's now completed
+		expect(result.epicComplete).toBe(true);
+	});
+
+	it("epicComplete is false when sibling slices remain", () => {
+		setupSliceInImplementationComplete("s1");
+		// Create second slice that is still in created status
+		begin(
+			projectDir,
+			"create",
+			{ type: "slice", name: "s2" },
+			{
+				name: "s2",
+				goal: "Second slice",
+				epic: "e1",
+			},
+		);
+
+		const result = complete(
+			projectDir,
+			{ type: "slice", name: "s1" },
+			{ type: "slice", verificationPassed: true },
+		);
+
+		expect(result.epicComplete).toBe(false);
+	});
+
+	it("handles deferred items with non-existent target slices (skipped)", () => {
+		setupSliceInImplementationComplete("s1");
+
+		const result = complete(
+			projectDir,
+			{ type: "slice", name: "s1" },
+			{
+				type: "slice",
+				verificationPassed: true,
+				deferred: [{ description: "Future work", targetSlice: "nonexistent" }],
+			},
+		);
+
+		expect(result.newStatus).toBe("completed");
+		expect(result.deferredSkipped).toBe(1);
+		expect(result.deferredRouted).toBeUndefined();
+	});
+
+	it("coerces undefined arrays to empty", () => {
+		setupSliceInImplementationComplete();
+
+		// Passing no optional arrays — should not throw
+		const result = complete(
+			projectDir,
+			{ type: "slice", name: "s1" },
+			{ type: "slice", verificationPassed: true },
+		);
+
+		expect(result.newStatus).toBe("completed");
+	});
+});
+
+describe("complete — error cases", () => {
+	it("throws state error for slice when slice does not exist", () => {
 		rpcInit(projectDir, "test");
 
 		expect(() =>
@@ -107,10 +326,10 @@ describe("complete — not yet implemented", () => {
 				{ type: "slice", name: "s1" },
 				{ type: "slice", verificationPassed: true },
 			),
-		).toThrow("not yet implemented");
+		).toThrow(GoodplanError);
 	});
 
-	it("throws for quest completion", () => {
+	it("throws for quest completion (not yet implemented)", () => {
 		rpcInit(projectDir, "test");
 
 		expect(() =>

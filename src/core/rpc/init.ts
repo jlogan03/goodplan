@@ -5,8 +5,8 @@
 
 import type { Project } from "../../schemas/entities/project.js";
 import { GoodplanError } from "../../util/errors.js";
-import { getJson } from "../tree.js";
 import { loadState } from "../data/load.js";
+import { getJson } from "../tree.js";
 import { begin } from "./begin.js";
 
 export interface InitResult {

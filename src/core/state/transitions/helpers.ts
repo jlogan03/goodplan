@@ -16,6 +16,9 @@ import type { StateError } from "../types.js";
 /** Default maximum refinement rounds. Shared by all BEGIN_REFINE handlers. */
 export const MAX_REFINEMENT_ROUNDS = 10;
 
+/** Activity log phase for deferred items skipped due to missing target slice. */
+export const ACTIVITY_PHASE_DEFERRED_SKIP = "deferred-skip";
+
 // ── Epic helpers ────────────────────────────────────────────
 
 export function getEpic(state: ProjectState, name: string): Epic | undefined {

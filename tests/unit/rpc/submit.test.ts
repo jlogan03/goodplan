@@ -3,8 +3,8 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { begin } from "../../../src/core/rpc/begin.js";
-import { submit } from "../../../src/core/rpc/submit.js";
 import { rpcInit } from "../../../src/core/rpc/init.js";
+import { submit } from "../../../src/core/rpc/submit.js";
 import { GoodplanError } from "../../../src/util/errors.js";
 
 let tmpDir: string;
@@ -121,12 +121,9 @@ describe("submit — phase mismatch assertion", () => {
 		).toThrow(GoodplanError);
 
 		try {
-			submit(
-				projectDir,
-				"explore",
-				{ type: "epic", name: "e1" },
-				{ phase: "architecture" } as never,
-			);
+			submit(projectDir, "explore", { type: "epic", name: "e1" }, {
+				phase: "architecture",
+			} as never);
 		} catch (err) {
 			expect((err as GoodplanError).code).toBe("INTERNAL_ERROR");
 		}
@@ -144,19 +141,29 @@ describe("submit — full slicing lifecycle", () => {
 		submit(projectDir, "architecture", { type: "epic", name: "e1" }, { phase: "architecture" });
 
 		begin(projectDir, "refine-architecture", { type: "epic", name: "e1" }, {});
-		submit(projectDir, "refine-architecture", { type: "epic", name: "e1" }, {
-			phase: "refine-architecture",
-			scores: { q: 10 },
-		});
+		submit(
+			projectDir,
+			"refine-architecture",
+			{ type: "epic", name: "e1" },
+			{
+				phase: "refine-architecture",
+				scores: { q: 10 },
+			},
+		);
 
 		begin(projectDir, "define-slices", { type: "epic", name: "e1" }, {});
 		submit(projectDir, "slices", { type: "epic", name: "e1" }, { phase: "slices" });
 
 		begin(projectDir, "refine-slices", { type: "epic", name: "e1" }, {});
-		const result = submit(projectDir, "refine-slices", { type: "epic", name: "e1" }, {
-			phase: "refine-slices",
-			scores: { q: 10 },
-		});
+		const result = submit(
+			projectDir,
+			"refine-slices",
+			{ type: "epic", name: "e1" },
+			{
+				phase: "refine-slices",
+				scores: { q: 10 },
+			},
+		);
 
 		expect(result.newStatus).toBe("slices-refined");
 	});
