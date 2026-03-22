@@ -1,5 +1,4 @@
 import { defineCommand } from "citty";
-import { globalArgs } from "./global-args.js";
 import { epicAbandonCommand } from "./epic/abandon.js";
 import { epicActivateCommand } from "./epic/activate.js";
 import { epicAddVerificationCommand } from "./epic/add-verification.js";
@@ -13,8 +12,17 @@ import { epicRefineArchitectureCommand } from "./epic/refine-architecture.js";
 import { epicRefineSlicesCommand } from "./epic/refine-slices.js";
 import { epicShowCommand } from "./epic/show.js";
 import { epicUpdateVerificationCommand } from "./epic/update-verification.js";
+import { globalArgs } from "./global-args.js";
 import { initCommand } from "./global/init.js";
 import { statusCommand } from "./global/status.js";
+import { sliceAbandonCommand } from "./slice/abandon.js";
+import { sliceCompleteCommand } from "./slice/complete.js";
+import { sliceCreateCommand } from "./slice/create.js";
+import { sliceImplementCommand } from "./slice/implement.js";
+import { sliceListCommand } from "./slice/list.js";
+import { slicePlanCommand } from "./slice/plan.js";
+import { sliceRefinePlanCommand } from "./slice/refine-plan.js";
+import { sliceShowCommand } from "./slice/show.js";
 import { submitArchitectureCommand } from "./subagent/submit-architecture.js";
 import { submitExploreCommand } from "./subagent/submit-explore.js";
 import { submitImplementationCommand } from "./subagent/submit-implementation.js";
@@ -52,6 +60,14 @@ export const mainCommand = defineCommand({
 		"epic:abandon": epicAbandonCommand,
 		"epic:add-verification": epicAddVerificationCommand,
 		"epic:update-verification": epicUpdateVerificationCommand,
+		"slice:create": sliceCreateCommand,
+		"slice:list": sliceListCommand,
+		"slice:show": sliceShowCommand,
+		"slice:plan": slicePlanCommand,
+		"slice:refine-plan": sliceRefinePlanCommand,
+		"slice:implement": sliceImplementCommand,
+		"slice:complete": sliceCompleteCommand,
+		"slice:abandon": sliceAbandonCommand,
 		"submit-plan": submitPlanCommand,
 		"submit-refinement": submitRefinementCommand,
 		"submit-implementation": submitImplementationCommand,
