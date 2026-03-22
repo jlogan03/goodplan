@@ -4,6 +4,21 @@ import { z } from "zod";
 export const timestampSchema = z.string().datetime();
 export type Timestamp = z.infer<typeof timestampSchema>;
 
+/** Score entry for refinement rounds */
+export const scoreEntrySchema = z.object({
+	round: z.number().int().positive(),
+	scores: z.record(z.string(), z.number()),
+});
+export type ScoreEntry = z.infer<typeof scoreEntrySchema>;
+
+/** Refinement state tracking */
+export const refinementSchema = z.object({
+	round: z.number().int().positive(),
+	maxRounds: z.number().int().positive(),
+	scoreHistory: z.array(scoreEntrySchema),
+});
+export type Refinement = z.infer<typeof refinementSchema>;
+
 /** Semver version string (e.g., "1.0.0") */
 export const versionSchema = z
 	.string()
