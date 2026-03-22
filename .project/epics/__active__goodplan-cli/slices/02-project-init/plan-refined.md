@@ -102,15 +102,15 @@ The `reduce()` function with just the INIT_PROJECT event. Pure functions, no I/O
 - [ ] `ls src/core/state/` — directory not found
 
 **After implementation** (should pass / show presence):
-- [ ] `bun test tests/unit/state/` — all state machine tests pass
-- [ ] `grep -r "from.*fs" src/core/state/` — returns nothing (purity check)
+- [x] `bun test tests/unit/state/` — all state machine tests pass
+- [x] `grep -r "from.*fs" src/core/state/` — returns nothing (purity check)
 
 ### Tasks
 
-- [ ] Create `src/core/state/reduce.ts` — `reduce(state: ProjectState, event: StateEvent): ProjectState | StateError`. Dispatch by `event.type`. For unknown event types, return `StateError` with `STATE_INVALID_TRANSITION`. `StateError` is a plain `{ code: string, message: string, detail?: Record<string, unknown> }` object (not a thrown error).
-- [ ] Create `src/core/state/transitions/init.ts` — INIT_PROJECT handler. Guard: `project.json` must not exist in state tree (check via `hasChild`); return `StateError` with code `STATE_ALREADY_INITIALIZED` on failure. Apply: produce new tree with `project.json` (name, version "1.0.0", null active pointers, timestamps), `epics/overview.json`, `slices/overview.json`, `quests/overview.json` (empty items arrays), `epics/`, `slices/`, `quests/` directory entries, `activity-log.jsonl` with init entry, `decisions.jsonl` (empty), `learnings.jsonl` (empty). Use `setEntry` to build the tree immutably.
-- [ ] Export `StateEvent`, `StateError`, and `isStateError` from `src/core/state/types.ts` (thin re-export layer from schemas). Use `export type` for `StateEvent` and `StateError` per `verbatimModuleSyntax: true`; use regular `export` for `isStateError` (it's a runtime function, not a type).
-- [ ] Write unit tests: INIT_PROJECT on ZERO_STATE → valid tree with all expected entries (including structural assertions on the activity log entry shape — verify ts, phase, scope, status, summary fields via plain object shape checks, not Zod imports), INIT_PROJECT on existing project → StateError with STATE_ALREADY_INITIALIZED, reduce with unknown event type → STATE_INVALID_TRANSITION, purity check (same inputs → same output)
+- [x] Create `src/core/state/reduce.ts` — `reduce(state: ProjectState, event: StateEvent): ProjectState | StateError`. Dispatch by `event.type`. For unknown event types, return `StateError` with `STATE_INVALID_TRANSITION`. `StateError` is a plain `{ code: string, message: string, detail?: Record<string, unknown> }` object (not a thrown error).
+- [x] Create `src/core/state/transitions/init.ts` — INIT_PROJECT handler. Guard: `project.json` must not exist in state tree (check via `hasChild`); return `StateError` with code `STATE_ALREADY_INITIALIZED` on failure. Apply: produce new tree with `project.json` (name, version "1.0.0", null active pointers, timestamps), `epics/overview.json`, `slices/overview.json`, `quests/overview.json` (empty items arrays), `epics/`, `slices/`, `quests/` directory entries, `activity-log.jsonl` with init entry, `decisions.jsonl` (empty), `learnings.jsonl` (empty). Use `setEntry` to build the tree immutably.
+- [x] Export `StateEvent`, `StateError`, and `isStateError` from `src/core/state/types.ts` (thin re-export layer from schemas). Use `export type` for `StateEvent` and `StateError` per `verbatimModuleSyntax: true`; use regular `export` for `isStateError` (it's a runtime function, not a type).
+- [x] Write unit tests: INIT_PROJECT on ZERO_STATE → valid tree with all expected entries (including structural assertions on the activity log entry shape — verify ts, phase, scope, status, summary fields via plain object shape checks, not Zod imports), INIT_PROJECT on existing project → StateError with STATE_ALREADY_INITIALIZED, reduce with unknown event type → STATE_INVALID_TRANSITION, purity check (same inputs → same output)
 
 ### Verification
 `bun test tests/unit/state/` passes. `grep -r "from.*fs" src/core/state/` returns nothing. Calling `reduce(ZERO_STATE, { type: "INIT_PROJECT", name: "test" })` returns a complete initial project tree.
