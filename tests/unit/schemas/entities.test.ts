@@ -194,7 +194,10 @@ describe("sliceSchema", () => {
 		expect(
 			sliceSchema.safeParse({
 				...validSlice,
-				deferred: ["item1", "item2"],
+				deferred: [
+					{ description: "Add caching", targetSlice: "03-caching" },
+					{ description: "Add logging", targetSlice: "04-logging" },
+				],
 			}).success,
 		).toBe(true);
 	});

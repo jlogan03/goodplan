@@ -8,8 +8,8 @@ type DataErrorCode =
 	| "DATA_VALIDATION_ERROR"
 	| "DATA_WRITE_ERROR";
 
-/** Error codes for the STATE namespace (state machine). Expand as needed. */
-type StateErrorCode = "STATE_ALREADY_INITIALIZED" | "STATE_INVALID_TRANSITION";
+/** Error codes for the STATE namespace — imported from state-events.ts (single source of truth). */
+import type { StateErrorCode } from "../schemas/state-events.js";
 
 /** Error codes for the VALIDATION namespace (input validation). Expand as needed. */
 type ValidationErrorCode =

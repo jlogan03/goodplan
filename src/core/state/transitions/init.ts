@@ -3,8 +3,8 @@
  * Guard: project.json must not already exist.
  * Apply: produce initial project tree from zero state.
  */
-import type { ProjectState } from "../../data/tree.js";
-import { hasChild, setEntry } from "../../data/tree.js";
+import type { ProjectState } from "../../tree.js";
+import { hasChild, setEntry } from "../../tree.js";
 import type { StateEvent, StateError } from "../types.js";
 
 type InitProjectEvent = Extract<StateEvent, { type: "INIT_PROJECT" }>;

@@ -101,7 +101,11 @@ function processJsonEntry(
 	newContent: unknown,
 	jsonWrites: PendingWrite[],
 ): void {
-	// Validate against schema before writing
+	// Validate against schema before writing.
+	// Use result.data (Zod-parsed output) to ensure on-disk matches what Zod produced
+	// (strips unknown keys, applies coercions). This prevents in-memory/on-disk divergence
+	// after a subsequent assembleState() re-parses.
+	let contentToWrite: unknown = newContent;
 	const schema = findSchema(relativePath);
 	if (schema !== undefined) {
 		const result = schema.safeParse(newContent);
@@ -112,12 +116,13 @@ function processJsonEntry(
 				{ file: relativePath },
 			);
 		}
+		contentToWrite = result.data;
 	}
 
 	// Check if content actually changed
 	if (oldEntry !== undefined && oldEntry.type === "json") {
 		const oldJson = deterministicStringify(oldEntry.content);
-		const newJson = deterministicStringify(newContent);
+		const newJson = deterministicStringify(contentToWrite);
 		if (oldJson === newJson) {
 			debug(`unchanged json: ${relativePath}`);
 			return;
@@ -125,7 +130,7 @@ function processJsonEntry(
 	}
 
 	debug(`write json: ${relativePath}`);
-	const content = `${deterministicStringify(newContent)}\n`;
+	const content = `${deterministicStringify(contentToWrite)}\n`;
 	jsonWrites.push({ absPath, content, relativePath });
 }
 
@@ -143,7 +148,9 @@ function processJsonlEntry(
 			: 0;
 
 	// Only validate NEW entries — existing ones were validated during assembleState
-	// and are trusted unchanged per INV-003 (reducer purity)
+	// and are trusted unchanged per INV-003 (reducer purity).
+	// Use result.data (Zod-parsed output) to ensure on-disk matches what Zod produced.
+	const validatedContent = [...newContent];
 	if (schema !== undefined) {
 		for (let i = oldLength; i < newContent.length; i++) {
 			const item = newContent[i];
@@ -155,17 +162,18 @@ function processJsonlEntry(
 					{ file: relativePath, line: i + 1 },
 				);
 			}
+			validatedContent[i] = result.data;
 		}
 	}
 
 	if (oldEntry !== undefined && oldEntry.type === "jsonl") {
-		if (newContent.length <= oldLength) {
+		if (validatedContent.length <= oldLength) {
 			debug(`unchanged jsonl: ${relativePath}`);
 			return;
 		}
 
 		// Append only new lines — deferred to flush phase
-		const newLines = newContent
+		const newLines = validatedContent
 			.slice(oldLength)
 			.map((item) => deterministicStringifyCompact(item));
 		const appendContent = newLines.map((line) => `${line}\n`).join("");
@@ -176,8 +184,8 @@ function processJsonlEntry(
 	}
 
 	// New JSONL file — write in full
-	debug(`write jsonl: ${relativePath} (${newContent.length} entries)`);
-	const content = newContent
+	debug(`write jsonl: ${relativePath} (${validatedContent.length} entries)`);
+	const content = validatedContent
 		.map((item) => `${deterministicStringifyCompact(item)}\n`)
 		.join("");
 	jsonlWrites.push({ absPath, content, relativePath });

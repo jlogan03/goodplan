@@ -212,11 +212,23 @@ describe("status command integration", () => {
 		expect(JSON.parse(outputStr)).toBe("query-test");
 	});
 
-	it("throws error when --query used without --json", async () => {
+	it("--query without --json succeeds (--query implies --json)", async () => {
 		createProject("no-json-query");
 
-		await expect(runStatus({ query: ".project.name" })).rejects.toThrow(
-			"--query requires --json flag",
-		);
+		const chunks: string[] = [];
+		const origWrite = process.stdout.write;
+		process.stdout.write = ((chunk: string) => {
+			chunks.push(chunk);
+			return true;
+		}) as typeof process.stdout.write;
+
+		try {
+			await runStatus({ query: ".project.name" });
+		} finally {
+			process.stdout.write = origWrite;
+		}
+
+		const outputStr = chunks.join("").trim();
+		expect(JSON.parse(outputStr)).toBe("no-json-query");
 	});
 });

@@ -63,7 +63,7 @@ describe("commitState", () => {
 					contents: {
 						"overview.json": {
 							type: "json",
-							content: { items: [], created: ts, updated: ts },
+							content: { items: [] },
 						},
 					},
 				},
@@ -292,7 +292,7 @@ describe("commitState", () => {
 					contents: {
 						"overview.json": {
 							type: "json",
-							content: { items: [], created: ts, updated: ts },
+							content: { items: [] },
 						},
 					},
 				},

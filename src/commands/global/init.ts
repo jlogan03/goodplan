@@ -30,7 +30,11 @@ export const initCommand = defineCommand({
 		const cwd = process.cwd();
 		const projectDirPath = path.join(cwd, ".project");
 
-		// Check cwd directly — do NOT use resolveProjectDir() which walks up
+		// Fast-fail: check cwd directly before assembleState() to avoid the overhead
+		// of building a full state tree for the common "already initialized" case.
+		// This duplicates the state machine's INIT_PROJECT guard (which checks project.json)
+		// intentionally — per tracer bullet learning, the directory check is a cheap pre-filter.
+		// Do NOT use resolveProjectDir() here, which walks up the directory tree.
 		if (fs.existsSync(projectDirPath)) {
 			throw new GoodplanError(
 				"STATE_ALREADY_INITIALIZED",

@@ -116,7 +116,7 @@ export function applyQuery(data: unknown, expr: string): unknown {
  *
  * Flags:
  * - --json: output as structured JSON
- * - --query <expr>: apply jq expression to JSON output (requires --json)
+ * - --query <expr>: apply jq expression to JSON output (implies --json)
  */
 export const statusCommand = defineCommand({
 	meta: {
@@ -127,20 +127,19 @@ export const statusCommand = defineCommand({
 		...globalArgs,
 		query: {
 			type: "string",
-			description: "jq expression to filter JSON output (requires --json)",
+			description: "jq expression to filter JSON output (implies --json)",
 			required: false,
 		},
 	},
 	setup() {},
 	async run({ args }) {
-		// --query requires --json
-		if (args.query && !args.json) {
-			throw new GoodplanError("VALIDATION_INVALID_INPUT", "--query requires --json flag");
-		}
+		// --query implies --json per architecture (commands-api.md): the intermediate
+		// representation is always JSON, and query results are printed as JSON.
+		const useJson = args.json || Boolean(args.query);
 
 		const status = buildStatusResult();
 
-		if (args.json) {
+		if (useJson) {
 			if (args.query) {
 				const result = applyQuery(status, args.query);
 				process.stdout.write(`${deterministicStringify(result)}\n`);
