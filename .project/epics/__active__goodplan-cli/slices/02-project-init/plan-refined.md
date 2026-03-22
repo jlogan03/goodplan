@@ -1,5 +1,8 @@
 # Plan: Project Init — Full Stack
 
+Status: COMPLETE
+Completed: 2026-03-22
+
 ## Overview
 
 Prove the recursive tree state model works end-to-end by refactoring `goodplan init` to go through the complete load→reduce→commit cycle. Builds the core infrastructure every subsequent slice depends on: `ProjectState` recursive tree types, `assembleState()` with zero-state support, `commitState()` with recursive tree diff and filesystem materialization, all Zod entity schemas, a state machine scaffold with `INIT_PROJECT`, and the RPC wiring that connects them.
