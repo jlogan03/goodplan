@@ -66,9 +66,9 @@ goodplan epic:show --epic <name>
 goodplan epic:create
 goodplan epic:explore --epic <name>
 goodplan epic:define-architecture --epic <name>
-goodplan epic:refine-architecture --epic <name> [--override]
+goodplan epic:refine-architecture --epic <name>
 goodplan epic:define-slices --epic <name>
-goodplan epic:refine-slices --epic <name> [--override]
+goodplan epic:refine-slices --epic <name>
 goodplan epic:activate --epic <name>
 goodplan epic:complete --epic <name>
 goodplan epic:abandon --epic <name> --reason <text>
@@ -83,7 +83,7 @@ goodplan slice:list [--epic <name>]
 goodplan slice:show --slice <name>
 goodplan slice:create --epic <name>
 goodplan slice:plan --slice <name>
-goodplan slice:refine-plan --slice <name> [--override]
+goodplan slice:refine-plan --slice <name>
 goodplan slice:implement --slice <name>
 goodplan slice:complete --slice <name>
 goodplan slice:abandon --slice <name> --reason <text>
@@ -96,7 +96,7 @@ goodplan quest:list
 goodplan quest:show --quest <name>
 goodplan quest:create
 goodplan quest:plan --quest <name>
-goodplan quest:refine-plan --quest <name> [--override]
+goodplan quest:refine-plan --quest <name>
 goodplan quest:implement --quest <name>
 goodplan quest:complete --quest <name>
 goodplan quest:abandon --quest <name> --reason <text>
@@ -181,6 +181,8 @@ goodplan submit-refine-slices --epic <name>
   ]
 }
 ```
+
+`architectureDelta` entries in stdin omit `ts` — the RPC layer injects `ts` (ISO 8601 timestamp) before building the state event.
 
 **`quest:complete`** — same shape as `slice:complete` but without `deferred` (quests don't route deferred work to slices):
 
@@ -291,13 +293,13 @@ These flags are meaningful only on workflow and sub-agent commands. Passing them
 | Flag | Type | Applicable commands | Description |
 |---|---|---|---|
 | `--inline` | boolean or number | `start-*`, workflow `begin`/`complete` commands | Include inlined content in context bundles. `--inline` uses the default budget (~20-30KB); `--inline=<bytes>` overrides it. |
-| `--override` | boolean | `submit-refinement`, `epic:refine-architecture`, `epic:refine-slices`, `slice:refine-plan`, `quest:refine-plan` | Bypass score threshold circuit breaker on refinement commands. Reaches the state machine via `StateEvent.override`. |
+| `--override` | boolean | `submit-refinement`, `submit-refine-architecture`, `submit-refine-slices` | Cross-cutting refinement pattern: bypasses score threshold circuit breaker. Flows through `WorkflowOptions.override` → `StateEvent.override` field on all refinement completion events. The state machine checks `override` in guards alongside score thresholds. |
 
 ## Contracts
 
 ### Help Text Quality
 
-Every citty command definition must include a `description` for the command itself and for each flag. The auto-generated `--help` output must be self-documenting — bare-bones help with unlabeled flags is not acceptable.
+Every citty command definition must include a `description` for the command itself and for each flag. The auto-generated `--help` output must be self-documenting — bare-bones help with unlabeled flags is not acceptable. For an LLM-first CLI, help text should include: the expected stdin payload shape (if any), the state preconditions for the command, and the resulting state transition. LLMs use `schema` for programmatic discovery; `--help` is for human operators and debugging.
 
 ### No Business Logic
 
@@ -349,7 +351,7 @@ Priority: 3 (implement after State Machine and Data Layer)
 ### Read-only commands are read-only
 
 - **Test file:** candidate — not yet written
-- **Verifies:** All `list` and `show` commands only call Data Layer read functions — no `writeEntity`, `commitState`, or RPC mutations
+- **Verifies:** All `list` and `show` commands only call Data Layer read functions — no `commitState` or RPC mutations
 
 ### Every error produces structured JSON and correct exit code
 

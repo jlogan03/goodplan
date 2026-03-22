@@ -1,15 +1,20 @@
 # Architecture Refinement Goal
 
-Good architecture for goodplan-cli means:
+## Focus: Recursive Tree State Model Integration
 
-## Primary Quality Signals
-- **Deep modules**: Each subsystem hides significant complexity behind a small interface. The state machine's single `reduce()` entry point is the gold standard.
-- **Boundary quality**: Boundaries align with areas of likely change. Modifications in one subsystem don't ripple across others.
-- **Pure state machine**: All transition logic is testable without I/O. Zero dependencies.
-- **Simplicity**: Actively look for opportunities to simplify or reduce complexity. Every abstraction must earn its place.
+The primary goal of this refinement round is ensuring the recently introduced data model change — from flat key map to recursive `DirectoryEntry` tree with typed `StateEntry` nodes (json, jsonl, markdown, directory) — is well integrated across ALL architecture files. Specifically:
 
-## Secondary Quality Signals
-- **Decision alignment**: Architecture respects all 13 active decisions in `.project/decisions/`.
-- **Completeness**: Every capability in the design spec is addressed (entity CRUD, workflow transitions, context bundling, status).
-- **Data flow clarity**: How state flows through load → reduce → commit is unambiguous.
-- **Unidirectional dependencies**: No layer reaches upward.
+1. The data model (`data-model.md`) is internally consistent and complete
+2. The state machine API, RPC layer, commands, flows, and invariants are all updated to work with the tree model
+3. The simplified data layer API (3 core functions: assembleState, loadState, commitState) is coherent with the state machine and RPC layer contracts
+4. Any necessary changes to accommodate the new model are identified and applied
+5. Opportunities to leverage the tree model (e.g., jq navigation, simpler guards, cleaner context bundling) are surfaced
+
+## Quality Signals (unchanged from prior round)
+- **Deep modules**: Small interfaces hiding significant complexity
+- **Boundary quality**: Boundaries align with areas of likely change
+- **Pure state machine**: All transition logic testable without I/O
+- **Simplicity**: Every abstraction must earn its place
+- **Decision alignment**: Architecture respects all active decisions
+- **Data flow clarity**: load → reduce → commit is unambiguous
+- **Unidirectional dependencies**: No layer reaches upward

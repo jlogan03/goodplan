@@ -15,7 +15,7 @@ function reduce(
 ): ProjectState | StateError;
 ```
 
-- `state`: the unified state object (all JSON entities + derived fields)
+- `state`: the unified state object (recursive tree of all project files)
 - `event`: discriminated union — the transition being requested plus its typed payload
 - Returns: new `ProjectState` with all changes applied, or a `StateError`
 
@@ -89,7 +89,7 @@ interface DeferredItem {
 interface Verification {
   description: string;        // what to verify
   status: 'pending' | 'passed' | 'failed';
-  addedDuring: string;        // phase when added (e.g., "slicing", "exploring")
+  addedDuring: string;        // phase when added (e.g., "defining-slices", "exploring")
   modifiedDuring: string | null;  // phase when last modified, null if never
 }
 
@@ -103,12 +103,12 @@ interface ArchitectureDelta {
   subsystem: string;          // which subsystem was changed
   type: 'add' | 'modify' | 'remove';
   description: string;        // what changed
-  ts: string;                 // ISO 8601 timestamp
+  ts: string;                 // ISO 8601 timestamp — injected by RPC layer, not caller-supplied
 }
 
 interface DecisionEntry {
   id: string;                 // e.g., "2026-03-20-layered-architecture"
-  status: 'active' | 'superseded' | 'rejected';
+  status: 'active' | 'superseded' | 'revisiting';
   domain: string;             // e.g., "architecture", "testing", "deployment"
   title: string;
   summary: string;
@@ -122,15 +122,15 @@ interface DecisionEntry {
 Centralized status values for each entity type. The fitness function "every (status, event) pair is handled" enumerates from these sets.
 
 ```typescript
-type EpicStatus = 'created' | 'exploring' | 'explored' | 'architecting' | 'architected'
-  | 'refining-architecture' | 'slicing' | 'sliced' | 'refining-slices' | 'ready'
-  | 'executing' | 'complete' | 'abandoned';
+type EpicStatus = 'created' | 'exploring' | 'explored' | 'defining-architecture' | 'architecture-defined'
+  | 'refining-architecture' | 'architecture-refined' | 'defining-slices' | 'slices-defined'
+  | 'refining-slices' | 'slices-refined' | 'activated' | 'completed' | 'abandoned';
 
-type SliceStatus = 'defined' | 'planning' | 'planned' | 'refining' | 'plan-refined'
-  | 'implementing' | 'implemented' | 'complete' | 'abandoned';
+type SliceStatus = 'created' | 'planning' | 'plan-created' | 'refining' | 'plan-refined'
+  | 'implementing' | 'implementation-complete' | 'completed' | 'abandoned';
 
-type QuestStatus = 'created' | 'planning' | 'planned' | 'refining' | 'plan-refined'
-  | 'implementing' | 'implemented' | 'complete' | 'abandoned';
+type QuestStatus = 'created' | 'planning' | 'plan-created' | 'refining' | 'plan-refined'
+  | 'implementing' | 'implementation-complete' | 'completed' | 'abandoned';
 ```
 
 ### State Error
@@ -213,25 +213,27 @@ The unified state object allows the state machine to enforce cross-entity rules 
 - **Implicit transitions**: after completing a slice, check if all sibling slices are complete and flag it in the returned state
 - **Deferred work routing**: completing a slice can modify another slice's deferred array
 - **Verification criteria gate**: can't activate an epic without verification criteria
-- **Epic completion guard**: `COMPLETE_EPIC` requires all `verificationResults` entries to have `passed: true`. If any entry has `passed: false`, the event is rejected with `STATE_VERIFICATION_FAILED` — the epic stays in `executing`. The orchestrator must re-verify failing items and resubmit. This mirrors the slice guard rule where `verificationPassed === false` blocks `COMPLETE_SLICE`.
+- **Epic completion guard**: `COMPLETE_EPIC` requires all `verificationResults` entries to have `passed: true`. If any entry has `passed: false`, the event is rejected with `STATE_VERIFICATION_FAILED` — the epic stays in `activated`. The orchestrator must re-verify failing items and resubmit. This mirrors the slice guard rule where `verificationPassed === false` blocks `COMPLETE_SLICE`.
 
 ### State Key Dependencies
 
 Each event type reads only a subset of the unified state object. Documenting this enables future partial loading if `ProjectState` grows large.
 
+All paths below are `resolve()` paths into the `ProjectState` tree.
+
 | Event Type | Reads | Writes |
 |---|---|---|
 | `CREATE_EPIC` | `epics/overview.json` | `epics/<name>/epic.json`, `epics/overview.json` |
 | `BEGIN_EXPLORE` | `epics/<name>/epic.json` | `epics/<name>/epic.json`, `activity-log.jsonl` |
-| `COMPLETE_EXPLORE` | `epics/<name>/epic.json`, `_derived` | `epics/<name>/epic.json`, `activity-log.jsonl` |
+| `COMPLETE_EXPLORE` | `epics/<name>/epic.json`, `epics/<name>/research/` | `epics/<name>/epic.json`, `activity-log.jsonl` |
 | `BEGIN_ARCHITECTURE` | `epics/<name>/epic.json` | `epics/<name>/epic.json`, `activity-log.jsonl` |
-| `COMPLETE_ARCHITECTURE` | `epics/<name>/epic.json`, `_derived` | `epics/<name>/epic.json`, `activity-log.jsonl` |
+| `COMPLETE_ARCHITECTURE` | `epics/<name>/epic.json`, `epics/<name>/architecture/` | `epics/<name>/epic.json`, `activity-log.jsonl` |
 | `ACTIVATE_EPIC` | `project.json`, `epics/<name>/epic.json` | `project.json`, `epics/<name>/epic.json`, `activity-log.jsonl` |
 | `CREATE_SLICE` | `epics/<name>/epic.json`, `slices/overview.json` | `slices/<name>/slice.json`, `slices/overview.json`, `epics/<name>/epic.json` |
-| `BEGIN_PLAN` | `slices/<name>/slice.json`, `_derived` | `slices/<name>/slice.json`, `activity-log.jsonl` |
-| `COMPLETE_PLAN` | `slices/<name>/slice.json`, `_derived` | `slices/<name>/slice.json`, `activity-log.jsonl` |
+| `BEGIN_PLAN` | `project.json`, `slices/<name>/slice.json`, `slices/overview.json` | `project.json`, `slices/<name>/slice.json`, `activity-log.jsonl` |
+| `COMPLETE_PLAN` | `slices/<name>/slice.json`, `slices/<name>/` | `slices/<name>/slice.json`, `activity-log.jsonl` |
 | `COMPLETE_REFINEMENT_ROUND` | `slices/<name>/slice.json` | `slices/<name>/slice.json`, `activity-log.jsonl` |
-| `COMPLETE_SLICE` | `slices/<name>/slice.json`, `slices/overview.json`, `epics/<epic>/epic.json` | `slices/<name>/slice.json`, `slices/overview.json`, `slices/<name>/learnings.jsonl`, `slices/<name>/architecture-deltas.jsonl`, `learnings.jsonl`, `activity-log.jsonl` |
+| `COMPLETE_SLICE` | `project.json`, `slices/<name>/slice.json`, `slices/overview.json`, `epics/<epic>/epic.json` | `project.json`, `slices/<name>/slice.json`, `slices/overview.json`, `slices/<name>/learnings.jsonl`, `slices/<name>/architecture-deltas.jsonl`, `learnings.jsonl`, `activity-log.jsonl` |
 | `COMPLETE_EPIC` | `epics/<name>/epic.json`, `project.json`, `slices/overview.json` | `epics/<name>/epic.json`, `project.json`, `activity-log.jsonl` |
 | `CREATE_DECISION` | `decisions.jsonl` | `decisions.jsonl`, `activity-log.jsonl` |
 | `UPDATE_DECISION` | `decisions.jsonl` | `decisions.jsonl`, `activity-log.jsonl` |
@@ -242,22 +244,22 @@ Quest events mirror slice events but operate on `quests/<name>/` paths. Represen
 | Event Type | Reads | Writes |
 |---|---|---|
 | `CREATE_QUEST` | `quests/overview.json` | `quests/<name>/quest.json`, `quests/overview.json` |
-| `BEGIN_QUEST_PLAN` | `quests/<name>/quest.json`, `_derived` | `quests/<name>/quest.json`, `activity-log.jsonl` |
-| `COMPLETE_QUEST_PLAN` | `quests/<name>/quest.json`, `_derived` | `quests/<name>/quest.json`, `activity-log.jsonl` |
+| `BEGIN_QUEST_PLAN` | `project.json`, `quests/<name>/quest.json`, `quests/<name>/` | `project.json`, `quests/<name>/quest.json`, `activity-log.jsonl` |
+| `COMPLETE_QUEST_PLAN` | `quests/<name>/quest.json`, `quests/<name>/` | `quests/<name>/quest.json`, `activity-log.jsonl` |
 | `COMPLETE_QUEST_REFINEMENT_ROUND` | `quests/<name>/quest.json` | `quests/<name>/quest.json`, `activity-log.jsonl` |
-| `COMPLETE_QUEST` | `quests/<name>/quest.json`, `quests/overview.json` | `quests/<name>/quest.json`, `quests/overview.json`, `quests/<name>/learnings.jsonl`, `quests/<name>/architecture-deltas.jsonl`, `learnings.jsonl`, `activity-log.jsonl` |
+| `COMPLETE_QUEST` | `project.json`, `quests/<name>/quest.json`, `quests/overview.json` | `project.json`, `quests/<name>/quest.json`, `quests/overview.json`, `quests/<name>/learnings.jsonl`, `quests/<name>/architecture-deltas.jsonl`, `learnings.jsonl`, `activity-log.jsonl` |
 
 Other events follow the same pattern: they read the target entity's JSON plus any cross-entity dependencies (e.g., sequential slice enforcement reads sibling slice statuses).
 
 ### Directory-Based Guards (replaces _derived)
 
-File existence checks use directory `files` arrays via `dirHasFile(state, dirPath, filename)` instead of a separate `_derived` map. The state machine reads directory entries to validate content prerequisites — it never modifies them. The data layer recomputes directory `files` arrays from the filesystem on each `loadState()` call.
+Content existence checks use `hasChild(state, dirPath, childName)` to navigate the recursive `DirectoryEntry.contents` tree. The state machine reads directory entries to validate content prerequisites — it never modifies them.
 
 Key guards:
-- `dirHasFile(state, "slices/<name>", "plan.md")` — guards `COMPLETE_PLAN`
-- `dirHasFile(state, "slices/<name>", "plan-refined.md")` — guards `BEGIN_IMPLEMENTATION`
-- `dirHasFile(state, "epics/<name>/architecture", "_overview.md")` — guards `COMPLETE_ARCHITECTURE`
-- `dirHasFile(state, "epics/<name>/research", ...)` or checking `files.length > 0` — guards `COMPLETE_EXPLORE`
+- `hasChild(state, "slices/<name>", "plan.md")` — guards `COMPLETE_PLAN`
+- `hasChild(state, "slices/<name>", "plan-refined.md")` — guards `BEGIN_IMPLEMENTATION`
+
+These guards are defined in transition-tables.md (source of truth). Only guards listed there are implemented.
 
 ## Dependencies
 

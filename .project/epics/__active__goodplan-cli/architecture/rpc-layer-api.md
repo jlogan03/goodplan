@@ -10,9 +10,9 @@ Workflow orchestration layer. Coordinates the State Machine and Data Layer to ex
 
 ```typescript
 function begin(phase: BeginPhase, target: Target, options: WorkflowOptions): BeginResult;
-function complete(phase: BeginPhase, target: Target, input: CompleteInput, options: WorkflowOptions): CompleteResult;
+function complete(target: Target, input: CompleteInput, options: WorkflowOptions): CompleteResult;
 function submit(phase: SubmitPhase, target: Target, content: SubmitInput, options: WorkflowOptions): SubmitResult;
-function startContext(phase: SubmitPhase, target: Target, options: WorkflowOptions): ContextResult;
+function startContext(phase: SubmitPhase, target: Target, options: WorkflowOptions): ContextBundle;
 function status(options: StatusOptions): StatusResult;
 ```
 
@@ -33,10 +33,10 @@ type BeginPhase =
   | 'plan'
   | 'refine-plan'
   | 'implement'
-  | 'complete'
   | 'abandon'
   | 'add-verification'
   | 'update-verification'
+  | 'update-decision'
   | 'rollup';
 
 type SubmitPhase =
@@ -52,7 +52,8 @@ type SubmitPhase =
 type Target =
   | { type: 'epic'; name: string }
   | { type: 'slice'; name: string }
-  | { type: 'quest'; name: string };
+  | { type: 'quest'; name: string }
+  | { type: 'decision'; id: string };
 
 // Explicit mapping: (function, phase, target.type) → StateEvent
 // BeginPhase mappings:
@@ -67,6 +68,18 @@ type Target =
 //   begin('plan', {type:'quest'})         → BEGIN_QUEST_PLAN
 //   begin('implement', {type:'slice'})    → BEGIN_IMPLEMENTATION
 //   begin('implement', {type:'quest'})    → BEGIN_QUEST_IMPLEMENTATION
+//   begin('refine-plan', {type:'slice'})  → BEGIN_REFINEMENT
+//   begin('refine-plan', {type:'quest'})  → BEGIN_QUEST_REFINEMENT
+//   begin('create', {type:'slice'})       → CREATE_SLICE
+//   begin('create', {type:'quest'})       → CREATE_QUEST
+//   begin('abandon', {type:'epic'})       → ABANDON_EPIC
+//   begin('abandon', {type:'slice'})      → ABANDON_SLICE
+//   begin('abandon', {type:'quest'})      → ABANDON_QUEST
+//   begin('add-verification', {type:'epic'}) → ADD_VERIFICATION
+//   begin('update-verification', {type:'epic'}) → UPDATE_VERIFICATION
+//   begin('create', {type:'decision'})     → CREATE_DECISION
+//   begin('update-decision', {type:'decision'}) → UPDATE_DECISION
+//   begin('rollup', ...)                  → ROLLUP_LEARNINGS
 // SubmitPhase mappings:
 //   submit('plan', {type:'slice'})        → COMPLETE_PLAN
 //   submit('plan', {type:'quest'})        → COMPLETE_QUEST_PLAN
@@ -87,12 +100,13 @@ type Target =
 |---|---|---|
 | `epic:create`, `slice:create`, `quest:create`, `decision:create` | `begin('create', ...)` | Entity creation |
 | `epic:explore`, `epic:define-architecture`, `epic:refine-architecture`, `epic:define-slices`, `epic:refine-slices`, `epic:activate`, `slice:plan`, `slice:refine-plan`, `slice:implement`, `quest:plan`, `quest:refine-plan`, `quest:implement` | `begin(phase, ...)` | Phase initiation — transitions entity into a new phase |
-| `epic:complete`, `slice:complete`, `quest:complete` | `complete(phase, ...)` | Entity completion — requires verification input |
-| `epic:abandon`, `slice:abandon`, `quest:abandon` | `complete('abandon', ...)` | Entity abandonment |
+| `epic:complete`, `slice:complete`, `quest:complete` | `complete(target, ...)` | Entity completion — requires verification input |
+| `epic:abandon`, `slice:abandon`, `quest:abandon` | `begin('abandon', ...)` | Entity abandonment |
 | `submit-plan`, `submit-refinement`, `submit-implementation`, `submit-explore`, `submit-architecture`, `submit-slices`, `submit-refine-architecture`, `submit-refine-slices` | `submit(phase, ...)` | Sub-agent content submission — writes content + triggers state event |
 | `start-plan`, `start-refinement`, `start-implementation`, `start-explore`, `start-architecture`, `start-slices`, `start-refine-architecture`, `start-refine-slices` | `startContext(phase, ...)` | Read-only context bundling for sub-agents |
 | `status` | `status(...)` | Read-only status query |
-| `decision:update`, `epic:add-verification`, `epic:update-verification`, `learning:rollup` | `begin(phase, ...)` | Cross-cutting mutations |
+| `decision:update` | `begin('update-decision', {type:'decision', id})` | Decision update |
+| `epic:add-verification`, `epic:update-verification`, `learning:rollup` | `begin(phase, ...)` | Cross-cutting mutations |
 
 Each mutating operation follows the same pattern:
 1. Load state via Data Layer (`loadState()`)
@@ -124,28 +138,32 @@ interface WorkflowOptions {
 type SubmitInput =
   // Plan phases: sub-agent writes plan markdown directly to filesystem.
   // Submit carries no content — triggers COMPLETE_PLAN / COMPLETE_QUEST_PLAN.
-  | { phase: 'plan'; learnings?: Learning[] }
+  | { phase: 'plan' }
   // Refinement phases: sub-agent writes revised plan to filesystem.
   // Submit carries scores — triggers COMPLETE_REFINEMENT_ROUND / COMPLETE_QUEST_REFINEMENT_ROUND.
-  | { phase: 'refinement'; scores: Record<string, number>; learnings?: Learning[] }
+  | { phase: 'refinement'; scores: Record<string, number> }
   // Implementation phases: sub-agent writes code directly.
   // Submit carries no content — triggers COMPLETE_IMPLEMENTATION / COMPLETE_QUEST_IMPLEMENTATION.
-  | { phase: 'implementation'; learnings?: Learning[] }
+  | { phase: 'implementation' }
   // Explore phase: sub-agent writes research/brainstorm markdown to filesystem.
   // Submit carries no content — triggers COMPLETE_EXPLORE.
-  | { phase: 'explore'; learnings?: Learning[] }
+  | { phase: 'explore' }
   // Architecture phase: sub-agent writes architecture markdown to filesystem.
   // Submit carries no content — triggers COMPLETE_ARCHITECTURE.
-  | { phase: 'architecture'; learnings?: Learning[] }
+  | { phase: 'architecture' }
   // Slices phase: sub-agent writes slice definitions to filesystem.
   // Submit carries no content — triggers COMPLETE_SLICING.
-  | { phase: 'slices'; learnings?: Learning[] }
+  | { phase: 'slices' }
   // Refine-architecture phase: sub-agent writes revised architecture to filesystem.
   // Submit carries scores — triggers COMPLETE_REFINE_ARCHITECTURE.
-  | { phase: 'refine-architecture'; scores: Record<string, number>; learnings?: Learning[] }
+  | { phase: 'refine-architecture'; scores: Record<string, number> }
   // Refine-slices phase: sub-agent writes revised slices to filesystem.
   // Submit carries scores — triggers COMPLETE_REFINE_SLICES.
-  | { phase: 'refine-slices'; scores: Record<string, number>; learnings?: Learning[] };
+  | { phase: 'refine-slices'; scores: Record<string, number> };
+
+// Learnings are captured only at entity completion (via CompleteInput),
+// not during intermediate submit phases. This keeps all learning persistence
+// within the state machine per INV-001.
 
 interface SubmitResult {
   entity: string;           // what was submitted
@@ -178,12 +196,29 @@ Validates the transition, updates state, optionally returns context bundle. Used
 ### Complete
 
 ```typescript
-interface CompleteInput {
-  verificationPassed: boolean;
-  deferred?: DeferredItem[];
-  learnings?: Learning[];
-  architectureDelta?: ArchitectureDelta[];  // maps to COMPLETE_SLICE.architectureDelta
-}
+// Discriminated union — epic completion requires VerificationResult[] while
+// slice/quest completion uses a boolean assertion. The `type` field matches
+// the Target.type used in the complete() call.
+// Undefined array fields (deferred, learnings, architectureDelta) are coerced
+// to [] by the RPC layer before building the state event.
+type CompleteInput =
+  | {
+      type: 'epic';
+      verificationResults: VerificationResult[];  // maps to COMPLETE_EPIC.verificationResults
+    }
+  | {
+      type: 'slice';
+      verificationPassed: boolean;
+      deferred?: DeferredItem[];
+      learnings?: Learning[];
+      architectureDelta?: ArchitectureDelta[];  // maps to COMPLETE_SLICE.architectureDelta
+    }
+  | {
+      type: 'quest';
+      verificationPassed: boolean;
+      learnings?: Learning[];
+      architectureDelta?: ArchitectureDelta[];  // maps to COMPLETE_QUEST.architectureDelta
+    };
 
 // Canonical Learning type — used in CompleteInput and sub-agent submit commands.
 // The `rollupTo` array specifies which scopes this learning should be rolled up to.
@@ -226,7 +261,41 @@ interface ContextBundle {
 }
 ```
 
+### Supporting Types
+
+```typescript
+// File/directory paths returned in operation results. Keys are logical names
+// (e.g., "plan", "architecture", "research"), values are absolute filesystem paths.
+type PathReferences = Record<string, string>;
+
+// Projection of DecisionEntry for context bundles — omits detail fields.
+interface DecisionSummary {
+  id: string;
+  status: 'active' | 'superseded' | 'revisiting';
+  domain: string;
+  title: string;
+  summary: string;
+}
+
+// Projection of stored learning record for context bundles.
+interface LearningSummary {
+  category: 'domain' | 'worked' | 'didnt-work' | 'do-differently';
+  summary: string;
+  tags: string[];
+  source: string;
+}
+
+// Options for the status() function. Empty for now — reserved for future
+// domain-level filtering (e.g., scope). Output formatting (json, query)
+// is handled by the Commands layer's output() function.
+interface StatusOptions {}
+
+// startContext() returns ContextBundle directly — no alias needed.
+```
+
 Read-only. Used by `start-*` commands. Assembles the context bundle appropriate for the given phase. Each phase has a hardcoded priority list of content to include. With `--inline`, content is inlined in priority order up to the budget. Without it, only references are returned.
+
+**Tree traversal for directory references:** When a priority item references a directory (e.g., "current architecture"), the context module resolves it to a `DirectoryEntry` node via `resolve(state, path)` and then walks `DirectoryEntry.contents` recursively, collecting all `MarkdownEntry` children for inlining. JSON/JSONL entries within directories are not inlined — only markdown content is eligible.
 
 **Per-phase content priority:**
 
@@ -265,7 +334,7 @@ interface StatusResult {
 }
 ```
 
-Read-only. Derives status from the unified state object and `_derived` fields. Generates recommendations based on current state.
+Read-only. Derives status from the unified state tree by navigating `DirectoryEntry.contents` to count artifacts and reading entity JSON for status fields. Generates recommendations based on current state.
 
 ## Contracts
 

@@ -1,80 +1,129 @@
-# API Contract Review — Round 2
+# API Contract Review (Round 2)
 
-Reviewer focus: interface consistency, naming, ergonomics, error contracts across CLI commands and inter-subsystem APIs. Special attention to whether Round 1 CRITICAL issues were resolved.
+Reviewer: API Contract
+Scope: Entire architecture -- inter-subsystem contract coherence after tree model integration fixes
+Goal: Verify inter-subsystem contracts are coherent after tree model integration fixes.
 
-## Round 1 Resolution Check
+## Round 1 Fix Verification
 
-### CRIT-1 (Command surface inconsistency): RESOLVED
-The editor chose entity-namespaced commands (`slice:plan`, `epic:explore`) and created a new decision (`entity-namespaced-commands.md`) superseding the old `command-surface-conventions.md`. commands-api.md now consistently uses entity-namespaced verbs throughout. flows.md has been updated to match (e.g., `goodplan slice:plan --slice 01-auth`). The RPC layer retains its generic `begin(phase, target)` internal API, with commands-api.md providing an explicit command-to-StateEvent mapping table. This is clean — the command surface is entity-oriented while the internal dispatch remains phase-generic.
+All 11 issues from round 1 are resolved:
+- All `_derived` references removed (only the historical note in the section header remains)
+- `dirHasFile()` standardized to `hasChild()` everywhere
+- `getJson<T>()` and `getJsonl<T>()` return unwrapped types consistently across data-model.md and data-layer-api.md
+- State Key Dependencies table references tree paths, not `_derived`
+- "Free-Form Markdown" section correctly references `DirectoryEntry.contents` keys
+- `complete()` RPC function no longer takes a `BeginPhase` parameter -- signature is now `complete(target, input, options)`
+- `plan-refined.md` example entry uses `type: "markdown"`
+- Context bundling documents tree traversal for directory references (MarkdownEntry children)
+- Status enum values in state-machine-api.md match transition table status names
+- Schema registry path construction specified (forward-slash-separated, no leading slash)
+- `getMarkdown()` added to data-model.md
 
-### CRIT-2 (`--inline` naming): RESOLVED
-All files now consistently use `--inline`. The global flags table correctly shows `--inline` as `boolean or number`. The `WorkflowOptions` interface uses `inlineContext` (camelCase for the TS property — appropriate). conventions.md, commands-api.md, and rpc-layer-api.md all agree.
+## Issues
 
-## New Issues
+**[IMPORTANT] `CompleteInput` type cannot represent `COMPLETE_EPIC` payload**
 
-### IMPORTANT-01: `quest:plan` and `quest:implement` missing from quest lifecycle listing but `quest:refine-plan` is present
-**Severity:** IMPORTANT
-**File:** `architecture/commands-api.md`
+`rpc-layer-api.md` defines a single `CompleteInput` type used by `complete(target, input, options)`:
 
-The quest lifecycle section shows `quest:plan` and `quest:refine-plan` but the command-to-StateEvent mapping table has `quest:plan` mapping to `BEGIN_PLAN (quest variant)`. However, there is no `quest:implement` command listed in the quest lifecycle section, yet slices have `slice:implement`. Quests that need implementation have no command path. If quests intentionally skip implementation (they're research/exploration), this should be stated explicitly.
+```typescript
+interface CompleteInput {
+  verificationPassed: boolean;
+  deferred?: DeferredItem[];
+  learnings?: Learning[];
+  architectureDelta?: ArchitectureDelta[];
+}
+```
 
-### IMPORTANT-02: `learning:rollup` and `decision:create`/`decision:update` don't follow the entity-namespace pattern consistently
-**Severity:** IMPORTANT
-**File:** `architecture/commands-api.md`
+This works for `COMPLETE_SLICE` and `COMPLETE_QUEST` (which use `verificationPassed: boolean`). However, `COMPLETE_EPIC` (state-machine-api.md line 48) uses a fundamentally different payload:
 
-Under "Cross-cutting" commands:
-- `learning:rollup` uses entity namespace but is a workflow mutation (rolls up learnings across scopes). It has no StateEvent mapping in the table — `ROLLUP_LEARNINGS` exists in the state machine but the command-to-event table omits it.
-- `decision:create` and `decision:update` also lack StateEvent mappings. Decisions are entities, but do they go through the state machine? If they bypass it (like resource commands), they should be in the `resource:` namespace. If they mutate state, they need events.
+```typescript
+{ type: 'COMPLETE_EPIC'; epic: string; verificationResults: VerificationResult[] }
+```
 
-This creates ambiguity about whether cross-cutting commands follow the "all mutations go through the state machine" invariant (INV-001).
+There is no way to pass `verificationResults` through `CompleteInput`. The commands-api.md stdin example (lines 157-166) correctly shows the epic payload shape with `verificationResults`, and the transition table guard ("all verificationResults have passed: true") matches. Only the RPC layer's `CompleteInput` type is missing the field.
 
-### IMPORTANT-03: Sub-agent `start-*`/`submit-*` commands are global (no namespace) while entity commands are namespaced — inconsistent routing story
-**Severity:** IMPORTANT
-**File:** `architecture/commands-api.md`
+Fix: Add `verificationResults?: VerificationResult[]` to `CompleteInput` and document that epic completion uses `verificationResults` while slice/quest completion uses `verificationPassed`. Alternatively, make `CompleteInput` a discriminated union on target type.
 
-Sub-agent commands (`start-plan`, `submit-plan`, `start-explore`, etc.) are global commands with no namespace. But they perform entity-scoped operations (they accept `--slice`, `--epic`, `--quest`). The architecture says `submit-*` commands write lifecycle-bound markdown "through the Data Layer with state validation" but "do NOT trigger state transitions."
+Resolution: DIRECTLY_ACTIONABLE
 
-If `submit-*` writes go through the Data Layer with state validation but bypass the state machine, this is a controlled exception to INV-001. The text acknowledges the split (orchestrator calls entity commands to advance state) but the routing story in the overview ("Resource commands bypass RPC, workflow commands go through RPC") doesn't mention this third path. Where do `submit-*` commands route? Directly to Data Layer? Through RPC without calling `reduce()`?
+---
 
-### IMPORTANT-04: `epic:add-verification` and `epic:update-verification` have StateEvents but no command-to-event mapping in the table
-**Severity:** IMPORTANT
-**File:** `architecture/commands-api.md`, `architecture/state-machine-api.md`
+**[IMPORTANT] `BeginPhase` mapping comments incomplete -- several values unmapped**
 
-The epic lifecycle listing shows `epic:add-verification` and `epic:update-verification`. The state machine has `ADD_VERIFICATION` and `UPDATE_VERIFICATION` events. But the command-to-StateEvent mapping table omits both. This table is the contract between Commands and State Machine — gaps undermine its value.
+`rpc-layer-api.md` defines `BeginPhase` with 16 values (lines 25-40) but the explicit mapping comments (lines 57-69) only cover 11. Missing:
 
-### MINOR-01: `context` global command overlaps with `start-*` sub-agent commands
-**Severity:** MINOR
-**File:** `architecture/commands-api.md`
+- `begin('refine-plan', {type:'slice'})` -> `BEGIN_REFINEMENT`
+- `begin('refine-plan', {type:'quest'})` -> `BEGIN_QUEST_REFINEMENT`
+- `begin('abandon', {type:'epic'})` -> `ABANDON_EPIC` (and slice/quest variants)
+- `begin('add-verification', {type:'epic'})` -> `ADD_VERIFICATION`
+- `begin('update-verification', {type:'epic'})` -> `UPDATE_VERIFICATION`
+- `begin('rollup', ...)` -> `ROLLUP_LEARNINGS`
 
-`goodplan context <phase> --slice <name> [--inline]` and `goodplan start-plan --slice <name> [--inline]` appear to do the same thing — both are "read-only context bundles for a phase." The description says `start-*` returns "context bundles for the sub-agent's phase (equivalent to `context <phase>` but with the sub-agent's perspective)." What distinguishes them? If `start-*` is just `context` with a different perspective, document the difference. If they're identical, consider removing the redundancy.
+The `'complete'` value in `BeginPhase` is also questionable -- the routing table (line 90) shows completion goes through the separate `complete()` function, not `begin()`. Either remove `'complete'` from `BeginPhase` or document that `begin('complete', ...)` delegates to `complete()`.
 
-### MINOR-02: `--override` flag appears in epic lifecycle but not in command-to-event table or state machine
-**Severity:** MINOR
-**File:** `architecture/commands-api.md`, `architecture/state-machine-api.md`
+The routing table (lines 86-95) covers these correctly, but the inline mapping comments serve as the primary implementor reference and are incomplete.
 
-`epic:refine-architecture --epic <name> [--override]` and `epic:refine-slices --epic <name> [--override]` show `--override`. The data model mentions `maxRounds` circuit breaker for slice refinement. But the state machine events (`BEGIN` with phase parameter) have no `override` field. How does `--override` reach the state machine? Is it a guard parameter?
+Fix: Add the missing mapping lines. Remove or document `'complete'` in `BeginPhase`.
 
-### MINOR-03: Flows.md `slice:complete` stdin example uses `rollup: true` instead of `rollupTo`
-**Severity:** MINOR
-**File:** `architecture/flows.md`
+Resolution: DIRECTLY_ACTIONABLE
 
-The completion flow example shows stdin JSON with `"learnings": [{ ..., "rollup": true }]`. But the canonical `Learning` type in rpc-layer-api.md uses `rollupTo: ('epic' | 'project')[]`. The transformation is now documented (rpc-layer-api.md explains how `rollupTo` maps to stored `rollup`), but the flow example should use the input shape (`rollupTo`), not the stored shape (`rollup`).
+---
 
-### MINOR-04: `slice:refine-plan` has `--override` but `quest:refine-plan` does not
-**Severity:** MINOR
-**File:** `architecture/commands-api.md`
+**[IMPORTANT] Three types referenced in RPC result interfaces are never defined**
 
-`slice:refine-plan --slice <name> [--override]` shows the override flag. `quest:refine-plan --quest <name>` does not. If quests also have refinement loops with circuit breakers, they need `--override` too. If not, document why quests differ.
+`rpc-layer-api.md` uses three types that have no definition anywhere in the architecture:
+
+1. `PathReferences` -- used in `SubmitResult.paths`, `BeginResult.paths`, `CompleteResult.paths`
+2. `DecisionSummary` -- used in `ContextBundle.decisions`
+3. `LearningSummary` -- used in `ContextBundle.learnings`
+
+These are part of the contract between the RPC layer and the Commands layer. Without definitions, implementors must guess the shape.
+
+Fix: Add interface definitions. `PathReferences` is likely `Record<string, string>` (logical name -> filesystem path). `DecisionSummary` and `LearningSummary` are likely lightweight projections of their full record types (id + title/summary + status).
+
+Resolution: DIRECTLY_ACTIONABLE
+
+---
+
+**[IMPORTANT] `StatusOptions` type referenced but never defined**
+
+`rpc-layer-api.md` line 16: `function status(options: StatusOptions): StatusResult` -- `StatusOptions` has no definition. The `status` command accepts `--json`, `--query`, `--verbose` flags, but those are output formatting (Commands layer concern). The RPC layer's `status()` function likely needs a subset of `WorkflowOptions` or nothing at all.
+
+Fix: Define `StatusOptions`. If it's just `WorkflowOptions`, use that type. If it needs nothing, use an empty interface or remove the parameter.
+
+Resolution: DIRECTLY_ACTIONABLE
+
+---
+
+**[MINOR] flows.md slice:complete flow references wrong source status**
+
+`flows.md` line 67: "Reads slice status -> `implementing`"
+
+Per transition-tables.md, `COMPLETE_SLICE` fires from `implementation-complete`, not `implementing`. The `COMPLETE_IMPLEMENTATION` event transitions `implementing` -> `implementation-complete`; then `COMPLETE_SLICE` transitions `implementation-complete` -> `completed`.
+
+Fix: Change "`implementing`" to "`implementation-complete`" on line 67.
+
+Resolution: DIRECTLY_ACTIONABLE
+
+---
+
+**[MINOR] Quest lifecycle missing first-round skip path that slices have**
+
+Transition-tables.md line 74 documents a slice skip path: `plan-created | COMPLETE_REFINEMENT_ROUND | plan-refined` (first round scores meet threshold, bypassing the `refining` state). No equivalent `plan-created | COMPLETE_QUEST_REFINEMENT_ROUND | plan-refined` row exists for quests.
+
+The document states "Quest lifecycle mirrors slice" but this path is absent. If intentional, note why quests differ. If an oversight, add the row.
+
+Resolution: DIRECTLY_ACTIONABLE
 
 ## Score: 8/10
 
-The Round 1 CRITICALs are fully resolved. The command surface is now consistent and well-documented — the entity-namespaced pattern is clear, the decision trail is clean, and the command-to-StateEvent mapping table is a strong contract artifact. The `--inline` naming is consistent everywhere. The Learning type now has a documented canonical form with transformation documentation. Context bundling is properly described as an internal module within RPC. `Phase` and `Target` types are defined. The guard return type is cleaned up. Refinement tracking and architecture deltas are in the data model.
+All round-1 issues are fully resolved. The tree model migration is complete and consistent across all documents. Core inter-subsystem contracts -- `reduce()` signature with tree state, `commitState()` with tree diff, context bundling with `MarkdownEntry` traversal, `hasChild()` guards, status enums matching transition tables -- are now coherent.
 
-The remaining issues are about completeness of the mapping table (verification commands, cross-cutting commands, override mechanism) and routing clarity for sub-agent commands. These are Important because they affect implementability — a developer reading the architecture needs to know how every command routes — but they're bounded gaps, not structural disagreements.
+The remaining issues are real but bounded. The most impactful is the `CompleteInput` type gap: it literally cannot represent the `COMPLETE_EPIC` payload, which will block implementation of `epic:complete`. The undefined result types and incomplete mapping comments are documentation gaps that create implementation friction but not architectural confusion.
 
-To reach 9+: (1) Complete the command-to-StateEvent mapping table (add verification commands, cross-cutting commands). (2) Clarify the routing path for `submit-*` commands in the overview and commands-api.md. (3) Decide whether `decision:create`/`decision:update` are state machine mutations or data-only writes. (4) Fix the flows.md Learning example to use `rollupTo`.
+To reach 9+: (1) Make `CompleteInput` support epic completion's `verificationResults`. (2) Complete the `BeginPhase` mapping comments and resolve the `'complete'` value. (3) Define `PathReferences`, `DecisionSummary`, `LearningSummary`, and `StatusOptions`. (4) Fix the two minor issues.
 
 ## Summary
 - Critical: 0
 - Important: 4
-- Minor: 4
+- Minor: 2

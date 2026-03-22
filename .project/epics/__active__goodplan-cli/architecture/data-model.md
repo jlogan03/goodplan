@@ -25,13 +25,13 @@ Per-epic metadata. Located at `.project/epics/<name>/epic.json`.
 ```json
 {
   "name": "goodplan-cli",
-  "status": "executing",
+  "status": "activated",
   "goal": "Build a compiled TypeScript CLI...",
   "verifications": [
     {
       "description": "CLI can create, list, and show epics, slices, and quests",
       "status": "pending",
-      "addedDuring": "slicing",
+      "addedDuring": "defining-slices",
       "modifiedDuring": null
     }
   ],
@@ -100,7 +100,7 @@ Index file per collection. Located at `.project/epics/overview.json`, `.project/
   "items": [
     {
       "name": "01-data-layer",
-      "status": "complete",
+      "status": "completed",
       "created": "2026-03-20T00:00:00Z",
       "completed": "2026-03-21T00:00:00Z"
     },
@@ -219,12 +219,13 @@ type ProjectState = DirectoryEntry;
 // Path resolution — walks the tree by splitting on "/"
 function resolve(state: ProjectState, path: string): StateEntry | undefined;
 
-// Typed accessors for common operations
-function getJson<T>(state: ProjectState, path: string): JsonEntry<T> | undefined;
-function getJsonl<T>(state: ProjectState, path: string): JsonlEntry<T> | undefined;
+// Typed accessors for common operations (unwrapped — return content directly)
+function getJson<T>(state: ProjectState, path: string): T | undefined;
+function getJsonl<T>(state: ProjectState, path: string): T[] | undefined;
 function getDir(state: ProjectState, path: string): DirectoryEntry | undefined;
+function getMarkdown(state: ProjectState, path: string): string | undefined;
 
-// Guard helper — checks if a file exists in a directory
+// Guard helper — checks if a child exists in a directory's contents
 function hasChild(state: ProjectState, dirPath: string, childName: string): boolean;
 ```
 
@@ -246,14 +247,21 @@ const state: ProjectState = {
     "idea.md": { type: "markdown", content: "# Project Idea\n\n..." },
     "conventions.md": { type: "markdown", content: "# Project Conventions\n\n..." },
 
+    "architecture": {
+      type: "directory",
+      contents: {
+        // Project-level current-reality architecture (LLM-managed)
+      }
+    },
+
     "epics": {
       type: "directory",
       contents: {
-        "overview.json": { type: "json", content: { items: [{ name: "goodplan-cli", status: "executing", created: "...", completed: null }] } },
+        "overview.json": { type: "json", content: { items: [{ name: "goodplan-cli", status: "activated", created: "...", completed: null }] } },
         "goodplan-cli": {
           type: "directory",
           contents: {
-            "epic.json": { type: "json", content: { name: "goodplan-cli", status: "executing", goal: "...", verifications: [...], sliceSequence: [...], created: "...", activated: "...", updated: "..." } },
+            "epic.json": { type: "json", content: { name: "goodplan-cli", status: "activated", goal: "...", verifications: [...], sliceSequence: [...], created: "...", activated: "...", updated: "..." } },
             "architecture": { type: "directory", contents: { "_overview.md": ..., "data-model.md": ... } },
             "research": { type: "directory", contents: {} },
             "brainstorm": { type: "directory", contents: {} },
@@ -275,7 +283,7 @@ const state: ProjectState = {
             "architecture-deltas.jsonl": { type: "jsonl", content: [] },
             // LLM-written files appear as entries when they exist on disk:
             "plan.md": { type: "markdown", content: "# Plan: Data Layer\n\n..." }
-            "plan-refined.md": { type: "json", content: "..." },
+            "plan-refined.md": { type: "markdown", content: "..." },
           }
         }
       }
@@ -305,14 +313,14 @@ hasChild(state, "slices/01-data-layer", "plan.md")
 const archDir = getDir(state, "epics/goodplan-cli/architecture");
 archDir !== undefined && Object.keys(archDir.contents).length > 0
 
-// Get a specific entity
+// Get a specific entity (unwrapped — returns T directly)
 const epic = getJson<Epic>(state, "epics/goodplan-cli/epic.json");
-epic?.content.status === "executing"
+epic?.status === "activated"
 ```
 
 ### Schema Registry
 
-`commitState()` needs to validate JSON entries before writing. A schema registry maps path patterns to Zod schemas. The path is derived by walking the tree and building the filesystem path from the nesting:
+`commitState()` needs to validate JSON entries before writing. A schema registry maps path patterns to Zod schemas. The path is derived by walking the tree and concatenating directory names — forward-slash-separated, no leading slash, rooted at `.project/` (e.g., `"epics/goodplan-cli/epic.json"`):
 
 ```typescript
 const schemaRegistry: Array<{ pattern: RegExp; schema: ZodSchema }> = [
@@ -348,7 +356,7 @@ This is a valid state — it represents "no project initialized." The state mach
 1. **New key in new tree** → create (directory: `mkdirSync`, file: validate + write)
 2. **Key in both, content changed** → verify old matches on-disk (concurrent modification detection), then update
 3. **Key in both, unchanged** → skip
-4. **Key in old but not new** → entity removed (generally kept for audit trail; implementation decides policy)
+4. **Key in old but not new** → no-op (abandoned entities kept for audit trail; optional deletion flag available)
 5. **Recurse into directories** — diff `contents` recursively, building the filesystem path as we go
 
 ### State Cache
@@ -362,6 +370,8 @@ Cache miss:    fall back to full assembly
 ```
 
 The cache is valid because the CLI is the only writer of JSON/JSONL state. The only external changes are LLM-written files within CLI-owned directories, which are captured by directory contents recomputation on every call.
+
+**Cache versioning:** The cache includes a `cacheVersion` field set from the CLI's schema version. On read, if the cached version doesn't match the running CLI's version, the cache is discarded and a full reassembly is performed. This ensures schema changes after a CLI upgrade don't produce stale or incompatible cached state.
 
 ## Storage
 
@@ -386,7 +396,7 @@ The cache is valid because the CLI is the only writer of JSON/JSONL state. The o
 - Root directories created by `commitState()` when the state machine produces them (e.g., `CREATE_EPIC` adds `epics/<name>/research/` as a `DirectoryEntry`)
 - Internal structure owned by the LLM — the CLI doesn't write markdown content
 - Read by the CLI for context bundling
-- Existence tracked in directory `files` arrays (e.g., `dirHasFile(state, "epics/my-epic/research", "topic.md")`)
+- Existence tracked via directory `contents` keys (e.g., `hasChild(state, "epics/my-epic/research", "topic.md")`)
 - Not validated by schemas — content is free-form
 
 ### Directory Structure
@@ -415,9 +425,9 @@ The cache is valid because the CLI is the only writer of JSON/JSONL state. The o
 │       ├── slice.json
 │       ├── learnings.jsonl
 │       ├── architecture-deltas.jsonl
-│       ├── plan.md            # LLM-managed, CLI-owned path
-│       ├── plan-refining.md   # LLM-managed — written during refinement rounds
-│       └── plan-refined.md    # LLM-managed — final refined plan
+│       ├── plan.md            # LLM-managed, CLI-owned path — written by sub-agent during planning
+│       ├── plan-refining.md   # LLM-managed — working draft updated during each refinement round. The sub-agent creates plan-refining.md during refinement rounds. When scores pass threshold, the sub-agent writes plan-refined.md directly; the CLI does not rename files.
+│       └── plan-refined.md    # LLM-managed — final refined plan written by sub-agent when scores pass
 ├── quests/
 │   ├── overview.json
 │   └── <name>/

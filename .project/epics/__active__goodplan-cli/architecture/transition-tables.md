@@ -6,7 +6,7 @@ Complete specification of valid state transitions for all entity types. Each row
 
 | From | Event | To | Guard | Error | Orchestrator Returns | Notes |
 |---|---|---|---|---|---|---|
-| (none) | INIT_PROJECT | initialized | — | — | project, status | Creates project.json |
+| (none) | INIT_PROJECT | — | — | — | project | Creates project.json. No status field on project — "To" is structural (project.json exists). |
 
 ## Epic
 
@@ -63,21 +63,21 @@ For each phase, what `startContext()` returns to sub-agents.
 | From | Event | To | Guard | Error | Orchestrator Returns | Notes |
 |---|---|---|---|---|---|---|
 | (none) | CREATE_SLICE | created | — | — | slice, epic, status | Creates slice.json, links to epic |
-| created | BEGIN_PLAN | planning | previous slice completed/abandoned OR first slice | — | slice, status, previousStatus | Sequential enforcement |
+| created | BEGIN_PLAN | planning | previous slice completed/abandoned OR first slice | — | slice, status, previousStatus | Sequential enforcement. Sets project.json activeSlice. |
 | created | BEGIN_PLAN | (error) | previous slice not completed/abandoned | STATE_SLICE_NOT_READY | — | |
-| planning | COMPLETE_PLAN | plan-created | _derived.planContentProvided == true | — | slice, status | submit-plan triggers this |
-| planning | COMPLETE_PLAN | (error) | _derived.planContentProvided == false | STATE_CONTENT_MISSING | — | |
+| planning | COMPLETE_PLAN | plan-created | hasChild(state, "slices/<name>", "plan.md") | — | slice, status | submit-plan triggers this |
+| planning | COMPLETE_PLAN | (error) | !hasChild(state, "slices/<name>", "plan.md") | STATE_CONTENT_MISSING | — | |
 | plan-created | BEGIN_REFINEMENT | refining | — | — | slice, status, round | |
 | refining | COMPLETE_REFINEMENT_ROUND | refining | scores below threshold AND round < maxRounds AND !override | — | slice, status, round, scores, thresholdMet | Increments round, records scores |
 | refining | COMPLETE_REFINEMENT_ROUND | plan-refined | scores meet threshold OR override | — | slice, status, round, scores, thresholdMet | |
 | refining | COMPLETE_REFINEMENT_ROUND | (error) | round >= maxRounds AND !override | STATE_MAX_ROUNDS_REACHED | — | Circuit breaker |
 | plan-created | COMPLETE_REFINEMENT_ROUND | plan-refined | scores meet threshold (first round) | — | slice, status, round, scores, thresholdMet | Skip path: first round passes |
-| plan-refined | BEGIN_IMPLEMENTATION | implementing | _derived.refinedPlanExists == true | — | slice, status, previousStatus | |
-| plan-refined | BEGIN_IMPLEMENTATION | (error) | _derived.refinedPlanExists == false | STATE_CONTENT_MISSING | — | |
+| plan-refined | BEGIN_IMPLEMENTATION | implementing | hasChild(state, "slices/<name>", "plan-refined.md") | — | slice, status, previousStatus | |
+| plan-refined | BEGIN_IMPLEMENTATION | (error) | !hasChild(state, "slices/<name>", "plan-refined.md") | STATE_CONTENT_MISSING | — | |
 | implementing | COMPLETE_IMPLEMENTATION | implementation-complete | — | — | slice, status | submit-implementation triggers this |
-| implementation-complete | COMPLETE_SLICE | completed | verificationPassed == true | — | slice, status, deferredRouted, architecturePaths, epicComplete, learningsRolledUp | Routes deferred, appends learnings + arch deltas |
+| implementation-complete | COMPLETE_SLICE | completed | verificationPassed == true | — | slice, status, deferredRouted, architecturePaths, epicComplete, learningsRolledUp | Routes deferred, appends learnings + arch deltas. Clears project.json activeSlice. |
 | implementation-complete | COMPLETE_SLICE | (error) | verificationPassed == false | STATE_VERIFICATION_FAILED | — | Stays in implementation-complete |
-| * (non-terminal) | ABANDON_SLICE | abandoned | current status is not terminal | — | slice, status, reason | Requires reason |
+| * (non-terminal) | ABANDON_SLICE | abandoned | current status is not terminal | — | slice, status, reason | Requires reason. Clears project.json activeSlice if this was the active slice. |
 | * (terminal) | ABANDON_SLICE | (error) | current status is terminal | STATE_INVALID_TRANSITION | — | |
 
 ### Slice Context Returns (Sub-Agent)
@@ -98,19 +98,20 @@ Quest lifecycle mirrors slice. Quests are project-scoped (no epic field, no sequ
 | From | Event | To | Guard | Error | Orchestrator Returns | Notes |
 |---|---|---|---|---|---|---|
 | (none) | CREATE_QUEST | created | — | — | quest, status | Creates quest.json |
-| created | BEGIN_QUEST_PLAN | planning | — | — | quest, status, previousStatus | No sequential enforcement |
-| planning | COMPLETE_QUEST_PLAN | plan-created | _derived.planContentProvided == true | — | quest, status | submit-plan --quest triggers this |
-| planning | COMPLETE_QUEST_PLAN | (error) | _derived.planContentProvided == false | STATE_CONTENT_MISSING | — | |
+| created | BEGIN_QUEST_PLAN | planning | — | — | quest, status, previousStatus | No sequential enforcement. Sets project.json activeQuest. |
+| planning | COMPLETE_QUEST_PLAN | plan-created | hasChild(state, "quests/<name>", "plan.md") | — | quest, status | submit-plan --quest triggers this |
+| planning | COMPLETE_QUEST_PLAN | (error) | !hasChild(state, "quests/<name>", "plan.md") | STATE_CONTENT_MISSING | — | |
 | plan-created | BEGIN_QUEST_REFINEMENT | refining | — | — | quest, status, round | |
+| plan-created | COMPLETE_QUEST_REFINEMENT_ROUND | plan-refined | scores meet threshold (first round) | — | quest, status, round, scores, thresholdMet | Skip path: first round passes |
 | refining | COMPLETE_QUEST_REFINEMENT_ROUND | refining | scores below threshold AND round < maxRounds AND !override | — | quest, status, round, scores, thresholdMet | |
 | refining | COMPLETE_QUEST_REFINEMENT_ROUND | plan-refined | scores meet threshold OR override | — | quest, status, round, scores, thresholdMet | |
 | refining | COMPLETE_QUEST_REFINEMENT_ROUND | (error) | round >= maxRounds AND !override | STATE_MAX_ROUNDS_REACHED | — | Circuit breaker |
-| plan-refined | BEGIN_QUEST_IMPLEMENTATION | implementing | _derived.refinedPlanExists == true | — | quest, status, previousStatus | |
-| plan-refined | BEGIN_QUEST_IMPLEMENTATION | (error) | _derived.refinedPlanExists == false | STATE_CONTENT_MISSING | — | |
+| plan-refined | BEGIN_QUEST_IMPLEMENTATION | implementing | hasChild(state, "quests/<name>", "plan-refined.md") | — | quest, status, previousStatus | |
+| plan-refined | BEGIN_QUEST_IMPLEMENTATION | (error) | !hasChild(state, "quests/<name>", "plan-refined.md") | STATE_CONTENT_MISSING | — | |
 | implementing | COMPLETE_QUEST_IMPLEMENTATION | implementation-complete | — | — | quest, status | |
-| implementation-complete | COMPLETE_QUEST | completed | verificationPassed == true | — | quest, status, architecturePaths, learningsRolledUp | Routes learnings, arch deltas |
+| implementation-complete | COMPLETE_QUEST | completed | verificationPassed == true | — | quest, status, architecturePaths, learningsRolledUp | Routes learnings, arch deltas. Clears project.json activeQuest. |
 | implementation-complete | COMPLETE_QUEST | (error) | verificationPassed == false | STATE_VERIFICATION_FAILED | — | |
-| * (non-terminal) | ABANDON_QUEST | abandoned | current status is not terminal | — | quest, status, reason | Requires reason |
+| * (non-terminal) | ABANDON_QUEST | abandoned | current status is not terminal | — | quest, status, reason | Requires reason. Clears project.json activeQuest if this was the active quest. |
 | * (terminal) | ABANDON_QUEST | (error) | current status is terminal | STATE_INVALID_TRANSITION | — | |
 
 ### Quest Context Returns (Sub-Agent)
@@ -143,8 +144,8 @@ Quest lifecycle mirrors slice. Quests are project-scoped (no epic field, no sequ
 | Sequential slice execution | BEGIN_PLAN | previous slice completed/abandoned OR first slice | STATE_SLICE_NOT_READY |
 | Circuit breaker | COMPLETE_REFINEMENT_ROUND, COMPLETE_QUEST_REFINEMENT_ROUND, COMPLETE_REFINE_ARCHITECTURE, COMPLETE_REFINE_SLICES | round < maxRounds OR override | STATE_MAX_ROUNDS_REACHED |
 | Verification passed | COMPLETE_SLICE, COMPLETE_QUEST | verificationPassed == true | STATE_VERIFICATION_FAILED |
-| Content exists | COMPLETE_PLAN, COMPLETE_QUEST_PLAN | _derived.planContentProvided == true | STATE_CONTENT_MISSING |
-| Refined plan exists | BEGIN_IMPLEMENTATION, BEGIN_QUEST_IMPLEMENTATION | _derived.refinedPlanExists == true | STATE_CONTENT_MISSING |
+| Content exists | COMPLETE_PLAN, COMPLETE_QUEST_PLAN | hasChild(state, "<entity>/<name>", "plan.md") | STATE_CONTENT_MISSING |
+| Refined plan exists | BEGIN_IMPLEMENTATION, BEGIN_QUEST_IMPLEMENTATION | hasChild(state, "<entity>/<name>", "plan-refined.md") | STATE_CONTENT_MISSING |
 
 ## Implicit Transitions
 

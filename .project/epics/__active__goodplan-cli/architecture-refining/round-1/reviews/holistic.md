@@ -1,96 +1,177 @@
-# Holistic Architecture Review
+# Holistic Architecture Review — Round 1
+
+Confirmed goal: Ensure the recursive tree state model is well integrated across all architecture files. Internal consistency, coherent contracts, opportunities to leverage the tree model.
 
 ## Issues
 
-### IMPORTANT-1: Command surface inconsistency between commands-api.md and decision + design spec
-**File:** `architecture/commands-api.md`
-**Resolution:** Reconcile command naming across files
+**[CRITICAL]** EpicStatus enum in state-machine-api.md does not match transition-tables.md statuses
 
-The commands-api.md uses `goodplan epic:create`, `goodplan slice:plan`, etc. The design spec uses space-separated `goodplan epic create`, `goodplan slice list`. The command-surface-conventions decision says colon-namespaced (`epic:`, `build:`, `resource:`). The flows.md uses yet another form: `goodplan begin plan --slice` (verb-first without namespace).
+The `EpicStatus` type in state-machine-api.md defines:
+```
+'created' | 'exploring' | 'explored' | 'architecting' | 'architected'
+  | 'refining-architecture' | 'slicing' | 'sliced' | 'refining-slices' | 'ready'
+  | 'executing' | 'complete' | 'abandoned'
+```
 
-The architecture needs to settle on ONE command syntax and use it consistently across all files. Currently an implementer would have to guess which form is canonical. The commands-api.md appears to be the most detailed and intentional, but flows.md contradicts it.
+But transition-tables.md (the declared source of truth) uses different status names:
+- `defining-architecture` (tables) vs `architecting` (enum)
+- `architecture-defined` (tables) vs `architected` (enum)
+- `architecture-refined` (tables) -- not in enum at all
+- `defining-slices` (tables) vs `slicing` (enum)
+- `slices-defined` (tables) vs `sliced` (enum)
+- `slices-refined` (tables) -- not in enum at all
+- `activated` (tables) vs `ready` then `executing` (enum) -- enum has both `ready` and `executing`, tables only have `activated`
+- `completed` (tables) vs `complete` (enum)
 
-### IMPORTANT-2: `begin`/`complete` commands not in commands-api.md entity namespaces
-**File:** `architecture/commands-api.md`, `architecture/flows.md`
-**Resolution:** Add workflow verb commands or clarify routing
+The transition tables are the declared source of truth. The enum must be updated to match.
 
-The flows.md describes `goodplan begin plan --slice 01-auth` and `goodplan complete --slice 01-auth` as the primary workflow commands. But commands-api.md lists `slice:plan`, `slice:complete` etc. under entity namespaces. These are different command surfaces. The RPC layer description and the orchestrator-subagent-split decision describe `begin`/`complete`/`context`/`status` as the orchestrator's vocabulary, but these don't clearly appear in the commands-api.md command listing. The `context` and `status` commands appear under Global Commands, but `begin` and `complete` do not.
+Files: `state-machine-api.md` (lines 125-127), `transition-tables.md` (all epic rows)
+Resolution: DIRECTLY_ACTIONABLE
 
-Either the entity namespace commands ARE the `begin`/`complete` equivalents (in which case flows.md needs updating), or `begin`/`complete` are separate global workflow commands (in which case commands-api.md needs them listed).
+---
 
-### IMPORTANT-3: `start-*`/`submit-*` sub-agent commands missing from architecture
-**File:** `architecture/commands-api.md`
-**Resolution:** Add sub-agent commands or explicitly defer them
+**[CRITICAL]** SliceStatus and QuestStatus enums do not match transition-tables.md statuses
 
-The command-surface-conventions decision and the orchestrator-subagent-split decision both describe `start-<action>`/`submit-<action>` commands for sub-agents. These are a core part of the context-efficient design (sub-agents write results directly to CLI, orchestrator stays compact). But commands-api.md has no mention of these commands. Neither does any other architecture file.
+`SliceStatus` enum values vs transition table values:
+- `defined` (enum) vs `created` (tables) -- initial status mismatch
+- `planned` (enum) vs `plan-created` (tables)
+- `implemented` (enum) vs `implementation-complete` (tables)
+- `complete` (enum) vs `completed` (tables)
 
-This is a significant gap: the sub-agent interaction pattern is a key design element from the decisions, and the architecture doesn't specify how it works.
+Same mismatches apply to `QuestStatus`.
 
-### IMPORTANT-4: `write-<field>` commands missing from architecture
-**File:** `architecture/commands-api.md`
-**Resolution:** Add or explicitly defer
+An implementer cannot write correct TypeScript from these contradictions. The transition tables should be authoritative; the enums must be updated.
 
-The design spec describes `goodplan <entity> write-<field>` commands (e.g., `goodplan slice write-plan 01-auth`, `goodplan slice write-goal`) as the mechanism for LLM content writes with state bookkeeping. These don't appear in commands-api.md. The data-model.md mentions `plan.md` in the directory structure but doesn't explain how it gets written.
+Files: `state-machine-api.md` (lines 129-133), `transition-tables.md` (slice and quest rows)
+Resolution: DIRECTLY_ACTIONABLE
 
-The conventions.md says "Lifecycle-bound markdown (goals, plans) is written through CLI `write-<field>` commands with state validation" but the commands-api.md doesn't list these commands.
+---
 
-### IMPORTANT-5: Refinement loop tracking absent from state machine
-**File:** `architecture/state-machine-api.md`
-**Resolution:** Add refinement tracking to state model and events
+**[IMPORTANT]** Stale `_derived` references in flows.md, rpc-layer-api.md, transition-tables.md, state-machine-api.md
 
-The cli-as-workflow-engine decision says the CLI owns "refinement loop tracking (round numbers, score history, trend detection), circuit breakers, implementation phase/iteration counting." The state-machine-api.md shows `COMPLETE_REFINEMENT_ROUND` with scores but there's no corresponding data in the data model for storing round counts, score history, or circuit breaker state. The `slice.json` example has no refinement fields. Where does the refinement round count live? Where is score history stored?
+The data-model.md correctly defines the recursive tree model where `DirectoryEntry.contents` replaces `_derived`. The state-machine-api.md has a "Directory-Based Guards (replaces _derived)" section explaining the new approach with `hasChild()`. However, 4 other files still use the old model:
 
-### IMPORTANT-6: Architecture delta / structured architecture updates dropped from data model
-**File:** `architecture/data-model.md`
-**Resolution:** Add architecture update proposal tracking or explain its removal
+- **flows.md** (lines 8, 26, 44, 91, 125): "recompute `_derived` fields", "`_derived.planContentProvided`", "all `_derived` false"
+- **rpc-layer-api.md** (line 268): "Derives status from the unified state object and `_derived` fields"
+- **state-machine-api.md** State Key Dependencies table (lines 226-232): multiple `_derived` entries in Reads column
+- **transition-tables.md** (lines 68-69, 75-76, 102-103, 108-109, 146-147): guards reference `_derived.planContentProvided` and `_derived.refinedPlanExists`
 
-The design spec describes structured architecture update proposals as JSON metadata in entity files (`{ subsystem, type, description, rationale, status }`). The `COMPLETE_SLICE` event in state-machine-api.md accepts `architectureDelta: ArchitectureDelta[]`. But the data model's `slice.json` example doesn't include architecture deltas, and there's no schema showing where they're stored. The incremental-architecture-updates decision says project-level architecture is updated on every completion, and the RPC layer returns architecture paths, but the structured tracking described in the spec appears lost.
+All should be rewritten to use `hasChild(state, path, filename)` per the tree model. For example, `_derived.planContentProvided` becomes `hasChild(state, "slices/<name>", "plan.md")`.
 
-### IMPORTANT-7: `goal.md` missing from data model directory structure
-**File:** `architecture/data-model.md`
-**Resolution:** Add goal.md or clarify where goals live
+Files: `flows.md`, `rpc-layer-api.md`, `state-machine-api.md`, `transition-tables.md`
+Resolution: DIRECTLY_ACTIONABLE
 
-The design spec has `goal.md` per slice/quest/epic. The data-model.md directory structure shows `plan.md` for slices and quests but no `goal.md`. Yet the epic.json has a `goal` field (string in JSON). Are goals stored as JSON fields or as markdown files? The flows.md references "slice goal" as context content. The _overview.md says "Lifecycle-bound markdown (goals, plans) is written through CLI `write-<field>` commands." This needs to be resolved: either goals are JSON fields in entity.json (current data model implies this for epics) or markdown files (spec implies this).
+---
 
-### MINOR-1: `plan-refining.md` and `plan-refined.md` missing from data model
-**File:** `architecture/data-model.md`
-**Resolution:** Add or clarify plan lifecycle files
+**[IMPORTANT]** `dirHasFile` function name used in state-machine-api.md and data-model.md but actual API defines `hasChild`
 
-The design spec describes `plan-refining.md` (working copy during refinement) and `plan-refined.md` (final output). The data model directory structure only shows `plan.md`. Since the state machine has refinement events, the plan file lifecycle should be documented.
+The state-machine-api.md "Directory-Based Guards" section (lines 254-260) uses `dirHasFile()`. The data-model.md Storage section (line 389) also uses `dirHasFile()`. But the tree navigation helpers defined in both data-model.md (line 228) and data-layer-api.md (line 74) define `hasChild()` -- not `dirHasFile`. Additionally, the state-machine-api.md section references "directory `files` arrays" but data-model.md line 173 explicitly says "contents keys ARE the file/directory listing (no separate `files` array needed)."
 
-### MINOR-2: `GOODPLAN_DIR` environment variable not mentioned in architecture
-**File:** `architecture/conventions.md`
-**Resolution:** Add to conventions or data-layer-api.md
+Standardize on `hasChild()` and "directory `contents` keys" throughout.
 
-The project conventions.md mentions `GOODPLAN_DIR` overrides the default `.project/` location. The data-layer-api.md doesn't mention this, meaning an implementer might hardcode `.project/`.
+Files: `data-model.md` (line 389), `state-machine-api.md` (lines 254-260)
+Resolution: DIRECTLY_ACTIONABLE
 
-### MINOR-3: Fitness functions are all "candidate" with no prioritization
-**File:** All architecture files
-**Resolution:** Prioritize which fitness functions to implement first
+---
 
-Every fitness function is marked "candidate -- not yet written." This is appropriate for experimental maturity, but there should be a note about which ones are highest priority for the first slices. The state machine purity check (INV-003) and the deterministic JSON round-trip (INV-002) are easy wins that would catch regressions early.
+**[IMPORTANT]** data-model.md example state tree has wrong type for `plan-refined.md`
 
-### MINOR-4: `--verbose` flag missing from global flags table
-**File:** `architecture/commands-api.md`
-**Resolution:** Add if planned
+In the example state tree (line 278), `plan-refined.md` is typed as:
+```typescript
+"plan-refined.md": { type: "json", content: "..." },
+```
+It should be `{ type: "markdown", content: "..." }`. A refined plan is markdown, not JSON. This would confuse implementers writing `commitState()` logic since JSON entries get schema validation but markdown entries do not.
 
-The conventions.md mentions `--verbose` for stderr diagnostics, but commands-api.md's global flags table doesn't list it.
+File: `data-model.md` (line 278)
+Resolution: DIRECTLY_ACTIONABLE
 
-### MINOR-5: `--override` flag for refinement not reflected in architecture
-**File:** `architecture/commands-api.md`, `architecture/state-machine-api.md`
-**Resolution:** Add override mechanism
+---
 
-The command-surface-conventions decision specifies an `--override` flag on refinement `complete` to accept despite scores not meeting threshold. This isn't reflected in commands-api.md or the state machine events.
+**[IMPORTANT]** `writeEntity`/`appendRecord`/`readEntity`/`readRecords` referenced in invariants.md but not in data-layer-api.md
 
-## Score: 6/10
+INV-001 references `writeEntity()` calls. INV-002 references `writeEntity()` and `appendRecord()`. INV-005 references `readEntity()`, `writeEntity()`, `readRecords()`, `appendRecord()`. These are all vestigial from a pre-tree-model API. The data-layer-api.md defines only three public functions: `assembleState`, `loadState`, `commitState` (plus tree navigation helpers). Invariant descriptions should reference `commitState()` for writes and `assembleState()`/`loadState()` for reads.
 
-The architecture has strong structural bones: the four-layer decomposition is clean, the state machine purity invariant is well-defended, the data ownership split (JSON vs markdown) is clear, and the reducer pattern is well-specified. The fitness functions and invariants are thoughtful.
+File: `invariants.md` (INV-001, INV-002, INV-005)
+Resolution: DIRECTLY_ACTIONABLE
 
-However, there are significant completeness gaps between the architecture files and the decisions/design spec they're supposed to implement. The command surface is inconsistent across files (IMPORTANT-1, IMPORTANT-2), key interaction patterns from the decisions are missing (IMPORTANT-3: sub-agent commands, IMPORTANT-4: write commands), and the data model has gaps for features the state machine references (IMPORTANT-5: refinement tracking, IMPORTANT-6: architecture deltas, IMPORTANT-7: goals).
+---
 
-To reach 9+: (1) Resolve the command surface to one consistent form across all files. (2) Either add the missing sub-agent and write-field commands or explicitly document they're deferred with rationale. (3) Complete the data model to cover all fields the state machine and RPC layer reference (refinement state, architecture deltas, goals). (4) Ensure flows.md uses the same command syntax as commands-api.md.
+**[IMPORTANT]** flows.md generic flow and init flow describe pre-tree-model data loading
+
+The generic state transition flow step 2 says "load state (from cache or full assembly), recompute `_derived` fields." With the tree model, `loadState()` returns the full `ProjectState` tree with directory contents already populated -- there is no separate `_derived` recomputation step.
+
+The init flow step 3 says `assembleState()` returns "empty `ProjectState`, no files, all `_derived` false." With the tree model, this is simply `{ type: "directory", contents: {} }`.
+
+The sub-agent flow step 5 says "RPC checks `_derived.planContentProvided`" -- should be `hasChild(state, "slices/01-auth", "plan.md")`.
+
+File: `flows.md` (lines 8, 26, 44, 91, 125)
+Resolution: DIRECTLY_ACTIONABLE
+
+---
+
+**[IMPORTANT]** Transition tables missing skip path from `plan-created` directly to `implementing`
+
+The epic lifecycle has explicit skip paths for every phase (e.g., `created` -> `COMPLETE_EXPLORE` -> `explored` skips exploration; `architecture-defined` -> `COMPLETE_REFINE_ARCHITECTURE` -> `architecture-refined` skips refinement). But slice/quest lifecycle has no skip path from `plan-created` to `implementing` that bypasses refinement entirely.
+
+The current workaround is `plan-created` -> `COMPLETE_REFINEMENT_ROUND` (with passing scores on first round) -> `plan-refined` -> `BEGIN_IMPLEMENTATION`. This works but is asymmetric with the epic pattern where skip = calling the COMPLETE event directly from the pre-phase state. Should there be a `plan-created` + `BEGIN_IMPLEMENTATION` row? Or is mandatory refinement (even if 1 round) intentional?
+
+File: `transition-tables.md` (slice and quest sections)
+Resolution: USER_INPUT
+
+---
+
+**[MINOR]** data-layer-api.md `getJson`/`getJsonl` return types differ from data-model.md
+
+data-model.md defines `getJson<T>()` returning `JsonEntry<T> | undefined` (wrapped). data-layer-api.md defines `getJson<T>()` returning `T | undefined` (unwrapped). Same for `getJsonl<T>()`. The unwrapped version is more ergonomic but loses the discriminated union type tag. Pick one and standardize.
+
+Files: `data-model.md` (lines 225-226), `data-layer-api.md` (lines 67-68)
+Resolution: DIRECTLY_ACTIONABLE
+
+---
+
+**[MINOR]** data-layer-api.md defines `getMarkdown` helper not present in data-model.md
+
+data-layer-api.md line 70 defines `getMarkdown(state, path): string | undefined`. data-model.md's tree navigation helpers section (lines 220-228) does not include this function. Either add it to data-model.md or establish that data-layer-api.md is the canonical location for the complete helper set and data-model.md only shows representative examples.
+
+Files: `data-layer-api.md` (line 70), `data-model.md` (lines 220-228)
+Resolution: DIRECTLY_ACTIONABLE
+
+---
+
+**[MINOR]** Opportunity: tree model enables simpler context bundling -- not yet leveraged in rpc-layer-api.md
+
+The RPC layer description says context bundling reads "content via the Data Layer" and "from `MarkdownEntry` nodes in the state tree." But the per-phase content priority tables in rpc-layer-api.md still describe content by reference to filesystem paths (e.g., "architecture/*.md"). With the tree model, the context module can walk `getDir(state, "epics/<name>/architecture")?.contents` and iterate over `MarkdownEntry` nodes directly. This is already implied but could be made explicit -- it eliminates the need for any filesystem glob during context assembly.
+
+File: `rpc-layer-api.md` (per-phase content priority table)
+Resolution: DIRECTLY_ACTIONABLE
+
+---
+
+**[MINOR]** State Key Dependencies table in state-machine-api.md uses path strings that don't match tree navigation
+
+The table uses paths like `epics/<name>/epic.json` and `slices/<name>/slice.json`. These are correct as tree paths for `resolve()`, but the table also uses `_derived` which doesn't exist in the tree. Beyond removing `_derived`, the table is a useful reference for future partial-loading optimization and should be kept accurate. Consider noting that these are `resolve()` paths into the `ProjectState` tree.
+
+File: `state-machine-api.md` (State Key Dependencies section)
+Resolution: DIRECTLY_ACTIONABLE
+
+---
+
+**[MINOR]** Cross-Cutting Guards table in transition-tables.md uses `_derived` notation
+
+The "Content exists" and "Refined plan exists" rows use `_derived.planContentProvided` and `_derived.refinedPlanExists`. These should use `hasChild()` notation consistent with the tree model.
+
+File: `transition-tables.md` (Cross-Cutting Guards table, lines 146-147)
+Resolution: DIRECTLY_ACTIONABLE
+
+## Score: 4/10
+
+The recursive tree model itself (StateEntry union, ProjectState, zero state, recursive diff, schema registry) is well-designed in data-model.md. The core idea of mirroring `.project/` as an in-memory tree and diffing to commit changes is clean and powerful.
+
+However, the integration of this model across the 10 architecture files is incomplete. Two critical enum mismatches between state-machine-api.md and transition-tables.md would block any correct implementation. Pervasive stale `_derived` references across 4 files show the tree model update was applied to data-model.md (and partially to state-machine-api.md's guard section) but not propagated to flows, RPC, transition tables, or invariants. There is also a naming split between `dirHasFile` and `hasChild` and between `files` arrays and `contents` keys.
+
+To reach 9+: (1) Align all three status enums with the transition tables. (2) Replace every `_derived` reference with tree-model equivalents using `hasChild()`. (3) Fix `dirHasFile` -> `hasChild` and "files arrays" -> "contents keys". (4) Update invariants to reference the actual 3-function data layer API. (5) Fix the type error in the example state tree. (6) Reconcile `getJson`/`getJsonl` return types between data-model.md and data-layer-api.md.
 
 ## Summary
-- Critical: 0
-- Important: 7
+- Critical: 2
+- Important: 6
 - Minor: 5

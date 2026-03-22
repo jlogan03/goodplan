@@ -34,8 +34,12 @@ skills/                   # source of truth for goodplan workflow skills
 src/
 ├── commands/
 │   ├── epic/
-│   ├── build/
-│   ├── resource/
+│   ├── slice/
+│   ├── quest/
+│   ├── decision/
+│   ├── learning/
+│   ├── activity/
+│   ├── subagent/
 │   └── global/
 ├── core/
 │   ├── state/

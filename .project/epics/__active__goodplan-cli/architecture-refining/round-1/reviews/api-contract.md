@@ -1,162 +1,207 @@
 # API Contract Review
 
-Reviewer focus: public interface design across all surfaces — CLI commands, inter-subsystem APIs, error shapes. Evaluating naming, consistency, ergonomics, and contract completeness.
+Reviewer: API Contract
+Scope: Entire architecture -- inter-subsystem contract coherence after recursive tree state model change
+Goal: Ensure data layer, state machine, RPC layer, and commands layer contracts all reference the tree model consistently.
 
 ## Issues
 
-### CRITICAL-01: Command surface in commands-api.md contradicts the command-surface-conventions decision for workflow verbs
-**Severity:** CRITICAL
-**File:** `architecture/commands-api.md`
-**Resolution:** Align commands-api.md with the decision
+**[CRITICAL] `_derived` references persist across multiple documents despite tree model replacing them**
 
-The command-surface-conventions decision (2026-03-20) defines phase-level orchestrator verbs as `begin`, `status`, `context`, `complete`, `abandon`, and sub-agent verbs as `start-<action>`, `submit-<action>`. But commands-api.md uses action-specific verbs per entity namespace instead: `epic:explore`, `epic:define-architecture`, `slice:plan`, `slice:implement`, etc. These are neither the `begin`/`complete` pattern nor the `start-*`/`submit-*` pattern.
+The recursive `DirectoryEntry` tree replaced the old `_derived` concept -- guards now use `hasChild()` and `resolve()` on the tree. The `state-machine-api.md` "Directory-Based Guards" section (lines 252-260) correctly describes this replacement. However, several documents still reference `_derived` as if it exists:
 
-The flows.md file partially follows the decision — it shows `goodplan begin plan --slice 01-auth` — but this command doesn't appear anywhere in commands-api.md. Meanwhile commands-api.md lists `goodplan slice:plan --slice <name>` which follows a different pattern entirely.
+- `flows.md` step 2 (generic flow): "recompute `_derived` fields"
+- `flows.md` step 3 (init flow): "all `_derived` false"
+- `flows.md` step 4 (slice:plan flow): "Checks `_derived`: slice goal exists"
+- `flows.md` step 5 (status flow): "uses `_derived` fields to report sub-phase progress"
+- `flows.md` step 5 (sub-agent flow): "checks `_derived.planContentProvided`"
+- `rpc-layer-api.md` StatusResult description: "Derives status from the unified state object and `_derived` fields"
+- `transition-tables.md` guards: `_derived.planContentProvided` and `_derived.refinedPlanExists` (slice rows 68-69, 75-76; quest rows 102-103, 108-109; cross-cutting guards table rows 146-147)
 
-This is a fundamental inconsistency in the primary public interface. The command surface is the most visible contract, and having the architecture file disagree with its own decision (and with flows.md) makes the design ambiguous. Which pattern is canonical?
+The transition tables are designated "source of truth for the state machine implementation and tests" but use `_derived` while the state machine API specifies tree-based guards. This is a direct contract conflict between two authoritative documents.
 
-### CRITICAL-02: RPC Layer's `begin`/`complete` interface doesn't match the command surface
-**Severity:** CRITICAL
-**File:** `architecture/rpc-layer-api.md`, `architecture/commands-api.md`
-**Resolution:** Reconcile the two APIs
+Resolution: DIRECTLY_ACTIONABLE
 
-The RPC Layer defines four operations: `begin(phase, target, options)`, `complete(phase, target, input, options)`, `context(phase, target, options)`, `status(options)`. These use a `Phase` type as a parameter — a generic "what phase are you beginning/completing" dispatch.
+Fix: Replace all `_derived.planContentProvided` with `hasChild(state, "slices/<name>", "plan.md")` (and quest equivalents). Replace `_derived.refinedPlanExists` with `hasChild(state, "slices/<name>", "plan-refined.md")`. Remove "recompute `_derived` fields" from flows.md -- `loadState()` already captures directory contents via tree assembly. Update status flow to reference tree navigation.
 
-But commands-api.md defines per-entity verb commands (`slice:plan`, `slice:implement`, `epic:explore`, `epic:define-architecture`). There's no mapping showing how `goodplan slice:plan --slice foo` translates to `rpc.begin('plan', { slice: 'foo' })`. And conversely, the RPC interface implies a `goodplan begin plan --slice foo` pattern that doesn't appear in commands-api.md.
+---
 
-Either the command surface should use generic verbs (`begin`, `complete`) with phase arguments, or the RPC layer should expose per-phase methods. Currently they disagree.
+**[CRITICAL] `dirHasFile()` function name conflicts with `hasChild()` -- same concept, two names**
 
-### IMPORTANT-01: `resource:` namespace prefix is verbose and inconsistent with how it would actually be used
-**Severity:** IMPORTANT
-**File:** `architecture/commands-api.md`
-**Resolution:** Simplify or justify
+Two different function names are used for the same operation across documents:
 
-The `resource:epic list` pattern means typing `goodplan resource:epic list` — three tokens before any flags. The decision doc says "resource: namespace keeps CRUD operations out of the way since the LLM rarely uses them directly." But the commands-api.md also shows `resource:activity list`, `resource:decision list`, `resource:learning list` which are likely high-frequency for status queries.
+- `state-machine-api.md` lines 257-260: uses `dirHasFile(state, "slices/<name>", "plan.md")`
+- `data-model.md` line 389: uses `dirHasFile(state, "epics/my-epic/research", "topic.md")`
+- `data-model.md` lines 228: defines `hasChild(state: ProjectState, dirPath: string, childName: string): boolean`
+- `data-layer-api.md` line 74: defines `hasChild(state: ProjectState, dirPath: string, childName: string): boolean`
 
-Compare: `goodplan resource:slice list --epic foo` vs `goodplan slice list --epic foo`. The `resource:` prefix adds friction for little benefit. Since resource commands are already distinguished by using `list`/`show` verbs (which don't appear in workflow commands), the namespace prefix may be redundant.
+The formally defined API in both the data-model and data-layer is `hasChild()`. The state-machine-api and a section of data-model use `dirHasFile()` informally. Since the state machine consumes this function for guards (a critical path), having two names for the same thing will cause implementation confusion.
 
-### IMPORTANT-02: `--inline-context` flag naming is inconsistent across documents
-**Severity:** IMPORTANT
-**File:** `architecture/commands-api.md`, `architecture/rpc-layer-api.md`, `architecture/conventions.md`
-**Resolution:** Standardize on one name
+Resolution: DIRECTLY_ACTIONABLE
 
-Three different names appear:
-- commands-api.md global flags table: `--inline-context`
-- commands-api.md context command: `--inline-context[=<bytes>]`
-- rpc-layer-api.md WorkflowOptions: `inlineContext`
-- The decision (inline-flag-replaces-depth): `--inline`
-- conventions.md: `--inline-context`
+Fix: Replace all `dirHasFile()` with `hasChild()` to match the formal API definition.
 
-The decision explicitly says the flag is called `--inline`. The architecture files use `--inline-context`. Pick one and use it everywhere. The decision should be the source of truth.
+---
 
-### IMPORTANT-03: `Target` type in RPC Layer is undefined
-**Severity:** IMPORTANT
-**File:** `architecture/rpc-layer-api.md`
-**Resolution:** Define the Target type
+**[IMPORTANT] `getJson<T>()` return type disagrees between data-model.md and data-layer-api.md**
 
-`begin(phase: Phase, target: Target, options)` uses a `Target` type that is never defined. Same for `Phase`. These are load-bearing types — they determine which entity the operation applies to and what workflow phase it maps to. Without definitions, implementers must guess. Should `Target` be `{ slice?: string; epic?: string; quest?: string }` or a discriminated union? What are the valid `Phase` values?
-
-### IMPORTANT-04: Commands-api.md lists commands that don't map to any state event
-**Severity:** IMPORTANT
-**File:** `architecture/commands-api.md`, `architecture/state-machine-api.md`
-**Resolution:** Add missing events or remove commands
-
-Several commands in commands-api.md have no corresponding `StateEvent`:
-- `epic:explore` — no EXPLORE event
-- `epic:define-architecture` — no DEFINE_ARCHITECTURE event
-- `epic:refine-architecture` — no REFINE_ARCHITECTURE event
-- `epic:define-slices` — no DEFINE_SLICES event
-- `epic:refine-slices` — no REFINE_SLICES event
-- `quest:start` — no START_QUEST event (there's `BEGIN_QUEST`)
-- `slice:implement` — no direct event (there's `BEGIN_IMPLEMENTATION`)
-
-Either these commands map to generic events like `BEGIN` with a phase parameter (supporting the flows.md pattern), or the state event list is incomplete. This gap makes the command-to-event contract unclear.
-
-### IMPORTANT-05: `complete` command input shape differs between RPC layer and state machine
-**Severity:** IMPORTANT
-**File:** `architecture/rpc-layer-api.md`, `architecture/state-machine-api.md`
-**Resolution:** Align or document the transformation
-
-RPC `CompleteInput` has:
-```
-verificationPassed, deferred?, learnings?
+`data-model.md` line 224:
+```typescript
+function getJson<T>(state: ProjectState, path: string): JsonEntry<T> | undefined;
 ```
 
-State machine `COMPLETE_SLICE` event has:
+`data-layer-api.md` line 67:
+```typescript
+function getJson<T>(state: ProjectState, path: string): T | undefined;
 ```
-verificationPassed, deferred, learnings, architectureDelta
-```
 
-The `architectureDelta` field appears in the state event but not in `CompleteInput`. And `CompleteInput.learnings` uses `rollupTo: ('epic' | 'project')[]` while the data model `learnings.jsonl` uses `rollup: true` (a boolean). These are different shapes for the same concept. Who transforms between them?
-
-### IMPORTANT-06: Learning schema differs across three locations
-**Severity:** IMPORTANT
-**File:** `architecture/rpc-layer-api.md`, `architecture/data-model.md`, `architecture/state-machine-api.md`
-**Resolution:** Define one canonical Learning type
-
-- rpc-layer-api.md: `{ category, summary, detail, tags, rollupTo: ('epic' | 'project')[] }`
-- data-model.md (learnings.jsonl): `{ category, summary, detail, tags, source, rollup: true }`
-- state-machine-api.md: references `Learning[]` without defining it
-
-Three different shapes. The RPC version uses `rollupTo` (array of targets), the stored version uses `rollup` (boolean). These must be reconciled — is the transformation documented? Where does `source` get populated?
-
-### IMPORTANT-07: No `write-<field>` commands defined despite being referenced
-**Severity:** IMPORTANT
-**File:** `architecture/data-layer-api.md`, `architecture/commands-api.md`
-**Resolution:** Add the commands or clarify the mechanism
-
-The overview states: "Lifecycle-bound markdown (goals, plans) is written through CLI `write-<field>` commands with state validation." But no `write-*` commands appear in commands-api.md. How does the LLM write a slice goal or plan? This is a gap in the command surface.
-
-### MINOR-01: `listEntities` return type is `OverviewEntity` (singular) instead of array
-**Severity:** MINOR
-**File:** `architecture/data-layer-api.md`
-**Resolution:** Fix the return type
+The data-model returns the wrapper `JsonEntry<T>` (caller writes `result?.content.status`). The data-layer returns the unwrapped `T` (caller writes `result?.status`). Same function, different signatures in two documents that both claim to define it. The state machine guard examples in `data-model.md` lines 308-310 use the wrapped version:
 
 ```typescript
-function listEntities(collectionPath: string): OverviewEntity;
+const epic = getJson<Epic>(state, "epics/goodplan-cli/epic.json");
+epic?.content.status === "executing"
 ```
 
-Should return `OverviewEntity[]` or the full overview object `{ items: OverviewEntity[] }`. As written, it returns a single entity for a list operation.
+This contract disagreement will cause type errors at implementation time.
 
-### MINOR-02: Guard pattern uses `STATE_GUARD_SKIP` as a control flow mechanism
-**Severity:** MINOR
-**File:** `architecture/state-machine-api.md`
-**Resolution:** Consider a cleaner pattern
+Similarly, `getJsonl<T>()` returns `JsonlEntry<T> | undefined` in data-model but `T[] | undefined` in data-layer.
 
-The transition table example uses `StateError` with code `STATE_GUARD_SKIP` to mean "this guard didn't match, try the next row." Using the error type for non-error control flow is confusing. A guard returning `false` (skip) vs `true` (match) vs `StateError` (reject) would be clearer.
+Resolution: DIRECTLY_ACTIONABLE
 
-### MINOR-03: `quest:start` vs `quest:create` — naming gap with Begin pattern
-**Severity:** MINOR
-**File:** `architecture/commands-api.md`
-**Resolution:** Clarify naming
+Fix: The unwrapped versions (`T` and `T[]`) from data-layer-api.md are more ergonomic. Update data-model.md to match, and update the guard examples accordingly (e.g., `epic?.status` instead of `epic?.content.status`).
 
-Quests have `quest:create` and `quest:start` but slices have `slice:create` and then use `slice:plan`/`slice:implement` to advance. If the pattern is supposed to be `begin`/`complete` (per the decision), neither entity follows it consistently in commands-api.md.
+---
 
-### MINOR-04: `StatusResult.artifacts` type is too loose
-**Severity:** MINOR
-**File:** `architecture/rpc-layer-api.md`
-**Resolution:** Define known artifact keys
+**[IMPORTANT] State Key Dependencies table references `_derived` in Reads column**
 
-`artifacts: Record<string, number>` loses type information. Known artifact types (architecture files, research docs, brainstorm docs, prototypes, decisions, learnings) could be enumerated for better type safety.
+`state-machine-api.md` lines 226-248: Several event types in the State Key Dependencies table list `_derived` in their Reads column. With the tree model, these guards read specific `DirectoryEntry.contents` paths. The table should reference the actual tree paths.
 
-### MINOR-05: No `--verbose` flag documented despite conventions.md referencing it
-**Severity:** MINOR
-**File:** `architecture/commands-api.md`, `architecture/conventions.md`
-**Resolution:** Add to global flags or clarify
+Affected events and their actual reads:
+- `COMPLETE_EXPLORE`: reads `epics/<name>/research/` directory contents (not `_derived`)
+- `COMPLETE_ARCHITECTURE`: reads `epics/<name>/architecture/` directory contents
+- `BEGIN_PLAN`: reads sibling slice statuses from `slices/` directory
+- `COMPLETE_PLAN`: reads `slices/<name>/` contents for `plan.md` existence
+- `BEGIN_QUEST_PLAN`, `COMPLETE_QUEST_PLAN`: reads `quests/<name>/` contents
 
-Conventions.md says "stderr for diagnostics (only with `--verbose`)" but `--verbose` doesn't appear in the global flags table in commands-api.md.
+Resolution: DIRECTLY_ACTIONABLE
+
+---
+
+**[IMPORTANT] data-model.md "Free-Form Markdown" section references nonexistent `files` array**
+
+`data-model.md` line 389:
+> Existence tracked in directory `files` arrays (e.g., `dirHasFile(state, "epics/my-epic/research", "topic.md")`)
+
+The recursive tree model uses `DirectoryEntry.contents` -- a `Record<string, StateEntry>`. There is no `files` array anywhere in the tree model. This sentence describes a flat-map model that was replaced.
+
+Resolution: DIRECTLY_ACTIONABLE
+
+Fix: Replace with: "Existence tracked via `DirectoryEntry.contents` keys (e.g., `hasChild(state, "epics/my-epic/research", "topic.md")`)"
+
+---
+
+**[IMPORTANT] `complete()` RPC function uses `BeginPhase` type for its phase parameter**
+
+`rpc-layer-api.md` line 14:
+```typescript
+function complete(phase: BeginPhase, target: Target, input: CompleteInput, options: WorkflowOptions): CompleteResult;
+```
+
+`BeginPhase` includes values like `'explore'`, `'define-architecture'`, `'plan'`, `'implement'` -- phases that represent the start of work. `complete()` maps to `COMPLETE_EPIC`, `COMPLETE_SLICE`, `COMPLETE_QUEST`, and `ABANDON_*` events. The command-to-RPC routing table (line 91) confirms: `epic:complete`, `slice:complete`, `quest:complete` and `*:abandon` use `complete()`. None of the `BeginPhase` values make sense here.
+
+Resolution: DIRECTLY_ACTIONABLE
+
+Fix: The `complete()` function should use a narrower type or infer the event from `target.type`. Options: (a) `type CompletePhase = 'complete' | 'abandon'`, or (b) remove the phase parameter since the event is determined by target type + the `CompleteInput` shape (which already distinguishes completion from abandonment via presence of `reason` field vs `verificationPassed`).
+
+---
+
+**[IMPORTANT] data-model.md example state tree has type error for `plan-refined.md`**
+
+`data-model.md` line 278-279:
+```typescript
+"plan-refined.md": { type: "json", content: "..." },
+```
+
+This should be `type: "markdown"` since `plan-refined.md` is an LLM-written markdown file. The entry directly above it (`plan.md` on line 277) correctly uses `type: "markdown"`. This is both a documentation error and a contract violation -- the `assembleState()` function will produce a `MarkdownEntry` for `.md` files per the data-layer-api spec (line 23: "`.md` files are read as text and stored as `MarkdownEntry`").
+
+Resolution: DIRECTLY_ACTIONABLE
+
+---
+
+**[IMPORTANT] Context bundling reads from MarkdownEntry nodes, but per-phase priority tables reference paths, not tree locations**
+
+The RPC layer's context bundling (rpc-layer-api.md lines 231-244) describes priority lists like "current architecture overview, target architecture overview, conventions." The Dependencies section (line 295) confirms: "Context bundling reads markdown content directly from `MarkdownEntry` nodes in the state tree."
+
+However, the priority tables use vague references like "current architecture" and "target architecture" without specifying the tree paths. The context module needs to resolve these to specific tree locations:
+- "current architecture" = `resolve(state, "architecture/")` (project-level, a DirectoryEntry)
+- "target architecture" = `resolve(state, "epics/<activeEpic>/architecture/")` (epic-level)
+- "conventions" = `resolve(state, "conventions.md")` (a MarkdownEntry)
+
+For directory entries like `architecture/`, the context module needs to iterate `contents` and collect all `MarkdownEntry` children. This traversal pattern is not documented in the context bundling contract.
+
+Resolution: DIRECTLY_ACTIONABLE
+
+Fix: Add a brief note to the context bundling section explaining that directory references (e.g., "current architecture") resolve to `DirectoryEntry` nodes, and all `MarkdownEntry` children within are eligible for inlining. Optionally add the concrete tree paths for each priority item.
+
+---
+
+**[MINOR] Status enum values in state-machine-api.md disagree with transition table status names**
+
+`state-machine-api.md` defines:
+```typescript
+type EpicStatus = 'created' | 'exploring' | 'explored' | 'architecting' | 'architected'
+  | 'refining-architecture' | 'slicing' | 'sliced' | 'refining-slices' | 'ready'
+  | 'executing' | 'complete' | 'abandoned';
+```
+
+`transition-tables.md` uses different names for many statuses:
+- `defining-architecture` (tables) vs `architecting` (enum)
+- `architecture-defined` (tables) vs `architected` (enum)
+- `architecture-refined` (tables) vs not in enum
+- `defining-slices` (tables) vs `slicing` (enum)
+- `slices-defined` (tables) vs `sliced` (enum)
+- `slices-refined` (tables) vs not in enum
+- `activated` (tables) vs `executing` / `ready` (enum)
+- `completed` (tables) vs `complete` (enum)
+
+For slices: `plan-created` (tables) vs `planned` (enum), `implementation-complete` (tables) vs `implemented` (enum).
+
+The transition tables are "the source of truth for the state machine implementation and tests." The enums should match.
+
+Resolution: DIRECTLY_ACTIONABLE
+
+---
+
+**[MINOR] Schema registry pattern coherent but path construction during tree walk is not specified**
+
+The schema registry matches paths like `epics/[^/]+/epic.json` against patterns. During `commitState()`'s recursive tree diff, the implementation must build a path string by concatenating directory names as it walks. This path construction algorithm (root = empty string, each level appends `childName + "/"`) is implicit. If the root starts with a leading slash or the path uses OS-specific separators, patterns won't match.
+
+Resolution: DIRECTLY_ACTIONABLE
+
+Fix: Add a one-liner to the schema registry section specifying that paths are always forward-slash-separated, rooted at the `.project/` directory with no leading slash (e.g., `"epics/goodplan-cli/epic.json"`).
+
+---
+
+**[MINOR] `getMarkdown()` helper defined in data-layer-api.md but absent from data-model.md**
+
+`data-layer-api.md` line 70 defines:
+```typescript
+function getMarkdown(state: ProjectState, path: string): string | undefined;
+```
+
+`data-model.md` lines 220-229 defines `resolve()`, `getJson()`, `getJsonl()`, `getDir()`, and `hasChild()` but omits `getMarkdown()`. Since context bundling reads markdown nodes from the tree, this helper is important and should be consistent across both documents.
+
+Resolution: DIRECTLY_ACTIONABLE
 
 ## Score: 5/10
 
-The inter-subsystem APIs (state-machine-api.md, data-layer-api.md, rpc-layer-api.md) are individually well-designed with clear contracts and good depth hiding. The state machine's single `reduce()` entry point is excellent. The data layer's concurrent modification detection is thoughtful.
+The recursive tree model itself is well-designed -- `StateEntry` as a discriminated union, `DirectoryEntry` with recursive `contents`, path-based navigation helpers, and the schema registry are all coherent in data-model.md. The data-layer-api.md is largely aligned.
 
-However, the command surface — the most visible and most important API contract — has fundamental inconsistencies with the decisions it's supposed to implement. The commands-api.md defines per-entity verb commands (`slice:plan`, `epic:explore`) while the decision defines generic orchestrator verbs (`begin`, `complete`) and the flows.md uses a third pattern (`goodplan begin plan --slice`). This isn't a minor naming quibble — it's a disagreement about the fundamental command structure that would block implementation.
+However, the migration to this model is incomplete across the document set. The `_derived` concept that the tree replaced still appears in flows.md, transition-tables.md, and parts of rpc-layer-api.md. Two different function names (`dirHasFile` vs `hasChild`) refer to the same operation. The tree navigation helpers have conflicting return types between data-model.md and data-layer-api.md. The transition table status names disagree with the state machine enums.
 
-The Learning type appearing in three different shapes across three files compounds the problem — it's unclear which is canonical.
-
-To reach 9+: (1) Resolve the command surface pattern — pick one and update commands-api.md, flows.md, and the decision to agree. (2) Define `Phase` and `Target` types explicitly in rpc-layer-api.md. (3) Reconcile the Learning/CompleteInput shapes across all files so the transformation path is clear. (4) Add the missing `write-<field>` commands or document how lifecycle-bound markdown gets written. (5) Align the `--inline` vs `--inline-context` naming.
+To reach 9+: (1) Eliminate all `_derived` references and replace with tree-based equivalents. (2) Standardize on `hasChild()` everywhere. (3) Align `getJson/getJsonl` return types between data-model and data-layer. (4) Fix the `complete()` RPC function phase type. (5) Reconcile enum values with transition table statuses. (6) Specify context bundling tree traversal for directory entries.
 
 ## Summary
 - Critical: 2
-- Important: 7
-- Minor: 5
+- Important: 6
+- Minor: 3

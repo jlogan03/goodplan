@@ -5,7 +5,7 @@
 Every workflow command follows this pattern. The state machine sees the complete project state as a single object and returns a new version. The RPC layer handles serialization.
 
 1. **Commands layer**: parse input (flags + stdin), validate with Zod schema
-2. **RPC layer**: load state (from cache or full assembly), recompute `_derived` fields
+2. **RPC layer**: load state (from cache or full assembly)
 3. **RPC layer**: build `StateEvent` from command parameters, call `reduce(state, event)`
 4. **State Machine**: validate transition using current state + event payload, run guards → return new state or error
 5. **RPC layer**: diff old state vs new state, write only changed files via Data Layer
@@ -23,7 +23,7 @@ Project initialization goes through the state machine like any other transition.
 
 1. Commands parses flags: `--name my-project`
 2. Commands checks `cwd/.project/` directly (NOT `resolveProjectDir()` walk-up). If exists, returns `STATE_ALREADY_INITIALIZED` immediately — no need to load state.
-3. Data Layer: `assembleState()` — `.project/` doesn't exist, returns zero state (empty `ProjectState`, no files, all `_derived` false)
+3. Data Layer: `assembleState()` — `.project/` doesn't exist, returns zero state (`{ type: "directory", contents: {} }`)
 4. RPC calls State Machine: `reduce(zeroState, { type: 'INIT_PROJECT', name: 'my-project' })`
 5. State Machine:
    - Validates no project exists in state (guard: `project.json` key absent)
@@ -36,12 +36,11 @@ Project initialization goes through the state machine like any other transition.
 ## `goodplan slice:plan --slice 01-auth --json`
 
 1. Commands parses flags: `--slice 01-auth`, `--json`
-2. RPC loads unified state (cache + derived recompute)
+2. RPC loads unified state (cache or full assembly)
 3. RPC calls State Machine: `reduce(state, { type: 'BEGIN_PLAN', slice: '01-auth' })`
 4. State Machine:
-   - Reads `slices/01-auth/slice.json` from state → status is `defined`
-   - Checks guard: previous slice complete or this is the first slice
-   - Checks `_derived`: slice goal exists
+   - Reads `slices/01-auth/slice.json` from state → status is `created`
+   - Checks guard: previous slice completed/abandoned or this is the first slice
    - Returns new state with `slice.json` status → `planning`, activity log entry appended
 5. RPC diffs: `slice.json` changed, `activity-log.jsonl` has new entry → writes both, updates cache
 6. RPC assembles response metadata: slice goal, epic name, active decisions (titles)
@@ -65,8 +64,8 @@ The completion flow has a defined ordering. The state machine enforces it via gu
 2. RPC loads unified state
 3. RPC calls State Machine: `reduce(state, { type: 'COMPLETE_SLICE', slice: '01-auth', ...input })`
 4. State Machine:
-   - Reads slice status → `implementing`
-   - **Verification guard**: checks `input.verificationPassed === true`. If false, returns error — slice stays in `implementing`, response indicates more work needed. Note: `verificationPassed` is a human/orchestrator assertion — the caller (orchestrator skill or user) reviews implementation results and decides whether verification criteria are met, then asserts the result in the `slice:complete` stdin payload. The CLI does not automatically determine verification.
+   - Reads slice status → `implementation-complete`
+   - **Verification guard**: checks `input.verificationPassed === true`. If false, returns error — slice stays in `implementation-complete`, response indicates more work needed. Note: `verificationPassed` is a human/orchestrator assertion — the caller (orchestrator skill or user) reviews implementation results and decides whether verification criteria are met, then asserts the result in the `slice:complete` stdin payload. The CLI does not automatically determine verification.
    - Updates `slice.json` status → `complete`
    - Appends deferred items to target slice's `slice.json` deferred array
    - Appends learnings to `slices/01-auth/learnings.jsonl`
@@ -82,13 +81,13 @@ The completion flow has a defined ordering. The state machine enforces it via gu
 
 ## `goodplan status --json`
 
-Read-only — derives status from unified state + derived fields.
+Read-only — derives status from the unified state tree.
 
 1. Commands parses flags
 2. RPC loads unified state
 3. RPC reads active pointers from `project.json` (epic, slice, quest)
 4. RPC reads active entity metadata for current status
-5. RPC uses `_derived` fields to report sub-phase progress (artifact counts)
+5. RPC traverses `DirectoryEntry.contents` to count artifacts (research files, architecture files, etc.)
 6. RPC checks for implicit conditions (all slices complete? verification criteria missing?)
 7. RPC assembles status: active work, current phase, artifact counts, recommendations for next action
 8. Commands outputs JSON result
@@ -122,9 +121,9 @@ This shows the full two-actor sequence for a plan phase. Other sub-agent phases 
 4. **Sub-agent** writes plan markdown directly to `.project/slices/01-auth/plan.md`
 5. **Sub-agent** calls `goodplan submit-plan --slice 01-auth` (with optional learnings via stdin)
    - Commands → RPC → `submit('plan', { type: 'slice', name: '01-auth' }, { phase: 'plan' }, {})`
-   - RPC checks `_derived.planContentProvided` — guards that plan.md exists on disk
    - State machine: `reduce(state, { type: 'COMPLETE_PLAN', slice: '01-auth' })`
-   - Slice transitions to `planned`
+   - Guard checks `hasChild(state, "slices/01-auth", "plan.md")` — plan.md must exist in the state tree
+   - Slice transitions to `plan-created`
 6. **Orchestrator** receives sub-agent completion, continues workflow (e.g., `slice:refine-plan`)
 
 Key points:

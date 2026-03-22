@@ -4,13 +4,13 @@
 
 - **Rationale:** The state machine is the single enforcer of workflow rules, transition validity, and cross-entity consistency. Bypassing it (writing JSON directly) risks invalid states that the CLI can't recover from.
 - **Scope:** System-wide — applies to all code paths that modify JSON entity files
-- **Verification:** Read-only commands (`list`, `show`) go directly to the Data Layer. All mutation commands route through the RPC Layer which calls `reduce()`. Fitness function candidate: no direct `writeEntity()` calls outside of `commitState()` for entity JSON files.
+- **Verification:** Read-only commands (`list`, `show`) go directly to the Data Layer. All mutation commands route through the RPC Layer which calls `reduce()`. Fitness function candidate: no direct filesystem writes outside of `commitState()` for entity JSON files.
 
 ## INV-002: JSON files always use deterministic key ordering
 
 - **Rationale:** Alphabetical key ordering minimizes git merge conflicts when multiple branches modify the same JSON file. Without this, semantically identical JSON can produce diffs.
 - **Scope:** Data Layer — all JSON and JSONL write operations
-- **Verification:** Enforced in `writeEntity()`, `appendRecord()`, and `commitState()`. Fitness function candidate: round-trip test confirming write → read → write produces identical output.
+- **Verification:** Enforced in `commitState()` for all JSON and JSONL writes. Fitness function candidate: round-trip test confirming `assembleState()` → `commitState()` on unchanged state produces identical output.
 
 ## INV-003: The state machine is pure — no I/O
 
@@ -27,8 +27,8 @@
 ## INV-005: Schema validation on every read and every write
 
 - **Rationale:** Invalid data must never reach the state machine (corrupting transition logic) or the filesystem (corrupting stored state). Validation at both boundaries catches bugs in either direction.
-- **Scope:** Data Layer — all `readEntity()`, `writeEntity()`, `readRecords()`, `appendRecord()`, `assembleState()`, `commitState()` operations
-- **Verification:** Every read parses through Zod and throws on failure. Every write validates through Zod before serializing. Fitness function candidate: test confirming malformed JSON is rejected on both read and write paths.
+- **Scope:** Data Layer — `assembleState()` (reads) and `commitState()` (writes)
+- **Verification:** Every read in `assembleState()` parses through Zod and throws on failure. Every write in `commitState()` validates through Zod before serializing. Fitness function candidate: test confirming malformed JSON is rejected on both read and write paths.
 
 ## INV-006: `schema` output reflects actual command signatures
 

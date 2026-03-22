@@ -8,9 +8,10 @@ The State Machine uses a reducer pattern: `(state, event) → new state | error`
 
 ### Command Routing
 
-Commands are one of two types:
-- **Read-only commands** (`list`, `show` in each entity namespace): Commands → Data Layer (skip RPC and State Machine)
-- **Workflow commands** (`create`, `plan`, `complete`, `abandon`, `submit-*`, `start-*`, `status`): Commands → RPC Layer → State Machine + Data Layer
+Commands are one of three routing types:
+- **Read-only entity commands** (`list`, `show` in each entity namespace): Commands → Data Layer (skip RPC and State Machine)
+- **Read-only workflow commands** (`start-*`, `status`): Commands → RPC Layer → Data Layer (no state machine)
+- **Mutation commands** (`create`, `plan`, `complete`, `abandon`, `submit-*`): Commands → RPC Layer → State Machine + Data Layer
 
 ### Schema-Driven Validation
 

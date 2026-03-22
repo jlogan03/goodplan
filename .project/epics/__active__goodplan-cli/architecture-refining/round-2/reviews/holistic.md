@@ -1,101 +1,112 @@
-# Holistic Review — Round 2
+# Holistic Architecture Review — Round 2
 
-## Overall Assessment
+Confirmed goal: Ensure the recursive tree state model is well integrated and internally consistent across all 10 architecture files.
 
-The architecture tells a coherent, well-structured story after round 1 edits. The four-layer stack is consistently described across all files, dependency directions are clear, and the state machine purity constraint is enforced throughout. The files read as a unified design rather than separately authored documents. Decision alignment is strong — every active decision is reflected accurately in the architecture.
+Context: Round 1 scored 4/10 with 2 critical, 6 important, 5 minor issues. All 15 reportedly fixed. This review verifies the fixes and checks for remaining or newly introduced issues.
 
-**Score: 8/10**
+## Round 1 Fix Verification
 
----
+All 15 round-1 issues have been addressed:
 
-## Coherence Across Files
+- **C1 (status enums):** FIXED. All three enums in state-machine-api.md now match transition-tables.md exactly.
+- **C2 (stale `_derived`):** FIXED. No `_derived` references remain except in the historical section heading "Directory-Based Guards (replaces _derived)" which is acceptable context.
+- **I1 (`dirHasFile` vs `hasChild`):** FIXED. No `dirHasFile` references remain. All usage standardized on `hasChild()` and `contents` keys.
+- **I2 (`getJson` return types):** FIXED. Both data-model.md and data-layer-api.md now use unwrapped returns (`T | undefined`, `T[] | undefined`).
+- **I3 (wrong type for plan-refined.md):** FIXED. Now uses `{ type: "markdown", content: "..." }`.
+- **I4 (stale `files` array in Free-Form Markdown):** FIXED. Now says "Existence tracked via directory `contents` keys."
+- **I5 (invariants reference removed functions):** FIXED. Invariants now reference `commitState()`, `assembleState()`, `loadState()`.
+- **I6 (`complete()` phase parameter):** FIXED. `complete(target, input, options)` no longer takes a phase.
+- **I7 (context bundling tree traversal):** FIXED. Explicit "Tree traversal for directory references" paragraph added to rpc-layer-api.md.
+- **I8 (data layer internals in state machine doc):** FIXED. Section now focuses on how the state machine uses the tree.
+- **I9 (skip path):** RESOLVED. `plan-created` + `COMPLETE_REFINEMENT_ROUND` with passing scores as skip path is documented in transition-tables.md line 74.
+- **M1 (removal policy wording):** FIXED. Both files now say "no-op (abandoned entities kept for audit trail; optional deletion flag available)."
+- **M2 (`getMarkdown` missing):** FIXED. Added to data-model.md tree navigation helpers.
+- **M3 (schema registry path format):** FIXED. Path format documented in data-model.md.
+- **M4 (State Key Dependencies paths):** FIXED. Note added that these are `resolve()` paths.
 
-**Strong points:**
-- The _overview.md summary accurately reflects the detail in each subsystem file. No contradictions found between the overview and the individual API documents.
-- The data-model.md directory structure matches the paths referenced in state-machine-api.md's key dependency table and flows.md's concrete examples.
-- The conventions.md file is a faithful distillation of patterns described in detail across the other files — no drift.
-- The invariants.md file captures the six most important rules, and each is verifiable from the architecture as described.
+## Issues
 
-**No cross-file contradictions detected.** This is a significant improvement if round 1 had consistency issues.
+**[IMPORTANT]** state-machine-api.md lists guards for COMPLETE_EXPLORE and COMPLETE_ARCHITECTURE that do not exist in transition-tables.md
 
----
+The "Directory-Based Guards" section in state-machine-api.md (lines 258-262) lists four "key guards." Two match the transition tables:
+- `hasChild(state, "slices/<name>", "plan.md")` guards `COMPLETE_PLAN` -- confirmed in transition-tables.md line 68
+- `hasChild(state, "slices/<name>", "plan-refined.md")` guards `BEGIN_IMPLEMENTATION` -- confirmed in transition-tables.md line 75
 
-## Decision Alignment
+Two do NOT exist in transition-tables.md (source of truth):
+- `hasChild(state, "epics/<name>/architecture", "_overview.md")` guards `COMPLETE_ARCHITECTURE` -- transition-tables.md lines 22-23 show no guard (dash) for both skip and normal COMPLETE_ARCHITECTURE paths
+- `Object.keys(getDir(state, "epics/<name>/research")?.contents ?? {}).length > 0` guards `COMPLETE_EXPLORE` -- transition-tables.md lines 19-20 show no guard for COMPLETE_EXPLORE
 
-All 12 decisions checked. Alignment is accurate:
+The Cross-Cutting Guards summary table (transition-tables.md lines 138-147) also does not include these guards.
 
-| Decision | Alignment |
-|---|---|
-| entity-namespaced-commands | Fully reflected in commands-api.md |
-| no-work-stack | Three active pointers in data-model.md project.json |
-| layered-architecture | Consistently described in _overview.md and all subsystem files |
-| inline-flag-replaces-depth | `--inline` throughout, no `--depth` references |
-| roll-your-own-state-machine | Reducer + transition table pattern in state-machine-api.md |
-| orchestrator-subagent-split | start-*/submit-* commands in commands-api.md, context budget in rpc-layer-api.md |
-| epic-verification-at-activation | Activation guard in state-machine-api.md and flows.md |
-| incremental-architecture-updates | Architecture path returns in rpc-layer-api.md CompleteResult |
-| skills-versioned-in-repo | Deployment model in _overview.md |
-| skill-cli-integration | `goodplan schema` command in commands-api.md |
-| cli-as-workflow-engine | RPC layer responsibilities in rpc-layer-api.md |
-| typescript-first-go-later | Bun dependency in _overview.md |
-| simplicity-as-default | Architecture is genuinely simple — four layers, clear boundaries, no gratuitous abstractions |
+Either: (a) these guards should be added to the transition tables if they are intended, or (b) the state-machine-api.md section should remove them. Given that the transition tables are declared source of truth, the state-machine-api.md section is currently incorrect.
 
----
-
-## Findings
-
-### Critical (0)
-
-None.
-
-### Important (3)
-
-**IMP-1: Design spec capabilities not fully covered — quest lifecycle gaps**
-
-The design spec lists quest commands with `start`, `update` verbs. The architecture's commands-api.md has quest lifecycle commands but the state-machine-api.md `StateEvent` union is missing events for quest planning and refinement phases. There is `BEGIN_QUEST` but no `BEGIN_PLAN` (quest variant) or `BEGIN_REFINEMENT` (quest variant) in the union despite commands-api.md listing `quest:plan` and `quest:refine-plan`. The command-to-event mapping table says "BEGIN_PLAN (quest variant)" but the StateEvent union only has a slice-scoped `BEGIN_PLAN`. Either the events need a target discriminator (e.g., `BEGIN_PLAN` carries `{ slice?: string; quest?: string }`) or quest-specific events need to be added.
-
-**IMP-2: `submit-*` command write path is under-specified**
-
-commands-api.md says `submit-*` commands "write lifecycle-bound markdown through the Data Layer with state validation." But the data-layer-api.md interface has no function for this. The existing functions are `writeEntity` (JSON), `appendRecord` (JSONL), and `readContent`/`createDirectory` (content files). There is no `writeContent(path, content)` function for writing markdown files. Either: (a) `submit-*` commands write markdown through a new Data Layer function, or (b) they use a filesystem write outside the Data Layer, which would violate the architecture's constraint that all filesystem I/O goes through the Data Layer. This needs a concrete answer.
-
-**IMP-3: Epic phase commands lack state machine representation**
-
-commands-api.md lists `epic:explore`, `epic:define-architecture`, `epic:refine-architecture`, `epic:define-slices`, `epic:refine-slices` as mapping to generic `BEGIN` events with a phase parameter. But the StateEvent union in state-machine-api.md has no generic `BEGIN` event — the closest is entity-specific events like `BEGIN_PLAN`, `BEGIN_IMPLEMENTATION`. The architecture needs to either add a `BEGIN` event with a phase discriminator to the StateEvent union, or add explicit events for each epic phase. The current gap means the state machine API doesn't cover the epic pre-activation workflow.
-
-### Minor (3)
-
-**MIN-1: `src/commands/build/` in conventions.md doesn't match current command surface**
-
-conventions.md repo structure shows `src/commands/build/` but the command surface uses entity namespaces (`epic:`, `slice:`, `quest:`), not a `build:` namespace. The `build/` directory appears to be a holdover. Should probably be `src/commands/slice/` and `src/commands/quest/` to match the entity namespace pattern, or the directory naming convention should be documented as intentionally different from command namespaces.
-
-**MIN-2: `architecture-deltas.jsonl` status field divergence from design spec**
-
-The design spec has architecture update proposals with a `status` field (`proposed | approved | applied`) and a `rationale` field. The architecture's data-model.md `architecture-deltas.jsonl` has neither — it's a simpler record (`subsystem`, `type`, `description`, `ts`). This is arguably a simplification (good), but the design spec's richer model served a purpose: the LLM proposes changes, the user approves, then the LLM applies. If the approval step is gone, the architecture should document that explicitly as a simplification decision. If it's still intended, the schema needs updating.
-
-**MIN-3: Fitness functions are all "candidate — not yet written"**
-
-Every fitness function across all files is listed as a candidate. This is fine for the architecture phase, but the architecture should indicate which fitness functions are priority 1 for the first slice. The _overview.md maturity table starts this with "priority 1: state machine, priority 2: data layer" but the individual files don't echo this prioritization in their fitness function sections.
+Files: `state-machine-api.md` (lines 258-262), `transition-tables.md` (lines 19-23, 138-147)
+Resolution: DIRECTLY_ACTIONABLE
 
 ---
 
-## Simplicity Check
+**[IMPORTANT]** SubmitInput accepts learnings on intermediate phases but StateEvent types do not carry them
 
-The architecture is genuinely simple for what it covers. Four layers, clean boundaries, no unnecessary abstractions. The reducer pattern avoids library overhead. The unified state object is a pragmatic choice that trades some memory for much simpler state machine code.
+`SubmitInput` in rpc-layer-api.md offers optional `learnings?: Learning[]` on every phase (plan, refinement, implementation, explore, architecture, slices, refine-architecture, refine-slices). But the corresponding `StateEvent` types in state-machine-api.md do NOT include learnings for most of these:
 
-One area to watch: the `resource:` namespace adds a layer of indirection for read-only commands. The rationale (signals read-only, keeps CRUD separate from workflow) is valid, but `goodplan epic list` (design spec style) is simpler than `goodplan resource:epic list` (architecture style). This is a minor ergonomic concern, not architectural.
+- `COMPLETE_PLAN` has only `{ type; slice }` -- no learnings
+- `COMPLETE_IMPLEMENTATION` has only `{ type; slice }` -- no learnings
+- `COMPLETE_EXPLORE` has only `{ type; epic }` -- no learnings
+- `COMPLETE_ARCHITECTURE` has only `{ type; epic }` -- no learnings
+- `COMPLETE_SLICING` has only `{ type; epic }` -- no learnings
+- `COMPLETE_REFINE_ARCHITECTURE` has `{ type; epic; scores; override }` -- no learnings
+- `COMPLETE_REFINE_SLICES` has `{ type; epic; scores; override }` -- no learnings
+
+Only `COMPLETE_SLICE` and `COMPLETE_QUEST` carry `learnings: Learning[]`.
+
+This means either: (a) the RPC layer must persist learnings outside the state machine for these events, violating INV-001 ("every state mutation goes through the state machine"), or (b) the `StateEvent` types need `learnings?: Learning[]` added, or (c) `SubmitInput` should not accept learnings on phases where the state machine cannot handle them.
+
+The cleanest fix: add `learnings?: Learning[]` to all `COMPLETE_*` state events and have the reducer append them to the entity's `learnings.jsonl` in the state tree. Alternatively, remove `learnings` from intermediate `SubmitInput` phases and only accept them at entity completion.
+
+Files: `rpc-layer-api.md` (lines 127-148), `state-machine-api.md` (lines 37-45, 52-56), `invariants.md` (INV-001)
+Resolution: DIRECTLY_ACTIONABLE
 
 ---
 
-## Gaps vs Design Spec
+**[MINOR]** Five types used but never defined in rpc-layer-api.md
 
-1. **`goodplan init` behavior**: The design spec says `/create-epic` calls `goodplan init` internally. The architecture has `init` as a global command but doesn't specify what it creates (which JSON files, what defaults). The data-model.md shows the directory structure but not the bootstrapping sequence.
+The following types appear in function signatures and interface definitions but are never specified:
 
-2. **System profile / project health**: The design spec mentions `project.json` containing "system profile (health/quality metrics)" and `goodplan status` exposing it. The architecture's `project.json` entity in data-model.md has no health or quality fields. This may have been intentionally dropped (simplicity), but it's undocumented.
+1. `ContextResult` -- return type of `startContext()` (line 15). Likely equivalent to `ContextBundle` but not stated.
+2. `PathReferences` -- used in `SubmitResult`, `BeginResult`, `CompleteResult` (lines 157, 172, 212). No shape defined.
+3. `StatusOptions` -- parameter of `status()` (line 16). Shape unknown.
+4. `LearningSummary` -- used in `ContextBundle.learnings` (line 225). Distinct from `Learning` but no definition.
+5. `DecisionSummary` -- used in `ContextBundle.decisions` (line 224). Distinct from `DecisionEntry` but no definition.
 
-3. **`--override` flag**: Referenced in the superseded command-surface-conventions decision and in commands-api.md (`epic:refine-architecture --override`, `slice:refine-plan --override`), mentioned in state-machine-api.md's circuit breaker context. But the StateEvent union doesn't carry an `override` field. Either it's a flag the RPC layer interprets before calling reduce (bypassing the guard), or it needs to be in the event payload.
+An implementer would have to guess the shapes of these types. For an architecture document serving as the implementation spec, all types in public API signatures should be defined.
+
+File: `rpc-layer-api.md`
+Resolution: DIRECTLY_ACTIONABLE
 
 ---
+
+**[MINOR]** Example state tree omits project-level directories shown in the directory structure
+
+The example state tree in data-model.md (lines 237-292) shows root-level contents: `project.json`, `activity-log.jsonl`, `decisions.jsonl`, `learnings.jsonl`, `idea.md`, `conventions.md`, `epics`, `slices`, `quests`. But the directory structure (lines 396-433) also shows `architecture/`, `research/`, `brainstorm/`, `prototypes/` at the project root. These are absent from the example.
+
+Since project-level `architecture/` is referenced by `CompleteResult.architecturePaths.currentArchitecture` and by context bundling ("current architecture"), its absence from the canonical example could confuse implementers deciding what `assembleState()` should produce and what `INIT_PROJECT` should create.
+
+Consider adding at least `"architecture": { type: "directory", contents: {} }` to the example, and clarifying whether `INIT_PROJECT` creates these project-level directories or if they are created later.
+
+File: `data-model.md` (lines 237-292)
+Resolution: DIRECTLY_ACTIONABLE
+
+## Score: 8/10
+
+The round-1 fixes were thorough. All 15 issues have been properly resolved. The status enums match, `_derived` is gone, function names are standardized, return types agree, invariants reference the correct API, and the tree model is consistently used across all 10 files. The architecture reads as a unified, internally consistent design.
+
+Two remaining IMPORTANT issues prevent a 9+:
+1. The state-machine-api.md "key guards" section lists two guards that don't exist in the transition tables (source of truth). This is a source-of-truth contradiction that would confuse implementers.
+2. The `SubmitInput`/`StateEvent` learnings mismatch creates an architectural tension with INV-001. This needs a design decision about where intermediate-phase learnings are persisted.
+
+To reach 9+: (1) Reconcile the COMPLETE_EXPLORE and COMPLETE_ARCHITECTURE guard claims with the transition tables. (2) Decide whether intermediate learnings flow through StateEvent or are removed from SubmitInput, and update both files accordingly. (3) Define the 5 missing types in rpc-layer-api.md.
 
 ## Summary
-
-The architecture is well-integrated and tells a consistent story. The three important findings are all about gaps in coverage — places where the architecture describes a capability in one file but doesn't fully specify it in the subsystem that implements it. These are straightforward to resolve by extending the state machine event union and the data layer interface. No fundamental design issues.
+- Critical: 0
+- Important: 2
+- Minor: 2
