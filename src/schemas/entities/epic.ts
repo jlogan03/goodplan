@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { timestampSchema } from "../shared.js";
+import { refinementSchema, timestampSchema } from "../shared.js";
 
 export const epicStatusSchema = z.enum([
 	"created",
@@ -27,11 +27,19 @@ export const verificationSchema = z.object({
 });
 export type Verification = z.infer<typeof verificationSchema>;
 
+export const verificationResultSchema = z.object({
+	index: z.number().int().nonnegative(),
+	passed: z.boolean(),
+	notes: z.string().min(1),
+});
+export type VerificationResult = z.infer<typeof verificationResultSchema>;
+
 export const epicSchema = z.object({
 	name: z.string().min(1),
 	status: epicStatusSchema,
 	goal: z.string().min(1),
 	verifications: z.array(verificationSchema),
+	refinement: refinementSchema.nullable(),
 	sliceSequence: z.array(z.string()),
 	created: timestampSchema,
 	activated: timestampSchema.nullable(),

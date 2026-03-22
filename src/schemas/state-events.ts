@@ -1,10 +1,76 @@
-// TODO: remaining events added in future slices (architecture defines ~30+ event types)
+import type { Verification, VerificationResult } from "./entities/epic.js";
+
 // `ts` field is injected by the RPC layer to keep the reducer pure (no Date.now() inside).
 // See state-machine-api.md "Timestamp convention" for the documented pattern.
-export type StateEvent = { type: "INIT_PROJECT"; name: string; ts: string };
+// Only events that produce timestamped entities carry `ts`.
+export type StateEvent =
+	// Project
+	| { type: "INIT_PROJECT"; name: string; ts: string }
+	// Epic lifecycle (16 events)
+	| { type: "CREATE_EPIC"; name: string; goal: string; ts: string }
+	| { type: "BEGIN_EXPLORE"; epic: string }
+	| { type: "COMPLETE_EXPLORE"; epic: string }
+	| { type: "BEGIN_ARCHITECTURE"; epic: string }
+	| { type: "COMPLETE_ARCHITECTURE"; epic: string }
+	| { type: "BEGIN_REFINE_ARCHITECTURE"; epic: string }
+	| {
+			type: "COMPLETE_REFINE_ARCHITECTURE";
+			epic: string;
+			scores: Record<string, number>;
+			override?: boolean;
+	  }
+	| { type: "BEGIN_SLICING"; epic: string }
+	| { type: "COMPLETE_SLICING"; epic: string }
+	| { type: "BEGIN_REFINE_SLICES"; epic: string }
+	| {
+			type: "COMPLETE_REFINE_SLICES";
+			epic: string;
+			scores: Record<string, number>;
+			override?: boolean;
+	  }
+	| { type: "ACTIVATE_EPIC"; epic: string; ts: string }
+	| {
+			type: "COMPLETE_EPIC";
+			epic: string;
+			verificationResults: VerificationResult[];
+	  }
+	| { type: "ABANDON_EPIC"; epic: string; reason: string }
+	| { type: "ADD_VERIFICATION"; epic: string; verification: Verification }
+	| {
+			type: "UPDATE_VERIFICATION";
+			epic: string;
+			index: number;
+			verification: Verification;
+	  }
+	// Slice submit events (pulled forward from slices 04-05)
+	| { type: "COMPLETE_PLAN"; slice: string }
+	| {
+			type: "COMPLETE_REFINEMENT_ROUND";
+			slice: string;
+			scores: Record<string, number>;
+			override?: boolean;
+	  }
+	| { type: "COMPLETE_IMPLEMENTATION"; slice: string }
+	// Quest submit events (pulled forward from slices 04-05)
+	| { type: "COMPLETE_QUEST_PLAN"; quest: string }
+	| {
+			type: "COMPLETE_QUEST_REFINEMENT_ROUND";
+			quest: string;
+			scores: Record<string, number>;
+			override?: boolean;
+	  }
+	| { type: "COMPLETE_QUEST_IMPLEMENTATION"; quest: string };
 
 /** Error codes produced by state machine transitions. Single source of truth — also used by GoodplanErrorCode. */
-export type StateErrorCode = "STATE_ALREADY_INITIALIZED" | "STATE_INVALID_TRANSITION";
+export type StateErrorCode =
+	| "STATE_ALREADY_INITIALIZED"
+	| "STATE_INVALID_TRANSITION"
+	| "STATE_EPIC_ALREADY_ACTIVE"
+	| "STATE_MISSING_VERIFICATIONS"
+	| "STATE_VERIFICATION_FAILED"
+	| "STATE_SLICE_NOT_READY"
+	| "STATE_CONTENT_MISSING"
+	| "STATE_MAX_ROUNDS_REACHED";
 
 export type StateError = {
 	code: StateErrorCode;

@@ -28,6 +28,7 @@ const validEpic = {
 	status: "activated" as const,
 	goal: "Build a compiled TypeScript CLI",
 	verifications: [validVerification],
+	refinement: null,
 	sliceSequence: ["01-data-layer", "02-state-machine"],
 	created: "2026-03-20T00:00:00Z",
 	activated: "2026-03-20T12:00:00Z",

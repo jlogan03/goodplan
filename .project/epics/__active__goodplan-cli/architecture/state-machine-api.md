@@ -34,7 +34,7 @@ type StateEvent =
   // and initial activity-log entry. commitState() materializes the directories and files.
   | { type: 'INIT_PROJECT'; name: string; ts: string }
   // Epic lifecycle
-  | { type: 'CREATE_EPIC'; name: string; goal: string }
+  | { type: 'CREATE_EPIC'; name: string; goal: string; ts: string }
   | { type: 'BEGIN_EXPLORE'; epic: string }
   | { type: 'COMPLETE_EXPLORE'; epic: string }
   | { type: 'BEGIN_ARCHITECTURE'; epic: string }
@@ -45,7 +45,7 @@ type StateEvent =
   | { type: 'COMPLETE_SLICING'; epic: string }
   | { type: 'BEGIN_REFINE_SLICES'; epic: string }
   | { type: 'COMPLETE_REFINE_SLICES'; epic: string; scores: Record<string, number>; override?: boolean }
-  | { type: 'ACTIVATE_EPIC'; epic: string }
+  | { type: 'ACTIVATE_EPIC'; epic: string; ts: string }
   | { type: 'ABANDON_EPIC'; epic: string; reason: string }
   | { type: 'COMPLETE_EPIC'; epic: string; verificationResults: VerificationResult[] }
   // Slice lifecycle
