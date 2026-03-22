@@ -4,6 +4,9 @@
  */
 
 import type { Verification, VerificationResult } from "../../schemas/entities/epic.js";
+import type { DeferredItem } from "../../schemas/entities/slice.js";
+import type { ArchitectureDeltaInput } from "../../schemas/records/architecture-delta.js";
+import type { LearningInput } from "../../schemas/records/learning.js";
 
 // ── Phase types ──────────────────────────────────────────────
 
@@ -105,7 +108,15 @@ export interface SubmitResult {
 
 export type CompleteInput =
 	| { type: "epic"; verificationResults: VerificationResult[] }
-	| { type: "slice"; verificationPassed: boolean }
+	| {
+			type: "slice";
+			verificationPassed: boolean;
+			// RPC layer must coerce undefined → [] before dispatching COMPLETE_SLICE event
+			// (event type requires non-optional arrays; these are optional at the input boundary)
+			deferred?: DeferredItem[];
+			learnings?: LearningInput[];
+			architectureDelta?: ArchitectureDeltaInput[];
+	  }
 	| { type: "quest"; verificationPassed: boolean };
 
 // ── Submit input ─────────────────────────────────────────────

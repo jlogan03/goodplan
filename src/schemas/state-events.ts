@@ -1,4 +1,7 @@
 import type { Verification, VerificationResult } from "./entities/epic.js";
+import type { DeferredItem } from "./entities/slice.js";
+import type { ArchitectureDeltaInput } from "./records/architecture-delta.js";
+import type { LearningInput } from "./records/learning.js";
 
 // `ts` field is injected by the RPC layer on ALL events to keep the reducer pure (no Date.now() inside).
 // See state-machine-api.md "Timestamp convention" for the documented pattern.
@@ -46,8 +49,11 @@ export type StateEvent =
 			index: number;
 			verification: Verification;
 	  }
-	// Slice submit events (pulled forward from slices 04-05)
+	// Slice lifecycle
+	| { type: "CREATE_SLICE"; name: string; epic: string; goal: string; ts: string }
+	| { type: "BEGIN_PLAN"; slice: string; ts: string }
 	| { type: "COMPLETE_PLAN"; slice: string; ts: string }
+	| { type: "BEGIN_REFINEMENT"; slice: string; ts: string }
 	| {
 			type: "COMPLETE_REFINEMENT_ROUND";
 			slice: string;
@@ -55,7 +61,18 @@ export type StateEvent =
 			scores: Record<string, number>;
 			override?: boolean;
 	  }
+	| { type: "BEGIN_IMPLEMENTATION"; slice: string; ts: string }
 	| { type: "COMPLETE_IMPLEMENTATION"; slice: string; ts: string }
+	| {
+			type: "COMPLETE_SLICE";
+			slice: string;
+			ts: string;
+			verificationPassed: boolean;
+			deferred: DeferredItem[];
+			learnings: LearningInput[];
+			architectureDelta: ArchitectureDeltaInput[];
+	  }
+	| { type: "ABANDON_SLICE"; slice: string; ts: string; reason: string }
 	// Quest submit events (pulled forward from slices 04-05)
 	| { type: "COMPLETE_QUEST_PLAN"; quest: string; ts: string }
 	| {
@@ -88,9 +105,7 @@ export type StateError = {
 // Safe today because ProjectState tree entries use a `type` discriminant ("json" | "jsonl" | "dir")
 // that doesn't overlap. If the state tree ever gains entries with `code`/`message` fields,
 // add a negative check (e.g., `!("type" in result)`) or a discriminant tag.
-export function isStateError(
-	result: unknown,
-): result is StateError {
+export function isStateError(result: unknown): result is StateError {
 	if (
 		typeof result !== "object" ||
 		result === null ||

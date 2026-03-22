@@ -50,14 +50,14 @@ type StateEvent =
   | { type: 'ABANDON_EPIC'; epic: string; ts: string; reason: string }
   | { type: 'COMPLETE_EPIC'; epic: string; ts: string; verificationResults: VerificationResult[] }
   // Slice lifecycle
-  | { type: 'CREATE_SLICE'; name: string; epic: string; ts: string }
+  | { type: 'CREATE_SLICE'; name: string; epic: string; goal: string; ts: string }
   | { type: 'BEGIN_PLAN'; slice: string; ts: string }
   | { type: 'COMPLETE_PLAN'; slice: string; ts: string }
   | { type: 'BEGIN_REFINEMENT'; slice: string; ts: string }
   | { type: 'COMPLETE_REFINEMENT_ROUND'; slice: string; ts: string; scores: Record<string, number>; override?: boolean }
   | { type: 'BEGIN_IMPLEMENTATION'; slice: string; ts: string }
   | { type: 'COMPLETE_IMPLEMENTATION'; slice: string; ts: string }
-  | { type: 'COMPLETE_SLICE'; slice: string; ts: string; verificationPassed: boolean; deferred: DeferredItem[]; learnings: Learning[]; architectureDelta: ArchitectureDelta[] }
+  | { type: 'COMPLETE_SLICE'; slice: string; ts: string; verificationPassed: boolean; deferred: DeferredItem[]; learnings: LearningInput[]; architectureDelta: ArchitectureDeltaInput[] }
   | { type: 'ABANDON_SLICE'; slice: string; ts: string; reason: string }
   // Quest lifecycle
   | { type: 'CREATE_QUEST'; name: string; ts: string }

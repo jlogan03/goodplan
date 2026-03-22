@@ -7,40 +7,37 @@
  * for compile-time exhaustiveness checking before Map conversion.
  */
 import type { ProjectState } from "../tree.js";
-import type { StateEvent, StateError } from "./types.js";
-import { handleInitProject } from "./transitions/init.js";
 import { handleCreateEpic } from "./transitions/epic-create.js";
 import {
-	handleBeginExplore,
-	handleCompleteExplore,
+	handleAbandonEpic,
+	handleActivateEpic,
+	handleCompleteEpic,
+} from "./transitions/epic-lifecycle.js";
+import {
 	handleBeginArchitecture,
-	handleCompleteArchitecture,
+	handleBeginExplore,
 	handleBeginRefineArchitecture,
-	handleBeginSlicing,
-	handleCompleteSlicing,
 	handleBeginRefineSlices,
+	handleBeginSlicing,
+	handleCompleteArchitecture,
+	handleCompleteExplore,
+	handleCompleteSlicing,
 } from "./transitions/epic-phase.js";
 import {
 	handleCompleteRefineArchitecture,
 	handleCompleteRefineSlices,
 } from "./transitions/epic-refine.js";
+import { handleAddVerification, handleUpdateVerification } from "./transitions/epic-verify.js";
+import { handleInitProject } from "./transitions/init.js";
 import {
-	handleActivateEpic,
-	handleCompleteEpic,
-	handleAbandonEpic,
-} from "./transitions/epic-lifecycle.js";
-import {
-	handleAddVerification,
-	handleUpdateVerification,
-} from "./transitions/epic-verify.js";
-import {
-	handleCompletePlan,
-	handleCompleteRefinementRound,
 	handleCompleteImplementation,
+	handleCompletePlan,
+	handleCompleteQuestImplementation,
 	handleCompleteQuestPlan,
 	handleCompleteQuestRefinementRound,
-	handleCompleteQuestImplementation,
+	handleCompleteRefinementRound,
 } from "./transitions/slice-submit.js";
+import type { StateError, StateEvent } from "./types.js";
 
 /**
  * Handler type: takes state and the narrowed event, returns new state or error.
@@ -49,6 +46,12 @@ type Handler<T extends StateEvent["type"] = StateEvent["type"]> = (
 	state: ProjectState,
 	event: Extract<StateEvent, { type: T }>,
 ) => ProjectState | StateError;
+
+/** Placeholder for events whose handlers are not yet implemented (slice 04 Phase 2). */
+const handleNotImplemented = (_state: ProjectState, _event: StateEvent): StateError => ({
+	code: "STATE_INVALID_TRANSITION",
+	message: "not yet implemented — see slice 04 Phase 2",
+});
 
 /**
  * Exhaustiveness-checked handler record. TypeScript ensures every StateEvent type
@@ -72,9 +75,15 @@ const handlerRecord = {
 	ABANDON_EPIC: handleAbandonEpic,
 	ADD_VERIFICATION: handleAddVerification,
 	UPDATE_VERIFICATION: handleUpdateVerification,
+	CREATE_SLICE: handleNotImplemented,
+	BEGIN_PLAN: handleNotImplemented,
 	COMPLETE_PLAN: handleCompletePlan,
+	BEGIN_REFINEMENT: handleNotImplemented,
 	COMPLETE_REFINEMENT_ROUND: handleCompleteRefinementRound,
+	BEGIN_IMPLEMENTATION: handleNotImplemented,
 	COMPLETE_IMPLEMENTATION: handleCompleteImplementation,
+	COMPLETE_SLICE: handleNotImplemented,
+	ABANDON_SLICE: handleNotImplemented,
 	COMPLETE_QUEST_PLAN: handleCompleteQuestPlan,
 	COMPLETE_QUEST_REFINEMENT_ROUND: handleCompleteQuestRefinementRound,
 	COMPLETE_QUEST_IMPLEMENTATION: handleCompleteQuestImplementation,
@@ -85,10 +94,7 @@ const handlers = new Map<string, Handler>(
 	Object.entries(handlerRecord) as Array<[string, Handler]>,
 );
 
-export function reduce(
-	state: ProjectState,
-	event: StateEvent,
-): ProjectState | StateError {
+export function reduce(state: ProjectState, event: StateEvent): ProjectState | StateError {
 	const handler = handlers.get(event.type);
 	if (handler === undefined) {
 		return {

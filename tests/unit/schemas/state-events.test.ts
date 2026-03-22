@@ -4,7 +4,11 @@ import type { StateError, StateErrorCode, StateEvent } from "../../../src/schema
 
 describe("StateEvent", () => {
 	it("INIT_PROJECT event is structurally valid", () => {
-		const event: StateEvent = { type: "INIT_PROJECT", name: "my-project", ts: "2026-03-22T00:00:00.000Z" };
+		const event: StateEvent = {
+			type: "INIT_PROJECT",
+			name: "my-project",
+			ts: "2026-03-22T00:00:00.000Z",
+		};
 		expect(event.type).toBe("INIT_PROJECT");
 		expect(event.name).toBe("my-project");
 	});
@@ -30,14 +34,14 @@ describe("StateEvent", () => {
 
 	it("epic lifecycle events with no extra payload", () => {
 		const simpleEpicEvents: StateEvent[] = [
-			{ type: "BEGIN_EXPLORE", epic: "e" },
-			{ type: "COMPLETE_EXPLORE", epic: "e" },
-			{ type: "BEGIN_ARCHITECTURE", epic: "e" },
-			{ type: "COMPLETE_ARCHITECTURE", epic: "e" },
-			{ type: "BEGIN_REFINE_ARCHITECTURE", epic: "e" },
-			{ type: "BEGIN_SLICING", epic: "e" },
-			{ type: "COMPLETE_SLICING", epic: "e" },
-			{ type: "BEGIN_REFINE_SLICES", epic: "e" },
+			{ type: "BEGIN_EXPLORE", epic: "e", ts: "2026-03-22T00:00:00.000Z" },
+			{ type: "COMPLETE_EXPLORE", epic: "e", ts: "2026-03-22T00:00:00.000Z" },
+			{ type: "BEGIN_ARCHITECTURE", epic: "e", ts: "2026-03-22T00:00:00.000Z" },
+			{ type: "COMPLETE_ARCHITECTURE", epic: "e", ts: "2026-03-22T00:00:00.000Z" },
+			{ type: "BEGIN_REFINE_ARCHITECTURE", epic: "e", ts: "2026-03-22T00:00:00.000Z" },
+			{ type: "BEGIN_SLICING", epic: "e", ts: "2026-03-22T00:00:00.000Z" },
+			{ type: "COMPLETE_SLICING", epic: "e", ts: "2026-03-22T00:00:00.000Z" },
+			{ type: "BEGIN_REFINE_SLICES", epic: "e", ts: "2026-03-22T00:00:00.000Z" },
 		];
 		expect(simpleEpicEvents).toHaveLength(8);
 		for (const event of simpleEpicEvents) {
@@ -49,6 +53,7 @@ describe("StateEvent", () => {
 		const event: StateEvent = {
 			type: "COMPLETE_REFINE_ARCHITECTURE",
 			epic: "e",
+			ts: "2026-03-22T00:00:00.000Z",
 			scores: { clarity: 8, completeness: 9 },
 		};
 		expect(event.type).toBe("COMPLETE_REFINE_ARCHITECTURE");
@@ -56,6 +61,7 @@ describe("StateEvent", () => {
 		const withOverride: StateEvent = {
 			type: "COMPLETE_REFINE_ARCHITECTURE",
 			epic: "e",
+			ts: "2026-03-22T00:00:00.000Z",
 			scores: { clarity: 5 },
 			override: true,
 		};
@@ -66,6 +72,7 @@ describe("StateEvent", () => {
 		const event: StateEvent = {
 			type: "COMPLETE_REFINE_SLICES",
 			epic: "e",
+			ts: "2026-03-22T00:00:00.000Z",
 			scores: { decomposition: 9 },
 		};
 		expect(event.type).toBe("COMPLETE_REFINE_SLICES");
@@ -75,6 +82,7 @@ describe("StateEvent", () => {
 		const event: StateEvent = {
 			type: "COMPLETE_EPIC",
 			epic: "e",
+			ts: "2026-03-22T00:00:00.000Z",
 			verificationResults: [{ index: 0, passed: true, notes: "All good" }],
 		};
 		expect(event.type).toBe("COMPLETE_EPIC");
@@ -84,6 +92,7 @@ describe("StateEvent", () => {
 		const event: StateEvent = {
 			type: "ABANDON_EPIC",
 			epic: "e",
+			ts: "2026-03-22T00:00:00.000Z",
 			reason: "Scope changed",
 		};
 		expect(event.type).toBe("ABANDON_EPIC");
@@ -93,6 +102,7 @@ describe("StateEvent", () => {
 		const event: StateEvent = {
 			type: "ADD_VERIFICATION",
 			epic: "e",
+			ts: "2026-03-22T00:00:00.000Z",
 			verification: {
 				description: "Tests pass",
 				status: "pending",
@@ -107,6 +117,7 @@ describe("StateEvent", () => {
 		const event: StateEvent = {
 			type: "UPDATE_VERIFICATION",
 			epic: "e",
+			ts: "2026-03-22T00:00:00.000Z",
 			index: 0,
 			verification: {
 				description: "Tests pass",
@@ -118,27 +129,69 @@ describe("StateEvent", () => {
 		expect(event.type).toBe("UPDATE_VERIFICATION");
 	});
 
-	it("slice submit events are structurally valid", () => {
+	it("slice lifecycle events are structurally valid", () => {
 		const events: StateEvent[] = [
-			{ type: "COMPLETE_PLAN", slice: "s" },
-			{ type: "COMPLETE_REFINEMENT_ROUND", slice: "s", scores: { quality: 9 } },
-			{ type: "COMPLETE_REFINEMENT_ROUND", slice: "s", scores: { quality: 7 }, override: true },
-			{ type: "COMPLETE_IMPLEMENTATION", slice: "s" },
+			{
+				type: "CREATE_SLICE",
+				name: "s",
+				epic: "e",
+				goal: "Do something",
+				ts: "2026-03-22T00:00:00.000Z",
+			},
+			{ type: "BEGIN_PLAN", slice: "s", ts: "2026-03-22T00:00:00.000Z" },
+			{ type: "COMPLETE_PLAN", slice: "s", ts: "2026-03-22T00:00:00.000Z" },
+			{ type: "BEGIN_REFINEMENT", slice: "s", ts: "2026-03-22T00:00:00.000Z" },
+			{
+				type: "COMPLETE_REFINEMENT_ROUND",
+				slice: "s",
+				ts: "2026-03-22T00:00:00.000Z",
+				scores: { quality: 9 },
+			},
+			{
+				type: "COMPLETE_REFINEMENT_ROUND",
+				slice: "s",
+				ts: "2026-03-22T00:00:00.000Z",
+				scores: { quality: 7 },
+				override: true,
+			},
+			{ type: "BEGIN_IMPLEMENTATION", slice: "s", ts: "2026-03-22T00:00:00.000Z" },
+			{ type: "COMPLETE_IMPLEMENTATION", slice: "s", ts: "2026-03-22T00:00:00.000Z" },
+			{
+				type: "COMPLETE_SLICE",
+				slice: "s",
+				ts: "2026-03-22T00:00:00.000Z",
+				verificationPassed: true,
+				deferred: [{ description: "fix later", targetSlice: "s2" }],
+				learnings: [{ category: "worked", summary: "s", detail: "d", tags: [], rollupTo: [] }],
+				architectureDelta: [{ subsystem: "core", type: "modify", description: "changed" }],
+			},
+			{ type: "ABANDON_SLICE", slice: "s", ts: "2026-03-22T00:00:00.000Z", reason: "Not needed" },
 		];
-		expect(events).toHaveLength(4);
+		expect(events).toHaveLength(10);
 	});
 
 	it("quest submit events are structurally valid", () => {
 		const events: StateEvent[] = [
-			{ type: "COMPLETE_QUEST_PLAN", quest: "q" },
-			{ type: "COMPLETE_QUEST_REFINEMENT_ROUND", quest: "q", scores: { quality: 9 } },
-			{ type: "COMPLETE_QUEST_REFINEMENT_ROUND", quest: "q", scores: { quality: 7 }, override: true },
-			{ type: "COMPLETE_QUEST_IMPLEMENTATION", quest: "q" },
+			{ type: "COMPLETE_QUEST_PLAN", quest: "q", ts: "2026-03-22T00:00:00.000Z" },
+			{
+				type: "COMPLETE_QUEST_REFINEMENT_ROUND",
+				quest: "q",
+				ts: "2026-03-22T00:00:00.000Z",
+				scores: { quality: 9 },
+			},
+			{
+				type: "COMPLETE_QUEST_REFINEMENT_ROUND",
+				quest: "q",
+				ts: "2026-03-22T00:00:00.000Z",
+				scores: { quality: 7 },
+				override: true,
+			},
+			{ type: "COMPLETE_QUEST_IMPLEMENTATION", quest: "q", ts: "2026-03-22T00:00:00.000Z" },
 		];
 		expect(events).toHaveLength(4);
 	});
 
-	it("discriminated union covers all 23 event types", () => {
+	it("discriminated union covers all 29 event types", () => {
 		// Compile-time exhaustiveness: this array must include every event type.
 		// If a new event type is added to StateEvent without adding it here, this won't catch it at runtime,
 		// but the individual tests above cover each type.
@@ -160,16 +213,22 @@ describe("StateEvent", () => {
 			"ABANDON_EPIC",
 			"ADD_VERIFICATION",
 			"UPDATE_VERIFICATION",
+			"CREATE_SLICE",
+			"BEGIN_PLAN",
 			"COMPLETE_PLAN",
+			"BEGIN_REFINEMENT",
 			"COMPLETE_REFINEMENT_ROUND",
+			"BEGIN_IMPLEMENTATION",
 			"COMPLETE_IMPLEMENTATION",
+			"COMPLETE_SLICE",
+			"ABANDON_SLICE",
 			"COMPLETE_QUEST_PLAN",
 			"COMPLETE_QUEST_REFINEMENT_ROUND",
 			"COMPLETE_QUEST_IMPLEMENTATION",
 		];
-		expect(allTypes).toHaveLength(23);
+		expect(allTypes).toHaveLength(29);
 		// All unique
-		expect(new Set(allTypes).size).toBe(23);
+		expect(new Set(allTypes).size).toBe(29);
 	});
 });
 
