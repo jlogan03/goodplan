@@ -25,9 +25,10 @@ The reducer is the single entry point. All transition logic flows through it.
 
 Each event type carries exactly the data it needs. TypeScript enforces correct payloads at compile time.
 
-**Timestamp convention**: Events that produce timestamped entities include a `ts: string` field (ISO 8601). The RPC layer injects `ts` before calling `reduce()` — reducers never call `new Date()` to preserve purity (INV-003). This externalizes non-determinism so the same inputs always produce the same output.
+**Timestamp convention**: ALL events carry a `ts: string` field (ISO 8601). The RPC layer injects `ts` on every event before calling `reduce()` — reducers never call `new Date()` to preserve purity (INV-003). Handlers use `event.ts` for activity log timestamps and for setting entity `updated` fields on every status change. This externalizes non-determinism so the same inputs always produce the same output.
 
 ```typescript
+// Note: ALL events carry `ts: string` (ISO 8601). The RPC layer injects it universally.
 type StateEvent =
   // Project — INIT_PROJECT operates on zero state (empty ProjectState from assembleState on
   // uninitialized project). Produces initial project.json, empty overview.json collections,
@@ -35,45 +36,45 @@ type StateEvent =
   | { type: 'INIT_PROJECT'; name: string; ts: string }
   // Epic lifecycle
   | { type: 'CREATE_EPIC'; name: string; goal: string; ts: string }
-  | { type: 'BEGIN_EXPLORE'; epic: string }
-  | { type: 'COMPLETE_EXPLORE'; epic: string }
-  | { type: 'BEGIN_ARCHITECTURE'; epic: string }
-  | { type: 'COMPLETE_ARCHITECTURE'; epic: string }
-  | { type: 'BEGIN_REFINE_ARCHITECTURE'; epic: string }
-  | { type: 'COMPLETE_REFINE_ARCHITECTURE'; epic: string; scores: Record<string, number>; override?: boolean }
-  | { type: 'BEGIN_SLICING'; epic: string }
-  | { type: 'COMPLETE_SLICING'; epic: string }
-  | { type: 'BEGIN_REFINE_SLICES'; epic: string }
-  | { type: 'COMPLETE_REFINE_SLICES'; epic: string; scores: Record<string, number>; override?: boolean }
+  | { type: 'BEGIN_EXPLORE'; epic: string; ts: string }
+  | { type: 'COMPLETE_EXPLORE'; epic: string; ts: string }
+  | { type: 'BEGIN_ARCHITECTURE'; epic: string; ts: string }
+  | { type: 'COMPLETE_ARCHITECTURE'; epic: string; ts: string }
+  | { type: 'BEGIN_REFINE_ARCHITECTURE'; epic: string; ts: string }
+  | { type: 'COMPLETE_REFINE_ARCHITECTURE'; epic: string; ts: string; scores: Record<string, number>; override?: boolean }
+  | { type: 'BEGIN_SLICING'; epic: string; ts: string }
+  | { type: 'COMPLETE_SLICING'; epic: string; ts: string }
+  | { type: 'BEGIN_REFINE_SLICES'; epic: string; ts: string }
+  | { type: 'COMPLETE_REFINE_SLICES'; epic: string; ts: string; scores: Record<string, number>; override?: boolean }
   | { type: 'ACTIVATE_EPIC'; epic: string; ts: string }
-  | { type: 'ABANDON_EPIC'; epic: string; reason: string }
-  | { type: 'COMPLETE_EPIC'; epic: string; verificationResults: VerificationResult[] }
+  | { type: 'ABANDON_EPIC'; epic: string; ts: string; reason: string }
+  | { type: 'COMPLETE_EPIC'; epic: string; ts: string; verificationResults: VerificationResult[] }
   // Slice lifecycle
-  | { type: 'CREATE_SLICE'; name: string; epic: string }
-  | { type: 'BEGIN_PLAN'; slice: string }
-  | { type: 'COMPLETE_PLAN'; slice: string }
-  | { type: 'BEGIN_REFINEMENT'; slice: string }
-  | { type: 'COMPLETE_REFINEMENT_ROUND'; slice: string; scores: Record<string, number>; override?: boolean }
-  | { type: 'BEGIN_IMPLEMENTATION'; slice: string }
-  | { type: 'COMPLETE_IMPLEMENTATION'; slice: string }
-  | { type: 'COMPLETE_SLICE'; slice: string; verificationPassed: boolean; deferred: DeferredItem[]; learnings: Learning[]; architectureDelta: ArchitectureDelta[] }
-  | { type: 'ABANDON_SLICE'; slice: string; reason: string }
+  | { type: 'CREATE_SLICE'; name: string; epic: string; ts: string }
+  | { type: 'BEGIN_PLAN'; slice: string; ts: string }
+  | { type: 'COMPLETE_PLAN'; slice: string; ts: string }
+  | { type: 'BEGIN_REFINEMENT'; slice: string; ts: string }
+  | { type: 'COMPLETE_REFINEMENT_ROUND'; slice: string; ts: string; scores: Record<string, number>; override?: boolean }
+  | { type: 'BEGIN_IMPLEMENTATION'; slice: string; ts: string }
+  | { type: 'COMPLETE_IMPLEMENTATION'; slice: string; ts: string }
+  | { type: 'COMPLETE_SLICE'; slice: string; ts: string; verificationPassed: boolean; deferred: DeferredItem[]; learnings: Learning[]; architectureDelta: ArchitectureDelta[] }
+  | { type: 'ABANDON_SLICE'; slice: string; ts: string; reason: string }
   // Quest lifecycle
-  | { type: 'CREATE_QUEST'; name: string }
-  | { type: 'BEGIN_QUEST_PLAN'; quest: string }
-  | { type: 'COMPLETE_QUEST_PLAN'; quest: string }
-  | { type: 'BEGIN_QUEST_REFINEMENT'; quest: string }
-  | { type: 'COMPLETE_QUEST_REFINEMENT_ROUND'; quest: string; scores: Record<string, number>; override?: boolean }
-  | { type: 'BEGIN_QUEST_IMPLEMENTATION'; quest: string }
-  | { type: 'COMPLETE_QUEST_IMPLEMENTATION'; quest: string }
-  | { type: 'COMPLETE_QUEST'; quest: string; verificationPassed: boolean; learnings: Learning[]; architectureDelta: ArchitectureDelta[] }
-  | { type: 'ABANDON_QUEST'; quest: string; reason: string }
+  | { type: 'CREATE_QUEST'; name: string; ts: string }
+  | { type: 'BEGIN_QUEST_PLAN'; quest: string; ts: string }
+  | { type: 'COMPLETE_QUEST_PLAN'; quest: string; ts: string }
+  | { type: 'BEGIN_QUEST_REFINEMENT'; quest: string; ts: string }
+  | { type: 'COMPLETE_QUEST_REFINEMENT_ROUND'; quest: string; ts: string; scores: Record<string, number>; override?: boolean }
+  | { type: 'BEGIN_QUEST_IMPLEMENTATION'; quest: string; ts: string }
+  | { type: 'COMPLETE_QUEST_IMPLEMENTATION'; quest: string; ts: string }
+  | { type: 'COMPLETE_QUEST'; quest: string; ts: string; verificationPassed: boolean; learnings: Learning[]; architectureDelta: ArchitectureDelta[] }
+  | { type: 'ABANDON_QUEST'; quest: string; ts: string; reason: string }
   // Cross-cutting
-  | { type: 'ROLLUP_LEARNINGS'; from: string; to: string }
-  | { type: 'CREATE_DECISION'; id: string; domain: string; title: string; summary: string }
-  | { type: 'UPDATE_DECISION'; id: string; changes: Partial<DecisionEntry> }
-  | { type: 'ADD_VERIFICATION'; epic: string; verification: Verification }
-  | { type: 'UPDATE_VERIFICATION'; epic: string; index: number; verification: Verification };
+  | { type: 'ROLLUP_LEARNINGS'; from: string; to: string; ts: string }
+  | { type: 'CREATE_DECISION'; id: string; domain: string; title: string; summary: string; ts: string }
+  | { type: 'UPDATE_DECISION'; id: string; changes: Partial<DecisionEntry>; ts: string }
+  | { type: 'ADD_VERIFICATION'; epic: string; ts: string; verification: Verification }
+  | { type: 'UPDATE_VERIFICATION'; epic: string; ts: string; index: number; verification: Verification };
 ```
 
 When `override` is `true` on refinement completion events (`COMPLETE_REFINEMENT_ROUND`, `COMPLETE_REFINE_ARCHITECTURE`, `COMPLETE_REFINE_SLICES`, `COMPLETE_QUEST_REFINEMENT_ROUND`), the state machine bypasses score threshold guards and advances to the next phase regardless of scores. This keeps override logic within the state machine per INV-001.
@@ -226,11 +227,11 @@ All paths below are `resolve()` paths into the `ProjectState` tree.
 | Event Type | Reads | Writes |
 |---|---|---|
 | `CREATE_EPIC` | `epics/overview.json` | `epics/<name>/epic.json`, `epics/overview.json` |
-| `BEGIN_EXPLORE` | `epics/<name>/epic.json` | `epics/<name>/epic.json`, `activity-log.jsonl` |
-| `COMPLETE_EXPLORE` | `epics/<name>/epic.json`, `epics/<name>/research/` | `epics/<name>/epic.json`, `activity-log.jsonl` |
-| `BEGIN_ARCHITECTURE` | `epics/<name>/epic.json` | `epics/<name>/epic.json`, `activity-log.jsonl` |
-| `COMPLETE_ARCHITECTURE` | `epics/<name>/epic.json`, `epics/<name>/architecture/` | `epics/<name>/epic.json`, `activity-log.jsonl` |
-| `ACTIVATE_EPIC` | `project.json`, `epics/<name>/epic.json` | `project.json`, `epics/<name>/epic.json`, `activity-log.jsonl` |
+| `BEGIN_EXPLORE` | `epics/<name>/epic.json`, `epics/overview.json` | `epics/<name>/epic.json`, `epics/overview.json`, `activity-log.jsonl` |
+| `COMPLETE_EXPLORE` | `epics/<name>/epic.json`, `epics/<name>/research/`, `epics/overview.json` | `epics/<name>/epic.json`, `epics/overview.json`, `activity-log.jsonl` |
+| `BEGIN_ARCHITECTURE` | `epics/<name>/epic.json`, `epics/overview.json` | `epics/<name>/epic.json`, `epics/overview.json`, `activity-log.jsonl` |
+| `COMPLETE_ARCHITECTURE` | `epics/<name>/epic.json`, `epics/<name>/architecture/`, `epics/overview.json` | `epics/<name>/epic.json`, `epics/overview.json`, `activity-log.jsonl` |
+| `ACTIVATE_EPIC` | `project.json`, `epics/<name>/epic.json`, `epics/overview.json` | `project.json`, `epics/<name>/epic.json`, `epics/overview.json`, `activity-log.jsonl` |
 | `CREATE_SLICE` | `epics/<name>/epic.json`, `slices/overview.json` | `slices/<name>/slice.json`, `slices/overview.json`, `epics/<name>/epic.json` |
 | `BEGIN_PLAN` | `project.json`, `slices/<name>/slice.json`, `slices/overview.json` | `project.json`, `slices/<name>/slice.json`, `activity-log.jsonl` |
 | `COMPLETE_PLAN` | `slices/<name>/slice.json`, `slices/<name>/` | `slices/<name>/slice.json`, `activity-log.jsonl` |

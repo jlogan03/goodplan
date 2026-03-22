@@ -1,0 +1,200 @@
+/**
+ * Shared helpers for transition handlers.
+ * Pure functions — no I/O.
+ */
+import type { ProjectState } from "../../tree.js";
+import { getJson, getJsonl, setEntry } from "../../tree.js";
+import type { StateError } from "../types.js";
+import type { Epic, EpicStatus } from "../../../schemas/entities/epic.js";
+import type { Project } from "../../../schemas/entities/project.js";
+import type { Overview } from "../../../schemas/entities/overview.js";
+import type { Refinement } from "../../../schemas/shared.js";
+
+// ── Constants ────────────────────────────────────────────────
+
+/** Default maximum refinement rounds. Shared by all BEGIN_REFINE handlers. */
+export const MAX_REFINEMENT_ROUNDS = 10;
+
+// ── Epic helpers ────────────────────────────────────────────
+
+export function getEpic(state: ProjectState, name: string): Epic | undefined {
+	return getJson<Epic>(state, `epics/${name}/epic.json`);
+}
+
+export function getProject(state: ProjectState): Project | undefined {
+	return getJson<Project>(state, "project.json");
+}
+
+/**
+ * Guard that the named epic exists and is in one of the expected statuses.
+ * Returns the Epic on success, or a StateError on failure.
+ * Callers use `isStateError()` to narrow the return type.
+ */
+export function guardEpicStatus(
+	epic: Epic | undefined,
+	epicName: string,
+	expected: EpicStatus | EpicStatus[],
+	eventType: string,
+): Epic | StateError {
+	if (epic === undefined) {
+		return {
+			code: "STATE_INVALID_TRANSITION",
+			message: `Epic "${epicName}" not found`,
+			detail: { epic: epicName, event: eventType },
+		};
+	}
+	const allowed: EpicStatus[] = Array.isArray(expected) ? expected : [expected];
+	if (!allowed.includes(epic.status)) {
+		return {
+			code: "STATE_INVALID_TRANSITION",
+			message: `Cannot ${eventType} on epic "${epicName}" in status "${epic.status}" (expected ${allowed.join(" or ")})`,
+			detail: { epic: epicName, event: eventType, currentStatus: epic.status },
+		};
+	}
+	return epic;
+}
+
+export function setEpicStatus(
+	state: ProjectState,
+	name: string,
+	epic: Epic,
+	newStatus: EpicStatus,
+	ts: string,
+): ProjectState {
+	return setEntry(state, `epics/${name}/epic.json`, {
+		type: "json",
+		content: { ...epic, status: newStatus, updated: ts },
+	});
+}
+
+export function setEpicJson(
+	state: ProjectState,
+	name: string,
+	content: Epic,
+): ProjectState {
+	return setEntry(state, `epics/${name}/epic.json`, {
+		type: "json",
+		content,
+	});
+}
+
+// ── Overview sync ────────────────────────────────────────────
+
+/**
+ * Update the epic's status in epics/overview.json.
+ * Called on every epic status change to keep overview in sync.
+ */
+export function updateOverviewStatus(
+	state: ProjectState,
+	epicName: string,
+	newStatus: string,
+): ProjectState {
+	const overview = getJson<Overview>(state, "epics/overview.json");
+	if (overview === undefined) return state;
+	return setEntry(state, "epics/overview.json", {
+		type: "json",
+		content: {
+			...overview,
+			items: overview.items.map((item) =>
+				item.name === epicName ? { ...item, status: newStatus } : item,
+			),
+		},
+	});
+}
+
+// ── Activity log ────────────────────────────────────────────
+
+/**
+ * Append an activity log entry with an explicit timestamp from the event.
+ * All events now carry `ts`, so this is the sole activity log helper.
+ */
+export function appendActivityLog(
+	state: ProjectState,
+	ts: string,
+	phase: string,
+	scope: string,
+	summary: string,
+): ProjectState {
+	const log = getJsonl<Record<string, unknown>>(state, "activity-log.jsonl") ?? [];
+	return setEntry(state, "activity-log.jsonl", {
+		type: "jsonl",
+		content: [
+			...log,
+			{ ts, phase, scope, status: "complete", summary },
+		],
+	});
+}
+
+// ── Refinement circuit breaker ──────────────────────────────
+
+const SCORE_THRESHOLD = 9;
+
+export interface RefinementInput {
+	scores: Record<string, number>;
+	override?: boolean | undefined;
+}
+
+export type RefinementOutcome =
+	| { action: "advance" }
+	| { action: "stay"; newRefinement: Refinement }
+	| { action: "error"; error: StateError };
+
+/**
+ * Shared circuit breaker logic for all refinement events.
+ * Returns the appropriate action based on scores, override flag, and round count.
+ *
+ * Skip-path behavior: when `refinement === null` (entering from a non-refining status
+ * like architecture-defined or slices-defined, where no BEGIN_REFINE was issued), scores
+ * are ignored and the outcome is "advance". This is correct because no refinement state
+ * was initialized — there are no rounds to track and no circuit breaker to enforce.
+ * The caller's guardEpicStatus already validated the skip path is a legal transition.
+ */
+export function evaluateRefinement(
+	refinement: Refinement | null,
+	input: RefinementInput,
+): RefinementOutcome {
+	const allAbove = Object.values(input.scores).every((s) => s >= SCORE_THRESHOLD);
+
+	// Scores pass threshold OR override — advance
+	if (allAbove || input.override === true) {
+		return { action: "advance" };
+	}
+
+	// No refinement state yet (skip path — see docstring above)
+	if (refinement === null) {
+		return { action: "advance" };
+	}
+
+	// Check circuit breaker
+	if (refinement.round >= refinement.maxRounds) {
+		return {
+			action: "error",
+			error: {
+				code: "STATE_MAX_ROUNDS_REACHED",
+				message: `Maximum refinement rounds (${refinement.maxRounds}) reached. Use override to force advancement.`,
+				detail: { round: refinement.round, maxRounds: refinement.maxRounds },
+			},
+		};
+	}
+
+	// Stay in refining — increment round, record scores
+	return {
+		action: "stay",
+		newRefinement: {
+			round: refinement.round + 1,
+			maxRounds: refinement.maxRounds,
+			scoreHistory: [
+				...refinement.scoreHistory,
+				{ round: refinement.round, scores: input.scores },
+			],
+		},
+	};
+}
+
+// ── Terminal status check ───────────────────────────────────
+
+const EPIC_TERMINAL_STATUSES: ReadonlySet<EpicStatus> = new Set(["completed", "abandoned"]);
+
+export function isEpicTerminal(status: EpicStatus): boolean {
+	return EPIC_TERMINAL_STATUSES.has(status);
+}

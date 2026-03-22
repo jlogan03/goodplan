@@ -1,30 +1,32 @@
 import type { Verification, VerificationResult } from "./entities/epic.js";
 
-// `ts` field is injected by the RPC layer to keep the reducer pure (no Date.now() inside).
+// `ts` field is injected by the RPC layer on ALL events to keep the reducer pure (no Date.now() inside).
 // See state-machine-api.md "Timestamp convention" for the documented pattern.
-// Only events that produce timestamped entities carry `ts`.
+// Handlers use event.ts for activity log timestamps and for setting entity `updated` fields.
 export type StateEvent =
 	// Project
 	| { type: "INIT_PROJECT"; name: string; ts: string }
 	// Epic lifecycle (16 events)
 	| { type: "CREATE_EPIC"; name: string; goal: string; ts: string }
-	| { type: "BEGIN_EXPLORE"; epic: string }
-	| { type: "COMPLETE_EXPLORE"; epic: string }
-	| { type: "BEGIN_ARCHITECTURE"; epic: string }
-	| { type: "COMPLETE_ARCHITECTURE"; epic: string }
-	| { type: "BEGIN_REFINE_ARCHITECTURE"; epic: string }
+	| { type: "BEGIN_EXPLORE"; epic: string; ts: string }
+	| { type: "COMPLETE_EXPLORE"; epic: string; ts: string }
+	| { type: "BEGIN_ARCHITECTURE"; epic: string; ts: string }
+	| { type: "COMPLETE_ARCHITECTURE"; epic: string; ts: string }
+	| { type: "BEGIN_REFINE_ARCHITECTURE"; epic: string; ts: string }
 	| {
 			type: "COMPLETE_REFINE_ARCHITECTURE";
 			epic: string;
+			ts: string;
 			scores: Record<string, number>;
 			override?: boolean;
 	  }
-	| { type: "BEGIN_SLICING"; epic: string }
-	| { type: "COMPLETE_SLICING"; epic: string }
-	| { type: "BEGIN_REFINE_SLICES"; epic: string }
+	| { type: "BEGIN_SLICING"; epic: string; ts: string }
+	| { type: "COMPLETE_SLICING"; epic: string; ts: string }
+	| { type: "BEGIN_REFINE_SLICES"; epic: string; ts: string }
 	| {
 			type: "COMPLETE_REFINE_SLICES";
 			epic: string;
+			ts: string;
 			scores: Record<string, number>;
 			override?: boolean;
 	  }
@@ -32,34 +34,38 @@ export type StateEvent =
 	| {
 			type: "COMPLETE_EPIC";
 			epic: string;
+			ts: string;
 			verificationResults: VerificationResult[];
 	  }
-	| { type: "ABANDON_EPIC"; epic: string; reason: string }
-	| { type: "ADD_VERIFICATION"; epic: string; verification: Verification }
+	| { type: "ABANDON_EPIC"; epic: string; ts: string; reason: string }
+	| { type: "ADD_VERIFICATION"; epic: string; ts: string; verification: Verification }
 	| {
 			type: "UPDATE_VERIFICATION";
 			epic: string;
+			ts: string;
 			index: number;
 			verification: Verification;
 	  }
 	// Slice submit events (pulled forward from slices 04-05)
-	| { type: "COMPLETE_PLAN"; slice: string }
+	| { type: "COMPLETE_PLAN"; slice: string; ts: string }
 	| {
 			type: "COMPLETE_REFINEMENT_ROUND";
 			slice: string;
+			ts: string;
 			scores: Record<string, number>;
 			override?: boolean;
 	  }
-	| { type: "COMPLETE_IMPLEMENTATION"; slice: string }
+	| { type: "COMPLETE_IMPLEMENTATION"; slice: string; ts: string }
 	// Quest submit events (pulled forward from slices 04-05)
-	| { type: "COMPLETE_QUEST_PLAN"; quest: string }
+	| { type: "COMPLETE_QUEST_PLAN"; quest: string; ts: string }
 	| {
 			type: "COMPLETE_QUEST_REFINEMENT_ROUND";
 			quest: string;
+			ts: string;
 			scores: Record<string, number>;
 			override?: boolean;
 	  }
-	| { type: "COMPLETE_QUEST_IMPLEMENTATION"; quest: string };
+	| { type: "COMPLETE_QUEST_IMPLEMENTATION"; quest: string; ts: string };
 
 /** Error codes produced by state machine transitions. Single source of truth — also used by GoodplanErrorCode. */
 export type StateErrorCode =
