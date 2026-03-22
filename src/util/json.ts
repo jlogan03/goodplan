@@ -6,6 +6,14 @@ export function deterministicStringify(data: unknown): string {
 	return JSON.stringify(sortKeys(data), null, "\t");
 }
 
+/**
+ * Deterministic compact JSON.stringify with alphabetically sorted keys.
+ * No indentation — suitable for JSONL (one object per line).
+ */
+export function deterministicStringifyCompact(data: unknown): string {
+	return JSON.stringify(sortKeys(data));
+}
+
 function sortKeys(value: unknown): unknown {
 	if (value === null || typeof value !== "object") {
 		return value;

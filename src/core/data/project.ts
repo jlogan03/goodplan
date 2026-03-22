@@ -3,6 +3,7 @@ import * as path from "node:path";
 import type { Project } from "../../schemas/entities/project.js";
 import { projectSchema } from "../../schemas/entities/project.js";
 import { GoodplanError } from "../../util/errors.js";
+// TODO(phase-5): Remove json.ts import when readProject/writeProject are replaced by assembleState/commitState
 import { readEntity, writeEntity } from "./json.js";
 
 const PROJECT_DIR_NAME = ".project";

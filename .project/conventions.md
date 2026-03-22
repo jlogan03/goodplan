@@ -81,7 +81,7 @@ tests/
 - **Error handling:** structured errors with error codes. CLI exits with non-zero status and JSON error object on failure. No empty catch blocks.
 - **Logging:** stderr for diagnostics (only with `--verbose`), stdout for command output. Never mix.
 - **JSON output:** deterministic key ordering (alphabetical) for git merge friendliness. JSONL files are append-only.
-- **Environment variables:** `GOODPLAN_DIR` overrides default `.project/` location (useful for testing). No other env vars initially.
+- **Environment variables:** `GOODPLAN_DIR` overrides default `.project/` location (useful for testing). `GOODPLAN_DEBUG=1` enables debug logging to stderr (dev/test only — use `--verbose` for production diagnostics).
 - **stdin for content:** mutations accept content via stdin (piped heredocs). Read-only commands use flags only.
 - **Skill development:** All goodplan workflow skills live in `skills/` as the source of truth. Installed to `~/.claude/skills/` via `bun run install:skills` (runs scripts/install-skills.sh). Never edit installed skills directly. Commit skill changes explaining why and what changed (per global CLAUDE.md).
 - **Skill migration:** Existing skills are copied into `skills/` at their current names and transformed in place as consolidation progresses. Git tracks the full evolution. The install script maps old and new skill names to the correct install locations throughout the transition.
