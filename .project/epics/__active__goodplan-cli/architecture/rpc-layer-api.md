@@ -219,6 +219,10 @@ type CompleteInput =
       learnings?: Learning[];
       architectureDelta?: ArchitectureDelta[];  // maps to COMPLETE_QUEST.architectureDelta
     };
+// Note: Slice 03 implements only the epic variant (verificationResults) and the
+// boolean assertion (verificationPassed) for slice/quest. The optional fields
+// (deferred, learnings, architectureDelta) and their coercion logic are deferred
+// to slice 04 (slice lifecycle) where COMPLETE_SLICE is first exercised end-to-end.
 
 // Canonical Learning type — used in CompleteInput and sub-agent submit commands.
 // The `rollupTo` array specifies which scopes this learning should be rolled up to.

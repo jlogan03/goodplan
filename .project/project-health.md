@@ -4,7 +4,7 @@
 
 ### Well-tested areas
 - Skill file structure (SKILL.md frontmatter, step numbering, reference paths): verified across 4 skill files during slice-quality-and-health implementation with 28-point checklist
-- goodplan CLI tracer bullet + project-init: 256 unit tests covering tree types (42), entity schemas (109), I/O layer (28), state machine (6), command framework, init, and status commands. Binary compilation verified with end-to-end verification. Type-clean against `tsc --noEmit`.
+- goodplan CLI through epic-lifecycle: 409 unit tests covering tree types (42), entity schemas (122), I/O layer (91), state machine (70), RPC layer (19), command framework + 13 epic commands + 8 submit commands (65). Binary compilation verified. Type-clean against `tsc --noEmit`.
 
 ### Undertested areas
 - Runtime behavior of new skills (refine-slices, updated define-slices three-lens evaluation): not yet exercised on a real project
@@ -21,7 +21,7 @@
 - epic-conventions.md is consumed by 12+ skills: changes require updating all consumers
 - citty + `exactOptionalPropertyTypes`: requires `as unknown as CommandDef` casts in `src/index.ts`. May break on citty upgrade.
 
-<!-- Last updated by: complete for epics/__active__goodplan-cli/slices/02-project-init, 2026-03-22 -->
+<!-- Last updated by: complete for epics/__active__goodplan-cli/slices/03-epic-lifecycle, 2026-03-22 -->
 
 ## Performance Characteristics
 
@@ -37,7 +37,8 @@
 - Epic scope resolution: the Step 0 preamble pattern ($SCOPE_TYPE, $SLICES_DIR, $EPIC_DIR) provides a consistent template for adding epic awareness to any new skill
 - goodplan CLI command registration: adding a new command requires creating a file in `src/commands/<namespace>/`, importing in `main.ts`, and adding to `subCommands`. Global flags are shared via `global-args.ts`.
 - goodplan CLI schemas: convention of exporting both schema and `z.infer` type from every schema file makes adding new entities straightforward
-- State machine transitions: adding a new event requires only a handler file in `src/core/state/transitions/` and a case in `reduce()`. The `setEntry` immutable builder makes constructing new tree states clean.
+- State machine transitions: adding a new event requires a handler file in `src/core/state/transitions/`, an entry in the `handlerRecord` (compile-time exhaustiveness via `satisfies`), and the event type in state-events.ts. Shared helpers (`guardEpicStatus`, `evaluateRefinement`, `updateOverviewStatus`, `appendActivityLog`) make handler implementation formulaic.
+- RPC layer: `begin()`/`complete()`/`submit()` generic dispatch — adding a new phase requires a case in the event mapping switch. BeginPayloadMap typing enforces correct payload shapes per phase at compile time.
 - assembleState/commitState: schema registry pattern means new entity types just need a schema + regex pattern entry
 
 ### Hard to extend
@@ -51,16 +52,18 @@
 ### Localized items
 - shared-preamble.md asymmetry: lives in refine-plan/references/ while iteration-loop.md lives in _shared/references/ — candidate for future consolidation
 - `--verbose` flag not wired: defined on all commands via `global-args.ts` but never sets `globalThis.__goodplan_verbose`. Debug logging only works via `GOODPLAN_DEBUG=1` env var.
+- `setEpicStatus` helper in `helpers.ts` is defined but unused — handlers use `setEpicJson` directly for more control. Dead code candidate.
+- loadState cache detects new/removed files but not content changes to existing JSON files. Bounded by commitState always writing fresh cache.
 
 ### Systemic items
 - shared-preamble.md divergence risk: refine-plan's copy is plan-framed but borrowed by refine-architecture and refine-slices. As those skills mature, their needs may diverge. Noted as tech debt — revisit when it causes a real problem.
 
-<!-- Last updated by: complete for epics/__active__goodplan-cli/slices/02-project-init, 2026-03-22 -->
+<!-- Last updated by: complete for epics/__active__goodplan-cli/slices/03-epic-lifecycle, 2026-03-22 -->
 
 ## Recent Changes
 
+- **03-epic-lifecycle** (2026-03-22): Full epic entity lifecycle — 23 StateEvent types, loadState cache with mtime validation, concurrent modification detection, ~20 transition handlers with handler Map + satisfies exhaustiveness, generic RPC begin/complete/submit, 13 epic:* commands + 8 submit-* commands. Universal ts on all events. 409 tests, binary verified.
 - **02-project-init** (2026-03-22): Recursive tree state model end-to-end — ProjectState types, all entity Zod schemas, assembleState/commitState I/O, INIT_PROJECT state machine, RPC wiring. Refactored init+status through full load→reduce→commit cycle. Removed readEntity/writeEntity. 256 tests, binary verified.
 - **01-tracer-bullet** (2026-03-21): First goodplan CLI implementation — Bun project scaffolding, Zod schemas, data layer (readEntity/writeEntity), citty command framework with custom runner, init and status commands, --query via jqjs, compiled to 58MB binary. 99 tests, type-clean.
-- **refactor-intelligence** (2026-03-19): Upgraded /complete Step 9 from generic cleanup question to proactive refactor detection with scope/risk classification, batch table presentation, inline fix application (capped at 5), and side quest proposals.
 
-<!-- Last updated by: complete for epics/__active__goodplan-cli/slices/02-project-init, 2026-03-22 -->
+<!-- Last updated by: complete for epics/__active__goodplan-cli/slices/03-epic-lifecycle, 2026-03-22 -->

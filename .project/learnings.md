@@ -2,6 +2,31 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Universal `ts` on all StateEvent variants beats selective per-event `ts`
+_Source: 03-epic-lifecycle_
+
+Selective `ts` (only on events that set timestamp fields) creates stale timestamps on most transitions. Universal `ts` (RPC injects on all events) simplifies every handler and eliminates timestamp staleness bugs. All future event types should include `ts: string`.
+
+## `satisfies Record<K, V>` before Map conversion provides compile-time exhaustiveness
+_Source: 03-epic-lifecycle_
+
+With `noUncheckedIndexedAccess`, `Map.get()` loses compile-time coverage. The `satisfies` pattern on the plain handler object catches missing handlers at compile time before converting to Map. Standard pattern for typed handler maps.
+
+## Overview.json must be synced by every status-changing handler
+_Source: 03-epic-lifecycle_
+
+Setting overview status only at creation time leaves it permanently stale. Use a shared `updateOverviewStatus` helper called by every handler that changes entity status. Apply this pattern to future entities (slice, quest) from the start.
+
+## Guard helpers should return `Entity | StateError` for type narrowing
+_Source: 03-epic-lifecycle_
+
+Guard functions returning `StateError | null` force non-null assertions (`!`) on every subsequent entity access. Returning `Entity | StateError` lets `isStateError()` narrow the type cleanly, eliminating dozens of `!` assertions across handler files.
+
+## Validation divergence between code paths serving the same data is a design bug
+_Source: 03-epic-lifecycle_
+
+When cache and full-assembly paths validate differently (one throws, one skips), the same filesystem produces different state trees depending on cache state. Incremental paths must throw to trigger fallback to the authoritative path.
+
 ## Pure types that cross layer boundaries belong in a shared module
 _Source: 02-project-init_
 
