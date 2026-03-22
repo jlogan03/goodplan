@@ -29,6 +29,11 @@ import {
 } from "./transitions/epic-refine.js";
 import { handleAddVerification, handleUpdateVerification } from "./transitions/epic-verify.js";
 import { handleInitProject } from "./transitions/init.js";
+import { handleAbandonSlice } from "./transitions/slice-abandon.js";
+import { handleCompleteSlice } from "./transitions/slice-complete.js";
+import { handleCreateSlice } from "./transitions/slice-create.js";
+import { handleBeginImplementation, handleBeginRefinement } from "./transitions/slice-implement.js";
+import { handleBeginPlan } from "./transitions/slice-plan.js";
 import {
 	handleCompleteImplementation,
 	handleCompletePlan,
@@ -46,12 +51,6 @@ type Handler<T extends StateEvent["type"] = StateEvent["type"]> = (
 	state: ProjectState,
 	event: Extract<StateEvent, { type: T }>,
 ) => ProjectState | StateError;
-
-/** Placeholder for events whose handlers are not yet implemented (slice 04 Phase 2). */
-const handleNotImplemented = (_state: ProjectState, _event: StateEvent): StateError => ({
-	code: "STATE_INVALID_TRANSITION",
-	message: "not yet implemented — see slice 04 Phase 2",
-});
 
 /**
  * Exhaustiveness-checked handler record. TypeScript ensures every StateEvent type
@@ -75,15 +74,15 @@ const handlerRecord = {
 	ABANDON_EPIC: handleAbandonEpic,
 	ADD_VERIFICATION: handleAddVerification,
 	UPDATE_VERIFICATION: handleUpdateVerification,
-	CREATE_SLICE: handleNotImplemented,
-	BEGIN_PLAN: handleNotImplemented,
+	CREATE_SLICE: handleCreateSlice,
+	BEGIN_PLAN: handleBeginPlan,
 	COMPLETE_PLAN: handleCompletePlan,
-	BEGIN_REFINEMENT: handleNotImplemented,
+	BEGIN_REFINEMENT: handleBeginRefinement,
 	COMPLETE_REFINEMENT_ROUND: handleCompleteRefinementRound,
-	BEGIN_IMPLEMENTATION: handleNotImplemented,
+	BEGIN_IMPLEMENTATION: handleBeginImplementation,
 	COMPLETE_IMPLEMENTATION: handleCompleteImplementation,
-	COMPLETE_SLICE: handleNotImplemented,
-	ABANDON_SLICE: handleNotImplemented,
+	COMPLETE_SLICE: handleCompleteSlice,
+	ABANDON_SLICE: handleAbandonSlice,
 	COMPLETE_QUEST_PLAN: handleCompleteQuestPlan,
 	COMPLETE_QUEST_REFINEMENT_ROUND: handleCompleteQuestRefinementRound,
 	COMPLETE_QUEST_IMPLEMENTATION: handleCompleteQuestImplementation,

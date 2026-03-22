@@ -1,3 +1,5 @@
+import type { Quest, QuestStatus } from "../../../schemas/entities/quest.js";
+import type { SliceStatus } from "../../../schemas/entities/slice.js";
 /**
  * Slice and quest submit handlers: COMPLETE_PLAN, COMPLETE_REFINEMENT_ROUND,
  * COMPLETE_IMPLEMENTATION + quest variants.
@@ -5,54 +7,31 @@
  */
 import type { ProjectState } from "../../tree.js";
 import { getJson, hasChild, setEntry } from "../../tree.js";
-import type { StateEvent, StateError } from "../types.js";
-import type { Slice, SliceStatus } from "../../../schemas/entities/slice.js";
-import type { Quest, QuestStatus } from "../../../schemas/entities/quest.js";
-import { appendActivityLog, evaluateRefinement } from "./helpers.js";
+import type { StateError, StateEvent } from "../types.js";
+import { isStateError } from "../types.js";
+import {
+	appendActivityLog,
+	evaluateRefinement,
+	getSlice,
+	guardSliceStatus,
+	setSliceStatus,
+} from "./helpers.js";
 
 type CompletePlanEvent = Extract<StateEvent, { type: "COMPLETE_PLAN" }>;
 type CompleteRefinementRoundEvent = Extract<StateEvent, { type: "COMPLETE_REFINEMENT_ROUND" }>;
 type CompleteImplementationEvent = Extract<StateEvent, { type: "COMPLETE_IMPLEMENTATION" }>;
 type CompleteQuestPlanEvent = Extract<StateEvent, { type: "COMPLETE_QUEST_PLAN" }>;
-type CompleteQuestRefinementRoundEvent = Extract<StateEvent, { type: "COMPLETE_QUEST_REFINEMENT_ROUND" }>;
-type CompleteQuestImplementationEvent = Extract<StateEvent, { type: "COMPLETE_QUEST_IMPLEMENTATION" }>;
+type CompleteQuestRefinementRoundEvent = Extract<
+	StateEvent,
+	{ type: "COMPLETE_QUEST_REFINEMENT_ROUND" }
+>;
+type CompleteQuestImplementationEvent = Extract<
+	StateEvent,
+	{ type: "COMPLETE_QUEST_IMPLEMENTATION" }
+>;
 
-// ── Helpers ─────────────────────────────────────────────────
-
-function getSlice(state: ProjectState, name: string): Slice | undefined {
-	return getJson<Slice>(state, `slices/${name}/slice.json`);
-}
-
-function setSliceJson(state: ProjectState, name: string, content: Slice): ProjectState {
-	return setEntry(state, `slices/${name}/slice.json`, {
-		type: "json",
-		content,
-	});
-}
-
-function guardSliceStatus(
-	slice: Slice | undefined,
-	sliceName: string,
-	expected: SliceStatus | SliceStatus[],
-	eventType: string,
-): StateError | null {
-	if (slice === undefined) {
-		return {
-			code: "STATE_INVALID_TRANSITION",
-			message: `Slice "${sliceName}" not found`,
-			detail: { slice: sliceName, event: eventType },
-		};
-	}
-	const allowed: SliceStatus[] = Array.isArray(expected) ? expected : [expected];
-	if (!allowed.includes(slice.status)) {
-		return {
-			code: "STATE_INVALID_TRANSITION",
-			message: `Cannot ${eventType} on slice "${sliceName}" in status "${slice.status}" (expected ${allowed.join(" or ")})`,
-			detail: { slice: sliceName, event: eventType, currentStatus: slice.status },
-		};
-	}
-	return null;
-}
+// ── Quest helpers (local) ───────────────────────────────────
+// TODO(slice-05): consolidate quest helpers to helpers.ts
 
 function getQuest(state: ProjectState, name: string): Quest | undefined {
 	return getJson<Quest>(state, `quests/${name}/quest.json`);
@@ -96,8 +75,8 @@ export function handleCompletePlan(
 	event: CompletePlanEvent,
 ): ProjectState | StateError {
 	const slice = getSlice(state, event.slice);
-	const err = guardSliceStatus(slice, event.slice, "planning", "COMPLETE_PLAN");
-	if (err !== null) return err;
+	const sliceOrErr = guardSliceStatus(slice, event.slice, "planning", "COMPLETE_PLAN");
+	if (isStateError(sliceOrErr)) return sliceOrErr;
 
 	// Guard: plan.md must exist
 	if (!hasChild(state, `slices/${event.slice}`, "plan.md")) {
@@ -108,12 +87,14 @@ export function handleCompletePlan(
 		};
 	}
 
-	let tree = setSliceJson(state, event.slice, {
-		...slice!,
-		status: "plan-created",
-		updated: event.ts,
-	});
-	tree = appendActivityLog(tree, event.ts, "complete-plan", `slices/${event.slice}`, `Slice "${event.slice}" plan completed`);
+	let tree = setSliceStatus(state, event.slice, sliceOrErr, "plan-created", event.ts);
+	tree = appendActivityLog(
+		tree,
+		event.ts,
+		"complete-plan",
+		`slices/${event.slice}`,
+		`Slice "${event.slice}" plan completed`,
+	);
 	return tree;
 }
 
@@ -123,10 +104,15 @@ export function handleCompleteRefinementRound(
 ): ProjectState | StateError {
 	const slice = getSlice(state, event.slice);
 	// Two valid from-statuses: plan-created (skip/first round) and refining (normal)
-	const err = guardSliceStatus(slice, event.slice, ["plan-created", "refining"], "COMPLETE_REFINEMENT_ROUND");
-	if (err !== null) return err;
+	const sliceOrErr = guardSliceStatus(
+		slice,
+		event.slice,
+		["plan-created", "refining"],
+		"COMPLETE_REFINEMENT_ROUND",
+	);
+	if (isStateError(sliceOrErr)) return sliceOrErr;
 
-	const outcome = evaluateRefinement(slice!.refinement, {
+	const outcome = evaluateRefinement(sliceOrErr.refinement, {
 		scores: event.scores,
 		override: event.override,
 	});
@@ -135,34 +121,49 @@ export function handleCompleteRefinementRound(
 
 	if (outcome.action === "advance") {
 		// Record final scores in refinement history if we have refinement state
-		const finalRefinement = slice!.refinement !== null
-			? {
-					...slice!.refinement,
-					scoreHistory: [
-						...slice!.refinement.scoreHistory,
-						{ round: slice!.refinement.round, scores: event.scores },
-					],
-				}
-			: null;
+		const finalRefinement =
+			sliceOrErr.refinement !== null
+				? {
+						...sliceOrErr.refinement,
+						scoreHistory: [
+							...sliceOrErr.refinement.scoreHistory,
+							{ round: sliceOrErr.refinement.round, scores: event.scores },
+						],
+					}
+				: null;
 
-		let tree = setSliceJson(state, event.slice, {
-			...slice!,
-			status: "plan-refined",
-			updated: event.ts,
-			refinement: finalRefinement,
-		});
-		tree = appendActivityLog(tree, event.ts, "complete-refinement", `slices/${event.slice}`, `Slice "${event.slice}" plan refined`);
+		let tree = setSliceStatus(
+			state,
+			event.slice,
+			{ ...sliceOrErr, refinement: finalRefinement },
+			"plan-refined",
+			event.ts,
+		);
+		tree = appendActivityLog(
+			tree,
+			event.ts,
+			"complete-refinement",
+			`slices/${event.slice}`,
+			`Slice "${event.slice}" plan refined`,
+		);
 		return tree;
 	}
 
 	// Stay in refining
-	let tree = setSliceJson(state, event.slice, {
-		...slice!,
-		status: "refining",
-		updated: event.ts,
-		refinement: outcome.newRefinement,
-	});
-	tree = appendActivityLog(tree, event.ts, "refinement-round", `slices/${event.slice}`, `Slice "${event.slice}" refinement round ${outcome.newRefinement.round - 1} completed`);
+	let tree = setSliceStatus(
+		state,
+		event.slice,
+		{ ...sliceOrErr, refinement: outcome.newRefinement },
+		"refining",
+		event.ts,
+	);
+	tree = appendActivityLog(
+		tree,
+		event.ts,
+		"refinement-round",
+		`slices/${event.slice}`,
+		`Slice "${event.slice}" refinement round ${outcome.newRefinement.round - 1} completed`,
+	);
 	return tree;
 }
 
@@ -171,15 +172,22 @@ export function handleCompleteImplementation(
 	event: CompleteImplementationEvent,
 ): ProjectState | StateError {
 	const slice = getSlice(state, event.slice);
-	const err = guardSliceStatus(slice, event.slice, "implementing", "COMPLETE_IMPLEMENTATION");
-	if (err !== null) return err;
+	const sliceOrErr = guardSliceStatus(
+		slice,
+		event.slice,
+		"implementing",
+		"COMPLETE_IMPLEMENTATION",
+	);
+	if (isStateError(sliceOrErr)) return sliceOrErr;
 
-	let tree = setSliceJson(state, event.slice, {
-		...slice!,
-		status: "implementation-complete",
-		updated: event.ts,
-	});
-	tree = appendActivityLog(tree, event.ts, "complete-implementation", `slices/${event.slice}`, `Slice "${event.slice}" implementation completed`);
+	let tree = setSliceStatus(state, event.slice, sliceOrErr, "implementation-complete", event.ts);
+	tree = appendActivityLog(
+		tree,
+		event.ts,
+		"complete-implementation",
+		`slices/${event.slice}`,
+		`Slice "${event.slice}" implementation completed`,
+	);
 	return tree;
 }
 
@@ -207,7 +215,13 @@ export function handleCompleteQuestPlan(
 		status: "plan-created",
 		updated: event.ts,
 	});
-	tree = appendActivityLog(tree, event.ts, "complete-quest-plan", `quests/${event.quest}`, `Quest "${event.quest}" plan completed`);
+	tree = appendActivityLog(
+		tree,
+		event.ts,
+		"complete-quest-plan",
+		`quests/${event.quest}`,
+		`Quest "${event.quest}" plan completed`,
+	);
 	return tree;
 }
 
@@ -217,7 +231,12 @@ export function handleCompleteQuestRefinementRound(
 ): ProjectState | StateError {
 	const quest = getQuest(state, event.quest);
 	// Two valid from-statuses: plan-created (skip/first round) and refining (normal)
-	const err = guardQuestStatus(quest, event.quest, ["plan-created", "refining"], "COMPLETE_QUEST_REFINEMENT_ROUND");
+	const err = guardQuestStatus(
+		quest,
+		event.quest,
+		["plan-created", "refining"],
+		"COMPLETE_QUEST_REFINEMENT_ROUND",
+	);
 	if (err !== null) return err;
 
 	const outcome = evaluateRefinement(quest!.refinement, {
@@ -228,15 +247,16 @@ export function handleCompleteQuestRefinementRound(
 	if (outcome.action === "error") return outcome.error;
 
 	if (outcome.action === "advance") {
-		const finalRefinement = quest!.refinement !== null
-			? {
-					...quest!.refinement,
-					scoreHistory: [
-						...quest!.refinement.scoreHistory,
-						{ round: quest!.refinement.round, scores: event.scores },
-					],
-				}
-			: null;
+		const finalRefinement =
+			quest!.refinement !== null
+				? {
+						...quest!.refinement,
+						scoreHistory: [
+							...quest!.refinement.scoreHistory,
+							{ round: quest!.refinement.round, scores: event.scores },
+						],
+					}
+				: null;
 
 		let tree = setQuestJson(state, event.quest, {
 			...quest!,
@@ -244,7 +264,13 @@ export function handleCompleteQuestRefinementRound(
 			updated: event.ts,
 			refinement: finalRefinement,
 		});
-		tree = appendActivityLog(tree, event.ts, "complete-quest-refinement", `quests/${event.quest}`, `Quest "${event.quest}" plan refined`);
+		tree = appendActivityLog(
+			tree,
+			event.ts,
+			"complete-quest-refinement",
+			`quests/${event.quest}`,
+			`Quest "${event.quest}" plan refined`,
+		);
 		return tree;
 	}
 
@@ -255,7 +281,13 @@ export function handleCompleteQuestRefinementRound(
 		updated: event.ts,
 		refinement: outcome.newRefinement,
 	});
-	tree = appendActivityLog(tree, event.ts, "quest-refinement-round", `quests/${event.quest}`, `Quest "${event.quest}" refinement round ${outcome.newRefinement.round - 1} completed`);
+	tree = appendActivityLog(
+		tree,
+		event.ts,
+		"quest-refinement-round",
+		`quests/${event.quest}`,
+		`Quest "${event.quest}" refinement round ${outcome.newRefinement.round - 1} completed`,
+	);
 	return tree;
 }
 
@@ -272,7 +304,13 @@ export function handleCompleteQuestImplementation(
 		status: "implementation-complete",
 		updated: event.ts,
 	});
-	tree = appendActivityLog(tree, event.ts, "complete-quest-implementation", `quests/${event.quest}`, `Quest "${event.quest}" implementation completed`);
+	tree = appendActivityLog(
+		tree,
+		event.ts,
+		"complete-quest-implementation",
+		`quests/${event.quest}`,
+		`Quest "${event.quest}" implementation completed`,
+	);
 	return tree;
 }
 

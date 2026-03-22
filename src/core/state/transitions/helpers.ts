@@ -1,3 +1,8 @@
+import type { Epic, EpicStatus } from "../../../schemas/entities/epic.js";
+import type { Overview } from "../../../schemas/entities/overview.js";
+import type { Project } from "../../../schemas/entities/project.js";
+import type { Slice, SliceStatus } from "../../../schemas/entities/slice.js";
+import type { Refinement } from "../../../schemas/shared.js";
 /**
  * Shared helpers for transition handlers.
  * Pure functions — no I/O.
@@ -5,10 +10,6 @@
 import type { ProjectState } from "../../tree.js";
 import { getJson, getJsonl, setEntry } from "../../tree.js";
 import type { StateError } from "../types.js";
-import type { Epic, EpicStatus } from "../../../schemas/entities/epic.js";
-import type { Project } from "../../../schemas/entities/project.js";
-import type { Overview } from "../../../schemas/entities/overview.js";
-import type { Refinement } from "../../../schemas/shared.js";
 
 // ── Constants ────────────────────────────────────────────────
 
@@ -67,11 +68,7 @@ export function setEpicStatus(
 	});
 }
 
-export function setEpicJson(
-	state: ProjectState,
-	name: string,
-	content: Epic,
-): ProjectState {
+export function setEpicJson(state: ProjectState, name: string, content: Epic): ProjectState {
 	return setEntry(state, `epics/${name}/epic.json`, {
 		type: "json",
 		content,
@@ -102,6 +99,94 @@ export function updateOverviewStatus(
 	});
 }
 
+// ── Slice helpers ────────────────────────────────────────────
+
+export function getSlice(state: ProjectState, name: string): Slice | undefined {
+	return getJson<Slice>(state, `slices/${name}/slice.json`);
+}
+
+/**
+ * Guard that the named slice exists and is in one of the expected statuses.
+ * Returns the Slice on success, or a StateError on failure.
+ * Callers use `isStateError()` to narrow the return type.
+ */
+export function guardSliceStatus(
+	slice: Slice | undefined,
+	sliceName: string,
+	expected: SliceStatus | SliceStatus[],
+	eventType: string,
+): Slice | StateError {
+	if (slice === undefined) {
+		return {
+			code: "STATE_INVALID_TRANSITION",
+			message: `Slice "${sliceName}" not found`,
+			detail: { slice: sliceName, event: eventType },
+		};
+	}
+	const allowed: SliceStatus[] = Array.isArray(expected) ? expected : [expected];
+	if (!allowed.includes(slice.status)) {
+		return {
+			code: "STATE_INVALID_TRANSITION",
+			message: `Cannot ${eventType} on slice "${sliceName}" in status "${slice.status}" (expected ${allowed.join(" or ")})`,
+			detail: { slice: sliceName, event: eventType, currentStatus: slice.status },
+		};
+	}
+	return slice;
+}
+
+export function setSliceJson(state: ProjectState, name: string, content: Slice): ProjectState {
+	return setEntry(state, `slices/${name}/slice.json`, {
+		type: "json",
+		content,
+	});
+}
+
+/**
+ * Sugar over setSliceJson: sets status, updated timestamp, and syncs overview.
+ * Prevents partial updates by bundling all status-change side effects.
+ */
+export function setSliceStatus(
+	state: ProjectState,
+	name: string,
+	slice: Slice,
+	newStatus: SliceStatus,
+	ts: string,
+): ProjectState {
+	let tree = setSliceJson(state, name, { ...slice, status: newStatus, updated: ts });
+	tree = updateSliceOverviewStatus(tree, name, newStatus);
+	return tree;
+}
+
+/**
+ * Update the slice's status in slices/overview.json.
+ * Called on every slice status change to keep overview in sync.
+ */
+export function updateSliceOverviewStatus(
+	state: ProjectState,
+	sliceName: string,
+	newStatus: string,
+): ProjectState {
+	const overview = getJson<Overview>(state, "slices/overview.json");
+	if (overview === undefined) return state;
+	return setEntry(state, "slices/overview.json", {
+		type: "json",
+		content: {
+			...overview,
+			items: overview.items.map((item) =>
+				item.name === sliceName ? { ...item, status: newStatus } : item,
+			),
+		},
+	});
+}
+
+// ── Terminal status check (slice) ───────────────────────────
+
+const SLICE_TERMINAL_STATUSES: ReadonlySet<SliceStatus> = new Set(["completed", "abandoned"]);
+
+export function isSliceTerminal(status: SliceStatus): boolean {
+	return SLICE_TERMINAL_STATUSES.has(status);
+}
+
 // ── Activity log ────────────────────────────────────────────
 
 /**
@@ -118,10 +203,7 @@ export function appendActivityLog(
 	const log = getJsonl<Record<string, unknown>>(state, "activity-log.jsonl") ?? [];
 	return setEntry(state, "activity-log.jsonl", {
 		type: "jsonl",
-		content: [
-			...log,
-			{ ts, phase, scope, status: "complete", summary },
-		],
+		content: [...log, { ts, phase, scope, status: "complete", summary }],
 	});
 }
 
@@ -183,10 +265,7 @@ export function evaluateRefinement(
 		newRefinement: {
 			round: refinement.round + 1,
 			maxRounds: refinement.maxRounds,
-			scoreHistory: [
-				...refinement.scoreHistory,
-				{ round: refinement.round, scores: input.scores },
-			],
+			scoreHistory: [...refinement.scoreHistory, { round: refinement.round, scores: input.scores }],
 		},
 	};
 }
