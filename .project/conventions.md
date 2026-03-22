@@ -40,7 +40,8 @@ src/
 │   ├── subagent/           # submit-plan, submit-refinement, submit-implementation, submit-explore,
 │   │                       # submit-architecture, submit-slices, submit-refine-architecture,
 │   │                       # submit-refine-slices (organizational dir; registered as flat top-level commands)
-│   ├── slice/
+│   ├── slice/              # slice:create, slice:list, slice:show, slice:plan, slice:refine-plan,
+│   │                       # slice:implement, slice:complete, slice:abandon
 │   ├── quest/
 │   ├── decision/
 │   ├── learning/
@@ -49,13 +50,14 @@ src/
 ├── core/
 │   ├── state/
 │   │   └── transitions/    # per-event transition handlers (epic-create, epic-phase, epic-refine,
-│   │                       # epic-lifecycle, epic-verify, slice-submit)
+│   │                       # epic-lifecycle, epic-verify, slice-create, slice-plan, slice-submit,
+│   │                       # slice-implement, slice-complete, slice-abandon)
 │   ├── data/               # assemble/commit/load state tree, tree types, schema registry
 │   ├── rpc/                # workflow orchestration: init, begin, complete, submit, status, types
 │   ├── context/
 │   └── workflow/
 ├── schemas/
-│   ├── commands/           # Zod schemas for CLI input validation (epic.ts, submit.ts)
+│   ├── commands/           # Zod schemas for CLI input validation (epic.ts, slice.ts, submit.ts)
 │   ├── entities/           # Zod schemas for JSON entities (project, epic, slice, quest, overview)
 │   └── records/            # Zod schemas for JSONL records (activity-log, decision, learning, architecture-delta)
 ├── util/

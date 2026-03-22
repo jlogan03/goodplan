@@ -8,14 +8,14 @@ Full lifecycle walkthrough matching goal.md success criteria. Sequential enforce
 - All commands already work from Phase 4. This phase verifies the integrated whole.
 
 **After implementation** (should all pass):
-- [ ] Full lifecycle walkthrough completes without errors (see walkthrough below)
-- [ ] Binary: `bun run build && ./goodplan slice:create --json` (with piped input) works in compiled binary
+- [x] Full lifecycle walkthrough completes without errors (see walkthrough below)
+- [x] Binary: `bun run build && ./goodplan slice:create --json` (with piped input) works in compiled binary
 
 ### Tasks
 
-- [ ] Run full test suite: `bun test` — all tests pass
-- [ ] Run type check: `npx tsc --noEmit` — passes
-- [ ] End-to-end verification walkthrough in temp dir (matches goal.md Verification section):
+- [x] Run full test suite: `bun test` — all tests pass (487 tests, 0 failures)
+- [x] Run type check: `npx tsc --noEmit` — passes (clean)
+- [x] End-to-end verification walkthrough in temp dir (matches goal.md Verification section):
   1. `goodplan init --name test-project`
   2. `echo '{"name":"my-epic","goal":"Build"}' | goodplan epic:create` → create epic
   3. Set up epic for activation (every command listed):
@@ -42,9 +42,9 @@ Full lifecycle walkthrough matching goal.md success criteria. Sequential enforce
   14. **Abandon**: create another slice, abandon it → abandoned status, activeSlice cleared
   15. `goodplan slice:list --json` and `slice:show --slice 01-auth --json` → correct output
   16. Verify activity-log.jsonl has entries for all transitions
-- [ ] Binary regression: `bun run build && cd $(mktemp -d) && ./goodplan init --name bin-test && echo '{"name":"bin-epic","goal":"test"}' | ./goodplan epic:create --json && ... epic activation ... && echo '{"name":"01-bin","goal":"test"}' | ./goodplan slice:create --epic bin-epic --json && ./goodplan slice:list --json` (use `./goodplan` output path from `bun build --compile`)
-- [ ] Verify `state-machine-api.md` is updated with all 6 new slice events (CREATE_SLICE, BEGIN_PLAN, BEGIN_REFINEMENT, BEGIN_IMPLEMENTATION, COMPLETE_SLICE, ABANDON_SLICE) including their full payload shapes and return types.
-- [ ] Update `.project/conventions.md` repo structure: add `src/commands/slice/` (create, list, show, plan, refine-plan, implement, complete, abandon), `src/core/state/transitions/` (slice-create, slice-plan, slice-implement, slice-complete, slice-abandon), `src/schemas/commands/slice.ts`
+- [x] Binary regression: `bun run build && cd $(mktemp -d) && ./goodplan init --name bin-test && echo '{"name":"bin-epic","goal":"test"}' | ./goodplan epic:create --json && ... epic activation ... && echo '{"name":"01-bin","goal":"test"}' | ./goodplan slice:create --epic bin-epic --json && ./goodplan slice:list --json` (use `./goodplan` output path from `bun build --compile`)
+- [x] Verify `state-machine-api.md` is updated with all 6 new slice events (CREATE_SLICE, BEGIN_PLAN, BEGIN_REFINEMENT, BEGIN_IMPLEMENTATION, COMPLETE_SLICE, ABANDON_SLICE) including their full payload shapes and return types.
+- [x] Update `.project/conventions.md` repo structure: add `src/commands/slice/` (create, list, show, plan, refine-plan, implement, complete, abandon), `src/core/state/transitions/` (slice-create, slice-plan, slice-implement, slice-complete, slice-abandon), `src/schemas/commands/slice.ts`
 
 ### Verification
 1. Full end-to-end walkthrough in temp dir covering all success criteria from goal.md.
