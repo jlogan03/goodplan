@@ -15,6 +15,14 @@ import { epicShowCommand } from "./epic/show.js";
 import { epicUpdateVerificationCommand } from "./epic/update-verification.js";
 import { initCommand } from "./global/init.js";
 import { statusCommand } from "./global/status.js";
+import { submitArchitectureCommand } from "./subagent/submit-architecture.js";
+import { submitExploreCommand } from "./subagent/submit-explore.js";
+import { submitImplementationCommand } from "./subagent/submit-implementation.js";
+import { submitPlanCommand } from "./subagent/submit-plan.js";
+import { submitRefineArchitectureCommand } from "./subagent/submit-refine-architecture.js";
+import { submitRefineSlicesCommand } from "./subagent/submit-refine-slices.js";
+import { submitRefinementCommand } from "./subagent/submit-refinement.js";
+import { submitSlicesCommand } from "./subagent/submit-slices.js";
 
 /**
  * Main goodplan command. Subcommands are registered here.
@@ -44,5 +52,13 @@ export const mainCommand = defineCommand({
 		"epic:abandon": epicAbandonCommand,
 		"epic:add-verification": epicAddVerificationCommand,
 		"epic:update-verification": epicUpdateVerificationCommand,
+		"submit-plan": submitPlanCommand,
+		"submit-refinement": submitRefinementCommand,
+		"submit-implementation": submitImplementationCommand,
+		"submit-explore": submitExploreCommand,
+		"submit-architecture": submitArchitectureCommand,
+		"submit-slices": submitSlicesCommand,
+		"submit-refine-architecture": submitRefineArchitectureCommand,
+		"submit-refine-slices": submitRefineSlicesCommand,
 	},
 });

@@ -33,22 +33,29 @@ skills/                   # source of truth for goodplan workflow skills
 └── migrate/
 src/
 ├── commands/
-│   ├── epic/
+│   ├── epic/               # epic:create, epic:list, epic:show, epic:explore, epic:define-architecture,
+│   │                       # epic:refine-architecture, epic:define-slices, epic:refine-slices,
+│   │                       # epic:activate, epic:complete, epic:abandon, epic:add-verification,
+│   │                       # epic:update-verification
+│   ├── subagent/           # submit-plan, submit-refinement, submit-implementation, submit-explore,
+│   │                       # submit-architecture, submit-slices, submit-refine-architecture,
+│   │                       # submit-refine-slices (organizational dir; registered as flat top-level commands)
 │   ├── slice/
 │   ├── quest/
 │   ├── decision/
 │   ├── learning/
 │   ├── activity/
-│   ├── subagent/
 │   └── global/
 ├── core/
 │   ├── state/
-│   │   └── transitions/    # per-event transition handlers
-│   ├── data/               # assemble/commit state tree, tree types, schema registry
-│   ├── rpc/                # workflow orchestration (init, begin, complete, submit, status)
+│   │   └── transitions/    # per-event transition handlers (epic-create, epic-phase, epic-refine,
+│   │                       # epic-lifecycle, epic-verify, slice-submit)
+│   ├── data/               # assemble/commit/load state tree, tree types, schema registry
+│   ├── rpc/                # workflow orchestration: init, begin, complete, submit, status, types
 │   ├── context/
 │   └── workflow/
 ├── schemas/
+│   ├── commands/           # Zod schemas for CLI input validation (epic.ts, submit.ts)
 │   ├── entities/           # Zod schemas for JSON entities (project, epic, slice, quest, overview)
 │   └── records/            # Zod schemas for JSONL records (activity-log, decision, learning, architecture-delta)
 ├── util/
