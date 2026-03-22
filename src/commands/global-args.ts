@@ -16,6 +16,7 @@ export const globalArgs = {
 		description: "Minimal output",
 		default: false,
 	},
+	/** Reserved for future use. Not yet wired to any command or utility layer. */
 	verbose: {
 		type: "boolean" as const,
 		description: "Enable diagnostic output on stderr",
