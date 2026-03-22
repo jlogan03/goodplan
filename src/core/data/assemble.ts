@@ -19,8 +19,8 @@ import type {
 	StateEntry,
 } from "./tree.js";
 
-/** Files/directories to skip during assembly. */
-const SKIP_NAMES = new Set([".state-cache.json", "node_modules"]);
+/** Files/directories to skip during assembly and incremental cache updates. */
+export const SKIP_NAMES = new Set([".state-cache.json", "node_modules"]);
 
 interface ValidationError {
 	file: string;

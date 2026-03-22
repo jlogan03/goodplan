@@ -1,10 +1,9 @@
-// TODO: concurrent modification detection deferred to slice 03
-
 /**
  * commitState — writes state tree changes back to the filesystem.
  * Performs a recursive tree diff between oldState and newState.
- * JSON files first, JSONL second (crash-safe ordering).
+ * JSON files first, JSONL second, state cache last (crash-safe ordering).
  * Markdown entries are read-only and never written.
+ * Includes concurrent modification detection for JSON files.
  */
 
 import * as fs from "node:fs";
@@ -12,6 +11,8 @@ import * as path from "node:path";
 import { GoodplanError } from "../../util/errors.js";
 import { debug } from "../../util/debug.js";
 import { deterministicStringify, deterministicStringifyCompact } from "../../util/json.js";
+import { CACHE_FILENAME, collectDirMtimes } from "./load.js";
+import type { StateCache } from "./load.js";
 import { findSchema } from "./schema-registry.js";
 import type {
 	DirectoryEntry,
@@ -47,6 +48,9 @@ export function commitState(
 			atomicWrite(write.absPath, write.content, write.relativePath);
 		}
 	}
+
+	// Write state cache as the last step (crash-safe: stale cache triggers full assembleState)
+	writeStateCache(projectDir, newState);
 
 	debug(`commitState complete: ${jsonWrites.length} json, ${jsonlWrites.length} jsonl writes`);
 }
@@ -127,6 +131,9 @@ function processJsonEntry(
 			debug(`unchanged json: ${relativePath}`);
 			return;
 		}
+
+		// Concurrent modification detection: verify on-disk matches oldState
+		checkConcurrentModification(absPath, relativePath, oldEntry.content);
 	}
 
 	debug(`write json: ${relativePath}`);
@@ -213,6 +220,69 @@ function atomicWrite(absPath: string, content: string, relativePath: string): vo
 			{ file: relativePath },
 			err,
 		);
+	}
+}
+
+/**
+ * Concurrent modification detection for JSON files.
+ * Reads current on-disk content and compares against oldState entry.
+ * If they differ, another process or user modified the file.
+ */
+function checkConcurrentModification(
+	absPath: string,
+	relativePath: string,
+	oldContent: unknown,
+): void {
+	if (!fs.existsSync(absPath)) {
+		// File doesn't exist on disk but was in oldState — skip check
+		// (could have been deleted externally)
+		return;
+	}
+
+	const diskRaw = fs.readFileSync(absPath, "utf-8");
+
+	// Compare on-disk bytes against a single serialization of oldContent.
+	// This avoids parsing diskRaw then re-serializing both sides.
+	const expectedRaw = `${deterministicStringify(oldContent)}\n`;
+
+	if (diskRaw !== expectedRaw) {
+		throw new GoodplanError(
+			"DATA_CONCURRENT_MODIFICATION",
+			`File ${relativePath} was externally modified since last read`,
+			{ file: relativePath },
+		);
+	}
+}
+
+/**
+ * Write state cache as the final step of commitState.
+ */
+function writeStateCache(projectDir: string, newState: ProjectState): void {
+	const cachePath = path.join(projectDir, CACHE_FILENAME);
+	const dirMtimes = collectDirMtimes(projectDir);
+
+	const cache: StateCache = {
+		version: 1,
+		writtenAt: new Date().toISOString(),
+		dirMtimes,
+		state: newState,
+	};
+
+	const content = JSON.stringify(cache);
+	const tmpPath = `${cachePath}.tmp.${process.pid}`;
+
+	try {
+		fs.writeFileSync(tmpPath, content, "utf-8");
+		fs.renameSync(tmpPath, cachePath);
+		debug("state cache written");
+	} catch (err) {
+		// Cache write failure is non-fatal — next loadState will fall back to assembleState
+		debug(`state cache write failed: ${String(err)}`);
+		try {
+			fs.unlinkSync(tmpPath);
+		} catch {
+			// Ignore cleanup failure
+		}
 	}
 }
 

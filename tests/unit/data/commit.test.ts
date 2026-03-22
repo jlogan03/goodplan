@@ -315,4 +315,180 @@ describe("commitState", () => {
 		expect(readFile("activity-log.jsonl")).toBe(activityLogBefore);
 		expect(readFile("epics/overview.json")).toBe(overviewBefore);
 	});
+
+	it("writes .state-cache.json after all entity writes", () => {
+		const newState: ProjectState = {
+			type: "directory",
+			contents: {
+				"project.json": { type: "json", content: projectContent },
+			},
+		};
+
+		commitState(projectDir(), ZERO_STATE, newState);
+		expect(fileExists(".state-cache.json")).toBe(true);
+
+		const cache = JSON.parse(readFile(".state-cache.json"));
+		expect(cache.version).toBe(1);
+		expect(cache.writtenAt).toBeDefined();
+		expect(cache.state).toBeDefined();
+	});
+});
+
+describe("concurrent modification detection", () => {
+	it("throws DATA_CONCURRENT_MODIFICATION when JSON file was externally modified", () => {
+		// Initial commit
+		const state1: ProjectState = {
+			type: "directory",
+			contents: {
+				"project.json": { type: "json", content: projectContent },
+			},
+		};
+		commitState(projectDir(), ZERO_STATE, state1);
+
+		// Externally modify the file on disk
+		const modified = { ...projectContent, name: "externally-changed" };
+		fs.writeFileSync(
+			path.join(tmpDir, "project.json"),
+			JSON.stringify(modified),
+			"utf-8",
+		);
+
+		// Try to commit a different change — should detect concurrent modification
+		const state2: ProjectState = {
+			type: "directory",
+			contents: {
+				"project.json": {
+					type: "json",
+					content: { ...projectContent, name: "my-change" },
+				},
+			},
+		};
+
+		expect(() => commitState(projectDir(), state1, state2)).toThrow(
+			expect.objectContaining({
+				code: "DATA_CONCURRENT_MODIFICATION",
+			}),
+		);
+	});
+
+	it("includes file path in concurrent modification error detail", () => {
+		const state1: ProjectState = {
+			type: "directory",
+			contents: {
+				"project.json": { type: "json", content: projectContent },
+			},
+		};
+		commitState(projectDir(), ZERO_STATE, state1);
+
+		// Externally modify
+		fs.writeFileSync(
+			path.join(tmpDir, "project.json"),
+			JSON.stringify({ ...projectContent, name: "external" }),
+			"utf-8",
+		);
+
+		const state2: ProjectState = {
+			type: "directory",
+			contents: {
+				"project.json": {
+					type: "json",
+					content: { ...projectContent, name: "internal" },
+				},
+			},
+		};
+
+		try {
+			commitState(projectDir(), state1, state2);
+			expect.unreachable("should have thrown");
+		} catch (err) {
+			const e = err as { code: string; detail: Record<string, unknown> };
+			expect(e.code).toBe("DATA_CONCURRENT_MODIFICATION");
+			expect(e.detail.file).toBe("project.json");
+		}
+	});
+
+	it("skips concurrent modification check for new files (not in oldState)", () => {
+		// New file — no oldEntry to compare against
+		const newState: ProjectState = {
+			type: "directory",
+			contents: {
+				"project.json": { type: "json", content: projectContent },
+			},
+		};
+
+		// Should not throw even though file doesn't exist on disk
+		expect(() => commitState(projectDir(), ZERO_STATE, newState)).not.toThrow();
+	});
+
+	it("skips concurrent modification check for JSONL files", () => {
+		// Initial commit with JSONL
+		const state1: ProjectState = {
+			type: "directory",
+			contents: {
+				"activity-log.jsonl": {
+					type: "jsonl",
+					content: [activityEntry],
+				},
+			},
+		};
+		commitState(projectDir(), ZERO_STATE, state1);
+
+		// Externally modify the JSONL on disk
+		const externalEntry = JSON.stringify({
+			ts: "2026-01-03T00:00:00.000Z",
+			phase: "explore",
+			scope: "project",
+			status: "started",
+			summary: "External append",
+		});
+		fs.appendFileSync(
+			path.join(tmpDir, "activity-log.jsonl"),
+			`${externalEntry}\n`,
+			"utf-8",
+		);
+
+		// Commit a new entry — should NOT throw (JSONL has append-only semantics)
+		const newEntry = {
+			ts: "2026-01-02T00:00:00.000Z",
+			phase: "plan",
+			scope: "project",
+			status: "started",
+			summary: "Planning started",
+		};
+		const state2: ProjectState = {
+			type: "directory",
+			contents: {
+				"activity-log.jsonl": {
+					type: "jsonl",
+					content: [activityEntry, newEntry],
+				},
+			},
+		};
+
+		expect(() => commitState(projectDir(), state1, state2)).not.toThrow();
+	});
+
+	it("does not throw when on-disk content matches oldState", () => {
+		// Initial commit
+		const state1: ProjectState = {
+			type: "directory",
+			contents: {
+				"project.json": { type: "json", content: projectContent },
+			},
+		};
+		commitState(projectDir(), ZERO_STATE, state1);
+
+		// Commit a legitimate change — on-disk matches oldState, no external changes
+		const state2: ProjectState = {
+			type: "directory",
+			contents: {
+				"project.json": {
+					type: "json",
+					content: { ...projectContent, name: "updated-name" },
+				},
+			},
+		};
+
+		expect(() => commitState(projectDir(), state1, state2)).not.toThrow();
+	});
 });
