@@ -19,16 +19,16 @@ Pure types and helper functions for the recursive `ProjectState` tree. No I/O, n
 - [ ] `bun run -e "import { resolve } from './src/core/data/tree'"` — module not found
 
 **After implementation** (should pass / show presence):
-- [ ] `bun test tests/unit/data/tree.test.ts` — all tree navigation tests pass
-- [ ] Types compile: `npx tsc --noEmit` passes with new tree types
+- [x] `bun test tests/unit/data/tree.test.ts` — all tree navigation tests pass
+- [x] Types compile: `npx tsc --noEmit` passes with new tree types
 
 ### Tasks
 
-- [ ] Create `src/core/data/tree.ts` — `StateEntry` discriminated union (`DirectoryEntry`, `JsonEntry<T>`, `JsonlEntry<T>`, `MarkdownEntry`), `ProjectState` type alias for `DirectoryEntry`. Use `import type` / `export type` throughout per `verbatimModuleSyntax: true`.
-- [ ] Implement tree navigation helpers in `src/core/data/tree.ts`: `resolve(state, path)`, `getJson<T>(state, path)`, `getJsonl<T>(state, path)`, `getDir(state, path)`, `getMarkdown(state, path)`, `hasChild(state, dirPath, childName)`
-- [ ] Implement `setEntry(state, path, entry)` — immutable setter that returns a new tree with the entry at the given path (used by the state machine's apply functions to build new state). Auto-creates intermediate `DirectoryEntry` nodes for missing path segments (matching `mkdirSync({ recursive: true })` semantics).
-- [ ] Implement `ZERO_STATE` constant — `{ type: "directory", contents: {} } as const satisfies ProjectState` representing an uninitialized project (type-level immutability prevents accidental mutation)
-- [ ] Write unit tests: resolve paths, get typed entries, hasChild on nested directories, setEntry produces new tree without mutating original, setEntry auto-creates intermediate directories, edge cases (empty path, missing intermediate directories, path to wrong type)
+- [x] Create `src/core/data/tree.ts` — `StateEntry` discriminated union (`DirectoryEntry`, `JsonEntry<T>`, `JsonlEntry<T>`, `MarkdownEntry`), `ProjectState` type alias for `DirectoryEntry`. Use `import type` / `export type` throughout per `verbatimModuleSyntax: true`.
+- [x] Implement tree navigation helpers in `src/core/data/tree.ts`: `resolve(state, path)`, `getJson<T>(state, path)`, `getJsonl<T>(state, path)`, `getDir(state, path)`, `getMarkdown(state, path)`, `hasChild(state, dirPath, childName)`
+- [x] Implement `setEntry(state, path, entry)` — immutable setter that returns a new tree with the entry at the given path (used by the state machine's apply functions to build new state). Auto-creates intermediate `DirectoryEntry` nodes for missing path segments (matching `mkdirSync({ recursive: true })` semantics).
+- [x] Implement `ZERO_STATE` constant — `{ type: "directory", contents: {} } as const satisfies ProjectState` representing an uninitialized project (type-level immutability prevents accidental mutation)
+- [x] Write unit tests: resolve paths, get typed entries, hasChild on nested directories, setEntry produces new tree without mutating original, setEntry auto-creates intermediate directories, edge cases (empty path, missing intermediate directories, path to wrong type)
 
 Note: `getJson<T>(state, path)` performs an unchecked cast — it is unsafe for unvalidated trees. The validation boundary is `commitState`, which runs Zod schemas on all entities. Callers must pass the correct type parameter and only use `getJson<T>` on trees that have passed through assembly (schema-validated) or commit (schema-validated). This is an intentional tradeoff documented here for awareness.
 
