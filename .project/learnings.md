@@ -2,6 +2,21 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Bundling helpers prevent overview sync invariant violations
+_Source: 04-slice-lifecycle_
+
+`setSliceStatus` bundles status + overview sync + timestamp in one call, making it impossible to skip overview sync. Review caught `slice-submit.ts` bypassing this via direct `setSliceJson`. Apply this bundling pattern to all future entities.
+
+## State machine writes data, RPC derives counts — clean separation for complex handlers
+_Source: 04-slice-lifecycle_
+
+COMPLETE_SLICE is the system's most complex handler but stays clean because the state machine only writes data. The RPC layer's `buildCompleteResult` derives all computed values (deferredRouted, epicComplete, learningsRolledUp) by diffing old vs new state. Keeps `ProjectState | StateError` as the only return type.
+
+## Input schemas with strict enums, storage schemas with flexible strings
+_Source: 04-slice-lifecycle_
+
+`learningInputSchema` validates category with `z.enum()` at input boundary; `learningEntrySchema` uses `z.string()` for forward-compatibility in storage. This pattern prevents invalid data entry while allowing schema evolution.
+
 ## Universal `ts` on all StateEvent variants beats selective per-event `ts`
 _Source: 03-epic-lifecycle_
 
