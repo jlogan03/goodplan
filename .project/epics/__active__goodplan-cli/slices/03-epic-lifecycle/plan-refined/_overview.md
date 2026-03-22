@@ -1,5 +1,8 @@
 # Plan: Epic Lifecycle — Full Entity CRUD + Data Layer Upgrades
 
+Status: COMPLETE
+Completed: 2026-03-22
+
 ## Overview
 
 Implement the complete epic entity lifecycle through the full-stack load→reduce→commit pattern. This is the most complex entity lifecycle (~20 transition rows, 12+ statuses) and proves the transition pattern for all subsequent entities. Also adds the deferred data layer upgrades from slice 02: `loadState()` with `.state-cache.json` cache and concurrent modification detection in `commitState()`.
