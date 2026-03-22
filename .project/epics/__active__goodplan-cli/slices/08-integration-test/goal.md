@@ -25,7 +25,7 @@ End-to-end integration tests that spawn the compiled binary and run full workflo
 - [ ] Concurrent modification test: external file change between commands causes DATA_CONCURRENT_MODIFICATION
 - [ ] Main runner tests: `./goodplan badcommand` exits 2, `./goodplan badcommand --json` outputs JSON to stdout with empty stderr, `./goodplan --help` shows command list, `./goodplan --version` shows version
 - [ ] Fitness: `grep -r "from.*fs" src/core/state/` returns nothing (state machine purity)
-- [ ] Fitness: count of transition test cases matches count derived from the `StateEvent` discriminated union
+- [ ] Fitness: every element of the compile-time-validated `EVENT_TYPES` const array has at least one corresponding test in the state machine completeness suite — exhaustiveness coverage, not count match. `Transition[]` arrays exported from state machine modules enable enumeration. Const array validated exhaustively against `StateEvent` union at compile time to ensure it stays in sync
 - [ ] Fitness: JSON write → read → write produces byte-identical files
 - [ ] Fitness: malformed JSON rejected by assembleState with Zod error details
 - [ ] Fitness: assembleState on a fixture .project/ produces a tree whose DirectoryEntry.contents keys match actual filesystem contents
@@ -36,7 +36,7 @@ End-to-end integration tests that spawn the compiled binary and run full workflo
 2. Run `bun test tests/integration/` — all integration tests pass.
 3. Run `bun test tests/fitness/` — all fitness function tests pass.
 4. Run the full integration suite 3 times — verify consistent results (no flaky tests).
-5. Verify fitness function derives expected transition count from `StateEvent` type, not by parsing markdown.
+5. Verify fitness function: every element of the compile-time-validated `EVENT_TYPES` const array has at least one corresponding test in the state machine completeness suite. The goal is exhaustiveness coverage, not a count match. Transition tables are exported from their respective state machine modules (e.g., `export const epicTransitions: Transition[]`) — verify imports resolve. Verify the const event type array is compile-time validated against the `StateEvent` discriminated union.
 
 ## Scope Boundaries
 **In scope:** Integration tests (spawn binary, full workflows, error paths, main runner), fitness functions (purity, completeness, determinism, validation, concurrency, atomicity, tree accuracy), test fixtures.

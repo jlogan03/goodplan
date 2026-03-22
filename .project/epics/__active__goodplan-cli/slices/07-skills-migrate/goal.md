@@ -13,14 +13,14 @@ Copy the existing workflow skills from `~/.claude/skills/` into the repo's `skil
 - [ ] `ls skills/` — contains all goodplan workflow skill directories (create-epic, explore, create-architecture, etc.)
 - [ ] `scripts/install-skills.sh` exists and is executable
 - [ ] `bun run install:skills` copies skills to `~/.claude/skills/` — verify by checking timestamps
-- [ ] Skills reference correct CLI commands — grep for `goodplan ` in skill files, verify each command exists in the CLI
+- [ ] Command reference audit: grep for `goodplan ` in skill files, produce a list of referenced commands and whether each exists in the CLI. This is an audit — skill content is not modified in this slice (skills are markdown prompts, not executable scripts, so end-to-end exercise isn't possible here)
 - [ ] Binary: `bun run build` still succeeds (skills don't affect compilation)
 
 ## Verification
 1. Run `bun run install:skills` — verify skills appear in `~/.claude/skills/`.
-2. Grep all skill files for `goodplan ` command references — verify each maps to an implemented command.
+2. Grep all skill files for `goodplan ` command references — produce an audit report mapping each reference to an implemented command (or flagging missing commands for future work).
 3. Compile binary — verify skills directory doesn't interfere with build.
 
 ## Scope Boundaries
 **In scope:** Copy skills to repo, install script, package.json script wiring, command reference audit.
-**Out of scope:** Modifying skill content to use the new CLI commands (that happens when skills are updated to call the CLI). Distribution mechanisms beyond local install (deferred to future epic).
+**Out of scope:** Modifying skill content to use the new CLI commands (that happens when skills are updated to call the CLI — skills are markdown prompts, not executable scripts). Distribution mechanisms beyond local install (deferred to future epic).
