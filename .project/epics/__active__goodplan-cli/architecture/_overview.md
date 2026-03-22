@@ -30,7 +30,7 @@ Workflow orchestration layer. Coordinates the State Machine and Data Layer to ex
 
 Pure rules engine with no I/O. Implements a reducer pattern over declarative transition tables: `(state, event) → new state | error`. Manages lifecycle for all entity types (project, epic, slice, quest) including guards (activation gate, sequential slice enforcement, circuit breakers) and tracking state (refinement rounds, scores, implementation phases).
 
-**Dependencies:** None (pure functions)
+**Dependencies:** Shared Tree Types (`src/core/tree.ts` — pure types and helpers with zero I/O, shared across State Machine and Data Layer)
 
 ### Data Layer
 

@@ -2,6 +2,26 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Pure types that cross layer boundaries belong in a shared module
+_Source: 02-project-init_
+
+Tree types (`ProjectState`, `StateEntry`, navigation helpers) were placed in the data layer but needed by the state machine. Integration review caught this as a layer boundary violation. Extract cross-layer pure types to shared locations (e.g., `src/core/tree.ts`) from the start.
+
+## Reducer purity requires externalizing non-determinism via event payloads
+_Source: 02-project-init_
+
+`new Date()` inside a reducer breaks INV-003 purity. Timestamps must be injected via the event payload by the RPC layer. All future `StateEvent` variants needing timestamps must include a `ts` field.
+
+## Write Zod safeParse().data, not the original input
+_Source: 02-project-init_
+
+Zod 4 may strip unknown keys or coerce values during `safeParse()`. Writing the original object instead of `result.data` causes in-memory/on-disk divergence. Always persist `result.data`.
+
+## Match architecture schema shapes from the start, even for unexercised fields
+_Source: 02-project-init_
+
+The slice `deferred` field was `string[]` but architecture specified `DeferredItem` objects. Fixing is cheap now, expensive after data is persisted. Match the documented shape even when the current slice doesn't exercise the field.
+
 ## citty requires runCommand + manual pre-dispatch for exit code control
 _Source: 01-tracer-bullet_
 

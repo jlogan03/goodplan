@@ -25,12 +25,14 @@ The reducer is the single entry point. All transition logic flows through it.
 
 Each event type carries exactly the data it needs. TypeScript enforces correct payloads at compile time.
 
+**Timestamp convention**: Events that produce timestamped entities include a `ts: string` field (ISO 8601). The RPC layer injects `ts` before calling `reduce()` — reducers never call `new Date()` to preserve purity (INV-003). This externalizes non-determinism so the same inputs always produce the same output.
+
 ```typescript
 type StateEvent =
   // Project — INIT_PROJECT operates on zero state (empty ProjectState from assembleState on
   // uninitialized project). Produces initial project.json, empty overview.json collections,
   // and initial activity-log entry. commitState() materializes the directories and files.
-  | { type: 'INIT_PROJECT'; name: string }
+  | { type: 'INIT_PROJECT'; name: string; ts: string }
   // Epic lifecycle
   | { type: 'CREATE_EPIC'; name: string; goal: string }
   | { type: 'BEGIN_EXPLORE'; epic: string }
