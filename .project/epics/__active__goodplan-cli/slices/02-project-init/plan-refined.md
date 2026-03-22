@@ -122,32 +122,32 @@ Wire init command through RPC → reduce → commitState. Update status to read 
 ### Expected Behavior
 
 **Before implementation** (should fail / show absence):
-- [ ] Current `init` writes `project.json` directly — does not create overview.json files or collection directories
+- [x] Current `init` writes `project.json` directly — does not create overview.json files or collection directories
 
 **After implementation** (should pass / show presence):
-- [ ] `goodplan init --name test-project` in empty dir — creates .project/ with project.json, epics/overview.json, slices/overview.json, quests/overview.json, activity-log.jsonl, decisions.jsonl, learnings.jsonl, plus collection directories
-- [ ] `goodplan init` in same dir — exit 3, STATE_ALREADY_INITIALIZED
-- [ ] `goodplan status --json` — returns valid StatusResult
-- [ ] `goodplan status` — human-readable output displays project name and status
-- [ ] `goodplan status --json --query '.project.name'` — returns `"test-project"`
-- [ ] `goodplan init --quiet` — suppresses output (no stdout)
-- [ ] `goodplan init --json` (in fresh dir) — returns structured JSON result; verify with `goodplan init --json | jq .name` returning `"test-project"` (or cwd basename)
-- [ ] `cd /tmp/my-project && goodplan init` — name defaults to `"my-project"`
-- [ ] `mkdir -p /tmp/alt-project && cd /tmp/alt-project && goodplan init --name alt && goodplan status --json` — works in a different directory (GOODPLAN_DIR points to `.project/` not project root; init always uses cwd)
-- [ ] `bun run build && cd $(mktemp -d) && /abs/path/to/goodplan init --name binary-test && /abs/path/to/goodplan status --json` — compiled binary works (run in temp dir to avoid creating `.project/` in repo root)
+- [x] `goodplan init --name test-project` in empty dir — creates .project/ with project.json, epics/overview.json, slices/overview.json, quests/overview.json, activity-log.jsonl, decisions.jsonl, learnings.jsonl, plus collection directories
+- [x] `goodplan init` in same dir — exit 3, STATE_ALREADY_INITIALIZED
+- [x] `goodplan status --json` — returns valid StatusResult
+- [x] `goodplan status` — human-readable output displays project name and status
+- [x] `goodplan status --json --query '.project.name'` — returns `"test-project"`
+- [x] `goodplan init --quiet` — suppresses output (no stdout)
+- [x] `goodplan init --json` (in fresh dir) — returns structured JSON result; verify with `goodplan init --json | jq .name` returning `"test-project"` (or cwd basename)
+- [x] `cd /tmp/my-project && goodplan init` — name defaults to `"my-project"`
+- [x] `mkdir -p /tmp/alt-project && cd /tmp/alt-project && goodplan init --name alt && goodplan status --json` — works in a different directory (GOODPLAN_DIR points to `.project/` not project root; init always uses cwd)
+- [x] `bun run build && cd $(mktemp -d) && /abs/path/to/goodplan init --name binary-test && /abs/path/to/goodplan status --json` — compiled binary works (run in temp dir to avoid creating `.project/` in repo root)
 
 ### Tasks
 
-- [ ] Create `src/core/rpc/init.ts` — RPC function for init: call `assembleState()` (which returns ZERO_STATE naturally if `.project/` doesn't exist), build INIT_PROJECT event, call `reduce()`, check result with `isStateError()` — if true, map to `GoodplanError` (using `StateError.code` as the error code and `StateError.message` as the message), call `commitState()` with old and new state
-- [ ] Refactor `src/commands/global/init.ts` — remove direct file writes, call RPC init function instead. Keep `--name` default (basename of cwd) and STATE_ALREADY_INITIALIZED check (check cwd/.project/ directly before assembleState, per tracer bullet learning). Preserve existing human-readable success message format. All output must route through `output()` to preserve `--quiet` behavior.
-- [ ] Update `src/commands/global/status.ts` — refactor `buildStatusResult()` to call `assembleState()` directly to read the state tree, then extract project info from the tree. This replaces the direct `readProject()` call. Note: this direct `assembleState()` call is a temporary arrangement — it will be replaced when RPC `status()` is implemented in a later slice (architecturally valid for read-only commands).
-- [ ] Remove `src/core/data/project.ts` functions that are now superseded (`readProject`/`writeProject`) — keep `resolveProjectDir()`. Update any remaining callers.
-- [ ] Remove or update `src/core/data/json.ts` and its test file `tests/unit/data/json.test.ts` — `readEntity`/`writeEntity` are replaced by assembleState/commitState for the init flow. Keep `deterministicStringify` in `src/util/json.ts` (already moved there in tracer bullet). Remove the old functions and tests if no callers remain; otherwise mark deprecated.
-- [ ] Update all existing tests that used `readEntity`/`writeEntity`/`readProject`/`writeProject`
-- [ ] Update `.project/conventions.md` repo structure section to match actual `src/` directory layout after this slice — document new directories: `src/schemas/records/`, `src/core/state/`, `src/core/state/transitions/`, `src/core/rpc/`
-- [ ] Run full test suite: `bun test` — all tests pass (including updated tests from tracer bullet)
-- [ ] Run type check: `npx tsc --noEmit` — passes
-- [ ] Run binary regression: `bun run build && cd $(mktemp -d) && /abs/path/to/goodplan init --name binary-test && /abs/path/to/goodplan status --json` (in temp dir). Also test error paths: running init twice in the same dir should exit 3; `goodplan status --query '.project.name'` (without `--json`) should exit with VALIDATION_INVALID_INPUT error.
+- [x] Create `src/core/rpc/init.ts` — RPC function for init: call `assembleState()` (which returns ZERO_STATE naturally if `.project/` doesn't exist), build INIT_PROJECT event, call `reduce()`, check result with `isStateError()` — if true, map to `GoodplanError` (using `StateError.code` as the error code and `StateError.message` as the message), call `commitState()` with old and new state
+- [x] Refactor `src/commands/global/init.ts` — remove direct file writes, call RPC init function instead. Keep `--name` default (basename of cwd) and STATE_ALREADY_INITIALIZED check (check cwd/.project/ directly before assembleState, per tracer bullet learning). Preserve existing human-readable success message format. All output must route through `output()` to preserve `--quiet` behavior.
+- [x] Update `src/commands/global/status.ts` — refactor `buildStatusResult()` to call `assembleState()` directly to read the state tree, then extract project info from the tree. This replaces the direct `readProject()` call. Note: this direct `assembleState()` call is a temporary arrangement — it will be replaced when RPC `status()` is implemented in a later slice (architecturally valid for read-only commands).
+- [x] Remove `src/core/data/project.ts` functions that are now superseded (`readProject`/`writeProject`) — keep `resolveProjectDir()`. Update any remaining callers.
+- [x] Remove or update `src/core/data/json.ts` and its test file `tests/unit/data/json.test.ts` — `readEntity`/`writeEntity` are replaced by assembleState/commitState for the init flow. Keep `deterministicStringify` in `src/util/json.ts` (already moved there in tracer bullet). Remove the old functions and tests if no callers remain; otherwise mark deprecated.
+- [x] Update all existing tests that used `readEntity`/`writeEntity`/`readProject`/`writeProject`
+- [x] Update `.project/conventions.md` repo structure section to match actual `src/` directory layout after this slice — document new directories: `src/schemas/records/`, `src/core/state/`, `src/core/state/transitions/`, `src/core/rpc/`
+- [x] Run full test suite: `bun test` — all tests pass (including updated tests from tracer bullet)
+- [x] Run type check: `npx tsc --noEmit` — passes
+- [x] Run binary regression: `bun run build && cd $(mktemp -d) && /abs/path/to/goodplan init --name binary-test && /abs/path/to/goodplan status --json` (in temp dir). Also test error paths: running init twice in the same dir should exit 3; `goodplan status --query '.project.name'` (without `--json`) should exit with VALIDATION_INVALID_INPUT error.
 
 ### Verification
 1. `goodplan init --name my-project` in fresh temp dir — creates full `.project/` structure per architecture.

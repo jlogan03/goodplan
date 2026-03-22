@@ -1,13 +1,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import type { Project } from "../../schemas/entities/project.js";
-import { projectSchema } from "../../schemas/entities/project.js";
 import { GoodplanError } from "../../util/errors.js";
-// TODO(phase-5): Remove json.ts import when readProject/writeProject are replaced by assembleState/commitState
-import { readEntity, writeEntity } from "./json.js";
 
 const PROJECT_DIR_NAME = ".project";
-const PROJECT_FILE_NAME = "project.json";
 
 /**
  * Resolve the `.project/` metadata directory.
@@ -49,22 +44,4 @@ export function resolveProjectDir(cwd?: string): string {
 		}
 		current = parent;
 	}
-}
-
-/**
- * Read project.json from the resolved project directory.
- */
-export function readProject(projectDir?: string): Project {
-	const dir = projectDir ?? resolveProjectDir();
-	const filePath = path.join(dir, PROJECT_FILE_NAME);
-	return readEntity(filePath, projectSchema);
-}
-
-/**
- * Write project.json to the resolved project directory.
- */
-export function writeProject(data: Project, projectDir?: string): void {
-	const dir = projectDir ?? resolveProjectDir();
-	const filePath = path.join(dir, PROJECT_FILE_NAME);
-	writeEntity(filePath, data, projectSchema);
 }

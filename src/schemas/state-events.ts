@@ -1,8 +1,11 @@
 // TODO: remaining events added in future slices (architecture defines ~30+ event types)
 export type StateEvent = { type: "INIT_PROJECT"; name: string; ts: string };
 
+/** Error codes produced by state machine transitions. Must stay in sync with GoodplanErrorCode. */
+export type StateErrorCode = "STATE_ALREADY_INITIALIZED" | "STATE_INVALID_TRANSITION";
+
 export type StateError = {
-	code: string;
+	code: StateErrorCode;
 	message: string;
 	detail?: Record<string, unknown>;
 };

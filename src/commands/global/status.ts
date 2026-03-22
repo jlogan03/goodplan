@@ -1,7 +1,10 @@
 import compile from "@michaelhomer/jqjs";
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { readProject } from "../../core/data/project.js";
+import { assembleState } from "../../core/data/assemble.js";
+import { resolveProjectDir } from "../../core/data/project.js";
+import { getJson } from "../../core/data/tree.js";
+import type { Project } from "../../schemas/entities/project.js";
 import type { StatusResult } from "../../schemas/commands/status.js";
 import { GoodplanError } from "../../util/errors.js";
 import { deterministicStringify } from "../../util/json.js";
@@ -10,10 +13,24 @@ import { globalArgs } from "../global-args.js";
 
 /**
  * Build a StatusResult from the current project state.
- * In slice 01, active pointers are always null (no entity files yet).
+ * Uses assembleState() to read the full state tree.
+ *
+ * TODO: This calls assembleState() directly — a deliberate plan decision for this slice.
+ * Architecture allows read-only commands to bypass RPC and access the Data Layer directly.
+ * Revisit routing when RPC read-only helpers are defined in a later slice.
  */
 export function buildStatusResult(projectDir?: string): StatusResult {
-	const project = readProject(projectDir);
+	const dir = projectDir ?? resolveProjectDir();
+	const state = assembleState(dir);
+
+	const project = getJson<Project>(state, "project.json");
+	if (project === undefined) {
+		throw new GoodplanError(
+			"DATA_NO_PROJECT",
+			"No project.json found in .project/ directory",
+		);
+	}
+
 	return {
 		project: {
 			name: project.name,

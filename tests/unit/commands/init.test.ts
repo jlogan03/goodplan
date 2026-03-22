@@ -70,6 +70,42 @@ describe("init command", () => {
 		writeSpy.mockRestore();
 	});
 
+	it("creates overview files and collection directories", async () => {
+		const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+		await runInit({ name: "full-tree" });
+
+		const projectDir = path.join(tmpDir, ".project");
+
+		// Overview files
+		expect(fs.existsSync(path.join(projectDir, "epics", "overview.json"))).toBe(true);
+		expect(fs.existsSync(path.join(projectDir, "slices", "overview.json"))).toBe(true);
+		expect(fs.existsSync(path.join(projectDir, "quests", "overview.json"))).toBe(true);
+
+		// JSONL files
+		expect(fs.existsSync(path.join(projectDir, "activity-log.jsonl"))).toBe(true);
+		expect(fs.existsSync(path.join(projectDir, "decisions.jsonl"))).toBe(true);
+		expect(fs.existsSync(path.join(projectDir, "learnings.jsonl"))).toBe(true);
+
+		// Activity log has init entry
+		const activityLog = fs.readFileSync(path.join(projectDir, "activity-log.jsonl"), "utf-8");
+		const lines = activityLog.trim().split("\n");
+		expect(lines).toHaveLength(1);
+		const entry = JSON.parse(lines[0]!);
+		expect(entry.phase).toBe("init");
+		expect(entry.scope).toBe("project");
+		expect(entry.status).toBe("complete");
+		expect(entry.summary).toContain("full-tree");
+
+		// Empty JSONL files
+		const decisions = fs.readFileSync(path.join(projectDir, "decisions.jsonl"), "utf-8");
+		expect(decisions.trim()).toBe("");
+		const learnings = fs.readFileSync(path.join(projectDir, "learnings.jsonl"), "utf-8");
+		expect(learnings.trim()).toBe("");
+
+		writeSpy.mockRestore();
+	});
+
 	it("defaults --name to path.basename(cwd)", async () => {
 		// Create a subdirectory with a known name and chdir into it
 		const namedDir = path.join(tmpDir, "my-cool-project");
@@ -140,5 +176,21 @@ describe("init command", () => {
 		const outputStr = chunks.join("");
 		expect(outputStr).toContain("human-test");
 		expect(outputStr).toContain("Initialized");
+	});
+
+	it("suppresses output with --quiet", async () => {
+		const chunks: string[] = [];
+		vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
+			chunks.push(String(chunk));
+			return true;
+		});
+
+		await runInit({ name: "quiet-test", quiet: true });
+
+		// No output should be produced
+		expect(chunks.join("")).toBe("");
+
+		// But project should still be created
+		expect(fs.existsSync(path.join(tmpDir, ".project", "project.json"))).toBe(true);
 	});
 });

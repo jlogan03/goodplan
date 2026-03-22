@@ -8,6 +8,7 @@ import {
 	formatStatusHuman,
 } from "../../../src/commands/global/status.js";
 import { statusResultSchema } from "../../../src/schemas/commands/status.js";
+import { deterministicStringify } from "../../../src/util/json.js";
 
 let tmpDir: string;
 let originalCwd: string;
@@ -24,7 +25,7 @@ afterEach(() => {
 	vi.restoreAllMocks();
 });
 
-/** Helper: create a minimal .project/ with project.json */
+/** Helper: create a minimal .project/ with project.json (uses deterministicStringify for compatibility with assembleState) */
 function createProject(name: string) {
 	const projectDir = path.join(tmpDir, ".project");
 	fs.mkdirSync(projectDir, { recursive: true });
@@ -38,7 +39,10 @@ function createProject(name: string) {
 		created: now,
 		updated: now,
 	};
-	fs.writeFileSync(path.join(projectDir, "project.json"), JSON.stringify(project, null, "\t"));
+	fs.writeFileSync(
+		path.join(projectDir, "project.json"),
+		`${deterministicStringify(project)}\n`,
+	);
 	return projectDir;
 }
 

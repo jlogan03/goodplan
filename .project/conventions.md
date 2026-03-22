@@ -43,10 +43,14 @@ src/
 │   └── global/
 ├── core/
 │   ├── state/
-│   ├── data/
+│   │   └── transitions/    # per-event transition handlers
+│   ├── data/               # assemble/commit state tree, tree types, schema registry
+│   ├── rpc/                # workflow orchestration (init, begin, complete, submit, status)
 │   ├── context/
 │   └── workflow/
 ├── schemas/
+│   ├── entities/           # Zod schemas for JSON entities (project, epic, slice, quest, overview)
+│   └── records/            # Zod schemas for JSONL records (activity-log, decision, learning, architecture-delta)
 ├── util/
 └── index.ts
 tests/

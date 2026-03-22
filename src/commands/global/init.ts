@@ -1,8 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { defineCommand } from "citty";
-import { writeProject } from "../../core/data/project.js";
-import type { Project } from "../../schemas/entities/project.js";
+import { rpcInit } from "../../core/rpc/init.js";
 import { GoodplanError } from "../../util/errors.js";
 import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
@@ -10,7 +9,7 @@ import { globalArgs } from "../global-args.js";
 /**
  * `goodplan init` — initialize a new project in the current directory.
  *
- * Creates `.project/` with a valid `project.json`.
+ * Creates `.project/` with a valid project tree via the state machine.
  * Checks cwd directly (not via resolveProjectDir, which walks up).
  */
 export const initCommand = defineCommand({
@@ -40,28 +39,13 @@ export const initCommand = defineCommand({
 		}
 
 		const projectName = args.name || path.basename(cwd);
-		const now = new Date().toISOString();
 
-		const project: Project = {
-			version: "1.0.0",
-			name: projectName,
-			activeEpic: null,
-			activeSlice: null,
-			activeQuest: null,
-			created: now,
-			updated: now,
-		};
-
-		// Create .project/ directory
-		fs.mkdirSync(projectDirPath, { recursive: true });
-
-		// Write project.json via data layer
-		writeProject(project, projectDirPath);
+		const result = rpcInit(projectDirPath, projectName);
 
 		if (args.json) {
-			output(project, args);
+			output(result, args);
 		} else {
-			output(`Initialized project "${projectName}" in ${projectDirPath}`, args);
+			output(`Initialized project "${result.name}" in ${result.projectDir}`, args);
 		}
 	},
 });
