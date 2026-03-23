@@ -37,4 +37,5 @@ Cross-cutting features that span entity types: decision management (create/updat
 
 ## Scope Boundaries
 **In scope:** decision:create, decision:update, learning:rollup (manual/explicit rollup via ROLLUP_LEARNINGS event) commands and state machine transitions. Full status command (replacing tracer bullet stub — needs quest information from slice 05). Full --query on all JSON-outputting commands. `schema` command for stdin shape discovery (exercises INV-006, cross-cutting introspection).
+**Also in scope:** Fix O(n²) learnings rollup in `quest-complete.ts` and `slice-complete.ts` — each project-rollup learning currently re-reads and re-writes the entire `learnings.jsonl`. Collect all project-rollup entries first, then do a single batch append. Pre-existing debt from slices 04-05.
 **Out of scope:** Skills migration (slice 07), integration tests (slice 08). Epic completion command (handled within epic lifecycle transitions in slice 03). Learnings-at-completion (handled by state machine in slices 04-05).
