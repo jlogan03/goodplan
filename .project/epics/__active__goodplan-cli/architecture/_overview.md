@@ -61,7 +61,7 @@ Installed alongside Claude Code skills. Skills are versioned in the repo (`skill
 
 | Subsystem | Maturity | Dependents | Fitness Functions | Notes |
 |---|---|---|---|---|
-| Commands | Experimental | — | candidate | Thin CLI layer. Depends on RPC and Data Layer. |
-| RPC Layer | Experimental | Commands | candidate | Workflow orchestration. Depends on State Machine and Data Layer. |
-| State Machine | Experimental | RPC Layer | candidate (priority 1) | Pure rules engine. No dependencies. Implement fitness functions first: purity (no I/O imports), completeness ((status, event) coverage). |
-| Data Layer | Experimental | RPC Layer, Commands | candidate (priority 2) | Filesystem I/O. Implement next: deterministic JSON round-trip, schema validation on read/write. |
+| Commands | Experimental | — | `tests/fitness/stateless-commands.test.ts`, `tests/fitness/schema-output-accuracy.test.ts` | Thin CLI layer. Depends on RPC and Data Layer. |
+| RPC Layer | Experimental | Commands | — | Workflow orchestration. Depends on State Machine and Data Layer. No direct fitness functions (tested indirectly via integration tests). |
+| State Machine | Experimental | RPC Layer | `tests/fitness/state-machine-purity.test.ts`, `tests/fitness/transition-completeness.test.ts` | Pure rules engine. No dependencies. Purity and completeness fitness functions in place. |
+| Data Layer | Experimental | RPC Layer, Commands | `tests/fitness/data-determinism.test.ts`, `tests/fitness/schema-validation.test.ts`, `tests/fitness/tree-accuracy.test.ts`, `tests/fitness/concurrent-modification.test.ts`, `tests/fitness/atomic-writes.test.ts` | Filesystem I/O. All planned fitness functions implemented. |

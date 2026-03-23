@@ -4,7 +4,8 @@
 
 ### Well-tested areas
 - Skill file structure (SKILL.md frontmatter, step numbering, reference paths): verified across 4 skill files during slice-quality-and-health implementation with 28-point checklist
-- goodplan CLI through decisions-learnings: 702 unit tests covering tree types (42), entity schemas (126), I/O layer (91), state machine (166), RPC layer (32), context bundling (58), command framework + 13 epic + 8 submit + 8 slice + 8 quest + 8 start + 4 decision + 2 learning + 1 schema commands (177). Universal `--query` on all commands. Binary compilation verified. Type-clean against `tsc --noEmit`.
+- goodplan CLI: 824 tests (702 unit + 30 integration + 92 fitness). Unit tests cover tree types, schemas, I/O, state machine, RPC, context, commands. Integration tests spawn compiled binary against real `.project/` fixtures covering init, epic/slice/quest lifecycle, error transitions, circuit breaker, runner modes. 9 fitness functions verify all architectural invariants (INV-001 through INV-007 plus transition completeness and tree accuracy). Type-clean against `tsc --noEmit`.
+- goodplan CLI main runner (`src/index.ts`): integration tests cover unknown commands, --help, --version, --json error mode, NO_COLOR, stdin validation — pre-dispatch regression now caught by tests.
 
 ### Undertested areas
 - Runtime behavior of new skills (refine-slices, updated define-slices three-lens evaluation): not yet exercised on a real project
@@ -12,7 +13,6 @@
 - Refactor Intelligence Protocol (Step 9 in complete): new detection algorithm, batch table presentation, inline fix application, side quest proposal — all untested on a real codebase
 - Maturity/invariants/fitness workflow: Steps 8f/8g/8h in define-architecture, Steps 3b/3c/3d in audit-architecture, maturity evaluation in refine-architecture, reviewer criteria 12/13 — all untested on a real project
 - Epic completion mode in /complete: new epic scope type, architecture reconciliation, artifact promotion, archive numbering — all untested on a real epic
-- goodplan CLI main runner (`src/index.ts`): no automated integration tests — only verified via manual CLI invocation. Pre-dispatch regression (exit 0 for unknown commands) was caught by review, not tests. Scoped for slice 08.
 - Install script (`scripts/install-skills.sh`): verified manually via `bun run install:skills` + diff; no automated test
 
 ### Known fragile areas
@@ -22,13 +22,15 @@
 - epic-conventions.md is consumed by 12+ skills: changes require updating all consumers
 - citty + `exactOptionalPropertyTypes`: requires `as unknown as CommandDef` casts in `src/index.ts`. May break on citty upgrade.
 
-<!-- Last updated by: complete for epics/goodplan-cli/slices/07-skills-migrate, 2026-03-23 -->
+<!-- Last updated by: complete for epics/goodplan-cli/slices/08-integration-test, 2026-03-23 -->
 
 ## Performance Characteristics
 
-- No performance observations yet — skill files are markdown documents parsed by the agent at invocation time
+- Full test suite (824 tests, 75 files): ~3s total including binary compilation (~1s)
+- Integration tests (30 tests): ~9s (dominated by binary spawning)
+- Fitness tests (92 tests): ~3s (mix of source parsing and module imports)
 
-<!-- Last updated by: complete for side-quests/slice-quality-and-health, 2026-03-17 -->
+<!-- Last updated by: complete for epics/goodplan-cli/slices/08-integration-test, 2026-03-23 -->
 
 ## Extensibility
 
@@ -69,8 +71,8 @@
 
 ## Recent Changes
 
+- **08-integration-test** (2026-03-23): Integration tests (30 tests spawning compiled binary: init, epic/slice/quest lifecycle, error transitions, circuit breaker, runner modes) + 9 fitness functions (92 tests: state machine purity, transition completeness, data determinism, schema validation, tree accuracy, concurrent modification, atomic writes, stateless commands, schema output accuracy). 1 production line changed (export handlerRecord). 824 total tests.
 - **07-skills-migrate** (2026-03-23): Copy 15 goodplan workflow skills into `skills/`, create `scripts/install-skills.sh` with clean-install semantics, wire `package.json install:skills`, command reference audit (0 CLI invocations found — skills use slash commands). 702 tests unchanged.
 - **06-decisions-learnings** (2026-03-23): Decision management (CREATE_DECISION, UPDATE_DECISION + 4 CLI commands), manual learnings rollup (ROLLUP_LEARNINGS + 2 CLI commands), full status command replacing stub, universal `--query` lifted to shared output() for all commands, schema command with INV-006 drift detection. O(n²) rollup fix. 702 tests.
-- **05-sub-agent-commands** (2026-03-22): Quest lifecycle (5 state machine handlers, 8 quest:* commands, RPC wiring) + context bundling module (src/core/context/ with startContext, priorities, budget, 8 start-* commands). activeQuest guard, learnings rollup, --inline budget, binary regression. 618 tests.
 
-<!-- Last updated by: complete for epics/goodplan-cli/slices/07-skills-migrate, 2026-03-23 -->
+<!-- Last updated by: complete for epics/goodplan-cli/slices/08-integration-test, 2026-03-23 -->

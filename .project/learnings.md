@@ -2,6 +2,21 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Plans referencing CLI commands must verify names and error codes against source
+_Source: 08-integration-test_
+
+Plan-invented error codes and imprecise command sequences were caught in refinement but would have cost implementation cycles. Grep `src/commands/main.ts` and `src/util/errors.ts` during `/create-plan` when the plan references CLI commands.
+
+## Binary-spawning integration tests require explicit stdin and GOODPLAN_DIR
+_Source: 08-integration-test_
+
+Without `stdin: ""` the compiled binary blocks forever. Without `GOODPLAN_DIR` env var, the binary finds the repo's own `.project/` via cwd walking. Both are required for every integration test spawning the binary.
+
+## Data Layer invariants need direct imports; CLI invariants use binary spawning
+_Source: 08-integration-test_
+
+Concurrent modification, deterministic serialization, and schema validation are internal to `commitState`/`assembleState` — not observable through the CLI binary. Fitness function plans should explicitly classify each invariant as binary-testable or import-testable.
+
 ## Skills use slash commands, not CLI commands — consolidation must bridge both
 _Source: 07-skills-migrate_
 
