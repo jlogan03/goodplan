@@ -61,19 +61,23 @@ export function handleCompleteQuest(
 			content: [...questLearnings, ...learningEntries],
 		});
 
-		// Rollup: for each learning with rollupTo targets
+		// Rollup: batch collect entries per target scope, then single setEntry per scope
+		const projectRollups: LearningEntry[] = [];
 		for (const entry of learningEntries) {
 			for (const target of entry.rollupTo) {
 				if (target === "project") {
-					const projectLearnings = getJsonl<LearningEntry>(tree, "learnings.jsonl") ?? [];
-					tree = setEntry(tree, "learnings.jsonl", {
-						type: "jsonl",
-						content: [...projectLearnings, entry],
-					});
+					projectRollups.push(entry);
 				}
 				// Quests are project-scoped — rollupTo "epic" is silently skipped
 				// because there is no parent epic to roll up to.
 			}
+		}
+		if (projectRollups.length > 0) {
+			const projectLearnings = getJsonl<LearningEntry>(tree, "learnings.jsonl") ?? [];
+			tree = setEntry(tree, "learnings.jsonl", {
+				type: "jsonl",
+				content: [...projectLearnings, ...projectRollups],
+			});
 		}
 	}
 

@@ -255,4 +255,77 @@ describe("reduce — COMPLETE_SLICE", () => {
 		// Note: epicComplete flag is derived by RPC layer, not state machine.
 		// We just verify the state is correct for the RPC layer to detect it.
 	});
+
+	it("O(n^2) fix: multiple learnings with rollupTo project produce correct learnings.jsonl", () => {
+		const s = stateWithSliceInImplementationComplete();
+		const result = reduce(s, {
+			type: "COMPLETE_SLICE",
+			slice: "s1",
+			ts: TS2,
+			verificationPassed: true,
+			deferred: [],
+			learnings: [
+				{ category: "domain", summary: "L1", detail: "D1", tags: [], rollupTo: ["project"] },
+				{ category: "worked", summary: "L2", detail: "D2", tags: [], rollupTo: ["project"] },
+				{ category: "didnt-work", summary: "L3", detail: "D3", tags: [], rollupTo: ["project"] },
+			],
+			architectureDelta: [],
+		}) as ProjectState;
+
+		// All 3 should appear in project learnings
+		const projectLearnings = getJsonl<LearningEntry>(result, "learnings.jsonl");
+		expect(projectLearnings).toHaveLength(3);
+		expect(projectLearnings!.map((l) => l.summary)).toEqual(["L1", "L2", "L3"]);
+
+		// All 3 should also be in per-slice learnings
+		const sliceLearnings = getJsonl<LearningEntry>(result, "slices/s1/learnings.jsonl");
+		expect(sliceLearnings).toHaveLength(3);
+	});
+
+	it("O(n^2) fix: multiple learnings with rollupTo epic produce correct epic learnings", () => {
+		const s = stateWithSliceInImplementationComplete();
+		const result = reduce(s, {
+			type: "COMPLETE_SLICE",
+			slice: "s1",
+			ts: TS2,
+			verificationPassed: true,
+			deferred: [],
+			learnings: [
+				{ category: "domain", summary: "E1", detail: "D1", tags: [], rollupTo: ["epic"] },
+				{ category: "worked", summary: "E2", detail: "D2", tags: [], rollupTo: ["epic"] },
+			],
+			architectureDelta: [],
+		}) as ProjectState;
+
+		const epicLearnings = getJsonl<LearningEntry>(result, "epics/e1/learnings.jsonl");
+		expect(epicLearnings).toHaveLength(2);
+		expect(epicLearnings!.map((l) => l.summary)).toEqual(["E1", "E2"]);
+	});
+
+	it("O(n^2) fix: mixed rollupTo targets batch correctly", () => {
+		const s = stateWithSliceInImplementationComplete();
+		const result = reduce(s, {
+			type: "COMPLETE_SLICE",
+			slice: "s1",
+			ts: TS2,
+			verificationPassed: true,
+			deferred: [],
+			learnings: [
+				{ category: "domain", summary: "Both", detail: "D", tags: [], rollupTo: ["epic", "project"] },
+				{ category: "worked", summary: "EpicOnly", detail: "D", tags: [], rollupTo: ["epic"] },
+				{ category: "didnt-work", summary: "ProjectOnly", detail: "D", tags: [], rollupTo: ["project"] },
+				{ category: "do-differently", summary: "LocalOnly", detail: "D", tags: [], rollupTo: [] },
+			],
+			architectureDelta: [],
+		}) as ProjectState;
+
+		const epicLearnings = getJsonl<LearningEntry>(result, "epics/e1/learnings.jsonl");
+		expect(epicLearnings).toHaveLength(2); // Both + EpicOnly
+
+		const projectLearnings = getJsonl<LearningEntry>(result, "learnings.jsonl");
+		expect(projectLearnings).toHaveLength(2); // Both + ProjectOnly
+
+		const sliceLearnings = getJsonl<LearningEntry>(result, "slices/s1/learnings.jsonl");
+		expect(sliceLearnings).toHaveLength(4); // all 4
+	});
 });

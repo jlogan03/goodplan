@@ -170,6 +170,35 @@ describe("StateEvent", () => {
 		expect(events).toHaveLength(10);
 	});
 
+	it("cross-cutting decision and rollup events are structurally valid", () => {
+		const events: StateEvent[] = [
+			{
+				type: "CREATE_DECISION",
+				id: "2026-03-20-layered-arch",
+				domain: "architecture",
+				title: "Four-Layer Architecture",
+				summary: "Commands -> RPC -> State Machine + Data Layer",
+				ts: "2026-03-22T00:00:00.000Z",
+			},
+			{
+				type: "UPDATE_DECISION",
+				id: "2026-03-20-layered-arch",
+				changes: { status: "revisiting" },
+				ts: "2026-03-22T00:00:00.000Z",
+			},
+			{
+				type: "ROLLUP_LEARNINGS",
+				from: "slices/01-auth",
+				to: "project",
+				ts: "2026-03-22T00:00:00.000Z",
+			},
+		];
+		expect(events).toHaveLength(3);
+		for (const event of events) {
+			expect(event.type).toBeTruthy();
+		}
+	});
+
 	it("quest lifecycle events are structurally valid", () => {
 		const events: StateEvent[] = [
 			{ type: "CREATE_QUEST", name: "q", goal: "Investigate something", ts: "2026-03-22T00:00:00.000Z" },
@@ -204,7 +233,7 @@ describe("StateEvent", () => {
 		expect(events).toHaveLength(10);
 	});
 
-	it("discriminated union covers all 35 event types", () => {
+	it("discriminated union covers all 38 event types", () => {
 		// Compile-time exhaustiveness: this array must include every event type.
 		// If a new event type is added to StateEvent without adding it here, this won't catch it at runtime,
 		// but the individual tests above cover each type.
@@ -244,10 +273,13 @@ describe("StateEvent", () => {
 			"COMPLETE_QUEST_IMPLEMENTATION",
 			"COMPLETE_QUEST",
 			"ABANDON_QUEST",
+			"CREATE_DECISION",
+			"UPDATE_DECISION",
+			"ROLLUP_LEARNINGS",
 		];
-		expect(allTypes).toHaveLength(35);
+		expect(allTypes).toHaveLength(38);
 		// All unique
-		expect(new Set(allTypes).size).toBe(35);
+		expect(new Set(allTypes).size).toBe(38);
 	});
 });
 
@@ -278,6 +310,7 @@ describe("isStateError", () => {
 			"STATE_CONTENT_MISSING",
 			"STATE_MAX_ROUNDS_REACHED",
 			"STATE_QUEST_ALREADY_ACTIVE",
+			"STATE_DUPLICATE_DECISION",
 		];
 		for (const code of newCodes) {
 			const err: StateError = { code, message: `Error: ${code}` };

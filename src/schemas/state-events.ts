@@ -1,6 +1,7 @@
 import type { Verification, VerificationResult } from "./entities/epic.js";
 import type { DeferredItem } from "./entities/slice.js";
 import type { ArchitectureDeltaInput } from "./records/architecture-delta.js";
+import type { DecisionEntry } from "./records/decision.js";
 import type { LearningInput } from "./records/learning.js";
 
 // `ts` field is injected by the RPC layer on ALL events to keep the reducer pure (no Date.now() inside).
@@ -95,7 +96,11 @@ export type StateEvent =
 			learnings: LearningInput[];
 			architectureDelta: ArchitectureDeltaInput[];
 	  }
-	| { type: "ABANDON_QUEST"; quest: string; ts: string; reason: string };
+	| { type: "ABANDON_QUEST"; quest: string; ts: string; reason: string }
+	// Cross-cutting: decisions and learnings rollup
+	| { type: "CREATE_DECISION"; id: string; domain: string; title: string; summary: string; ts: string }
+	| { type: "UPDATE_DECISION"; id: string; changes: Partial<Omit<DecisionEntry, "id" | "date">>; ts: string }
+	| { type: "ROLLUP_LEARNINGS"; from: string; to: string; ts: string };
 
 /** Error codes produced by state machine transitions. Single source of truth — also used by GoodplanErrorCode. */
 export type StateErrorCode =
@@ -107,7 +112,8 @@ export type StateErrorCode =
 	| "STATE_SLICE_NOT_READY"
 	| "STATE_CONTENT_MISSING"
 	| "STATE_MAX_ROUNDS_REACHED"
-	| "STATE_QUEST_ALREADY_ACTIVE";
+	| "STATE_QUEST_ALREADY_ACTIVE"
+	| "STATE_DUPLICATE_DECISION";
 
 export type StateError = {
 	code: StateErrorCode;

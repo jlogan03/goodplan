@@ -29,6 +29,7 @@ import {
 } from "./transitions/epic-refine.js";
 import { handleAddVerification, handleUpdateVerification } from "./transitions/epic-verify.js";
 import { handleInitProject } from "./transitions/init.js";
+import { handleCreateDecision, handleUpdateDecision } from "./transitions/decision.js";
 import { handleAbandonQuest } from "./transitions/quest-abandon.js";
 import { handleCompleteQuest } from "./transitions/quest-complete.js";
 import { handleCreateQuest } from "./transitions/quest-create.js";
@@ -42,6 +43,7 @@ import { handleCompleteSlice } from "./transitions/slice-complete.js";
 import { handleCreateSlice } from "./transitions/slice-create.js";
 import { handleBeginImplementation, handleBeginRefinement } from "./transitions/slice-implement.js";
 import { handleBeginPlan } from "./transitions/slice-plan.js";
+import { handleRollupLearnings } from "./transitions/rollup-learnings.js";
 import {
 	handleCompleteImplementation,
 	handleCompletePlan,
@@ -100,6 +102,9 @@ const handlerRecord = {
 	COMPLETE_QUEST_IMPLEMENTATION: handleCompleteQuestImplementation,
 	COMPLETE_QUEST: handleCompleteQuest,
 	ABANDON_QUEST: handleAbandonQuest,
+	CREATE_DECISION: handleCreateDecision,
+	UPDATE_DECISION: handleUpdateDecision,
+	ROLLUP_LEARNINGS: handleRollupLearnings,
 } satisfies { [K in StateEvent["type"]]: Handler<K> };
 
 /** Runtime lookup map — derived from the exhaustiveness-checked record. */

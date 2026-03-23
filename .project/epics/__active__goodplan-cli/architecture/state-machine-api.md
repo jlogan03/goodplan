@@ -72,7 +72,7 @@ type StateEvent =
   // Cross-cutting
   | { type: 'ROLLUP_LEARNINGS'; from: string; to: string; ts: string }
   | { type: 'CREATE_DECISION'; id: string; domain: string; title: string; summary: string; ts: string }
-  | { type: 'UPDATE_DECISION'; id: string; changes: Partial<DecisionEntry>; ts: string }
+  | { type: 'UPDATE_DECISION'; id: string; changes: Partial<Omit<DecisionEntry, 'id' | 'date'>>; ts: string }
   | { type: 'ADD_VERIFICATION'; epic: string; ts: string; verification: Verification }
   | { type: 'UPDATE_VERIFICATION'; epic: string; ts: string; index: number; verification: Verification };
 ```

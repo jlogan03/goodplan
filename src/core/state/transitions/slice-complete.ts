@@ -85,24 +85,32 @@ export function handleCompleteSlice(
 			content: [...sliceLearnings, ...learningEntries],
 		});
 
-		// Rollup: for each learning with rollupTo targets
+		// Rollup: batch collect entries per target scope, then single setEntry per scope
+		const epicRollups: LearningEntry[] = [];
+		const projectRollups: LearningEntry[] = [];
 		for (const entry of learningEntries) {
 			for (const target of entry.rollupTo) {
 				if (target === "epic") {
-					const epicLearnings =
-						getJsonl<LearningEntry>(tree, `epics/${sliceOrErr.epic}/learnings.jsonl`) ?? [];
-					tree = setEntry(tree, `epics/${sliceOrErr.epic}/learnings.jsonl`, {
-						type: "jsonl",
-						content: [...epicLearnings, entry],
-					});
+					epicRollups.push(entry);
 				} else if (target === "project") {
-					const projectLearnings = getJsonl<LearningEntry>(tree, "learnings.jsonl") ?? [];
-					tree = setEntry(tree, "learnings.jsonl", {
-						type: "jsonl",
-						content: [...projectLearnings, entry],
-					});
+					projectRollups.push(entry);
 				}
 			}
+		}
+		if (epicRollups.length > 0) {
+			const epicLearnings =
+				getJsonl<LearningEntry>(tree, `epics/${sliceOrErr.epic}/learnings.jsonl`) ?? [];
+			tree = setEntry(tree, `epics/${sliceOrErr.epic}/learnings.jsonl`, {
+				type: "jsonl",
+				content: [...epicLearnings, ...epicRollups],
+			});
+		}
+		if (projectRollups.length > 0) {
+			const projectLearnings = getJsonl<LearningEntry>(tree, "learnings.jsonl") ?? [];
+			tree = setEntry(tree, "learnings.jsonl", {
+				type: "jsonl",
+				content: [...projectLearnings, ...projectRollups],
+			});
 		}
 	}
 
