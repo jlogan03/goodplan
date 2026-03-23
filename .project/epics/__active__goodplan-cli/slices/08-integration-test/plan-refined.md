@@ -63,33 +63,33 @@ Focused workflow tests, error path tests, and main runner tests — all spawning
 
 ### Tasks
 
-- [ ] Create `tests/integration/workflow-init.test.ts` — test `goodplan init` in an empty directory: verify exit 0, JSON output, `.project/` created with expected structure (idea.md, overview.json, activity-log.jsonl).
-- [ ] Create `tests/integration/workflow-epic.test.ts` — test epic lifecycle segments using `runChain()`:
+- [x] Create `tests/integration/workflow-init.test.ts` — test `goodplan init` in an empty directory: verify exit 0, JSON output, `.project/` created with expected structure (idea.md, overview.json, activity-log.jsonl).
+- [x] Create `tests/integration/workflow-epic.test.ts` — test epic lifecycle segments using `runChain()`:
   - From fresh-init fixture: `epic:create` with stdin `{ "name": "test-epic", "goal": "Test goal" }` → verify epic directory and status
   - From epic-created fixture: `epic:explore --epic test-epic` → `submit-explore --epic test-epic` → `epic:define-architecture --epic test-epic` → `submit-architecture --epic test-epic` → `epic:define-slices --epic test-epic` → `submit-slices --epic test-epic` → `epic:add-verification --epic test-epic` with stdin verification criterion → `epic:activate --epic test-epic` → verify activated status
   - Test `epic:list`, `epic:show` read commands at various states
-- [ ] Create `tests/integration/workflow-slice.test.ts` — test slice lifecycle using `runChain()`:
+- [x] Create `tests/integration/workflow-slice.test.ts` — test slice lifecycle using `runChain()`:
   - From epic-activated fixture: `slice:create --epic test-epic` with stdin `{ "name": "test-slice" }` → `slice:plan` → `start-plan` → `submit-plan` → `slice:refine-plan` → `start-refinement` → `submit-refinement` with stdin `{ "scores": { "correctness": 8, "completeness": 8 } }` → `slice:implement` → `start-implementation` → `submit-implementation` → `slice:complete` with stdin `{ "verificationPassed": true, "learnings": [], "deferred": [], "architectureDelta": "" }` → verify completed status and learnings
   - Test `slice:list`, `slice:show` read commands
-- [ ] Create `tests/integration/workflow-quest.test.ts` — test quest lifecycle alongside an active epic:
+- [x] Create `tests/integration/workflow-quest.test.ts` — test quest lifecycle alongside an active epic:
   - From epic-activated fixture: `quest:create` with stdin `{ "name": "test-quest", "goal": "Test quest goal" }` → `quest:plan` → `start-plan` → `submit-plan` → `quest:refine-plan` → `start-refinement` → `submit-refinement` with stdin `{ "scores": { "correctness": 8, "completeness": 8 } }` → `quest:implement` → `start-implementation` → `submit-implementation` → `quest:complete` with stdin `{ "verificationPassed": true, "learnings": [], "deferred": [] }` → verify completed status
   - Note: `start-*` and `submit-*` commands are shared between slices and quests — they detect the active target from context
-- [ ] Create `tests/integration/error-transitions.test.ts` — test invalid state transitions:
+- [x] Create `tests/integration/error-transitions.test.ts` — test invalid state transitions:
   - Attempt `slice:plan` on a slice that hasn't been created → `STATE_INVALID_TRANSITION` error
   - Attempt `epic:activate` without verification criteria → `STATE_MISSING_VERIFICATIONS` error
   - Attempt `slice:implement` before plan is refined → `STATE_SLICE_NOT_READY` error
   - Verify JSON error output includes error code and message
-- [ ] Create `tests/integration/error-circuit-breaker.test.ts` — test refinement circuit breaker:
+- [x] Create `tests/integration/error-circuit-breaker.test.ts` — test refinement circuit breaker:
   - Use a fixture starting at a high refinement round (e.g., round 9 of 10) so only 1-2 spawns are needed to hit `MAX_REFINEMENT_ROUNDS` (defined in `src/core/state/transitions/helpers.ts`) → `STATE_MAX_ROUNDS_REACHED` error
   - Submit with `--override` → succeeds past maxRounds
-- [ ] Create `tests/integration/runner-modes.test.ts` — test main runner behavior:
+- [x] Create `tests/integration/runner-modes.test.ts` — test main runner behavior:
   - `./goodplan badcommand` → exit 2 (validation error), error on stderr
   - `./goodplan badcommand --json` → JSON error to stdout, empty stderr
   - `./goodplan --help` → shows command list, exit 0
   - `./goodplan --version` → shows version string, exit 0
   - `echo '{}' | ./goodplan epic:create --json` with empty stdin → JSON validation error to stdout, empty stderr
   - `NO_COLOR=1 ./goodplan --help` → output contains no ANSI escape codes
-- [ ] Verify: `bun test tests/integration/` passes. Run 3 times to check for flakiness.
+- [x] Verify: `bun test tests/integration/` passes. Run 3 times to check for flakiness.
 
 ### Verification
 All integration tests pass consistently across 3 runs. Test count ≥ 20. Total integration test time under 30 seconds.

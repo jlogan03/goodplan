@@ -7,7 +7,8 @@
  *   bun test                       — run all tests (unit + integration + fitness)
  */
 
-import { type SpawnSyncReturns, spawnSync } from "node:child_process";
+import type { SpawnSyncReturns } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -127,6 +128,27 @@ export async function withFixture<T>(
 		const bin = buildBinary();
 
 		return await fn({ tmpDir, env, bin });
+	} finally {
+		fs.rmSync(tmpDir, { recursive: true, force: true });
+	}
+}
+
+/**
+ * Create a temp directory, run the callback, clean up.
+ * Lighter than withFixture — for tests that create their own project (e.g., init).
+ */
+export async function withTempDir<T>(
+	fn: (tmpDir: string, env: Record<string, string>) => T | Promise<T>,
+): Promise<T> {
+	const tmpDir = fs.mkdtempSync(
+		path.join(os.tmpdir(), "goodplan-integration-temp-"),
+	);
+
+	try {
+		const env: Record<string, string> = {
+			GOODPLAN_DIR: path.join(tmpDir, ".project"),
+		};
+		return await fn(tmpDir, env);
 	} finally {
 		fs.rmSync(tmpDir, { recursive: true, force: true });
 	}
