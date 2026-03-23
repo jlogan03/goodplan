@@ -104,6 +104,10 @@ function buildSubmitEvent(
 				...spreadOverride(options),
 			};
 		}
+		case "complete":
+			// 'complete' phase is used only for context bundling priority tables,
+			// not for submit-* commands. If reached here, it's a routing error.
+			throw new GoodplanError("INTERNAL_ERROR", "submit('complete') is not valid — complete uses the complete() RPC function");
 		default: {
 			const _exhaustive: never = phase;
 			throw new GoodplanError("INTERNAL_ERROR", `Unknown submit phase: ${String(_exhaustive)}`);

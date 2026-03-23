@@ -29,6 +29,9 @@ export type BeginPhase =
 	| "update-decision"
 	| "rollup";
 
+/** Phases that have content priority orderings for context bundling.
+ *  Encompasses both `submit-*` command phases and the `complete` phase
+ *  (which assembles context inline during entity completion). */
 export type SubmitPhase =
 	| "plan"
 	| "refinement"
@@ -37,7 +40,8 @@ export type SubmitPhase =
 	| "architecture"
 	| "slices"
 	| "refine-architecture"
-	| "refine-slices";
+	| "refine-slices"
+	| "complete";
 
 // ── Target ───────────────────────────────────────────────────
 

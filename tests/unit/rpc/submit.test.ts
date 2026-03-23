@@ -130,6 +130,30 @@ describe("submit — phase mismatch assertion", () => {
 	});
 });
 
+describe("submit — complete phase error", () => {
+	it("throws INTERNAL_ERROR when phase is 'complete'", () => {
+		initWithEpic();
+
+		expect(() =>
+			submit(
+				projectDir,
+				"complete",
+				{ type: "slice", name: "s1" },
+				// complete is not a valid submit phase — must use the complete() RPC function.
+				// We force the type here to test the runtime guard.
+				{ phase: "complete" } as never,
+			),
+		).toThrow(GoodplanError);
+
+		try {
+			submit(projectDir, "complete", { type: "slice", name: "s1" }, { phase: "complete" } as never);
+		} catch (err) {
+			expect((err as GoodplanError).code).toBe("INTERNAL_ERROR");
+			expect((err as GoodplanError).message).toContain("submit('complete') is not valid");
+		}
+	});
+});
+
 describe("submit — full slicing lifecycle", () => {
 	it("goes through explore → architecture → refine-arch → slicing → refine-slices", () => {
 		initWithEpic();
