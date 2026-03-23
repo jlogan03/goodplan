@@ -2,6 +2,16 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Strict layered architecture with a pure reducer is the highest-leverage early investment
+_Source: goodplan-cli_
+
+The 4-layer stack (Commands → RPC → State Machine → Data Layer) held up across all 8 slices without boundary changes. Reducer purity (INV-003) made all 37 event handlers trivially testable and deterministic. Invest in the layer model and purity constraint early — it pays dividends for the entire epic.
+
+## Novel modules need 3-5x more review budget than pattern-following code
+_Source: goodplan-cli_
+
+Context bundling (no precedent) had 8 review issues; quest state machine (following slice patterns) had 0. Budget extra iterations for phases introducing new subsystems. Pattern-following code often passes on the first iteration.
+
 ## Plans referencing CLI commands must verify names and error codes against source
 _Source: 08-integration-test_
 
