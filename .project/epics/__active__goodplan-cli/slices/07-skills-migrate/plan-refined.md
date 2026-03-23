@@ -1,5 +1,8 @@
 # Plan: Skills Migration
 
+Status: COMPLETE
+Completed: 2026-03-23
+
 ## Overview
 
 Copy goodplan workflow skills from `~/.claude/skills/` into the repo's `skills/` directory and build `scripts/install-skills.sh`. This makes skills version-controlled alongside the CLI — skill prompts contain concrete `goodplan` CLI commands, so they must stay in sync with the CLI's command surface.
