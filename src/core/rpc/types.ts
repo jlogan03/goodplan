@@ -128,7 +128,12 @@ export type CompleteInput =
 			learnings?: LearningInput[];
 			architectureDelta?: ArchitectureDeltaInput[];
 	  }
-	| { type: "quest"; verificationPassed: boolean };
+	| {
+			type: "quest";
+			verificationPassed: boolean;
+			learnings?: LearningInput[];
+			architectureDelta?: ArchitectureDeltaInput[];
+	  };
 
 // ── Submit input ─────────────────────────────────────────────
 

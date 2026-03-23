@@ -1,6 +1,7 @@
 import type { Epic, EpicStatus } from "../../../schemas/entities/epic.js";
 import type { Overview } from "../../../schemas/entities/overview.js";
 import type { Project } from "../../../schemas/entities/project.js";
+import type { Quest, QuestStatus } from "../../../schemas/entities/quest.js";
 import type { Slice, SliceStatus } from "../../../schemas/entities/slice.js";
 import type { Refinement } from "../../../schemas/shared.js";
 /**
@@ -279,4 +280,92 @@ const EPIC_TERMINAL_STATUSES: ReadonlySet<EpicStatus> = new Set(["completed", "a
 
 export function isEpicTerminal(status: EpicStatus): boolean {
 	return EPIC_TERMINAL_STATUSES.has(status);
+}
+
+// ── Quest helpers ────────────────────────────────────────────
+
+export function getQuest(state: ProjectState, name: string): Quest | undefined {
+	return getJson<Quest>(state, `quests/${name}/quest.json`);
+}
+
+/**
+ * Guard that the named quest exists and is in one of the expected statuses.
+ * Returns the Quest on success, or a StateError on failure.
+ * Callers use `isStateError()` to narrow the return type.
+ */
+export function guardQuestStatus(
+	quest: Quest | undefined,
+	questName: string,
+	expected: QuestStatus | QuestStatus[],
+	eventType: string,
+): Quest | StateError {
+	if (quest === undefined) {
+		return {
+			code: "STATE_INVALID_TRANSITION",
+			message: `Quest "${questName}" not found`,
+			detail: { quest: questName, event: eventType },
+		};
+	}
+	const allowed: QuestStatus[] = Array.isArray(expected) ? expected : [expected];
+	if (!allowed.includes(quest.status)) {
+		return {
+			code: "STATE_INVALID_TRANSITION",
+			message: `Cannot ${eventType} on quest "${questName}" in status "${quest.status}" (expected ${allowed.join(" or ")})`,
+			detail: { quest: questName, event: eventType, currentStatus: quest.status },
+		};
+	}
+	return quest;
+}
+
+export function setQuestJson(state: ProjectState, name: string, content: Quest): ProjectState {
+	return setEntry(state, `quests/${name}/quest.json`, {
+		type: "json",
+		content,
+	});
+}
+
+/**
+ * Sugar over setQuestJson: sets status, updated timestamp, and syncs overview.
+ * Prevents partial updates by bundling all status-change side effects.
+ */
+export function setQuestStatus(
+	state: ProjectState,
+	name: string,
+	quest: Quest,
+	newStatus: QuestStatus,
+	ts: string,
+): ProjectState {
+	let tree = setQuestJson(state, name, { ...quest, status: newStatus, updated: ts });
+	tree = updateQuestOverviewStatus(tree, name, newStatus);
+	return tree;
+}
+
+/**
+ * Update the quest's status in quests/overview.json.
+ * Called on every quest status change to keep overview in sync.
+ */
+export function updateQuestOverviewStatus(
+	state: ProjectState,
+	questName: string,
+	newStatus: string,
+): ProjectState {
+	const overview = getJson<Overview>(state, "quests/overview.json");
+	if (overview === undefined) return state;
+	return setEntry(state, "quests/overview.json", {
+		type: "json",
+		content: {
+			...overview,
+			items: overview.items.map((item) =>
+				item.name === questName ? { ...item, status: newStatus } : item,
+			),
+		},
+	});
+}
+
+// ── Terminal status check (quest) ───────────────────────────
+
+const QUEST_TERMINAL_STATUSES: ReadonlySet<QuestStatus> = new Set(["completed", "abandoned"]);
+
+export function isQuestTerminal(status: QuestStatus): boolean {
+	return QUEST_TERMINAL_STATUSES.has(status);
 }

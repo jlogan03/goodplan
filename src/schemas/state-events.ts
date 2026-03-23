@@ -73,8 +73,11 @@ export type StateEvent =
 			architectureDelta: ArchitectureDeltaInput[];
 	  }
 	| { type: "ABANDON_SLICE"; slice: string; ts: string; reason: string }
-	// Quest submit events (pulled forward from slices 04-05)
+	// Quest lifecycle
+	| { type: "CREATE_QUEST"; name: string; goal: string; ts: string }
+	| { type: "BEGIN_QUEST_PLAN"; quest: string; ts: string }
 	| { type: "COMPLETE_QUEST_PLAN"; quest: string; ts: string }
+	| { type: "BEGIN_QUEST_REFINEMENT"; quest: string; ts: string }
 	| {
 			type: "COMPLETE_QUEST_REFINEMENT_ROUND";
 			quest: string;
@@ -82,7 +85,17 @@ export type StateEvent =
 			scores: Record<string, number>;
 			override?: boolean;
 	  }
-	| { type: "COMPLETE_QUEST_IMPLEMENTATION"; quest: string; ts: string };
+	| { type: "BEGIN_QUEST_IMPLEMENTATION"; quest: string; ts: string }
+	| { type: "COMPLETE_QUEST_IMPLEMENTATION"; quest: string; ts: string }
+	| {
+			type: "COMPLETE_QUEST";
+			quest: string;
+			ts: string;
+			verificationPassed: boolean;
+			learnings: LearningInput[];
+			architectureDelta: ArchitectureDeltaInput[];
+	  }
+	| { type: "ABANDON_QUEST"; quest: string; ts: string; reason: string };
 
 /** Error codes produced by state machine transitions. Single source of truth — also used by GoodplanErrorCode. */
 export type StateErrorCode =
@@ -93,7 +106,8 @@ export type StateErrorCode =
 	| "STATE_VERIFICATION_FAILED"
 	| "STATE_SLICE_NOT_READY"
 	| "STATE_CONTENT_MISSING"
-	| "STATE_MAX_ROUNDS_REACHED";
+	| "STATE_MAX_ROUNDS_REACHED"
+	| "STATE_QUEST_ALREADY_ACTIVE";
 
 export type StateError = {
 	code: StateErrorCode;

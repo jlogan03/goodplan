@@ -170,9 +170,12 @@ describe("StateEvent", () => {
 		expect(events).toHaveLength(10);
 	});
 
-	it("quest submit events are structurally valid", () => {
+	it("quest lifecycle events are structurally valid", () => {
 		const events: StateEvent[] = [
+			{ type: "CREATE_QUEST", name: "q", goal: "Investigate something", ts: "2026-03-22T00:00:00.000Z" },
+			{ type: "BEGIN_QUEST_PLAN", quest: "q", ts: "2026-03-22T00:00:00.000Z" },
 			{ type: "COMPLETE_QUEST_PLAN", quest: "q", ts: "2026-03-22T00:00:00.000Z" },
+			{ type: "BEGIN_QUEST_REFINEMENT", quest: "q", ts: "2026-03-22T00:00:00.000Z" },
 			{
 				type: "COMPLETE_QUEST_REFINEMENT_ROUND",
 				quest: "q",
@@ -186,12 +189,22 @@ describe("StateEvent", () => {
 				scores: { quality: 7 },
 				override: true,
 			},
+			{ type: "BEGIN_QUEST_IMPLEMENTATION", quest: "q", ts: "2026-03-22T00:00:00.000Z" },
 			{ type: "COMPLETE_QUEST_IMPLEMENTATION", quest: "q", ts: "2026-03-22T00:00:00.000Z" },
+			{
+				type: "COMPLETE_QUEST",
+				quest: "q",
+				ts: "2026-03-22T00:00:00.000Z",
+				verificationPassed: true,
+				learnings: [{ category: "worked", summary: "s", detail: "d", tags: [], rollupTo: [] }],
+				architectureDelta: [{ subsystem: "core", type: "modify", description: "changed" }],
+			},
+			{ type: "ABANDON_QUEST", quest: "q", ts: "2026-03-22T00:00:00.000Z", reason: "Not needed" },
 		];
-		expect(events).toHaveLength(4);
+		expect(events).toHaveLength(10);
 	});
 
-	it("discriminated union covers all 29 event types", () => {
+	it("discriminated union covers all 35 event types", () => {
 		// Compile-time exhaustiveness: this array must include every event type.
 		// If a new event type is added to StateEvent without adding it here, this won't catch it at runtime,
 		// but the individual tests above cover each type.
@@ -222,13 +235,19 @@ describe("StateEvent", () => {
 			"COMPLETE_IMPLEMENTATION",
 			"COMPLETE_SLICE",
 			"ABANDON_SLICE",
+			"CREATE_QUEST",
+			"BEGIN_QUEST_PLAN",
 			"COMPLETE_QUEST_PLAN",
+			"BEGIN_QUEST_REFINEMENT",
 			"COMPLETE_QUEST_REFINEMENT_ROUND",
+			"BEGIN_QUEST_IMPLEMENTATION",
 			"COMPLETE_QUEST_IMPLEMENTATION",
+			"COMPLETE_QUEST",
+			"ABANDON_QUEST",
 		];
-		expect(allTypes).toHaveLength(29);
+		expect(allTypes).toHaveLength(35);
 		// All unique
-		expect(new Set(allTypes).size).toBe(29);
+		expect(new Set(allTypes).size).toBe(35);
 	});
 });
 
@@ -258,6 +277,7 @@ describe("isStateError", () => {
 			"STATE_SLICE_NOT_READY",
 			"STATE_CONTENT_MISSING",
 			"STATE_MAX_ROUNDS_REACHED",
+			"STATE_QUEST_ALREADY_ACTIVE",
 		];
 		for (const code of newCodes) {
 			const err: StateError = { code, message: `Error: ${code}` };

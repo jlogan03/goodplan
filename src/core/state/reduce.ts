@@ -52,6 +52,12 @@ type Handler<T extends StateEvent["type"] = StateEvent["type"]> = (
 	event: Extract<StateEvent, { type: T }>,
 ) => ProjectState | StateError;
 
+/** Placeholder for events whose transition logic is not yet implemented. */
+const notImplementedError: StateError = Object.freeze({
+	code: "STATE_INVALID_TRANSITION",
+	message: "Not yet implemented",
+});
+
 /**
  * Exhaustiveness-checked handler record. TypeScript ensures every StateEvent type
  * has a corresponding handler at compile time via `satisfies`.
@@ -83,9 +89,15 @@ const handlerRecord = {
 	COMPLETE_IMPLEMENTATION: handleCompleteImplementation,
 	COMPLETE_SLICE: handleCompleteSlice,
 	ABANDON_SLICE: handleAbandonSlice,
+	CREATE_QUEST: () => notImplementedError,
+	BEGIN_QUEST_PLAN: () => notImplementedError,
 	COMPLETE_QUEST_PLAN: handleCompleteQuestPlan,
+	BEGIN_QUEST_REFINEMENT: () => notImplementedError,
 	COMPLETE_QUEST_REFINEMENT_ROUND: handleCompleteQuestRefinementRound,
+	BEGIN_QUEST_IMPLEMENTATION: () => notImplementedError,
 	COMPLETE_QUEST_IMPLEMENTATION: handleCompleteQuestImplementation,
+	COMPLETE_QUEST: () => notImplementedError,
+	ABANDON_QUEST: () => notImplementedError,
 } satisfies { [K in StateEvent["type"]]: Handler<K> };
 
 /** Runtime lookup map — derived from the exhaustiveness-checked record. */
