@@ -13,6 +13,7 @@
 - Maturity/invariants/fitness workflow: Steps 8f/8g/8h in define-architecture, Steps 3b/3c/3d in audit-architecture, maturity evaluation in refine-architecture, reviewer criteria 12/13 — all untested on a real project
 - Epic completion mode in /complete: new epic scope type, architecture reconciliation, artifact promotion, archive numbering — all untested on a real epic
 - goodplan CLI main runner (`src/index.ts`): no automated integration tests — only verified via manual CLI invocation. Pre-dispatch regression (exit 0 for unknown commands) was caught by review, not tests. Scoped for slice 08.
+- Install script (`scripts/install-skills.sh`): verified manually via `bun run install:skills` + diff; no automated test
 
 ### Known fragile areas
 - Cross-skill reference paths (e.g., refine-slices references refine-plan's shared-preamble.md): if refine-plan files move, refine-slices breaks silently
@@ -21,7 +22,7 @@
 - epic-conventions.md is consumed by 12+ skills: changes require updating all consumers
 - citty + `exactOptionalPropertyTypes`: requires `as unknown as CommandDef` casts in `src/index.ts`. May break on citty upgrade.
 
-<!-- Last updated by: complete for epics/goodplan-cli/slices/06-decisions-learnings, 2026-03-23 -->
+<!-- Last updated by: complete for epics/goodplan-cli/slices/07-skills-migrate, 2026-03-23 -->
 
 ## Performance Characteristics
 
@@ -68,8 +69,8 @@
 
 ## Recent Changes
 
+- **07-skills-migrate** (2026-03-23): Copy 15 goodplan workflow skills into `skills/`, create `scripts/install-skills.sh` with clean-install semantics, wire `package.json install:skills`, command reference audit (0 CLI invocations found — skills use slash commands). 702 tests unchanged.
 - **06-decisions-learnings** (2026-03-23): Decision management (CREATE_DECISION, UPDATE_DECISION + 4 CLI commands), manual learnings rollup (ROLLUP_LEARNINGS + 2 CLI commands), full status command replacing stub, universal `--query` lifted to shared output() for all commands, schema command with INV-006 drift detection. O(n²) rollup fix. 702 tests.
 - **05-sub-agent-commands** (2026-03-22): Quest lifecycle (5 state machine handlers, 8 quest:* commands, RPC wiring) + context bundling module (src/core/context/ with startContext, priorities, budget, 8 start-* commands). activeQuest guard, learnings rollup, --inline budget, binary regression. 618 tests.
-- **04-slice-lifecycle** (2026-03-22): Full slice entity lifecycle — 6 new StateEvent types, 5 transition handler files, 8 slice:* CLI commands, input/storage schema split for learnings. 487 tests, binary verified.
 
-<!-- Last updated by: complete for epics/goodplan-cli/slices/06-decisions-learnings, 2026-03-23 -->
+<!-- Last updated by: complete for epics/goodplan-cli/slices/07-skills-migrate, 2026-03-23 -->

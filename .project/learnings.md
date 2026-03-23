@@ -2,6 +2,21 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Skills use slash commands, not CLI commands — consolidation must bridge both
+_Source: 07-skills-migrate_
+
+Command audit found zero `goodplan` CLI invocations in skill files. Skills orchestrate via slash commands (`/create-plan`). The `start-*`/`submit-*` subagent commands are the likely bridge when skills are consolidated to call the CLI.
+
+## Shell scripts need robustness specs in plans
+_Source: 07-skills-migrate_
+
+Review caught existence guards, clean-install semantics (rm+rsync vs cp), POSIX newlines, and path resolution that the plan omitted. Future plans with shell scripts should specify error handling, idempotency, and path resolution upfront.
+
+## Cross-reference conventions.md against plans during create-plan
+_Source: 07-skills-migrate_
+
+Plan listed 14 skill dirs; conventions.md and goal required 15 (including `migrate` stub). Caught as CRITICAL in refinement. Checking conventions alignment during planning prevents this class of error.
+
 ## Global flag additions require auditing all existing command files
 _Source: 06-decisions-learnings_
 
