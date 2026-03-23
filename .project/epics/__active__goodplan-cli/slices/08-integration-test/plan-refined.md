@@ -1,5 +1,8 @@
 # Plan: Integration Tests & Fitness Functions
 
+Status: COMPLETE
+Completed: 2026-03-23
+
 ## Overview
 
 Write end-to-end integration tests that spawn the compiled `goodplan` binary against real `.project/` directory structures, plus fitness functions that verify architectural invariants. This is the final slice in the goodplan-cli epic — it validates the complete system works as a binary and establishes quality baselines for ongoing development.
