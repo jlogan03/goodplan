@@ -30,7 +30,7 @@ export const questPlanCommand = defineCommand({
 		const projectDir = resolveProjectDir();
 		const result = await begin(projectDir, "plan", { type: "quest", name: args.quest }, {});
 
-		if (args.json) {
+		if (args.json || args.query) {
 			output(result, args);
 		} else if (!args.quiet) {
 			output(

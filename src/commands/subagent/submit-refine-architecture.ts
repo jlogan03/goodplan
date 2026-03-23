@@ -49,7 +49,7 @@ export const submitRefineArchitectureCommand = defineCommand({
 			options,
 		);
 
-		if (args.json) {
+		if (args.json || args.query) {
 			output(result, args);
 		} else if (!args.quiet) {
 			output(`${pc.bold(result.entity)}: ${result.previousStatus} ${pc.dim("->")} ${pc.green(result.newStatus)} (advanced: ${result.advanced})`, args);

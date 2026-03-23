@@ -31,7 +31,7 @@ export const questListCommand = defineCommand({
 
 		const items = overview.items;
 
-		if (args.json) {
+		if (args.json || args.query) {
 			output({ items }, args);
 		} else if (!args.quiet) {
 			if (items.length === 0) {

@@ -1,4 +1,3 @@
-import compile from "@michaelhomer/jqjs";
 import { defineCommand } from "citty";
 import pc from "picocolors";
 import { assembleState } from "../../core/data/assemble.js";
@@ -15,7 +14,6 @@ import type { Quest } from "../../schemas/entities/quest.js";
 import type { Slice } from "../../schemas/entities/slice.js";
 import type { Artifacts, StatusResult } from "../../schemas/commands/status.js";
 import { GoodplanError } from "../../util/errors.js";
-import { deterministicStringify } from "../../util/json.js";
 import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
@@ -345,47 +343,13 @@ export function formatStatusHuman(status: StatusResult): string {
 }
 
 /**
- * Apply a jq expression to data and return the results.
- * Throws VALIDATION_INVALID_QUERY for invalid expressions.
- */
-export function applyQuery(data: unknown, expr: string): unknown {
-	let filter: (input: unknown) => Generator<unknown>;
-	try {
-		filter = compile(expr);
-	} catch (error: unknown) {
-		const message = error instanceof Error ? error.message : String(error);
-		throw new GoodplanError("VALIDATION_INVALID_QUERY", `Invalid jq expression: ${message}`, {
-			expression: expr,
-		});
-	}
-
-	const results: unknown[] = [];
-	try {
-		for (const value of filter(data)) {
-			results.push(value);
-		}
-	} catch (error: unknown) {
-		const message = error instanceof Error ? error.message : String(error);
-		throw new GoodplanError("VALIDATION_INVALID_QUERY", `jq query execution failed: ${message}`, {
-			expression: expr,
-		});
-	}
-
-	if (results.length === 0) {
-		return null;
-	}
-	if (results.length === 1) {
-		return results[0];
-	}
-	return results;
-}
-
-/**
  * `goodplan status` — show current project status.
  *
  * Flags:
  * - --json: output as structured JSON
  * - --query <expr>: apply jq expression to JSON output (implies --json)
+ *
+ * --query is now handled by the shared output() function.
  */
 export const statusCommand = defineCommand({
 	meta: {
@@ -394,27 +358,16 @@ export const statusCommand = defineCommand({
 	},
 	args: {
 		...globalArgs,
-		query: {
-			type: "string",
-			description: "jq expression to filter JSON output (implies --json)",
-			required: false,
-		},
 	},
 	setup() {},
 	async run({ args }) {
-		// --query implies --json per architecture (commands-api.md): the intermediate
-		// representation is always JSON, and query results are printed as JSON.
-		const useJson = args.json || Boolean(args.query);
-
 		const status = buildStatusResult();
 
-		if (useJson) {
-			if (args.query) {
-				const result = applyQuery(status, args.query);
-				process.stdout.write(`${deterministicStringify(result)}\n`);
-			} else {
-				output(status, args);
-			}
+		// When --query is present, output() handles it (auto-implies json).
+		// When --json is explicit, pass structured data.
+		// Otherwise, format as human-readable text.
+		if (args.query || args.json) {
+			output(status, args);
 		} else {
 			const formatted = formatStatusHuman(status);
 			output(formatted, args);

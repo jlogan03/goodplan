@@ -2,7 +2,7 @@ import type { z } from "zod";
 import { GoodplanError } from "./errors.js";
 
 /** Global flag keys that should be stripped before command-level schema validation. */
-const GLOBAL_FLAG_KEYS = new Set(["json", "quiet", "verbose", "help", "version"]);
+const GLOBAL_FLAG_KEYS = new Set(["json", "quiet", "query", "verbose", "help", "version"]);
 
 /**
  * Merge stdin base object with CLI flag overrides, then validate against a Zod schema.

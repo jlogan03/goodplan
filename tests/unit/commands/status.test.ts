@@ -3,10 +3,10 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-	applyQuery,
 	buildStatusResult,
 	formatStatusHuman,
 } from "../../../src/commands/global/status.js";
+import { applyQuery } from "../../../src/util/query.js";
 import { statusResultSchema } from "../../../src/schemas/commands/status.js";
 import { deterministicStringify } from "../../../src/util/json.js";
 

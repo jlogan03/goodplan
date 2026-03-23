@@ -42,7 +42,7 @@ export const sliceListCommand = defineCommand({
 			items = items.filter((item) => item.epic === args.epic);
 		}
 
-		if (args.json) {
+		if (args.json || args.query) {
 			output({ items }, args);
 		} else if (!args.quiet) {
 			if (items.length === 0) {

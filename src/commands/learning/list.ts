@@ -36,7 +36,7 @@ export const learningListCommand = defineCommand({
 			args.source !== undefined ? `${args.source}/learnings.jsonl` : "learnings.jsonl";
 		const items = getJsonl<LearningEntry>(state, jsonlPath) ?? [];
 
-		if (args.json) {
+		if (args.json || args.query) {
 			output({ items }, args);
 		} else if (!args.quiet) {
 			if (items.length === 0) {

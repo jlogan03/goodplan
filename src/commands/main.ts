@@ -28,6 +28,7 @@ import { questPlanCommand } from "./quest/plan.js";
 import { questRefinePlanCommand } from "./quest/refine-plan.js";
 import { questShowCommand } from "./quest/show.js";
 import { initCommand } from "./global/init.js";
+import { schemaCommand } from "./global/schema.js";
 import { statusCommand } from "./global/status.js";
 import { sliceAbandonCommand } from "./slice/abandon.js";
 import { sliceCompleteCommand } from "./slice/complete.js";
@@ -68,6 +69,7 @@ export const mainCommand = defineCommand({
 	},
 	subCommands: {
 		init: initCommand,
+		schema: schemaCommand,
 		status: statusCommand,
 		"decision:create": decisionCreateCommand,
 		"decision:list": decisionListCommand,

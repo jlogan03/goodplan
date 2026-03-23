@@ -30,7 +30,7 @@ export const slicePlanCommand = defineCommand({
 		const projectDir = resolveProjectDir();
 		const result = await begin(projectDir, "plan", { type: "slice", name: args.slice }, {});
 
-		if (args.json) {
+		if (args.json || args.query) {
 			output(result, args);
 		} else if (!args.quiet) {
 			output(

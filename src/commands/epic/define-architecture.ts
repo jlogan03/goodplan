@@ -32,7 +32,7 @@ export const epicDefineArchitectureCommand = defineCommand({
 		const projectDir = resolveProjectDir();
 		const result = await begin(projectDir, "define-architecture", { type: "epic", name: args.epic }, {});
 
-		if (args.json) {
+		if (args.json || args.query) {
 			output(result, args);
 		} else if (!args.quiet) {
 			output(`${pc.bold(result.entity)}: ${result.previousStatus} ${pc.dim("->")} ${pc.green(result.newStatus)}`, args);

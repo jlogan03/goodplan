@@ -28,7 +28,7 @@ export const decisionListCommand = defineCommand({
 
 		const items = getJsonl<DecisionEntry>(state, "decisions.jsonl") ?? [];
 
-		if (args.json) {
+		if (args.json || args.query) {
 			output({ items }, args);
 		} else if (!args.quiet) {
 			if (items.length === 0) {

@@ -55,7 +55,7 @@ export const decisionUpdateCommand = defineCommand({
 			},
 		);
 
-		if (args.json) {
+		if (args.json || args.query) {
 			output(result, args);
 		} else if (!args.quiet) {
 			output(

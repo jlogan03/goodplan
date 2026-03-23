@@ -44,7 +44,7 @@ export const submitPlanCommand = defineCommand({
 		const projectDir = resolveProjectDir();
 		const result = submit(projectDir, "plan", target, { phase: "plan" });
 
-		if (args.json) {
+		if (args.json || args.query) {
 			output(result, args);
 		} else if (!args.quiet) {
 			output(`${pc.bold(result.entity)}: ${result.previousStatus} ${pc.dim("->")} ${pc.green(result.newStatus)}`, args);

@@ -29,7 +29,7 @@ export const epicListCommand = defineCommand({
 		// Treat missing overview.json as empty list (supports fresh projects with no epics yet)
 		const overview = getJson<Overview>(state, "epics/overview.json") ?? { items: [] };
 
-		if (args.json) {
+		if (args.json || args.query) {
 			output({ items: overview.items }, args);
 		} else if (!args.quiet) {
 			if (overview.items.length === 0) {

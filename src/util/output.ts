@@ -2,19 +2,31 @@ import pc from "picocolors";
 import type { ErrorOutput } from "../schemas/error-output.js";
 import { type GoodplanError, isGoodplanError } from "./errors.js";
 import { deterministicStringify } from "./json.js";
+import { applyQuery } from "./query.js";
 
-interface OutputArgs {
-	json?: boolean;
-	quiet?: boolean;
+export interface OutputArgs {
+	json?: boolean | undefined;
+	quiet?: boolean | undefined;
+	query?: string | undefined;
 }
 
 /**
  * Write command output to stdout.
- * - Quiet mode: suppress all output (for scripting)
- * - JSON mode: deterministic stringify to stdout
- * - Human mode: data is expected to be a pre-formatted string
+ *
+ * Precedence:
+ * - `--query` overrides `--quiet` (if both passed, `--query` wins)
+ * - `--query` implies `--json` for the intermediate representation
+ * - `--quiet` suppresses all output (for scripting)
+ * - `--json` outputs deterministic JSON
+ * - default: human-readable (data expected to be a pre-formatted string)
  */
 export function output(data: unknown, args: OutputArgs): void {
+	// --query takes highest precedence: implies json, overrides quiet
+	if (args.query) {
+		const result = applyQuery(data, args.query);
+		process.stdout.write(`${deterministicStringify(result)}\n`);
+		return;
+	}
 	if (args.quiet) {
 		return;
 	}
@@ -40,7 +52,10 @@ export function outputError(error: GoodplanError, args: OutputArgs): void {
 		},
 	};
 
-	if (args.json) {
+	if (args.query) {
+		const result = applyQuery(errorObj, args.query);
+		process.stdout.write(`${deterministicStringify(result)}\n`);
+	} else if (args.json) {
 		process.stdout.write(`${deterministicStringify(errorObj)}\n`);
 	} else {
 		process.stderr.write(`${pc.red("Error")}: ${error.message}\n`);
@@ -59,7 +74,10 @@ export function outputUnexpectedError(error: unknown, args: OutputArgs): void {
 		},
 	};
 
-	if (args.json) {
+	if (args.query) {
+		const result = applyQuery(errorObj, args.query);
+		process.stdout.write(`${deterministicStringify(result)}\n`);
+	} else if (args.json) {
 		process.stdout.write(`${deterministicStringify(errorObj)}\n`);
 	} else {
 		process.stderr.write(`${pc.red("Error")}: ${message}\n`);

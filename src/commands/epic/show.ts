@@ -40,7 +40,7 @@ export const epicShowCommand = defineCommand({
 			);
 		}
 
-		if (args.json) {
+		if (args.json || args.query) {
 			output(epic, args);
 		} else if (!args.quiet) {
 			const lines: string[] = [];

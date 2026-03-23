@@ -34,7 +34,7 @@ export const epicCreateCommand = defineCommand({
 			goal: input.goal,
 		});
 
-		if (args.json) {
+		if (args.json || args.query) {
 			output(result, args);
 		} else if (!args.quiet) {
 			output(`${pc.bold(result.entity)}: ${result.previousStatus} ${pc.dim("->")} ${pc.green(result.newStatus)}`, args);

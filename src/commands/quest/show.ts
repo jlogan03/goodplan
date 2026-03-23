@@ -37,7 +37,7 @@ export const questShowCommand = defineCommand({
 			throw new GoodplanError("DATA_FILE_NOT_FOUND", `Quest '${args.quest}' not found`);
 		}
 
-		if (args.json) {
+		if (args.json || args.query) {
 			output(quest, args);
 		} else if (!args.quiet) {
 			const lines: string[] = [];

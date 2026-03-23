@@ -49,7 +49,7 @@ export const sliceCompleteCommand = defineCommand({
 			},
 		);
 
-		if (args.json) {
+		if (args.json || args.query) {
 			output(result, args);
 		} else if (!args.quiet) {
 			const lines: string[] = [];

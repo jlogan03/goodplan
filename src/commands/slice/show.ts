@@ -37,7 +37,7 @@ export const sliceShowCommand = defineCommand({
 			throw new GoodplanError("DATA_FILE_NOT_FOUND", `Slice '${args.slice}' not found`);
 		}
 
-		if (args.json) {
+		if (args.json || args.query) {
 			output(slice, args);
 		} else if (!args.quiet) {
 			const lines: string[] = [];

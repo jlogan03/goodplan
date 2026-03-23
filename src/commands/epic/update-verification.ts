@@ -46,7 +46,7 @@ export const epicUpdateVerificationCommand = defineCommand({
 			{ index: input.index, verification: input.verification },
 		);
 
-		if (args.json) {
+		if (args.json || args.query) {
 			output(result, args);
 		} else if (!args.quiet) {
 			output(`${pc.bold(result.entity)}: verification[${input.index}] updated`, args);
