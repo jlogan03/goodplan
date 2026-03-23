@@ -2,6 +2,21 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Global flag additions require auditing all existing command files
+_Source: 06-decisions-learnings_
+
+Adding `--query` to shared `output()` left ~40 commands broken because they gated on `args.json` only. Plans adding global behaviors must include an explicit grep-and-update task for every command file.
+
+## Non-entity RPC operations need dedicated return types
+_Source: 06-decisions-learnings_
+
+Forcing `learning:rollup` into the entity-shaped `begin()` Target/BeginResult contract was flagged as critical by all 4 reviewers. Design dedicated types for operations that don't fit the entity pattern.
+
+## Architecture doc updates should be per-phase tasks, not consolidated
+_Source: 06-decisions-learnings_
+
+Both `rpc-layer-api.md` and `state-machine-api.md` drifted because doc updates were deferred to a later phase. Include doc updates as tasks within each phase that changes behavior.
+
 ## Greenfield modules need extra review budget vs pattern-following code
 _Source: 05-sub-agent-commands_
 

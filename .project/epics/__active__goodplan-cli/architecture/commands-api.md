@@ -115,14 +115,13 @@ goodplan decision:update --id <id>
 
 ```
 goodplan learning:list [--source <scope>]
-goodplan learning:show --id <id>
 goodplan learning:rollup --from <source> --to <target>
 ```
 
 **Activity namespace:**
 
 ```
-goodplan activity:list [--scope <scope>]
+goodplan activity:list [--scope <scope>]  # not yet implemented
 ```
 
 ### Sub-Agent Commands

@@ -4,7 +4,7 @@
 
 ### Well-tested areas
 - Skill file structure (SKILL.md frontmatter, step numbering, reference paths): verified across 4 skill files during slice-quality-and-health implementation with 28-point checklist
-- goodplan CLI through sub-agent-commands: 618 unit tests covering tree types (42), entity schemas (122), I/O layer (91), state machine (143), RPC layer (31), context bundling (58), command framework + 13 epic commands + 8 submit commands + 8 slice commands + 8 quest commands + 8 start commands (123). Binary compilation verified. Type-clean against `tsc --noEmit`.
+- goodplan CLI through decisions-learnings: 702 unit tests covering tree types (42), entity schemas (126), I/O layer (91), state machine (166), RPC layer (32), context bundling (58), command framework + 13 epic + 8 submit + 8 slice + 8 quest + 8 start + 4 decision + 2 learning + 1 schema commands (177). Universal `--query` on all commands. Binary compilation verified. Type-clean against `tsc --noEmit`.
 
 ### Undertested areas
 - Runtime behavior of new skills (refine-slices, updated define-slices three-lens evaluation): not yet exercised on a real project
@@ -21,7 +21,7 @@
 - epic-conventions.md is consumed by 12+ skills: changes require updating all consumers
 - citty + `exactOptionalPropertyTypes`: requires `as unknown as CommandDef` casts in `src/index.ts`. May break on citty upgrade.
 
-<!-- Last updated by: complete for epics/goodplan-cli/slices/05-sub-agent-commands, 2026-03-22 -->
+<!-- Last updated by: complete for epics/goodplan-cli/slices/06-decisions-learnings, 2026-03-23 -->
 
 ## Performance Characteristics
 
@@ -58,16 +58,18 @@
 - Quest submit handlers (`handleCompleteQuestPlan`, `handleCompleteQuestRefinementRound`, `handleCompleteQuestImplementation`) remain co-located in `slice-submit.ts` — splitting to `quest-submit.ts` deferred. File is now 304 lines covering two entity types.
 - Overview `completed` timestamp never set by status-changing handlers — permanently `null` for all entities.
 - Bidirectional `import type` between `context/types.ts` and `rpc/types.ts` — works but violates independent-modules principle.
+- `decision:update` stdin schema accepts optional `id` that is silently ignored (command uses `--id` flag). Vestige of pre-review design.
+- Schema command human-readable mode uses `process.stdout.write` directly, bypassing `output()` — `--quiet` not respected in human mode.
 
 ### Systemic items
 - shared-preamble.md divergence risk: refine-plan's copy is plan-framed but borrowed by refine-architecture and refine-slices. As those skills mature, their needs may diverge. Noted as tech debt — revisit when it causes a real problem.
 
-<!-- Last updated by: complete for epics/goodplan-cli/slices/05-sub-agent-commands, 2026-03-22 -->
+<!-- Last updated by: complete for epics/goodplan-cli/slices/06-decisions-learnings, 2026-03-23 -->
 
 ## Recent Changes
 
+- **06-decisions-learnings** (2026-03-23): Decision management (CREATE_DECISION, UPDATE_DECISION + 4 CLI commands), manual learnings rollup (ROLLUP_LEARNINGS + 2 CLI commands), full status command replacing stub, universal `--query` lifted to shared output() for all commands, schema command with INV-006 drift detection. O(n²) rollup fix. 702 tests.
 - **05-sub-agent-commands** (2026-03-22): Quest lifecycle (5 state machine handlers, 8 quest:* commands, RPC wiring) + context bundling module (src/core/context/ with startContext, priorities, budget, 8 start-* commands). activeQuest guard, learnings rollup, --inline budget, binary regression. 618 tests.
 - **04-slice-lifecycle** (2026-03-22): Full slice entity lifecycle — 6 new StateEvent types, 5 transition handler files, 8 slice:* CLI commands, input/storage schema split for learnings. 487 tests, binary verified.
-- **03-epic-lifecycle** (2026-03-22): Full epic entity lifecycle — 23 StateEvent types, loadState cache, ~20 transition handlers, generic RPC begin/complete/submit, 13 epic:* + 8 submit-* commands. 409 tests, binary verified.
 
-<!-- Last updated by: complete for epics/goodplan-cli/slices/05-sub-agent-commands, 2026-03-22 -->
+<!-- Last updated by: complete for epics/goodplan-cli/slices/06-decisions-learnings, 2026-03-23 -->
