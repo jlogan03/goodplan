@@ -29,6 +29,14 @@ import {
 } from "./transitions/epic-refine.js";
 import { handleAddVerification, handleUpdateVerification } from "./transitions/epic-verify.js";
 import { handleInitProject } from "./transitions/init.js";
+import { handleAbandonQuest } from "./transitions/quest-abandon.js";
+import { handleCompleteQuest } from "./transitions/quest-complete.js";
+import { handleCreateQuest } from "./transitions/quest-create.js";
+import {
+	handleBeginQuestImplementation,
+	handleBeginQuestRefinement,
+} from "./transitions/quest-implement.js";
+import { handleBeginQuestPlan } from "./transitions/quest-plan.js";
 import { handleAbandonSlice } from "./transitions/slice-abandon.js";
 import { handleCompleteSlice } from "./transitions/slice-complete.js";
 import { handleCreateSlice } from "./transitions/slice-create.js";
@@ -51,12 +59,6 @@ type Handler<T extends StateEvent["type"] = StateEvent["type"]> = (
 	state: ProjectState,
 	event: Extract<StateEvent, { type: T }>,
 ) => ProjectState | StateError;
-
-/** Placeholder for events whose transition logic is not yet implemented. */
-const notImplementedError: StateError = Object.freeze({
-	code: "STATE_INVALID_TRANSITION",
-	message: "Not yet implemented",
-});
 
 /**
  * Exhaustiveness-checked handler record. TypeScript ensures every StateEvent type
@@ -89,15 +91,15 @@ const handlerRecord = {
 	COMPLETE_IMPLEMENTATION: handleCompleteImplementation,
 	COMPLETE_SLICE: handleCompleteSlice,
 	ABANDON_SLICE: handleAbandonSlice,
-	CREATE_QUEST: () => notImplementedError,
-	BEGIN_QUEST_PLAN: () => notImplementedError,
+	CREATE_QUEST: handleCreateQuest,
+	BEGIN_QUEST_PLAN: handleBeginQuestPlan,
 	COMPLETE_QUEST_PLAN: handleCompleteQuestPlan,
-	BEGIN_QUEST_REFINEMENT: () => notImplementedError,
+	BEGIN_QUEST_REFINEMENT: handleBeginQuestRefinement,
 	COMPLETE_QUEST_REFINEMENT_ROUND: handleCompleteQuestRefinementRound,
-	BEGIN_QUEST_IMPLEMENTATION: () => notImplementedError,
+	BEGIN_QUEST_IMPLEMENTATION: handleBeginQuestImplementation,
 	COMPLETE_QUEST_IMPLEMENTATION: handleCompleteQuestImplementation,
-	COMPLETE_QUEST: () => notImplementedError,
-	ABANDON_QUEST: () => notImplementedError,
+	COMPLETE_QUEST: handleCompleteQuest,
+	ABANDON_QUEST: handleAbandonQuest,
 } satisfies { [K in StateEvent["type"]]: Handler<K> };
 
 /** Runtime lookup map — derived from the exhaustiveness-checked record. */

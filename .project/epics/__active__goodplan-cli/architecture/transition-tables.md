@@ -98,7 +98,8 @@ Quest lifecycle mirrors slice. Quests are project-scoped (no epic field, no sequ
 | From | Event | To | Guard | Error | Orchestrator Returns | Notes |
 |---|---|---|---|---|---|---|
 | (none) | CREATE_QUEST | created | — | — | quest, status | Creates quest.json |
-| created | BEGIN_QUEST_PLAN | planning | — | — | quest, status, previousStatus | No sequential enforcement. Sets project.json activeQuest. |
+| created | BEGIN_QUEST_PLAN | planning | activeQuest == null | — | quest, status, previousStatus | No sequential enforcement. Sets project.json activeQuest. |
+| created | BEGIN_QUEST_PLAN | (error) | activeQuest != null | STATE_QUEST_ALREADY_ACTIVE | — | Must complete or abandon active quest first. |
 | planning | COMPLETE_QUEST_PLAN | plan-created | hasChild(state, "quests/<name>", "plan.md") | — | quest, status | submit-plan --quest triggers this |
 | planning | COMPLETE_QUEST_PLAN | (error) | !hasChild(state, "quests/<name>", "plan.md") | STATE_CONTENT_MISSING | — | |
 | plan-created | BEGIN_QUEST_REFINEMENT | refining | — | — | quest, status, round | |
@@ -139,6 +140,7 @@ Quest lifecycle mirrors slice. Quests are project-scoped (no epic field, no sequ
 | Guard | Applies To | Rule | Error |
 |---|---|---|---|
 | One active epic | ACTIVATE_EPIC | project.activeEpic == null | STATE_EPIC_ALREADY_ACTIVE |
+| One active quest | BEGIN_QUEST_PLAN | project.activeQuest == null | STATE_QUEST_ALREADY_ACTIVE |
 | Verification criteria exist | ACTIVATE_EPIC | epic.verifications.length > 0 | STATE_MISSING_VERIFICATIONS |
 | All verifications passed | COMPLETE_EPIC | all verificationResults have passed: true | STATE_VERIFICATION_FAILED |
 | Sequential slice execution | BEGIN_PLAN | previous slice completed/abandoned OR first slice | STATE_SLICE_NOT_READY |
