@@ -53,8 +53,8 @@ Grep skill files for `goodplan ` command references and produce an ephemeral aud
 
 ### Tasks
 
-- [ ] Grep all `.md` files under `skills/` for `goodplan ` patterns. Use a pattern that handles backtick-wrapped references: `` grep -roEh '`?goodplan [a-z:_-]+`?' skills/ | tr -d '`' `` to extract and strip backticks from results. Extract unique command names.
-- [ ] Cross-reference against the registered commands in `src/commands/main.ts` (the `subCommands` object keys, plus `init` and `status` from global commands).
-- [ ] Write `command-audit.md` in the slice directory with: (a) table of all referenced commands, which skill files reference them, and whether each is implemented, (b) summary counts: N commands referenced, M implemented, K missing, (c) list of missing commands (flagged for future work — either skill consolidation epic or individual fixes).
-- [ ] Run `bun run build` to verify the `skills/` directory doesn't interfere with binary compilation.
-- [ ] Note: no developer setup docs (contributing guide, etc.) exist yet. Documenting `bun run install:skills` as a post-clone step is deferred until such docs are created.
+- [x] Grep all `.md` files under `skills/` for `goodplan ` patterns. Use a pattern that handles backtick-wrapped references: `` grep -roEh '`?goodplan [a-z:_-]+`?' skills/ | tr -d '`' `` to extract and strip backticks from results. Extract unique command names.
+- [x] Cross-reference against the registered commands in `src/commands/main.ts` (the `subCommands` object keys, plus `init` and `status` from global commands).
+- [x] Write `command-audit.md` in the slice directory with: (a) table of all referenced commands, which skill files reference them, and whether each is implemented, (b) summary counts: N commands referenced, M implemented, K missing, (c) list of missing commands (flagged for future work — either skill consolidation epic or individual fixes).
+- [x] Run `bun run build` to verify the `skills/` directory doesn't interfere with binary compilation.
+- [x] Note: no developer setup docs (contributing guide, etc.) exist yet. Documenting `bun run install:skills` as a post-clone step is deferred until such docs are created.
