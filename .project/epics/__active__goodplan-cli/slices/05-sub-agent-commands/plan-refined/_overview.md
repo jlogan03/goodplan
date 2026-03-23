@@ -1,5 +1,8 @@
 # Plan: Sub-Agent Commands & Quest Lifecycle
 
+Status: COMPLETE
+Completed: 2026-03-22
+
 ## Overview
 
 Implement context bundling (`start-*` commands with `--inline` budget-based markdown inlining) and the full quest entity lifecycle. These are two independent feature clusters sharing a single slice because they complete the sub-agent interface.
