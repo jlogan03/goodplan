@@ -2,6 +2,26 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Greenfield modules need extra review budget vs pattern-following code
+_Source: 05-sub-agent-commands_
+
+Context bundling (novel, no precedent) had 8 review issues; quest state machine (following slice patterns) had 0. Plan extra iterations for phases without codebase precedent.
+
+## Parameterized command families need a factory pattern
+_Source: 05-sub-agent-commands_
+
+8 start-* commands share ~400 lines of identical logic differing only by phase string. Use a factory returning command definitions; keep individual files as thin wrappers.
+
+## Overview completed timestamps need setting on terminal transitions
+_Source: 05-sub-agent-commands_
+
+`updateOverviewStatus` helpers only update `status`, leaving `completed` permanently `null`. Set `completed` when entities transition to terminal states (completed/abandoned).
+
+## Peer modules needing each other's types should share a common types file
+_Source: 05-sub-agent-commands_
+
+Bidirectional `import type` between context and RPC works but violates independent-modules. Extract shared types (`Target`, `SubmitPhase`, `ContextBundle`) to a common location.
+
 ## Bundling helpers prevent overview sync invariant violations
 _Source: 04-slice-lifecycle_
 

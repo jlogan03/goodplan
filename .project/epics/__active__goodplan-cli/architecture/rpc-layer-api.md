@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Workflow orchestration layer. Coordinates the State Machine and Data Layer to execute complete workflow operations. Owns context bundling, implicit transition detection, and the bridge between CLI commands and the pure state machine. Consumed by the Commands Layer.
+Workflow orchestration layer. Coordinates the State Machine and Data Layer to execute complete workflow operations. Coordinates with the context bundling peer module, handles implicit transition detection, and bridges CLI commands to the pure state machine. Consumed by the Commands Layer.
 
 ## Interface
 
