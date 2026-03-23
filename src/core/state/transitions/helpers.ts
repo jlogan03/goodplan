@@ -362,6 +362,30 @@ export function updateQuestOverviewStatus(
 	});
 }
 
+/**
+ * Add a new quest entry to quests/overview.json.
+ * Centralises the overview item shape for quest creation.
+ */
+export function addQuestToOverview(
+	state: ProjectState,
+	questName: string,
+	status: string,
+	ts: string,
+): ProjectState {
+	const overview = getJson<Overview>(state, "quests/overview.json");
+	if (overview === undefined) return state;
+	return setEntry(state, "quests/overview.json", {
+		type: "json",
+		content: {
+			...overview,
+			items: [
+				...overview.items,
+				{ name: questName, status, created: ts, completed: null },
+			],
+		},
+	});
+}
+
 // ── Terminal status check (quest) ───────────────────────────
 
 const QUEST_TERMINAL_STATUSES: ReadonlySet<QuestStatus> = new Set(["completed", "abandoned"]);

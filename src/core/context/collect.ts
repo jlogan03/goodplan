@@ -5,8 +5,8 @@
 
 import type { DirectoryEntry, ProjectState, StateEntry } from "../tree.js";
 import { resolve } from "../tree.js";
-import type { ResolvedTarget } from "./priorities.js";
 import { resolveSourcePath } from "./priorities.js";
+import type { ResolvedTarget } from "./types.js";
 import type { ContentSource } from "./types.js";
 
 // ── Collected entry ─────────────────────────────────────────

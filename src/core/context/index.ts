@@ -13,8 +13,8 @@ import type { CollectedEntry } from "./collect.js";
 import { resolveContentSource } from "./collect.js";
 import { collectDecisions } from "./decisions.js";
 import { collectLearnings } from "./learnings.js";
-import type { ResolvedTarget } from "./priorities.js";
 import { getPriorityTable } from "./priorities.js";
+import type { ResolvedTarget } from "./types.js";
 import type {
 	ContextBundle,
 	StartContextOptions,

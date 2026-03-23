@@ -6,9 +6,8 @@
  * Source of truth: rpc-layer-api.md and transition-tables.md "Context Returns" tables.
  */
 
+import { resolveEntityJsonPath } from "../rpc/types.js";
 import type { ContentSource, ResolvedTarget, SubmitPhase, Target } from "./types.js";
-
-export type { ResolvedTarget } from "./types.js";
 
 // ── Path helpers ────────────────────────────────────────────
 
@@ -25,18 +24,6 @@ function entityDir(target: Target): string {
 	}
 }
 
-function entityJsonPath(target: Target): string {
-	switch (target.type) {
-		case "slice":
-			return `slices/${target.name}/slice.json`;
-		case "quest":
-			return `quests/${target.name}/quest.json`;
-		case "epic":
-			return `epics/${target.name}/epic.json`;
-		default:
-			return "project.json";
-	}
-}
 
 /** Resolve the epic name for architecture paths. Epic targets use their own name;
  *  slice/quest targets use the active epic from project.json. */
@@ -49,7 +36,7 @@ function epicName(rt: ResolvedTarget): string | undefined {
 
 /** plan: entity goal, current architecture, target architecture, conventions */
 const planSources: ContentSource[] = [
-	{ key: "entity-goal", path: (rt) => entityJsonPath(rt.target), sourceType: "markdown" },
+	{ key: "entity-goal", path: (rt) => resolveEntityJsonPath(rt.target), sourceType: "markdown" },
 	{ key: "current-architecture", path: "architecture", sourceType: "directory" },
 	{ key: "target-architecture", path: (rt) => { const e = epicName(rt); return e ? `epics/${e}/architecture` : undefined; }, sourceType: "directory" },
 	{ key: "conventions", path: "conventions.md", sourceType: "markdown" },
@@ -58,7 +45,7 @@ const planSources: ContentSource[] = [
 /** refinement: plan, entity goal, current architecture, target architecture, conventions */
 const refinementSources: ContentSource[] = [
 	{ key: "plan", path: (rt) => `${entityDir(rt.target)}/plan.md`, sourceType: "markdown" },
-	{ key: "entity-goal", path: (rt) => entityJsonPath(rt.target), sourceType: "markdown" },
+	{ key: "entity-goal", path: (rt) => resolveEntityJsonPath(rt.target), sourceType: "markdown" },
 	{ key: "current-architecture", path: "architecture", sourceType: "directory" },
 	{ key: "target-architecture", path: (rt) => { const e = epicName(rt); return e ? `epics/${e}/architecture` : undefined; }, sourceType: "directory" },
 	{ key: "conventions", path: "conventions.md", sourceType: "markdown" },
@@ -67,7 +54,7 @@ const refinementSources: ContentSource[] = [
 /** implementation: refined plan, entity goal, current architecture, target architecture, conventions */
 const implementationSources: ContentSource[] = [
 	{ key: "refined-plan", path: (rt) => `${entityDir(rt.target)}/plan-refined.md`, sourceType: "markdown" },
-	{ key: "entity-goal", path: (rt) => entityJsonPath(rt.target), sourceType: "markdown" },
+	{ key: "entity-goal", path: (rt) => resolveEntityJsonPath(rt.target), sourceType: "markdown" },
 	{ key: "current-architecture", path: "architecture", sourceType: "directory" },
 	{ key: "target-architecture", path: (rt) => { const e = epicName(rt); return e ? `epics/${e}/architecture` : undefined; }, sourceType: "directory" },
 	{ key: "conventions", path: "conventions.md", sourceType: "markdown" },
@@ -75,7 +62,7 @@ const implementationSources: ContentSource[] = [
 
 /** complete: entity goal, slices overview, current architecture, target architecture */
 const completeSources: ContentSource[] = [
-	{ key: "entity-goal", path: (rt) => entityJsonPath(rt.target), sourceType: "markdown" },
+	{ key: "entity-goal", path: (rt) => resolveEntityJsonPath(rt.target), sourceType: "markdown" },
 	{ key: "slices-overview", path: "slices/overview.json", sourceType: "markdown" },
 	{ key: "current-architecture", path: "architecture", sourceType: "directory" },
 	{ key: "target-architecture", path: (rt) => { const e = epicName(rt); return e ? `epics/${e}/architecture` : undefined; }, sourceType: "directory" },

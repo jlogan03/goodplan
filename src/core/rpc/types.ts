@@ -3,6 +3,9 @@
  * Defined per rpc-layer-api.md (source of truth).
  */
 
+// Type-only import — no runtime circular dependency. The context module
+// imports Target/SubmitPhase from here; this imports ContextBundle from there.
+// Both are `import type` (erased at compile time), which is safe.
 import type { ContextBundle } from "../context/types.js";
 import type { Verification, VerificationResult } from "../../schemas/entities/epic.js";
 import type { DeferredItem } from "../../schemas/entities/slice.js";

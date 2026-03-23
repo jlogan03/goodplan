@@ -9,7 +9,7 @@ import type { QuestStatus } from "../../../schemas/entities/quest.js";
 import type { ProjectState } from "../../tree.js";
 import { getJson, hasChild, setEntry } from "../../tree.js";
 import type { StateError, StateEvent } from "../types.js";
-import { appendActivityLog } from "./helpers.js";
+import { addQuestToOverview, appendActivityLog } from "./helpers.js";
 
 type CreateQuestEvent = Extract<StateEvent, { type: "CREATE_QUEST" }>;
 
@@ -52,15 +52,7 @@ export function handleCreateQuest(
 	});
 
 	// Update quests/overview.json — no epic field (quests are project-scoped)
-	tree = setEntry(tree, "quests/overview.json", {
-		type: "json",
-		content: {
-			items: [
-				...overview.items,
-				{ name: event.name, status: "created", created: now, completed: null },
-			],
-		},
-	});
+	tree = addQuestToOverview(tree, event.name, "created", now);
 
 	// Append activity log
 	tree = appendActivityLog(
