@@ -37,12 +37,16 @@ src/
 │   │                       # epic:refine-architecture, epic:define-slices, epic:refine-slices,
 │   │                       # epic:activate, epic:complete, epic:abandon, epic:add-verification,
 │   │                       # epic:update-verification
-│   ├── subagent/           # submit-plan, submit-refinement, submit-implementation, submit-explore,
-│   │                       # submit-architecture, submit-slices, submit-refine-architecture,
-│   │                       # submit-refine-slices (organizational dir; registered as flat top-level commands)
+│   ├── subagent/           # start-plan, start-refinement, start-implementation, start-explore,
+│   │                       # start-architecture, start-slices, start-refine-architecture,
+│   │                       # start-refine-slices, submit-plan, submit-refinement,
+│   │                       # submit-implementation, submit-explore, submit-architecture,
+│   │                       # submit-slices, submit-refine-architecture, submit-refine-slices
+│   │                       # (organizational dir; registered as flat top-level commands)
 │   ├── slice/              # slice:create, slice:list, slice:show, slice:plan, slice:refine-plan,
 │   │                       # slice:implement, slice:complete, slice:abandon
-│   ├── quest/
+│   ├── quest/              # quest:create, quest:list, quest:show, quest:plan, quest:refine-plan,
+│   │                       # quest:implement, quest:complete, quest:abandon
 │   ├── decision/
 │   ├── learning/
 │   ├── activity/
@@ -51,13 +55,14 @@ src/
 │   ├── state/
 │   │   └── transitions/    # per-event transition handlers (epic-create, epic-phase, epic-refine,
 │   │                       # epic-lifecycle, epic-verify, slice-create, slice-plan, slice-submit,
-│   │                       # slice-implement, slice-complete, slice-abandon)
+│   │                       # slice-implement, slice-complete, slice-abandon, quest-create,
+│   │                       # quest-plan, quest-implement, quest-complete, quest-abandon)
 │   ├── data/               # assemble/commit/load state tree, tree types, schema registry
 │   ├── rpc/                # workflow orchestration: init, begin, complete, submit, status, types
-│   ├── context/
+│   ├── context/            # context bundling: startContext, priorities, budget, collect, decisions, learnings
 │   └── workflow/
 ├── schemas/
-│   ├── commands/           # Zod schemas for CLI input validation (epic.ts, slice.ts, submit.ts)
+│   ├── commands/           # Zod schemas for CLI input validation (epic.ts, slice.ts, quest.ts, submit.ts)
 │   ├── entities/           # Zod schemas for JSON entities (project, epic, slice, quest, overview)
 │   └── records/            # Zod schemas for JSONL records (activity-log, decision, learning, architecture-delta)
 ├── util/

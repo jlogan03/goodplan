@@ -10,6 +10,7 @@ import type { Slice } from "../../schemas/entities/slice.js";
 import type { LearningEntry } from "../../schemas/records/learning.js";
 import type { StateEvent } from "../../schemas/state-events.js";
 import { GoodplanError } from "../../util/errors.js";
+import { startContext, DEFAULT_INLINE_BUDGET } from "../context/index.js";
 import { commitState } from "../data/commit.js";
 import { loadState } from "../data/load.js";
 import { reduce } from "../state/reduce.js";
@@ -34,7 +35,7 @@ export function complete(
 	projectDir: string,
 	target: Target,
 	input: CompleteInput,
-	_options?: WorkflowOptions,
+	options?: WorkflowOptions,
 ): CompleteResult {
 	const oldState = loadState(projectDir);
 	const ts = new Date().toISOString();
@@ -48,7 +49,19 @@ export function complete(
 
 	commitState(projectDir, oldState, result);
 
-	return buildCompleteResult(target, oldState, result);
+	const completeResult = buildCompleteResult(target, oldState, result);
+
+	// Wire --inline: assemble context bundle after state transition
+	if (options?.inlineContext !== undefined) {
+		const budget = options.inlineContext === true
+			? DEFAULT_INLINE_BUDGET
+			: typeof options.inlineContext === "number"
+				? options.inlineContext
+				: DEFAULT_INLINE_BUDGET;
+		completeResult.context = startContext(result, "complete", target, { inlineBudget: budget });
+	}
+
+	return completeResult;
 }
 
 // ── Event building ───────────────────────────────────────────

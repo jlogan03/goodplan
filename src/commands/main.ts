@@ -31,6 +31,14 @@ import { sliceListCommand } from "./slice/list.js";
 import { slicePlanCommand } from "./slice/plan.js";
 import { sliceRefinePlanCommand } from "./slice/refine-plan.js";
 import { sliceShowCommand } from "./slice/show.js";
+import { startArchitectureCommand } from "./subagent/start-architecture.js";
+import { startExploreCommand } from "./subagent/start-explore.js";
+import { startImplementationCommand } from "./subagent/start-implementation.js";
+import { startPlanCommand } from "./subagent/start-plan.js";
+import { startRefineArchitectureCommand } from "./subagent/start-refine-architecture.js";
+import { startRefineSlicesCommand } from "./subagent/start-refine-slices.js";
+import { startRefinementCommand } from "./subagent/start-refinement.js";
+import { startSlicesCommand } from "./subagent/start-slices.js";
 import { submitArchitectureCommand } from "./subagent/submit-architecture.js";
 import { submitExploreCommand } from "./subagent/submit-explore.js";
 import { submitImplementationCommand } from "./subagent/submit-implementation.js";
@@ -84,6 +92,14 @@ export const mainCommand = defineCommand({
 		"quest:implement": questImplementCommand,
 		"quest:complete": questCompleteCommand,
 		"quest:abandon": questAbandonCommand,
+		"start-plan": startPlanCommand,
+		"start-refinement": startRefinementCommand,
+		"start-implementation": startImplementationCommand,
+		"start-explore": startExploreCommand,
+		"start-architecture": startArchitectureCommand,
+		"start-slices": startSlicesCommand,
+		"start-refine-architecture": startRefineArchitectureCommand,
+		"start-refine-slices": startRefineSlicesCommand,
 		"submit-plan": submitPlanCommand,
 		"submit-refinement": submitRefinementCommand,
 		"submit-implementation": submitImplementationCommand,

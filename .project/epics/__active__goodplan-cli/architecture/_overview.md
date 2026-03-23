@@ -20,7 +20,7 @@ Workflow orchestration layer. Coordinates the State Machine and Data Layer to ex
 
 - Hydrate entity state from filesystem, feed to State Machine, write results back
 - Append to activity log on every state transition
-- Assemble context bundles for each phase (with `--inline` budget-based content inlining). Context bundling is an internal module within the RPC layer (`src/core/context/`) — a distinct concern from state orchestration.
+- Assemble context bundles for each phase (with `--inline` budget-based content inlining). Context bundling is a peer module alongside the RPC layer (`src/core/context/`) — depends on tree types and Data Layer, consumed by both the RPC layer (for `--inline` on mutations) and the Commands layer (for `start-*` commands).
 - Handle implicit transitions (e.g., all slices complete → epic needs completion)
 - Enforce completion flow ordering (verify goal → deferred work → arch delta → learnings)
 

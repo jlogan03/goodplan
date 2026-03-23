@@ -12,7 +12,7 @@ Workflow orchestration layer. Coordinates the State Machine and Data Layer to ex
 function begin(phase: BeginPhase, target: Target, options: WorkflowOptions): BeginResult;
 function complete(target: Target, input: CompleteInput, options: WorkflowOptions): CompleteResult;
 function submit(phase: SubmitPhase, target: Target, content: SubmitInput, options: WorkflowOptions): SubmitResult;
-function startContext(phase: SubmitPhase, target: Target, options: WorkflowOptions): ContextBundle;
+function startContext(state: ProjectState, phase: SubmitPhase, target: Target, options?: StartContextOptions): ContextBundle;
 function status(options: StatusOptions): StatusResult;
 ```
 
@@ -39,6 +39,9 @@ type BeginPhase =
   | 'update-decision'
   | 'rollup';
 
+/** Phases that have content priority orderings for context bundling.
+ *  Encompasses both `submit-*` command phases and the `complete` phase
+ *  (which assembles context inline during entity completion). */
 type SubmitPhase =
   | 'plan'
   | 'refinement'
@@ -47,7 +50,8 @@ type SubmitPhase =
   | 'architecture'
   | 'slices'
   | 'refine-architecture'
-  | 'refine-slices';
+  | 'refine-slices'
+  | 'complete';
 
 type Target =
   | { type: 'epic'; name: string }
@@ -347,9 +351,11 @@ Read-only. Derives status from the unified state tree by navigating `DirectoryEn
 
 The RPC Layer does not contain transition logic — that's the State Machine's job. It does not contain I/O logic — that's the Data Layer's job. It wires them together and assembles responses.
 
-### Context Bundling as Internal Module
+### Context Bundling as Peer Module
 
-Context bundling (budget-based inlining, per-phase priority tables, content assembly) is a distinct concern within the RPC layer, located at `src/core/context/`. It changes for different reasons than state orchestration — adding a new phase's priority list or adjusting budget heuristics should not touch orchestration code. The RPC layer's public API (`begin`, `complete`, `context`, `status`) delegates to the context module when `--inline` is set. The context module reads content via the Data Layer but has no direct dependency on the State Machine.
+Context bundling (budget-based inlining, per-phase priority tables, content assembly) is a peer module alongside the RPC layer, located at `src/core/context/`. It depends on tree types and Data Layer reads, and is consumed by both the RPC layer (for `--inline` on mutations like `complete()`) and the Commands layer (for `start-*` commands). The context module has no direct dependency on the State Machine.
+
+`startContext(state, phase, target, options?)` takes a caller-provided `ProjectState` for testability — it does not call `loadState()` internally. This design allows both the RPC layer (which already has state loaded) and the Commands layer (which loads state separately) to use the same function without redundant I/O.
 
 ### Context Budget
 

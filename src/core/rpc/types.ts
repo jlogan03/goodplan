@@ -3,6 +3,7 @@
  * Defined per rpc-layer-api.md (source of truth).
  */
 
+import type { ContextBundle } from "../context/types.js";
 import type { Verification, VerificationResult } from "../../schemas/entities/epic.js";
 import type { DeferredItem } from "../../schemas/entities/slice.js";
 import type { ArchitectureDeltaInput } from "../../schemas/records/architecture-delta.js";
@@ -109,6 +110,8 @@ export interface CompleteResult {
 	};
 	epicComplete?: boolean;
 	learningsRolledUp?: { epic: number; project: number };
+	/** Context bundle included when `options.inlineContext` is set. */
+	context?: ContextBundle;
 }
 
 export interface SubmitResult {
