@@ -6,7 +6,7 @@
 		"check": "biome check .",
 		"test": "vitest",
 		"build": "bun build --compile src/index.ts --outfile goodplan",
-		"install:skills": "echo 'TODO: install skills'"
+		"install:skills": "bash scripts/install-skills.sh"
 	},
 	"dependencies": {
 		"@michaelhomer/jqjs": "github:mwh/jqjs",

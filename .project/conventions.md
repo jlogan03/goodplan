@@ -18,19 +18,20 @@ scripts/
 skills/                   # source of truth for goodplan workflow skills
 ├── _shared/
 │   └── references/
-├── create-epic/
-├── explore/
-├── create-architecture/
-├── refine-architecture/
-├── create-slices/
-├── refine-slices/
-├── create-plan/
-├── complete/
-├── project-status/
 ├── audit-architecture/
-├── refine-plan/
+├── complete/
+├── create-architecture/
+├── create-epic/
+├── create-plan/
+├── create-slices/
+├── explore/
 ├── implement-plan/
-└── migrate/
+├── migrate/
+├── project-status/
+├── refine-architecture/
+├── refine-plan/
+├── refine-slices/
+└── start-epic/
 src/
 ├── commands/
 │   ├── epic/               # epic:create, epic:list, epic:show, epic:explore, epic:define-architecture,

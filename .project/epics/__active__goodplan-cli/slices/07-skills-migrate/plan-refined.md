@@ -19,24 +19,24 @@ Copy goodplan workflow skills into `skills/` and create the install script.
 ### Expected Behavior
 
 **Before implementation** (should fail / show absence):
-- [ ] `test -d skills/` — directory does not exist (exit 1)
-- [ ] `cat scripts/install-skills.sh` — file does not exist
+- [x] `test -d skills/` — directory does not exist (exit 1)
+- [x] `cat scripts/install-skills.sh` — file does not exist
 
 **After implementation** (should pass / show presence):
-- [ ] `ls skills/` — contains 15 directories: `_shared`, `audit-architecture`, `complete`, `create-architecture`, `create-epic`, `create-plan`, `create-slices`, `explore`, `implement-plan`, `migrate`, `project-status`, `refine-architecture`, `refine-plan`, `refine-slices`, `start-epic`
-- [ ] `scripts/install-skills.sh` exists and is executable (`test -x scripts/install-skills.sh`)
-- [ ] `bun run install:skills` copies skills to `~/.claude/skills/` — verify with `diff skills/start-epic/SKILL.md ~/.claude/skills/start-epic/SKILL.md` returning no differences, and `diff -r skills/_shared/references/ ~/.claude/skills/_shared/references/` returning no differences (confirms recursive copy and clean-install semantics)
-- [ ] No `.DS_Store` files tracked in `skills/` (`git ls-files 'skills/**/.DS_Store'` returns empty)
+- [x] `ls skills/` — contains 15 directories: `_shared`, `audit-architecture`, `complete`, `create-architecture`, `create-epic`, `create-plan`, `create-slices`, `explore`, `implement-plan`, `migrate`, `project-status`, `refine-architecture`, `refine-plan`, `refine-slices`, `start-epic`
+- [x] `scripts/install-skills.sh` exists and is executable (`test -x scripts/install-skills.sh`)
+- [x] `bun run install:skills` copies skills to `~/.claude/skills/` — verify with `diff skills/start-epic/SKILL.md ~/.claude/skills/start-epic/SKILL.md` returning no differences, and `diff -r skills/_shared/references/ ~/.claude/skills/_shared/references/` returning no differences (confirms recursive copy and clean-install semantics)
+- [x] No `.DS_Store` files tracked in `skills/` (`git ls-files 'skills/**/.DS_Store'` returns empty)
 
 ### Tasks
 
-- [ ] Create `skills/` directory structure by copying from `~/.claude/skills/`. Use `rsync -a --exclude='.DS_Store'` to copy these 14 directories preserving internal structure: `_shared`, `audit-architecture`, `complete`, `create-architecture`, `create-epic`, `create-plan`, `create-slices`, `explore`, `implement-plan`, `project-status`, `refine-architecture`, `refine-plan`, `refine-slices`, `start-epic`. Skip non-goodplan skills (`skill-creator`, `open-markdown`, `vercel-react-best-practices`, `web-design-guidelines`). Also skip symlinks.
-- [ ] Create stub `skills/migrate/` directory with a placeholder `SKILL.md` containing a brief note that this skill is not yet implemented and will be built in a future slice.
-- [ ] Add `skills/**/.DS_Store` to `.gitignore` as a safety net against future manual copies.
-- [ ] Create `scripts/install-skills.sh` with clean-install semantics: (a) shebang `#!/usr/bin/env bash` and `set -e` for error handling, (b) determine repo root via `SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"` to produce an absolute path when invoked from any working directory, (c) `mkdir -p ~/.claude/skills/` for first-time install, (d) hardcode the list of 15 goodplan skill directory names — for each: `rm -rf` the target dir (note: this overwrites any manually-symlinked destination) then `rsync -a --exclude='.DS_Store'` from repo to `~/.claude/skills/`, printing each skill name as it's copied, (e) report summary on completion ("Installed N skills to ~/.claude/skills/"). The script copies only goodplan skill directories, preserving non-goodplan skills at the destination.
-- [ ] Verify `package.json` `install:skills` script is `"bash scripts/install-skills.sh"` (not `"./scripts/install-skills.sh"` — avoids dependence on execute bit in some clone environments). Update if the tracer bullet placeholder doesn't match.
-- [ ] Update `conventions.md` to include `start-epic` in the `skills/` directory listing.
-- [ ] Run `bun run install:skills` and verify it works — run `diff skills/start-epic/SKILL.md ~/.claude/skills/start-epic/SKILL.md` to confirm content matches.
+- [x] Create `skills/` directory structure by copying from `~/.claude/skills/`. Use `rsync -a --exclude='.DS_Store'` to copy these 14 directories preserving internal structure: `_shared`, `audit-architecture`, `complete`, `create-architecture`, `create-epic`, `create-plan`, `create-slices`, `explore`, `implement-plan`, `project-status`, `refine-architecture`, `refine-plan`, `refine-slices`, `start-epic`. Skip non-goodplan skills (`skill-creator`, `open-markdown`, `vercel-react-best-practices`, `web-design-guidelines`). Also skip symlinks.
+- [x] Create stub `skills/migrate/` directory with a placeholder `SKILL.md` containing a brief note that this skill is not yet implemented and will be built in a future slice.
+- [x] Add `skills/**/.DS_Store` to `.gitignore` as a safety net against future manual copies.
+- [x] Create `scripts/install-skills.sh` with clean-install semantics: (a) shebang `#!/usr/bin/env bash` and `set -e` for error handling, (b) determine repo root via `SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"` to produce an absolute path when invoked from any working directory, (c) `mkdir -p ~/.claude/skills/` for first-time install, (d) hardcode the list of 15 goodplan skill directory names — for each: `rm -rf` the target dir (note: this overwrites any manually-symlinked destination) then `rsync -a --exclude='.DS_Store'` from repo to `~/.claude/skills/`, printing each skill name as it's copied, (e) report summary on completion ("Installed N skills to ~/.claude/skills/"). The script copies only goodplan skill directories, preserving non-goodplan skills at the destination.
+- [x] Verify `package.json` `install:skills` script is `"bash scripts/install-skills.sh"` (not `"./scripts/install-skills.sh"` — avoids dependence on execute bit in some clone environments). Update if the tracer bullet placeholder doesn't match.
+- [x] Update `conventions.md` to include `start-epic` in the `skills/` directory listing.
+- [x] Run `bun run install:skills` and verify it works — run `diff skills/start-epic/SKILL.md ~/.claude/skills/start-epic/SKILL.md` to confirm content matches.
 
 ## Phase 2: Command Reference Audit
 

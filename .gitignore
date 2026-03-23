@@ -5,3 +5,4 @@
 .project/epics/goodplan-cli/prototypes/jqjs-spike/node_modules/
 node_modules
 goodplan
+skills/**/.DS_Store
