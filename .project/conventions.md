@@ -47,8 +47,8 @@ src/
 │   │                       # slice:implement, slice:complete, slice:abandon
 │   ├── quest/              # quest:create, quest:list, quest:show, quest:plan, quest:refine-plan,
 │   │                       # quest:implement, quest:complete, quest:abandon
-│   ├── decision/
-│   ├── learning/
+│   ├── decision/           # decision:create, decision:update, decision:list, decision:show
+│   ├── learning/           # learning:rollup, learning:list
 │   ├── activity/
 │   └── global/
 ├── core/
@@ -57,15 +57,15 @@ src/
 │   │                       # epic-lifecycle, epic-verify, slice-create, slice-plan, slice-submit,
 │   │                       # slice-implement, slice-complete, slice-abandon, quest-create,
 │   │                       # quest-plan, quest-implement, quest-complete, quest-abandon)
-│   ├── data/               # assemble/commit/load state tree, tree types, schema registry
+│   ├── data/               # assemble/commit/load state tree, tree types, schema registry, files (countFiles helper)
 │   ├── rpc/                # workflow orchestration: init, begin, complete, submit, status, types
 │   ├── context/            # context bundling: startContext, priorities, budget, collect, decisions, learnings
 │   └── workflow/
 ├── schemas/
-│   ├── commands/           # Zod schemas for CLI input validation (epic.ts, slice.ts, quest.ts, submit.ts)
+│   ├── commands/           # Zod schemas for CLI input validation (epic.ts, slice.ts, quest.ts, submit.ts, decision.ts, status.ts)
 │   ├── entities/           # Zod schemas for JSON entities (project, epic, slice, quest, overview)
 │   └── records/            # Zod schemas for JSONL records (activity-log, decision, learning, architecture-delta)
-├── util/
+├── util/                   # output, errors, validate, query (applyQuery jq helper)
 └── index.ts
 tests/
 ├── unit/

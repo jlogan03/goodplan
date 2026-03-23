@@ -24,7 +24,7 @@ Lift `--query` from status-only to all JSON-outputting commands via the shared `
 - [x] Register schema command in `src/commands/main.ts`.
 - [x] Write tests: `--query` on `epic:list`, `decision:list`, `status`. Schema command: full hierarchy returns all registered commands, per-command detail includes stdin schema for commands that accept stdin (e.g., `slice:complete`), commands without stdin return no schema. `--query` auto-implies `--json` (verify `status --query '.project.name'` works without explicit `--json`).
 - [x] Run full test suite: `bun test` — all tests pass. `npx tsc --noEmit` — clean.
-- [ ] E2E walkthrough in temp dir (use `bun run src/index.ts`):
+- [x] E2E walkthrough in temp dir (use `bun run src/index.ts`):
   1. `init --name test-project`
   2. Create and activate epic
   3. Create slice, walk through plan → submit → refine → submit → implement → submit → complete (with learnings including `rollupTo:["project"]`)
@@ -37,9 +37,9 @@ Lift `--query` from status-only to all JSON-outputting commands via the shared `
   10. `schema --command slice:complete --json` — verify stdin schema includes `verificationPassed`, `deferred`, `learnings`, `architectureDelta`.
   11. Quest lifecycle: create (with `{ goal: "..." }` stdin payload) → plan → complete with learnings
   12. Verify `activity-log.jsonl` has entries for all transitions
-- [ ] Binary regression: `bun run build` → test `decision:create`, `status`, `schema`, `--query` against compiled binary
-- [ ] Update `.project/conventions.md` repo structure: add `src/commands/decision/`, `src/commands/learning/`, `src/schemas/commands/decision.ts`, `src/util/query.ts`
-- [ ] Verify architecture docs accuracy post-implementation: spot-check `commands-api.md`, `state-machine-api.md`, `data-model.md` against actual implementation. Fix any drift introduced by Phases 1-3.
+- [x] Binary regression: `bun run build` → test `decision:create`, `status`, `schema`, `--query` against compiled binary
+- [x] Update `.project/conventions.md` repo structure: add `src/commands/decision/`, `src/commands/learning/`, `src/schemas/commands/decision.ts`, `src/util/query.ts`
+- [x] Verify architecture docs accuracy post-implementation: spot-check `commands-api.md`, `state-machine-api.md`, `data-model.md` against actual implementation. Fix any drift introduced by Phases 1-3.
 
 ### Verification
 1. Full E2E walkthrough covering all success criteria from goal.md.

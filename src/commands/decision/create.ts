@@ -30,7 +30,7 @@ export const decisionCreateCommand = defineCommand({
 		const input = validateInput(createDecisionInputSchema, args, stdin);
 
 		const projectDir = resolveProjectDir();
-		const result = await begin(
+		const result = begin(
 			projectDir,
 			"create-decision",
 			{ type: "decision", id: input.id },

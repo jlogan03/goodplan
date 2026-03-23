@@ -1,5 +1,8 @@
 # Plan: Decisions, Learnings & Full Status
 
+**Status**: COMPLETE
+**Completed**: 2026-03-23
+
 ## Overview
 
 Implement the cross-cutting features that span entity types: decision management (create/update with status lifecycle), manual learnings rollup, full status command, universal `--query` on all commands, and schema command for stdin introspection. Also fix O(n²) learnings rollup in existing COMPLETE_SLICE and COMPLETE_QUEST handlers.
