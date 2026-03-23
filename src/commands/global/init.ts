@@ -46,7 +46,7 @@ export const initCommand = defineCommand({
 
 		const result = rpcInit(projectDirPath, projectName);
 
-		if (args.json) {
+		if (args.json || args.query) {
 			output(result, args);
 		} else {
 			output(`Initialized project "${result.name}" in ${result.projectDir}`, args);
