@@ -66,7 +66,7 @@ type Handler<T extends StateEvent["type"] = StateEvent["type"]> = (
  * Exhaustiveness-checked handler record. TypeScript ensures every StateEvent type
  * has a corresponding handler at compile time via `satisfies`.
  */
-const handlerRecord = {
+export const handlerRecord = {
 	INIT_PROJECT: handleInitProject,
 	CREATE_EPIC: handleCreateEpic,
 	BEGIN_EXPLORE: handleBeginExplore,

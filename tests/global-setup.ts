@@ -11,20 +11,6 @@ const projectRoot = path.resolve(import.meta.dirname, "..");
 const outfile = path.join(projectRoot, "goodplan");
 
 export function setup(): void {
-	// Skip binary compilation when no integration test files are included
-	const vitestArgs = process.argv.join(" ");
-	const isUnitOnly =
-		vitestArgs.includes("tests/unit") ||
-		vitestArgs.includes("tests/fitness") ||
-		(vitestArgs.includes("tests/") &&
-			!vitestArgs.includes("tests/integration") &&
-			!vitestArgs.includes("tests/global"));
-
-	if (isUnitOnly) {
-		console.log("[global-setup] Skipping binary compilation (no integration tests selected)");
-		return;
-	}
-
 	console.log("[global-setup] Compiling binary...");
 	execFileSync("bun", ["build", "--compile", "src/index.ts", "--outfile", outfile], {
 		cwd: projectRoot,

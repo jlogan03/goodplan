@@ -2,9 +2,14 @@
  * Integration test helpers for spawning the compiled goodplan binary.
  *
  * Usage:
- *   bun test tests/integration/    — run integration tests
- *   bun test tests/fitness/        — run fitness function tests
- *   bun test                       — run all tests (unit + integration + fitness)
+ *   npx vitest run tests/integration/    — run integration tests only
+ *   npx vitest run tests/fitness/        — run fitness function tests only
+ *   npx vitest run                       — run all tests (unit + integration + fitness)
+ *   bun test                             — alias for npx vitest run (via package.json)
+ *
+ * Fitness functions verify architectural invariants (INV-001 through INV-007).
+ * Integration tests spawn the compiled binary against fixture `.project/` directories.
+ * Both rely on globalSetup (tests/global-setup.ts) to compile the binary once.
  */
 
 import type { SpawnSyncReturns } from "node:child_process";
