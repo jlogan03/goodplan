@@ -5,6 +5,7 @@
 
 import type { Epic } from "../../schemas/entities/epic.js";
 import type { Project } from "../../schemas/entities/project.js";
+import type { Quest } from "../../schemas/entities/quest.js";
 import type { Slice } from "../../schemas/entities/slice.js";
 import type { StateEvent } from "../../schemas/state-events.js";
 import { GoodplanError } from "../../util/errors.js";
@@ -145,7 +146,20 @@ function buildCreateEvent(
 				ts,
 			};
 		}
-		case "quest":
+		case "quest": {
+			if (payload.goal === undefined) {
+				throw new GoodplanError(
+					"VALIDATION_INVALID_INPUT",
+					"goal is required when creating a quest",
+				);
+			}
+			return {
+				type: "CREATE_QUEST",
+				name: payload.name,
+				goal: payload.goal,
+				ts,
+			};
+		}
 		case "decision":
 			throw new GoodplanError(
 				"INTERNAL_ERROR",
@@ -172,10 +186,7 @@ function buildAbandonEvent(
 		case "slice":
 			return { type: "ABANDON_SLICE", slice: target.name, ts, reason: payload.reason };
 		case "quest":
-			throw new GoodplanError(
-				"INTERNAL_ERROR",
-				`begin('abandon', {type:'${target.type}'}) is not yet implemented`,
-			);
+			return { type: "ABANDON_QUEST", quest: target.name, ts, reason: payload.reason };
 		default:
 			throw new GoodplanError("INTERNAL_ERROR", `Cannot abandon target type: ${target.type}`);
 	}
@@ -185,10 +196,12 @@ function buildPlanPhaseEvent(target: Target, ts: string): StateEvent {
 	switch (target.type) {
 		case "slice":
 			return { type: "BEGIN_PLAN", slice: target.name, ts };
+		case "quest":
+			return { type: "BEGIN_QUEST_PLAN", quest: target.name, ts };
 		default:
 			throw new GoodplanError(
 				"INTERNAL_ERROR",
-				`begin('plan') requires slice target, got ${target.type}`,
+				`begin('plan') requires slice or quest target, got ${target.type}`,
 			);
 	}
 }
@@ -197,10 +210,12 @@ function buildRefinePlanEvent(target: Target, ts: string): StateEvent {
 	switch (target.type) {
 		case "slice":
 			return { type: "BEGIN_REFINEMENT", slice: target.name, ts };
+		case "quest":
+			return { type: "BEGIN_QUEST_REFINEMENT", quest: target.name, ts };
 		default:
 			throw new GoodplanError(
 				"INTERNAL_ERROR",
-				`begin('refine-plan') requires slice target, got ${target.type}`,
+				`begin('refine-plan') requires slice or quest target, got ${target.type}`,
 			);
 	}
 }
@@ -209,10 +224,12 @@ function buildImplementEvent(target: Target, ts: string): StateEvent {
 	switch (target.type) {
 		case "slice":
 			return { type: "BEGIN_IMPLEMENTATION", slice: target.name, ts };
+		case "quest":
+			return { type: "BEGIN_QUEST_IMPLEMENTATION", quest: target.name, ts };
 		default:
 			throw new GoodplanError(
 				"INTERNAL_ERROR",
-				`begin('implement') requires slice target, got ${target.type}`,
+				`begin('implement') requires slice or quest target, got ${target.type}`,
 			);
 	}
 }
@@ -245,6 +262,11 @@ function buildBeginResult(
 		const newSlice = getJson<Slice>(newState, entityPath);
 		previousStatus = oldSlice?.status ?? "none";
 		newStatus = newSlice?.status ?? "unknown";
+	} else if (target.type === "quest") {
+		const oldQuest = getJson<Quest>(oldState, entityPath);
+		const newQuest = getJson<Quest>(newState, entityPath);
+		previousStatus = oldQuest?.status ?? "none";
+		newStatus = newQuest?.status ?? "unknown";
 	}
 
 	return { entity, phase, previousStatus, newStatus };

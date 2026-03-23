@@ -13,6 +13,14 @@ import { epicRefineSlicesCommand } from "./epic/refine-slices.js";
 import { epicShowCommand } from "./epic/show.js";
 import { epicUpdateVerificationCommand } from "./epic/update-verification.js";
 import { globalArgs } from "./global-args.js";
+import { questAbandonCommand } from "./quest/abandon.js";
+import { questCompleteCommand } from "./quest/complete.js";
+import { questCreateCommand } from "./quest/create.js";
+import { questImplementCommand } from "./quest/implement.js";
+import { questListCommand } from "./quest/list.js";
+import { questPlanCommand } from "./quest/plan.js";
+import { questRefinePlanCommand } from "./quest/refine-plan.js";
+import { questShowCommand } from "./quest/show.js";
 import { initCommand } from "./global/init.js";
 import { statusCommand } from "./global/status.js";
 import { sliceAbandonCommand } from "./slice/abandon.js";
@@ -68,6 +76,14 @@ export const mainCommand = defineCommand({
 		"slice:implement": sliceImplementCommand,
 		"slice:complete": sliceCompleteCommand,
 		"slice:abandon": sliceAbandonCommand,
+		"quest:create": questCreateCommand,
+		"quest:list": questListCommand,
+		"quest:show": questShowCommand,
+		"quest:plan": questPlanCommand,
+		"quest:refine-plan": questRefinePlanCommand,
+		"quest:implement": questImplementCommand,
+		"quest:complete": questCompleteCommand,
+		"quest:abandon": questAbandonCommand,
 		"submit-plan": submitPlanCommand,
 		"submit-refinement": submitRefinementCommand,
 		"submit-implementation": submitImplementationCommand,

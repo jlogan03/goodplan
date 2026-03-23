@@ -5,6 +5,7 @@
 
 import type { Epic } from "../../schemas/entities/epic.js";
 import type { Overview } from "../../schemas/entities/overview.js";
+import type { Quest } from "../../schemas/entities/quest.js";
 import type { Slice } from "../../schemas/entities/slice.js";
 import type { LearningEntry } from "../../schemas/records/learning.js";
 import type { StateEvent } from "../../schemas/state-events.js";
@@ -85,11 +86,22 @@ function buildCompleteEvent(target: Target, input: CompleteInput, ts: string): S
 				architectureDelta: input.architectureDelta ?? [],
 			};
 		}
-		case "quest":
-			throw new GoodplanError(
-				"INTERNAL_ERROR",
-				`complete({type:'${target.type}'}) is not yet implemented`,
-			);
+		case "quest": {
+			if (input.type !== "quest") {
+				throw new GoodplanError(
+					"INTERNAL_ERROR",
+					`CompleteInput.type '${input.type}' does not match target.type 'quest'`,
+				);
+			}
+			return {
+				type: "COMPLETE_QUEST",
+				quest: target.name,
+				ts,
+				verificationPassed: input.verificationPassed,
+				learnings: input.learnings ?? [],
+				architectureDelta: input.architectureDelta ?? [],
+			};
+		}
 		default:
 			throw new GoodplanError("INTERNAL_ERROR", `Cannot complete target type: ${target.type}`);
 	}
@@ -117,6 +129,10 @@ function buildCompleteResult(
 
 	if (target.type === "slice") {
 		return buildSliceCompleteResult(target.name, entity, oldState, newState);
+	}
+
+	if (target.type === "quest") {
+		return buildQuestCompleteResult(target.name, entity, oldState, newState);
 	}
 
 	throw new GoodplanError(
@@ -220,6 +236,44 @@ function buildSliceCompleteResult(
 				currentArchitecture: `epics/${newSlice.epic}/architecture`,
 			};
 		}
+	}
+
+	return result;
+}
+
+function buildQuestCompleteResult(
+	questName: string,
+	entity: string,
+	oldState: ProjectState,
+	newState: ProjectState,
+): CompleteResult {
+	const oldQuest = getJson<Quest>(oldState, `quests/${questName}/quest.json`);
+	const newQuest = getJson<Quest>(newState, `quests/${questName}/quest.json`);
+
+	const result: CompleteResult = {
+		entity,
+		previousStatus: oldQuest?.status ?? "none",
+		newStatus: newQuest?.status ?? "unknown",
+	};
+
+	if (newQuest === undefined) return result;
+
+	// Derive learningsRolledUp: compare old vs new learnings.jsonl at project level
+	// (quests are project-scoped — no epic-level rollup)
+	const projectLearningsOld = getJsonl<LearningEntry>(oldState, "learnings.jsonl") ?? [];
+	const projectLearningsNew = getJsonl<LearningEntry>(newState, "learnings.jsonl") ?? [];
+	const projectDelta = projectLearningsNew.length - projectLearningsOld.length;
+
+	if (projectDelta > 0) {
+		result.learningsRolledUp = { epic: 0, project: projectDelta };
+	}
+
+	// Architecture paths: quests use project-level architecture
+	const archDeltas = getJsonl<unknown>(newState, `quests/${questName}/architecture-deltas.jsonl`);
+	if (archDeltas !== undefined && archDeltas.length > 0) {
+		result.architecturePaths = {
+			currentArchitecture: "architecture",
+		};
 	}
 
 	return result;

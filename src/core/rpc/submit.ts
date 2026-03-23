@@ -7,6 +7,7 @@
  */
 
 import type { Epic } from "../../schemas/entities/epic.js";
+import type { Quest } from "../../schemas/entities/quest.js";
 import type { Slice } from "../../schemas/entities/slice.js";
 import type { StateEvent } from "../../schemas/state-events.js";
 import { GoodplanError } from "../../util/errors.js";
@@ -217,8 +218,16 @@ function resolveStatuses(
 		};
 	}
 
-	// Quest submit phases — deferred to slice 05.
-	return { previousStatus: "pre-submit", newStatus: "post-submit" };
+	if (target.type === "quest") {
+		const oldQuest = getJson<Quest>(oldState, entityPath);
+		const newQuest = getJson<Quest>(newState, entityPath);
+		return {
+			previousStatus: oldQuest?.status ?? "none",
+			newStatus: newQuest?.status ?? "unknown",
+		};
+	}
+
+	return { previousStatus: "none", newStatus: "unknown" };
 }
 
 // ── Helpers ──────────────────────────────────────────────────

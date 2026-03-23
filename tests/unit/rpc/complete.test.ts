@@ -329,7 +329,7 @@ describe("complete — error cases", () => {
 		).toThrow(GoodplanError);
 	});
 
-	it("throws for quest completion (not yet implemented)", () => {
+	it("throws for quest completion when quest not found", () => {
 		rpcInit(projectDir, "test");
 
 		expect(() =>
@@ -338,6 +338,6 @@ describe("complete — error cases", () => {
 				{ type: "quest", name: "q1" },
 				{ type: "quest", verificationPassed: true },
 			),
-		).toThrow("not yet implemented");
+		).toThrow("not found");
 	});
 });
