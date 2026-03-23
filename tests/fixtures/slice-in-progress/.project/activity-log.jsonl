@@ -1,0 +1,8 @@
+{"phase":"init","scope":"project","status":"complete","summary":"Project \"test-project\" initialized","ts":"2026-01-01T00:00:00.000Z"}
+{"phase":"create-epic","scope":"epics/test-epic","status":"complete","summary":"Epic \"test-epic\" created","ts":"2026-01-01T00:00:00.000Z"}
+{"phase":"activate-epic","scope":"epics/test-epic","status":"complete","summary":"Epic \"test-epic\" activated","ts":"2026-01-01T00:00:00.000Z"}
+{"phase":"create-slice","scope":"slices/test-slice","status":"complete","summary":"Slice \"test-slice\" created for epic \"test-epic\"","ts":"2026-01-01T00:00:00.000Z"}
+{"phase":"begin-plan","scope":"slices/test-slice","status":"complete","summary":"Slice \"test-slice\" planning started","ts":"2026-01-01T00:00:00.000Z"}
+{"phase":"complete-plan","scope":"slices/test-slice","status":"complete","summary":"Slice \"test-slice\" plan created","ts":"2026-01-01T00:00:00.000Z"}
+{"phase":"begin-refinement","scope":"slices/test-slice","status":"complete","summary":"Slice \"test-slice\" refinement started","ts":"2026-01-01T00:00:00.000Z"}
+{"phase":"complete-refinement","scope":"slices/test-slice","status":"complete","summary":"Slice \"test-slice\" plan refined","ts":"2026-01-01T00:00:00.000Z"}

@@ -1,0 +1,3 @@
+{"phase":"init","scope":"project","status":"complete","summary":"Project \"test-project\" initialized","ts":"2026-01-01T00:00:00.000Z"}
+{"phase":"create-epic","scope":"epics/test-epic","status":"complete","summary":"Epic \"test-epic\" created","ts":"2026-01-01T00:00:00.000Z"}
+{"phase":"activate-epic","scope":"epics/test-epic","status":"complete","summary":"Epic \"test-epic\" activated","ts":"2026-01-01T00:00:00.000Z"}

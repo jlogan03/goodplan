@@ -1,0 +1,146 @@
+/**
+ * Integration test helpers for spawning the compiled goodplan binary.
+ *
+ * Usage:
+ *   bun test tests/integration/    — run integration tests
+ *   bun test tests/fitness/        — run fitness function tests
+ *   bun test                       — run all tests (unit + integration + fitness)
+ */
+
+import { type SpawnSyncReturns, spawnSync } from "node:child_process";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+
+/** Well-known path for the compiled binary (set by globalSetup). */
+const BINARY_PATH = path.resolve(import.meta.dirname, "../../goodplan");
+
+export interface CommandResult {
+	stdout: string;
+	stderr: string;
+	exitCode: number;
+	json?: unknown;
+}
+
+export interface CommandOptions {
+	cwd?: string;
+	stdin?: string;
+	env?: Record<string, string>;
+}
+
+/**
+ * Spawn the compiled binary with the given arguments.
+ * Parses stdout as JSON when `--json` flag is present in args.
+ */
+export function runCommand(
+	binPath: string,
+	args: string[],
+	options?: CommandOptions,
+): CommandResult {
+	const result: SpawnSyncReturns<Buffer> = spawnSync(binPath, args, {
+		cwd: options?.cwd,
+		input: options?.stdin,
+		env: { ...process.env, ...options?.env },
+		timeout: 15_000,
+	});
+
+	const stdout = result.stdout?.toString("utf-8") ?? "";
+	const stderr = result.stderr?.toString("utf-8") ?? "";
+	const exitCode = result.status ?? 1;
+
+	const commandResult: CommandResult = { stdout, stderr, exitCode };
+
+	if (args.includes("--json")) {
+		try {
+			commandResult.json = JSON.parse(stdout) as unknown;
+		} catch {
+			// stdout wasn't valid JSON — leave json undefined
+		}
+	}
+
+	return commandResult;
+}
+
+export interface ChainOptions extends CommandOptions {
+	continueOnError?: boolean;
+}
+
+/**
+ * Run a sequence of commands, returning an array of results.
+ * Stops on first non-zero exit unless `continueOnError` is set.
+ */
+export function runChain(
+	binPath: string,
+	commands: Array<{ args: string[]; stdin?: string }>,
+	options?: ChainOptions,
+): CommandResult[] {
+	const results: CommandResult[] = [];
+
+	for (const cmd of commands) {
+		const result = runCommand(binPath, cmd.args, {
+			...options,
+			stdin: cmd.stdin ?? options?.stdin,
+		});
+		results.push(result);
+
+		if (result.exitCode !== 0 && options?.continueOnError !== true) {
+			break;
+		}
+	}
+
+	return results;
+}
+
+export interface FixtureContext {
+	tmpDir: string;
+	env: Record<string, string>;
+	bin: string;
+}
+
+/**
+ * Copy a fixture to a temp directory, set GOODPLAN_DIR, run the callback, clean up.
+ * Uses GOODPLAN_DIR env var to isolate from the repo's own `.project/`.
+ * Returns a FixtureContext with tmpDir, env, and the binary path.
+ */
+export async function withFixture<T>(
+	fixtureName: string,
+	fn: (ctx: FixtureContext) => T | Promise<T>,
+): Promise<T> {
+	const fixtureDir = path.resolve(import.meta.dirname, "../fixtures", fixtureName);
+
+	if (!fs.existsSync(fixtureDir)) {
+		throw new Error(`Fixture "${fixtureName}" not found at ${fixtureDir}`);
+	}
+
+	const tmpDir = fs.mkdtempSync(
+		path.join(os.tmpdir(), `goodplan-integration-${fixtureName}-`),
+	);
+
+	try {
+		// Deep copy fixture to temp dir
+		fs.cpSync(fixtureDir, tmpDir, { recursive: true });
+
+		const env: Record<string, string> = {
+			GOODPLAN_DIR: path.join(tmpDir, ".project"),
+		};
+
+		const bin = buildBinary();
+
+		return await fn({ tmpDir, env, bin });
+	} finally {
+		fs.rmSync(tmpDir, { recursive: true, force: true });
+	}
+}
+
+/**
+ * Assert the compiled binary exists and return its path.
+ * Does not compile — compilation is handled by globalSetup.
+ */
+export function buildBinary(): string {
+	if (!fs.existsSync(BINARY_PATH)) {
+		throw new Error(
+			`Compiled binary not found at ${BINARY_PATH}. Ensure globalSetup ran successfully (vitest.config.ts → tests/global-setup.ts).`,
+		);
+	}
+	return BINARY_PATH;
+}

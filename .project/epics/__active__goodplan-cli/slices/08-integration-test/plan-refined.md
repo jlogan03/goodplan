@@ -31,19 +31,19 @@ Create on-disk fixture `.project/` structures and a shared test helper module fo
 
 ### Tasks
 
-- [ ] Create fixture directory `tests/fixtures/fresh-init/` — a minimal `.project/` with `idea.md`, `overview.json`, and `activity-log.jsonl` as produced by `goodplan init`. Generate by running `goodplan init` in a temp dir and copying the result. Use a fixed timestamp (e.g., `2026-01-01T00:00:00.000Z`) in all generated files.
-- [ ] Create fixture directory `tests/fixtures/epic-created/` — a project with an epic at `created` status. Hand-craft with fixed timestamps (`2026-01-01T00:00:00.000Z`). Build on `fresh-init` by adding `epics/__active__initial/` with `overview.json` (status: `created`) and `goal.md`.
-- [ ] Create fixture directory `tests/fixtures/epic-activated/` — hand-crafted with fixed timestamps. A project with an activated epic that has slice definitions. Includes architecture files, `slices/sequencing.md`, at least one slice with `goal.md`, and epic status `activated`.
-- [ ] Create fixture directory `tests/fixtures/slice-in-progress/` — hand-crafted with fixed timestamps. An activated epic with a slice at `plan-refined` status, ready for `slice:implement`.
-- [ ] Create `tests/integration/helpers.ts` with:
+- [x] Create fixture directory `tests/fixtures/fresh-init/` — a minimal `.project/` with `idea.md`, `overview.json`, and `activity-log.jsonl` as produced by `goodplan init`. Generate by running `goodplan init` in a temp dir and copying the result. Use a fixed timestamp (e.g., `2026-01-01T00:00:00.000Z`) in all generated files.
+- [x] Create fixture directory `tests/fixtures/epic-created/` — a project with an epic at `created` status. Hand-craft with fixed timestamps (`2026-01-01T00:00:00.000Z`). Build on `fresh-init` by adding `epics/__active__initial/` with `overview.json` (status: `created`) and `goal.md`.
+- [x] Create fixture directory `tests/fixtures/epic-activated/` — hand-crafted with fixed timestamps. A project with an activated epic that has slice definitions. Includes architecture files, `slices/sequencing.md`, at least one slice with `goal.md`, and epic status `activated`.
+- [x] Create fixture directory `tests/fixtures/slice-in-progress/` — hand-crafted with fixed timestamps. An activated epic with a slice at `plan-refined` status, ready for `slice:implement`.
+- [x] Create `tests/integration/helpers.ts` with:
   - `runCommand(binPath, args, options?)` — spawns binary in a given cwd, returns `{ stdout, stderr, exitCode, json? }`. Parses stdout as JSON when `--json` flag present. `options` includes optional `stdin?: string` (piped via `spawnSync`'s `input` option) and `env?: Record<string, string>`. `json` field typed as `unknown` (not `any`) to enforce narrowing under `noUncheckedIndexedAccess`.
   - `runChain(binPath, commands, options?)` — runs a sequence of commands, returns array of results. Stops on first non-zero exit unless `continueOnError` option set.
   - `withFixture(fixtureName, fn)` — copies fixture to a temp dir, sets `GOODPLAN_DIR=<tempDir>/.project/` in spawned process environment (rather than relying on cwd-based discovery, which risks finding the repo's own `.project/`), passes the temp path to `fn`, cleans up after. Uses `node:child_process` (`execFileSync`/`spawnSync`).
   - `buildBinary()` — asserts the compiled binary exists at the well-known path (set by `globalSetup`) and returns that path. Does not compile — compilation is handled by `globalSetup`.
-- [ ] Create `tests/global-setup.ts` — Vitest `globalSetup` module that compiles the binary once before all test files and writes it to a well-known path (e.g., `./goodplan` in project root). This runs in a separate module context from test files; `buildBinary()` in the helper bridges by reading the known path.
-- [ ] Create `vitest.config.ts` at project root with `testTimeout: 30_000` — single config file (simplest for a single-package project; unit tests are fast enough that 30s won't mask issues). Configure `globalSetup` pointing to `tests/global-setup.ts`.
-- [ ] Create `tests/integration/smoke.test.ts` — basic smoke test that builds the binary and runs `--version`, `--help`, and `init` to verify the test infrastructure works.
-- [ ] Verify: `bun test tests/integration/smoke.test.ts` passes.
+- [x] Create `tests/global-setup.ts` — Vitest `globalSetup` module that compiles the binary once before all test files and writes it to a well-known path (e.g., `./goodplan` in project root). This runs in a separate module context from test files; `buildBinary()` in the helper bridges by reading the known path.
+- [x] Create `vitest.config.ts` at project root with `testTimeout: 30_000` — single config file (simplest for a single-package project; unit tests are fast enough that 30s won't mask issues). Configure `globalSetup` pointing to `tests/global-setup.ts`.
+- [x] Create `tests/integration/smoke.test.ts` — basic smoke test that builds the binary and runs `--version`, `--help`, and `init` to verify the test infrastructure works.
+- [x] Verify: `bun test tests/integration/smoke.test.ts` passes.
 
 ## Phase 2: Integration Tests
 

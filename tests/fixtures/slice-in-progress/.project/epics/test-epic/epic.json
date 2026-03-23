@@ -1,0 +1,20 @@
+{
+	"activated": "2026-01-01T00:00:00.000Z",
+	"created": "2026-01-01T00:00:00.000Z",
+	"goal": "Test epic goal",
+	"name": "test-epic",
+	"refinement": null,
+	"sliceSequence": [
+		"test-slice"
+	],
+	"status": "activated",
+	"updated": "2026-01-01T00:00:00.000Z",
+	"verifications": [
+		{
+			"addedDuring": "slices-defined",
+			"description": "All tests pass",
+			"modifiedDuring": null,
+			"status": "pending"
+		}
+	]
+}
