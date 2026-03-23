@@ -10,7 +10,11 @@ import type { ContextBundle } from "../context/types.js";
 import type { Verification, VerificationResult } from "../../schemas/entities/epic.js";
 import type { DeferredItem } from "../../schemas/entities/slice.js";
 import type { ArchitectureDeltaInput } from "../../schemas/records/architecture-delta.js";
+import type { DecisionEntry } from "../../schemas/records/decision.js";
 import type { LearningInput } from "../../schemas/records/learning.js";
+
+/** Changes allowed on decision:update — mirrors Partial<Omit<DecisionEntry, "id" | "date">> */
+export type UpdateDecisionChanges = Partial<Omit<DecisionEntry, "id" | "date">>;
 
 export type { DeferredItem } from "../../schemas/entities/slice.js";
 
@@ -18,6 +22,7 @@ export type { DeferredItem } from "../../schemas/entities/slice.js";
 
 export type BeginPhase =
 	| "create"
+	| "create-decision"
 	| "explore"
 	| "define-architecture"
 	| "refine-architecture"
@@ -57,7 +62,8 @@ export type Target =
 	| { type: "epic"; name: string }
 	| { type: "slice"; name: string }
 	| { type: "quest"; name: string }
-	| { type: "decision"; id: string };
+	| { type: "decision"; id: string }
+	| { type: "rollup"; from: string; to: string };
 
 // ── Workflow options ─────────────────────────────────────────
 
@@ -75,6 +81,7 @@ export interface WorkflowOptions {
  */
 export interface BeginPayloadMap {
 	create: { name: string; goal?: string; epic?: string };
+	"create-decision": { id: string; domain: string; title: string; summary: string };
 	explore: Record<string, never>;
 	"define-architecture": Record<string, never>;
 	"refine-architecture": Record<string, never>;
@@ -87,8 +94,8 @@ export interface BeginPayloadMap {
 	abandon: { reason: string };
 	"add-verification": { verification: Verification };
 	"update-verification": { index: number; verification: Verification };
-	"update-decision": Record<string, never>;
-	rollup: Record<string, never>;
+	"update-decision": { changes: UpdateDecisionChanges };
+	rollup: { from: string; to: string };
 }
 
 // ── Result types ─────────────────────────────────────────────
@@ -98,6 +105,14 @@ export interface BeginResult {
 	phase: string;
 	previousStatus: string;
 	newStatus: string;
+}
+
+/** Specialized result for rollup operations — no meaningful entity status. */
+export interface RollupResult {
+	phase: "rollup";
+	from: string;
+	to: string;
+	rolledUp: number;
 }
 
 export interface CompleteResult {
@@ -172,6 +187,8 @@ export function resolveEntityName(target: Target): string {
 			return target.name;
 		case "decision":
 			return target.id;
+		case "rollup":
+			return `rollup:${target.from}->${target.to}`;
 	}
 }
 
@@ -188,5 +205,7 @@ export function resolveEntityJsonPath(target: Target): string {
 			return `quests/${target.name}/quest.json`;
 		case "decision":
 			return "decisions.jsonl";
+		case "rollup":
+			return "learnings.jsonl";
 	}
 }

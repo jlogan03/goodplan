@@ -198,7 +198,7 @@ goodplan submit-refine-slices --epic <name>
 }
 ```
 
-**`epic:create`** / **`quest:create`** / **`decision:create`** — entity creation via stdin:
+**`epic:create`** / **`quest:create`** — entity creation via stdin:
 
 ```json
 { "name": "my-epic", "goal": "Build the feature..." }
@@ -207,6 +207,8 @@ goodplan submit-refine-slices --epic <name>
 ```json
 { "name": "fix-logging", "goal": "Fix structured logging to include correlation IDs" }
 ```
+
+**`decision:create`** — decision creation via stdin (different shape from entity creation):
 
 ```json
 { "id": "2026-03-20-my-decision", "domain": "architecture", "title": "...", "summary": "..." }

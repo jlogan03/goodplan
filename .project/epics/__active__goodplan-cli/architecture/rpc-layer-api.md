@@ -24,6 +24,7 @@ function status(options: StatusOptions): StatusResult;
 // BEGIN_* event, a SubmitPhase always maps to a COMPLETE_* event.
 type BeginPhase =
   | 'create'
+  | 'create-decision'
   | 'explore'
   | 'define-architecture'
   | 'refine-architecture'
@@ -81,9 +82,9 @@ type Target =
 //   begin('abandon', {type:'quest'})      → ABANDON_QUEST
 //   begin('add-verification', {type:'epic'}) → ADD_VERIFICATION
 //   begin('update-verification', {type:'epic'}) → UPDATE_VERIFICATION
-//   begin('create', {type:'decision'})     → CREATE_DECISION
+//   begin('create-decision', {type:'decision'}) → CREATE_DECISION
 //   begin('update-decision', {type:'decision'}) → UPDATE_DECISION
-//   begin('rollup', ...)                  → ROLLUP_LEARNINGS
+//   begin('rollup', {type:'rollup'})      → ROLLUP_LEARNINGS
 // SubmitPhase mappings:
 //   submit('plan', {type:'slice'})        → COMPLETE_PLAN
 //   submit('plan', {type:'quest'})        → COMPLETE_QUEST_PLAN
@@ -102,7 +103,8 @@ type Target =
 
 | Command pattern | RPC function | Description |
 |---|---|---|
-| `epic:create`, `slice:create`, `quest:create`, `decision:create` | `begin('create', ...)` | Entity creation |
+| `epic:create`, `slice:create`, `quest:create` | `begin('create', ...)` | Entity creation |
+| `decision:create` | `begin('create-decision', {type:'decision', id})` | Decision creation |
 | `epic:explore`, `epic:define-architecture`, `epic:refine-architecture`, `epic:define-slices`, `epic:refine-slices`, `epic:activate`, `slice:plan`, `slice:refine-plan`, `slice:implement`, `quest:plan`, `quest:refine-plan`, `quest:implement` | `begin(phase, ...)` | Phase initiation — transitions entity into a new phase |
 | `epic:complete`, `slice:complete`, `quest:complete` | `complete(target, ...)` | Entity completion — requires verification input |
 | `epic:abandon`, `slice:abandon`, `quest:abandon` | `begin('abandon', ...)` | Entity abandonment |

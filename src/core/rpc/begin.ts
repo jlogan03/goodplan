@@ -13,9 +13,11 @@ import { commitState } from "../data/commit.js";
 import { loadState } from "../data/load.js";
 import { reduce } from "../state/reduce.js";
 import { isStateError } from "../state/types.js";
-import { getJson } from "../tree.js";
+import { getJson, getJsonl } from "../tree.js";
 import type { ProjectState } from "../tree.js";
-import type { BeginPayloadMap, BeginPhase, BeginResult, Target, WorkflowOptions } from "./types.js";
+import type { DecisionEntry } from "../../schemas/records/decision.js";
+import type { LearningEntry } from "../../schemas/records/learning.js";
+import type { BeginPayloadMap, BeginPhase, BeginResult, RollupResult, Target, WorkflowOptions } from "./types.js";
 import { resolveEntityJsonPath, resolveEntityName } from "./types.js";
 
 /**
@@ -28,7 +30,7 @@ export function begin<P extends BeginPhase>(
 	target: Target,
 	payload: BeginPayloadMap[P],
 	_options?: WorkflowOptions,
-): BeginResult {
+): P extends "rollup" ? RollupResult : BeginResult {
 	const oldState = loadState(projectDir);
 	const ts = new Date().toISOString();
 	const event = buildBeginEvent(phase, target, payload, ts);
@@ -41,7 +43,11 @@ export function begin<P extends BeginPhase>(
 
 	commitState(projectDir, oldState, result);
 
-	return buildBeginResult(phase, target, oldState, result);
+	if (phase === "rollup" && target.type === "rollup") {
+		return buildRollupResult(target, oldState, result) as P extends "rollup" ? RollupResult : BeginResult;
+	}
+
+	return buildBeginResult(phase, target, oldState, result) as P extends "rollup" ? RollupResult : BeginResult;
 }
 
 // ── Event building ───────────────────────────────────────────
@@ -96,9 +102,38 @@ function buildBeginEvent<P extends BeginPhase>(
 			return buildRefinePlanEvent(target, ts);
 		case "implement":
 			return buildImplementEvent(target, ts);
-		case "update-decision":
-		case "rollup":
-			throw new GoodplanError("INTERNAL_ERROR", `begin('${phase}') is not yet implemented`);
+		case "create-decision": {
+			const cdp = payload as BeginPayloadMap["create-decision"];
+			return {
+				type: "CREATE_DECISION",
+				id: cdp.id,
+				domain: cdp.domain,
+				title: cdp.title,
+				summary: cdp.summary,
+				ts,
+			};
+		}
+		case "update-decision": {
+			const udp = payload as BeginPayloadMap["update-decision"];
+			if (target.type !== "decision") {
+				throw new GoodplanError("VALIDATION_INVALID_INPUT", "update-decision requires decision target");
+			}
+			return {
+				type: "UPDATE_DECISION",
+				id: target.id,
+				changes: udp.changes,
+				ts,
+			};
+		}
+		case "rollup": {
+			const rp = payload as BeginPayloadMap["rollup"];
+			return {
+				type: "ROLLUP_LEARNINGS",
+				from: rp.from,
+				to: rp.to,
+				ts,
+			};
+		}
 		default: {
 			const _exhaustive: never = phase;
 			throw new GoodplanError("INTERNAL_ERROR", `Unknown begin phase: ${String(_exhaustive)}`);
@@ -163,7 +198,12 @@ function buildCreateEvent(
 		case "decision":
 			throw new GoodplanError(
 				"INTERNAL_ERROR",
-				`begin('create', {type:'${target.type}'}) is not yet implemented`,
+				"Use begin('create-decision', ...) for decision creation, not begin('create', {type:'decision'})",
+			);
+		case "rollup":
+			throw new GoodplanError(
+				"INTERNAL_ERROR",
+				"Rollup target cannot be used with begin('create', ...)",
 			);
 		default: {
 			const _exhaustive: never = target;
@@ -267,9 +307,36 @@ function buildBeginResult(
 		const newQuest = getJson<Quest>(newState, entityPath);
 		previousStatus = oldQuest?.status ?? "none";
 		newStatus = newQuest?.status ?? "unknown";
+	} else if (target.type === "decision") {
+		// Decision entries live in decisions.jsonl — find by id to extract status
+		const oldDecisions = getJsonl<DecisionEntry>(oldState, "decisions.jsonl") ?? [];
+		const newDecisions = getJsonl<DecisionEntry>(newState, "decisions.jsonl") ?? [];
+		const oldDecision = oldDecisions.find((d) => d.id === target.id);
+		const newDecision = newDecisions.find((d) => d.id === target.id);
+		previousStatus = oldDecision?.status ?? "none";
+		newStatus = newDecision?.status ?? "unknown";
 	}
 
 	return { entity, phase, previousStatus, newStatus };
+}
+
+function buildRollupResult(
+	target: Extract<Target, { type: "rollup" }>,
+	oldState: ProjectState,
+	newState: ProjectState,
+): RollupResult {
+	// Count how many learnings were removed from the source scope
+	const sourcePath = `${target.from}/learnings.jsonl`;
+	const oldLearnings = getJsonl<LearningEntry>(oldState, sourcePath) ?? [];
+	const newLearnings = getJsonl<LearningEntry>(newState, sourcePath) ?? [];
+	const rolledUp = oldLearnings.length - newLearnings.length;
+
+	return {
+		phase: "rollup",
+		from: target.from,
+		to: target.to,
+		rolledUp,
+	};
 }
 
 // ── Helpers ──────────────────────────────────────────────────

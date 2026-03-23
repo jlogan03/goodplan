@@ -1,4 +1,8 @@
 import { defineCommand } from "citty";
+import { decisionCreateCommand } from "./decision/create.js";
+import { decisionListCommand } from "./decision/list.js";
+import { decisionShowCommand } from "./decision/show.js";
+import { decisionUpdateCommand } from "./decision/update.js";
 import { epicAbandonCommand } from "./epic/abandon.js";
 import { epicActivateCommand } from "./epic/activate.js";
 import { epicAddVerificationCommand } from "./epic/add-verification.js";
@@ -13,6 +17,8 @@ import { epicRefineSlicesCommand } from "./epic/refine-slices.js";
 import { epicShowCommand } from "./epic/show.js";
 import { epicUpdateVerificationCommand } from "./epic/update-verification.js";
 import { globalArgs } from "./global-args.js";
+import { learningListCommand } from "./learning/list.js";
+import { learningRollupCommand } from "./learning/rollup.js";
 import { questAbandonCommand } from "./quest/abandon.js";
 import { questCompleteCommand } from "./quest/complete.js";
 import { questCreateCommand } from "./quest/create.js";
@@ -63,6 +69,10 @@ export const mainCommand = defineCommand({
 	subCommands: {
 		init: initCommand,
 		status: statusCommand,
+		"decision:create": decisionCreateCommand,
+		"decision:list": decisionListCommand,
+		"decision:show": decisionShowCommand,
+		"decision:update": decisionUpdateCommand,
 		"epic:create": epicCreateCommand,
 		"epic:list": epicListCommand,
 		"epic:show": epicShowCommand,
@@ -76,14 +86,8 @@ export const mainCommand = defineCommand({
 		"epic:abandon": epicAbandonCommand,
 		"epic:add-verification": epicAddVerificationCommand,
 		"epic:update-verification": epicUpdateVerificationCommand,
-		"slice:create": sliceCreateCommand,
-		"slice:list": sliceListCommand,
-		"slice:show": sliceShowCommand,
-		"slice:plan": slicePlanCommand,
-		"slice:refine-plan": sliceRefinePlanCommand,
-		"slice:implement": sliceImplementCommand,
-		"slice:complete": sliceCompleteCommand,
-		"slice:abandon": sliceAbandonCommand,
+		"learning:list": learningListCommand,
+		"learning:rollup": learningRollupCommand,
 		"quest:create": questCreateCommand,
 		"quest:list": questListCommand,
 		"quest:show": questShowCommand,
@@ -92,6 +96,14 @@ export const mainCommand = defineCommand({
 		"quest:implement": questImplementCommand,
 		"quest:complete": questCompleteCommand,
 		"quest:abandon": questAbandonCommand,
+		"slice:create": sliceCreateCommand,
+		"slice:list": sliceListCommand,
+		"slice:show": sliceShowCommand,
+		"slice:plan": slicePlanCommand,
+		"slice:refine-plan": sliceRefinePlanCommand,
+		"slice:implement": sliceImplementCommand,
+		"slice:complete": sliceCompleteCommand,
+		"slice:abandon": sliceAbandonCommand,
 		"start-plan": startPlanCommand,
 		"start-refinement": startRefinementCommand,
 		"start-implementation": startImplementationCommand,
