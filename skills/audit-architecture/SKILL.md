@@ -10,6 +10,7 @@ description: >
   'architecture audit', 'audit architecture', 'how does the code compare to the
   architecture', 'check architecture alignment', 'has the code drifted from the
   architecture', 'architecture gap analysis'.
+requires: goodplan >= 1.0.0
 ---
 
 # Audit Architecture
@@ -25,17 +26,31 @@ Both produce actionable output: side quest proposals with specific scope.
 
 **Sequencing with refine-architecture**: Run `/audit-architecture` first, then `/refine-architecture` on updated files. Auditing first prevents optimizing files about to be invalidated.
 
-## Step 1 — Load Context
+## Step 0 — Version Check
 
-**1a. Resolve architecture path**: Read `~/.claude/skills/_shared/references/epic-conventions.md` for epic directory structure. Detect the active epic:
+Read `~/.claude/skills/_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
+
+Verify CLI availability and compatibility:
 
 ```bash
-ls -d .project/epics/__active__*/ 2>/dev/null
+goodplan --version --json
 ```
 
-Resolve paths based on result:
-- **Active epic found**: `$ARCH_DIR` = `.project/epics/__active__<name>/architecture/`, `$FLOW_SCOPE` = `"epics/<name>"`
-- **No active epic**: `$ARCH_DIR` = `.project/architecture/`, `$FLOW_SCOPE` = `"project"`
+If the command fails (not found, non-zero exit), stop: "The `goodplan` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
+
+If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill requires goodplan >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
+
+## Step 1 — Load Context
+
+**1a. Resolve architecture path**: Read `~/.claude/skills/_shared/references/epic-conventions.md` for epic directory structure. Detect the active epic via CLI:
+
+```bash
+goodplan status --json
+```
+
+Check the `.activeEpic` field in the response. Resolve paths based on result:
+- **Active epic found** (`.activeEpic` is not null): `$ARCH_DIR` = `.project/epics/<activeEpic.name>/architecture/`, `$FLOW_SCOPE` = `"epics/<activeEpic.name>"`
+- **No active epic** (`.activeEpic` is null): `$ARCH_DIR` = `.project/architecture/`, `$FLOW_SCOPE` = `"project"`
 
 **1b. Scaffold detection**: When falling back to `.project/architecture/` (no active epic), check whether `_overview.md` contains the `<!-- scaffold -->` marker:
 
@@ -53,7 +68,13 @@ If the marker is present, warn the user: "Top-level architecture is a scaffold p
 
 4. **Load learnings and conventions**: Read `.project/learnings.md` and `.project/conventions.md` (if they exist).
 
-5. **Load recent activity-log**: Read the last 20 lines of `.project/activity-log.jsonl` for context on recent work.
+5. **Load recent activity-log**: Query recent activity filtered to the scope being audited:
+
+   ```bash
+   goodplan state --json --query '[.["activity-log.jsonl"][] | select(.scope | startswith("'"$FLOW_SCOPE"'"))] | .[-20:]'
+   ```
+
+   (Where `$FLOW_SCOPE` is the scope resolved in Step 1a, e.g., `"epics/my-epic"` or `"project"`.)
 
 6. **Expertise check (load)**: Read `## Expertise` section from `~/.claude/CLAUDE.md` to calibrate communication depth.
 
@@ -266,25 +287,14 @@ If the user says "stop" or "that's enough" at any point:
 
 On resume (detected in Step 1): read the partial report and continue from where it left off.
 
-## Step 7 — State Write-Back
-
-1. Read `~/.claude/skills/_shared/references/state-and-activity-formats.md` for formats.
-2. Generate timestamp: `date -u +%Y-%m-%dT%H:%M:%SZ`
-3. Append to `.project/activity-log.jsonl`:
-   ```bash
-   echo '{"ts":"<timestamp>","phase":"audit-architecture","scope":"$FLOW_SCOPE","status":"complete","summary":"<one-sentence summary of findings and actions>"}' >> .project/activity-log.jsonl
-   ```
-   Use the `$FLOW_SCOPE` value resolved in Step 1 (`"epics/<name>"` when operating on epic architecture, `"project"` otherwise).
-4. Update `.project/state.md`:
-   - Current Phase: `audit-architecture complete`
-   - Next Step: recommend `/refine-architecture` if architecture files were updated, otherwise next logical step
-
-### Expertise Check (write-back)
+## Step 7 — Expertise Check
 
 Reflect on the conversation: did it reveal new information about the user's expertise?
 
 - **If yes**: Read `~/.claude/skills/_shared/references/expertise-tracking.md` for the recording protocol. Update `## Expertise` section in `~/.claude/CLAUDE.md` and write/update relevant `expertise_<domain>.md` memory file.
 - **If no**: Skip silently.
+
+> **Note:** Audit is a read-only analysis skill — it does not trigger CLI state mutations. The audit report files in `.project/audits/` serve as the provenance record.
 
 ## When to Ask the User
 
@@ -298,8 +308,8 @@ Do NOT ask for permission to continue between analysis steps.
 
 ## References
 
+- **CLI interaction**: `~/.claude/skills/_shared/references/cli-interaction.md` — CLI conventions, error handling, invocation patterns
 - **Guidance**: `references/guidance.md` — exploration strategy, severity levels, side quest format
 - **Sub-agent prompts**: `references/sub-agent-prompts.md` — self-contained exploration agent prompt
 - **Decisions format**: `~/.claude/skills/_shared/references/decisions-format.md`
-- **State formats**: `~/.claude/skills/_shared/references/state-and-activity-formats.md`
 - **Expertise tracking**: `~/.claude/skills/_shared/references/expertise-tracking.md`
