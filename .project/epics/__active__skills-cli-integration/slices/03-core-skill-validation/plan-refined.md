@@ -37,8 +37,8 @@ Rewrite `create-epic` SKILL.md to use CLI commands, eliminating all direct `.pro
 
 ### Tasks
 
-- [ ] **Read current `skills/create-epic/SKILL.md`** and `skills/create-epic/references/templates.md` in full to understand every step and reference
-- [ ] **Rewrite `skills/create-epic/SKILL.md`** with the simplified flow:
+- [x] **Read current `skills/create-epic/SKILL.md`** and `skills/create-epic/references/templates.md` in full to understand every step and reference
+- [x] **Rewrite `skills/create-epic/SKILL.md`** with the simplified flow:
   - Add `requires: goodplan >= 1.0.0` to frontmatter
   - **Step 1 — Version Check**: `goodplan --version --json`, verify version satisfies `requires` constraint. If CLI not found or version mismatch, show error per convention doc and stop.
   - **Step 2 — Detect Mode**: `goodplan status --json`. If it succeeds → Mode B (existing project, check `.activeEpic`). If it fails with `DATA_NO_PROJECT` → Mode A (fresh project). No `ls -la .project/`, no `state.md` reads.
@@ -47,8 +47,8 @@ Rewrite `create-epic` SKILL.md to use CLI commands, eliminating all direct `.pro
   - Eliminate: all `state.md` reads/writes, all `activity-log.jsonl` appends, all `mkdir -p .project/...`, all `.gitignore` manipulation, all `epic-conventions.md` state machine references, all `state-and-activity-formats.md` references
   - Keep: `CLAUDE.md` update logic (LLM-owned), `idea.md` writing (LLM-owned), `goal.md` writing (LLM-owned), interactive dialogue quality, expertise check
   - Reference `cli-interaction-conventions.md` for error handling patterns (exit codes, structured error JSON)
-- [ ] **Update `skills/create-epic/references/templates.md`** if needed — check if templates reference any eliminated patterns
-- [ ] **Verify line count** — target ≤200 lines for SKILL.md
+- [x] **Update `skills/create-epic/references/templates.md`** if needed — check if templates reference any eliminated patterns
+- [x] **Verify line count** — target ≤200 lines for SKILL.md
 
 ### Verification
 
