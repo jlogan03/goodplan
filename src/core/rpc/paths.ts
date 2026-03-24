@@ -144,6 +144,7 @@ function resolveEntityDir(projectDir: string, target: Target): string | undefine
 			return nodePath.join(projectDir, "slices", target.name);
 		case "quest":
 			return nodePath.join(projectDir, "quests", target.name);
+		// These target types have no entity directory — return undefined to yield empty paths.
 		case "project":
 		case "decision":
 		case "rollup":

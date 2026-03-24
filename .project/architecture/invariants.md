@@ -5,6 +5,8 @@
 - **Rationale:** The state machine is the single enforcer of workflow rules, transition validity, and cross-entity consistency. Bypassing it (writing JSON directly) risks invalid states that the CLI can't recover from.
 - **Scope:** System-wide — applies to all code paths that modify JSON entity files
 - **Verification:** Read-only commands (`list`, `show`) go directly to the Data Layer. All mutation commands route through the RPC Layer which calls `reduce()`. Fitness function candidate: no direct filesystem writes outside of `commitState()` for entity JSON files.
+- **Known Exceptions:**
+  - `project.json.version` is stamped post-reduce in the RPC layer (`src/core/rpc/version-stamp.ts`). Version is infrastructure metadata (tracking which CLI version last wrote the data), not workflow state. The state machine need not validate or be aware of it.
 
 ## INV-002: JSON files always use deterministic key ordering
 

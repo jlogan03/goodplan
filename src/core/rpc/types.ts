@@ -106,6 +106,9 @@ export interface BeginPayloadMap {
  * Always populated by the RPC layer; typed optional for backward compatibility
  * with consumers that don't expect it.
  */
+// Shallow type is intentional per spec — primary consumers are LLM skills parsing JSON dynamically.
+// TODO: Consider discriminated union per-phase PathReferences (e.g., PlanPaths, ExplorePaths)
+// when consumers need compile-time key guarantees. Per-phase keys are documented in JSDoc on resolvePathReferences.
 export type PathReferences = Record<string, string>;
 
 // ── Result types ─────────────────────────────────────────────

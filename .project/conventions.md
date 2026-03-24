@@ -58,7 +58,7 @@ src/
 │   │                       # epic-lifecycle, epic-verify, slice-create, slice-plan, slice-submit,
 │   │                       # slice-implement, slice-complete, slice-abandon, quest-create,
 │   │                       # quest-plan, quest-implement, quest-complete, quest-abandon)
-│   ├── data/               # assemble/commit/load state tree, tree types, schema registry, files (countFiles helper)
+│   ├── data/               # assemble/commit/load state tree, tree types, schema registry
 │   ├── rpc/                # workflow orchestration: init, begin, complete, submit, status, types
 │   ├── context/            # context bundling: startContext, priorities, budget, collect, decisions, learnings
 │   └── workflow/

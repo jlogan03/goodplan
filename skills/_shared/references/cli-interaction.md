@@ -248,12 +248,6 @@ Skills that only query state: `/project-status`, `/audit-architecture` (read pha
 
 Use `status --json`, `show --json`, `list --json`, `state --json` commands. These bypass the RPC layer and go directly to the Data Layer — they're fast and side-effect-free.
 
-### Coming in Future Slices
-
-The following commands are planned but not yet fully available for all patterns:
-
-- `show --json` with `artifacts` field — enriched artifact existence checks
-
 ## 6. State Orientation
 
 When a skill starts and needs to understand the current project state:
