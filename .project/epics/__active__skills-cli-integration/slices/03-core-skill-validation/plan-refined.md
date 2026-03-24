@@ -1,5 +1,8 @@
 # Plan: Core Skill Validation — create-epic & complete
 
+**Status: COMPLETE**
+**Completed: 2026-03-24**
+
 ## Overview
 
 Migrate the two broadest-interaction workflow skills (`create-epic` and `complete`) to use the `goodplan` CLI for all structured state operations. `create-epic` is a clean simplification (280→~160 lines) — `init` + `epic:create` replace manual directory creation, `state.md`, and `activity-log.jsonl` writes. `complete` is more complex (628 lines) — uses filesystem-backed accumulation to collect learnings, architecture deltas, and decisions during its interactive flow, then constructs a single `slice:complete` payload at the end. Phase 3 validates both skills against real workflows, documents migration patterns for slices 04-05, and installs the updated skills.
