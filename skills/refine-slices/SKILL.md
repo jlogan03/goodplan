@@ -13,7 +13,7 @@ requires: goodplan >= 1.0.0
 
 # Refine Slices
 
-Iteratively improve slice goal definitions and sequencing by spawning specialized review sub-agents in parallel, synthesizing their feedback, and repeating until slice quality is high. Uses the shared iteration loop (`~/.claude/skills/_shared/references/iteration-loop.md`).
+Iteratively improve slice goal definitions and sequencing by spawning specialized review sub-agents in parallel, synthesizing their feedback, and repeating until slice quality is high. Uses the shared iteration loop (`../_shared/references/iteration-loop.md`).
 
 ## Loop Parameters
 
@@ -23,14 +23,14 @@ Iteratively improve slice goal definitions and sequencing by spawning specialize
 | **Exit criteria** | All reviewers >= 9 |
 | **Early exit** | All reviewers >= 8 after minimum 3 iterations |
 | **Max iterations** | 4 (expect 2-3 typically) |
-| **Sub-agent prompts** | Bootstrap and synthesis: `~/.claude/skills/refine-plan/references/sub-agent-prompts.md`. Editor only: `references/sub-agent-prompts.md` (local) |
+| **Sub-agent prompts** | Bootstrap and synthesis: `../refine-plan/references/sub-agent-prompts.md`. Editor only: `references/sub-agent-prompts.md` (local) |
 | **Working directory** | In-place working copies alongside originals (e.g., `$SLICES_ROOT/01-user-auth/goal-refining.md`) plus `sequencing-refining.md` alongside `sequencing.md`. A manifest lists all working copy full paths. `$SLICES_ROOT` is `.project/slices/` (top-level) or `.project/epics/<name>/slices/` (epic-scoped, where `<name>` comes from `goodplan status --json` → `.activeEpic.name`). |
 | **Run directory** | `$SLICES_ROOT/slices-refining/` (holding `round-N/reviews/`, `merged.md`) |
 | **review_context** | `"slice goal definitions and sequencing"` |
 
 ## Scope Resolution
 
-**Epic detection**: Before beginning, load `~/.claude/skills/_shared/references/epic-conventions.md` for epic directory structure and conventions. Query `goodplan status --json` and check `.activeEpic`. If an active epic exists, set `$SLICES_ROOT` to `.project/epics/<activeEpic.name>/slices/`. If no active epic, use `.project/slices/`. All paths below use `$SLICES_ROOT` as the base. When epic-scoped, also load the epic's `goal.md` and `architecture/` as additional context for refinement.
+**Epic detection**: Before beginning, load `../_shared/references/epic-conventions.md` for epic directory structure and conventions. Query `goodplan status --json` and check `.activeEpic`. If an active epic exists, set `$SLICES_ROOT` to `.project/epics/<activeEpic.name>/slices/`. If no active epic, use `.project/slices/`. All paths below use `$SLICES_ROOT` as the base. When epic-scoped, also load the epic's `goal.md` and `architecture/` as additional context for refinement.
 
 ## Scope Exclusion
 
@@ -38,7 +38,7 @@ Iteratively improve slice goal definitions and sequencing by spawning specialize
 
 ## Decisions Context
 
-Read `~/.claude/skills/_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load `.project/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions provide context for slice review.
+Read `../_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load `.project/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions provide context for slice review.
 
 ## Reviewer Roles
 
@@ -58,7 +58,7 @@ For Software Architecture (shared prompt from `../../_shared/references/reviewer
 
 ### Step 0: Load Context
 
-Read `~/.claude/skills/_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
+Read `../_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
 
 Verify CLI availability and compatibility:
 
@@ -98,7 +98,7 @@ Read all relevant project state:
 
 ### Step 3: Refinement Loop
 
-Enter the shared iteration loop (read `~/.claude/skills/_shared/references/iteration-loop.md` for the full mechanics). Skill-specific details:
+Enter the shared iteration loop (read `../_shared/references/iteration-loop.md` for the full mechanics). Skill-specific details:
 
 - **`{plan_file_paths}`**: Newline-separated list of all working copy paths (from manifest)
 - **Plan type**: `directory-based` — `sequencing-refining.md` as "overview", `goal-refining.md` files in slice order as "phase files"
@@ -148,11 +148,11 @@ Do NOT ask for permission to continue between iterations.
 
 ## References
 
-- **Shared iteration loop**: `~/.claude/skills/_shared/references/iteration-loop.md`
+- **Shared iteration loop**: `../_shared/references/iteration-loop.md`
 - **Reviewer registry**: `references/reviewer-registry.md`
 - **Slice reviewer prompts**: `references/reviewers-slices.md`
-- **Software Architecture prompt**: `~/.claude/skills/_shared/references/reviewers-cross-cutting.md` (section `## Software Architecture Reviewer`)
-- **Sub-agent prompts (bootstrap + synthesis)**: `~/.claude/skills/refine-plan/references/sub-agent-prompts.md`
+- **Software Architecture prompt**: `../_shared/references/reviewers-cross-cutting.md` (section `## Software Architecture Reviewer`)
+- **Sub-agent prompts (bootstrap + synthesis)**: `../refine-plan/references/sub-agent-prompts.md`
 - **Sub-agent prompts (editor)**: `references/sub-agent-prompts.md`
-- **Shared preamble**: `~/.claude/skills/refine-plan/references/shared-preamble.md`
-- **Team defaults**: `~/.claude/skills/_shared/references/team-defaults.md` (optional)
+- **Shared preamble**: `../refine-plan/references/shared-preamble.md`
+- **Team defaults**: `../_shared/references/team-defaults.md` (optional)

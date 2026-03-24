@@ -17,7 +17,7 @@ Iterative research/brainstorm/prototype loop. Facilitates open-ended investigati
 
 ## Step 0 — Version Check and Context Loading
 
-Read `~/.claude/skills/_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
+Read `../_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
 
 Verify CLI availability and compatibility:
 
@@ -29,13 +29,13 @@ If the command fails (not found, non-zero exit), stop: "The `goodplan` CLI is re
 
 If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill requires goodplan >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
 
-Also load `~/.claude/skills/_shared/references/epic-conventions.md` for epic directory structure.
+Also load `../_shared/references/epic-conventions.md` for epic directory structure.
 
 ## Step 1 — Load Explore Logic and Decisions Format
 
 Use the Read tool to load `references/explore-logic.md` (relative to this skill's directory). Use the scope path mapping, output templates, and mode behaviors from this file throughout all subsequent steps.
 
-Also load `~/.claude/skills/_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load `.project/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions provide context for exploration.
+Also load `../_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load `.project/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions provide context for exploration.
 
 ## Step 2 — Determine Scope
 
@@ -146,7 +146,7 @@ On subsequent iterations, note previously used modes in the question text (e.g.,
 
 If the user somehow selects Prototype at slice/quest scope, offer: "Want to switch to project or epic scope for this prototype, or pick Research or Brainstorm instead?"
 
-Follow calibration depth guidance in `~/.claude/skills/_shared/references/expertise-tracking.md`.
+Follow calibration depth guidance in `../_shared/references/expertise-tracking.md`.
 
 ### 4b. Run the selected mode
 
@@ -203,7 +203,7 @@ Use the Write tool to create `explore-complete.md` at the scope path after appro
 
 Reflect on the conversation: did it reveal new information about the user's expertise? (CLAUDE.md `## Expertise` section is already in context.)
 
-- **If yes**: Read `~/.claude/skills/_shared/references/expertise-tracking.md` for the recording protocol. Update `## Expertise` section in `~/.claude/CLAUDE.md` and write/update relevant `expertise_<domain>.md` memory file.
+- **If yes**: Read `../_shared/references/expertise-tracking.md` for the recording protocol. Update `## Expertise` section in `~/.claude/CLAUDE.md` and write/update relevant `expertise_<domain>.md` memory file.
 - **If no**: Skip silently — no Read, no output, no AskUserQuestion.
 
 ## Step 6 — Complete Exploration

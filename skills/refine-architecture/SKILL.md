@@ -25,7 +25,7 @@ No arguments — resolves architecture path automatically based on active epic.
 
 ## Decisions Context
 
-Read `~/.claude/skills/_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load `.project/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions provide context for architecture review — reviewers check that the architecture respects existing decisions.
+Read `../_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load `.project/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions provide context for architecture review — reviewers check that the architecture respects existing decisions.
 
 Note: sub-agents load decisions themselves via codebase exploration (`.project/decisions/` is a project directory accessible to all agents), so decisions do not need to be passed in bootstrap prompts.
 
@@ -42,7 +42,7 @@ Conditional multi-reviewer approach: Software Architecture and Holistic always r
 
 ## Loop Parameters
 
-These fill in the skill-specific slots defined by `~/.claude/skills/_shared/references/iteration-loop.md`:
+These fill in the skill-specific slots defined by `../_shared/references/iteration-loop.md`:
 
 | Parameter | Value |
 |---|---|
@@ -64,7 +64,7 @@ These fill in the skill-specific slots defined by `~/.claude/skills/_shared/refe
 
 **0a. Version check and path resolution**:
 
-Read `~/.claude/skills/_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
+Read `../_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
 
 Verify CLI availability and compatibility:
 
@@ -74,7 +74,7 @@ goodplan --version --json
 
 If the command fails, stop: "The `goodplan` CLI is required but not found." If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop with a version mismatch message.
 
-Also load `~/.claude/skills/_shared/references/epic-conventions.md` for epic directory structure.
+Also load `../_shared/references/epic-conventions.md` for epic directory structure.
 
 **Resolve architecture path via CLI**:
 
@@ -101,9 +101,9 @@ All subsequent references to architecture paths, run directories, and backup dir
 
 2. **Load decisions**: Load `.project/decisions/` following the Loading Protocol above.
 
-3. **Load maturity conventions**: Read `~/.claude/skills/_shared/references/maturity-conventions.md` for maturity level definitions and promotion criteria. The maturity table itself is already in `_overview.md` which is loaded as part of the architecture files in sub-step 1.
+3. **Load maturity conventions**: Read `../_shared/references/maturity-conventions.md` for maturity level definitions and promotion criteria. The maturity table itself is already in `_overview.md` which is loaded as part of the architecture files in sub-step 1.
 
-4. **Prerequisite check**: Verify that `~/.claude/skills/_shared/references/reviewers-cross-cutting.md` contains criteria 8–11 (deep module criteria) in the Software Architecture Reviewer section. Check for these headings:
+4. **Prerequisite check**: Verify that `../_shared/references/reviewers-cross-cutting.md` contains criteria 8–11 (deep module criteria) in the Software Architecture Reviewer section. Check for these headings:
    - `8. **Module depth**`
    - `9. **Caller friction**`
    - `10. **Test boundary alignment**`
@@ -134,7 +134,7 @@ All subsequent references to architecture paths, run directories, and backup dir
    mkdir -p "$SCOPE_ROOT/architecture-refining/"
    ```
 
-7. **Read shared iteration loop reference**: Read `~/.claude/skills/_shared/references/iteration-loop.md` for the orchestration pattern. This skill's Loop Parameters (above) fill in the skill-specific slots.
+7. **Read shared iteration loop reference**: Read `../_shared/references/iteration-loop.md` for the orchestration pattern. This skill's Loop Parameters (above) fill in the skill-specific slots.
 
 ### Step 1: Verify Goal
 
@@ -145,7 +145,7 @@ All subsequent references to architecture paths, run directories, and backup dir
 
 ### Step 2: Refinement Loop
 
-Read `~/.claude/skills/_shared/references/iteration-loop.md` for the shared orchestration structure. This step fills in the architecture-specific parameters.
+Read `../_shared/references/iteration-loop.md` for the shared orchestration structure. This step fills in the architecture-specific parameters.
 
 Enter the review loop (max 8 iterations):
 
@@ -239,7 +239,7 @@ After the review loop exits, check for goal drift:
 
 Reflect on the conversation: did it reveal new information about the user's expertise?
 
-- **If yes**: Read `~/.claude/skills/_shared/references/expertise-tracking.md` for the recording protocol. Update `## Expertise` section in `~/.claude/CLAUDE.md` and write/update relevant `expertise_<domain>.md` memory file.
+- **If yes**: Read `../_shared/references/expertise-tracking.md` for the recording protocol. Update `## Expertise` section in `~/.claude/CLAUDE.md` and write/update relevant `expertise_<domain>.md` memory file.
 - **If no**: Skip silently.
 
 ## Graceful Stop
@@ -327,12 +327,12 @@ Display at the end of Step 4.
 
 ## References
 
-- **CLI interaction**: `~/.claude/skills/_shared/references/cli-interaction.md` — CLI conventions, error handling, invocation patterns
-- **Shared iteration loop**: `~/.claude/skills/_shared/references/iteration-loop.md` — orchestration pattern shared with refine-plan
+- **CLI interaction**: `../_shared/references/cli-interaction.md` — CLI conventions, error handling, invocation patterns
+- **Shared iteration loop**: `../_shared/references/iteration-loop.md` — orchestration pattern shared with refine-plan
 - **Reviewer registry**: `references/reviewer-registry.md` — reviewer domains and prompt file locations
 - **Sub-agent prompts**: `references/sub-agent-prompts.md` — reviewer weighting, editor prompt, editor guardrails
 - **Guidance**: `references/guidance.md` — architecture-specific evaluation priorities
-- **Team defaults**: `~/.claude/skills/_shared/references/team-defaults.md` (optional)
-- **Cross-cutting reviewers**: `~/.claude/skills/_shared/references/reviewers-cross-cutting.md` — Software Architecture, UX & IA, etc.
-- **Decisions format**: `~/.claude/skills/_shared/references/decisions-format.md`
-- **Expertise tracking**: `~/.claude/skills/_shared/references/expertise-tracking.md`
+- **Team defaults**: `../_shared/references/team-defaults.md` (optional)
+- **Cross-cutting reviewers**: `../_shared/references/reviewers-cross-cutting.md` — Software Architecture, UX & IA, etc.
+- **Decisions format**: `../_shared/references/decisions-format.md`
+- **Expertise tracking**: `../_shared/references/expertise-tracking.md`

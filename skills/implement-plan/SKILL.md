@@ -38,7 +38,7 @@ implement-plan (orchestrator)
 
 ## Decisions Context
 
-Read `~/.claude/skills/_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load `.project/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions provide context for implementation — the implementing agent should respect existing decisions.
+Read `../_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load `.project/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions provide context for implementation — the implementing agent should respect existing decisions.
 
 Note: sub-agents load decisions themselves via codebase exploration (`.project/decisions/` is a project directory accessible to all agents), so decisions do not need to be passed in bootstrap prompts.
 
@@ -50,7 +50,7 @@ Read `references/reviewer-registry.md` for the list of domain specialist reviewe
 
 ### Step 0: Version Check and Context Loading
 
-Read `~/.claude/skills/_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
+Read `../_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
 
 Verify CLI availability and compatibility:
 
@@ -81,7 +81,7 @@ Also load `.project/conventions.md` if it exists — project conventions inform 
 
 ### Step 2: Pre-Implementation Research
 
-Read and follow `~/.claude/skills/_shared/references/dependency-research.md` for what to research and how to structure the output. If the plan references no external libraries, frameworks, tools, or APIs, skip to Step 2b.
+Read and follow `../_shared/references/dependency-research.md` for what to research and how to structure the output. If the plan references no external libraries, frameworks, tools, or APIs, skip to Step 2b.
 
 **Execution**: Spawn research agents in parallel — one per library/tool (`model: "opus"`). Each agent uses Context7 MCP tools first, falls back to WebSearch. When sub-agents are unavailable, perform research inline.
 
@@ -89,7 +89,7 @@ Re-scan before each phase — phases may reference different libraries. Only fet
 
 ### Step 2b: Codebase Context Discovery
 
-Read and follow `~/.claude/skills/_shared/references/codebase-context-discovery.md`. Delegate to a single sub-agent (`model: "opus"`) when available; otherwise perform inline.
+Read and follow `../_shared/references/codebase-context-discovery.md`. Delegate to a single sub-agent (`model: "opus"`) when available; otherwise perform inline.
 
 ### Step 2.5: Ensure Clean Git State (MANDATORY)
 
@@ -438,12 +438,12 @@ All phases completed RED-GREEN verification cycle. Phases requiring extra iterat
 
 ## References
 
-- **Team defaults**: `~/.claude/skills/_shared/references/team-defaults.md` (optional) — Team-specific tool and process preferences. If this file exists, read it and fill in the `{team_defaults}` placeholder in every reviewer's shared preamble. If absent, set `{team_defaults}` to empty. The file uses a 3-tier enforcement model: enforce conventions the codebase already follows, suggest defaults when no convention exists, defer when the codebase uses a different approach.
+- **Team defaults**: `../_shared/references/team-defaults.md` (optional) — Team-specific tool and process preferences. If this file exists, read it and fill in the `{team_defaults}` placeholder in every reviewer's shared preamble. If absent, set `{team_defaults}` to empty. The file uses a 3-tier enforcement model: enforce conventions the codebase already follows, suggest defaults when no convention exists, defer when the codebase uses a different approach.
 - **Shared preamble**: `references/shared-preamble.md` — read by each reviewer sub-agent directly via bootstrap
 - **Reviewer registry**: `references/reviewer-registry.md` — reviewer domains and prompt file locations
 - **Sub-agent prompt templates**: `references/sub-agent-prompts.md` — generalist implementation and review agents
-- **Dependency research**: `~/.claude/skills/_shared/references/dependency-research.md` — research targets, version detection, output format, and reviewer mapping
-- **Codebase context discovery**: `~/.claude/skills/_shared/references/codebase-context-discovery.md` — in-repo documentation, freshness assessment, PR history, and git activity analysis
+- **Dependency research**: `../_shared/references/dependency-research.md` — research targets, version detection, output format, and reviewer mapping
+- **Codebase context discovery**: `../_shared/references/codebase-context-discovery.md` — in-repo documentation, freshness assessment, PR history, and git activity analysis
 - **Domain reviewer prompts** (read only the files for spawned reviewers):
   - `references/reviewers-language.md` — Python, Rust, C++, TypeScript and JavaScript
   - `references/reviewers-scientific.md` — Algorithm/Numerical/Validation, Performance/Parallelism, ML, Data I/O

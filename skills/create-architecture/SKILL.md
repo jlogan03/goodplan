@@ -19,7 +19,7 @@ When an active epic exists, architecture output is scoped to the epic (see Step 
 
 ## Step 0 — Version Check and Architecture Path Resolution
 
-Read `~/.claude/skills/_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
+Read `../_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
 
 Verify CLI availability and compatibility:
 
@@ -29,7 +29,7 @@ goodplan --version --json
 
 If the command fails, stop: "The `goodplan` CLI is required but not found." If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop with a version mismatch message.
 
-Also load `~/.claude/skills/_shared/references/epic-conventions.md` for epic directory structure.
+Also load `../_shared/references/epic-conventions.md` for epic directory structure.
 
 ### Resolve architecture path
 
@@ -92,7 +92,7 @@ Use the Read tool to load these files (paths relative to this skill's directory)
 - `references/architecture-logic.md` — file applicability table
 - `references/architecture-logic-templates.md` — file templates for conventions.md and all architecture files
 - `references/guidance.md` — CLAUDE.md Project Context format and conversation guidance
-- `~/.claude/skills/_shared/references/decisions-format.md` — decisions format and Loading Protocol
+- `../_shared/references/decisions-format.md` — decisions format and Loading Protocol
 
 On-demand references (loaded at their respective steps, not here):
 - `references/design-tree.md` — loaded at Step 5 (broad pass) and Step 7 (deep pass)
@@ -132,7 +132,7 @@ Handle four cases based on what Step 2 found:
 - If "Continue": batch the revisit prompt into one question using AskUserQuestion: "These files exist: [list]. Want to revisit any? (List them, or say 'none' to skip to gaps.)"
 - If "Start fresh": treat all areas as incomplete and proceed to Step 4.
 
-Follow calibration depth guidance in `~/.claude/skills/_shared/references/expertise-tracking.md`.
+Follow calibration depth guidance in `../_shared/references/expertise-tracking.md`.
 
 ## Step 4 — Conventions Phase
 
@@ -252,7 +252,7 @@ Handle based on current progress:
 
 After all architecture files are written (Steps 8b-8d), populate the `## Subsystem Maturity` section in `_overview.md`.
 
-1. Read `~/.claude/skills/_shared/references/maturity-conventions.md` for the maturity table format and column definitions.
+1. Read `../_shared/references/maturity-conventions.md` for the maturity table format and column definitions.
 2. For each subsystem defined in the architecture (from `_overview.md`'s Subsystems section and any `<subsystem>-api.md` files written), create a row. If a Subsystem Maturity table already has content (from a previous run), merge: add rows for new subsystems, update existing rows if the dependency graph changed, and leave unchanged rows intact.
    - **Maturity:** Experimental (all subsystems start here during initial architecture definition)
    - **Dependents:** derive from the architecture's dependency graph (each subsystem's Dependencies section). Use "—" if no other subsystems depend on it.
@@ -267,7 +267,7 @@ After all architecture files are written (Steps 8b-8d), populate the `## Subsyst
 
 After the maturity table, interactively define system-wide invariants.
 
-1. Read `~/.claude/skills/_shared/references/maturity-conventions.md` for the invariants format and examples.
+1. Read `../_shared/references/maturity-conventions.md` for the invariants format and examples.
 2. Ask the user using AskUserQuestion: "What constraints must hold across all future work? Think about error handling, data integrity, security, performance. Or say 'none yet' and I'll create a stub."
 3. **If the user provides invariants:** Draft `architecture/invariants.md` with each invariant in the format from `maturity-conventions.md` (Statement as heading, Rationale, Scope, Verification fields). Present the draft and use AskUserQuestion for approval. Iterate until the user approves. Write the file.
 4. **If the user has nothing yet:** Create a stub `architecture/invariants.md` with the format header, an examples section showing the format, and a note: "Add invariants as the project matures. Good candidates: error handling rules, data integrity constraints, security requirements, performance guarantees." Write the stub file.
@@ -278,7 +278,7 @@ After the maturity table, interactively define system-wide invariants.
 
 For each subsystem, identify architectural properties that should eventually be tested.
 
-1. Read `~/.claude/skills/_shared/references/maturity-conventions.md` for the fitness function candidate format.
+1. Read `../_shared/references/maturity-conventions.md` for the fitness function candidate format.
 2. For each subsystem with an `<subsystem>-api.md` file, identify candidate fitness functions — architectural properties that should be tested when the subsystem matures. Consider: boundary enforcement, contract compliance, performance characteristics, data integrity rules.
 3. Add candidate entries to the `## Fitness Functions` section of each relevant `<subsystem>-api.md` file using the format from `maturity-conventions.md`:
    ```markdown
@@ -318,7 +318,7 @@ Using the Project Context section format from `references/guidance.md` (the HTML
 
 Reflect on the conversation: did it reveal new information about the user's expertise? (CLAUDE.md `## Expertise` section is already in context.)
 
-- **If yes**: Read `~/.claude/skills/_shared/references/expertise-tracking.md` for the recording protocol. Update `## Expertise` section in `~/.claude/CLAUDE.md` and write/update relevant `expertise_<domain>.md` memory file.
+- **If yes**: Read `../_shared/references/expertise-tracking.md` for the recording protocol. Update `## Expertise` section in `~/.claude/CLAUDE.md` and write/update relevant `expertise_<domain>.md` memory file.
 - **If no**: Skip silently — no Read, no output, no AskUserQuestion.
 
 ## Step 10 — Complete Architecture Phase

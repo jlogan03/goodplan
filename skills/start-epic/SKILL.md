@@ -16,8 +16,8 @@ Reviews an epic's architecture proposal, gets user confirmation, and activates t
 
 Use the Read tool to load:
 
-- `~/.claude/skills/_shared/references/epic-conventions.md` — epic directory structure, `__active__` prefix convention, state machine
-- `~/.claude/skills/_shared/references/state-and-activity-formats.md` — state.md and activity-log.jsonl formats
+- `../_shared/references/epic-conventions.md` — epic directory structure, `__active__` prefix convention, state machine
+- `../_shared/references/state-and-activity-formats.md` — state.md and activity-log.jsonl formats
 
 ## Step 1 — Resolve Epic
 

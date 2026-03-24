@@ -92,7 +92,7 @@ For each invariant, report one of:
 
 ## Maturity Promotion and Demotion Criteria
 
-> **Authoritative source**: `~/.claude/skills/_shared/references/maturity-conventions.md` defines the general maturity levels, promotion evidence, and demotion triggers. The audit-specific criteria below provide detailed evidence thresholds for each level transition.
+> **Authoritative source**: `../../_shared/references/maturity-conventions.md` defines the general maturity levels, promotion evidence, and demotion triggers. The audit-specific criteria below provide detailed evidence thresholds for each level transition.
 
 ### Sufficient Evidence for Promotion
 

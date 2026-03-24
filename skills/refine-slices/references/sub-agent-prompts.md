@@ -1,6 +1,6 @@
 # Sub-Agent Prompt Templates
 
-This file contains only the editor prompt for refine-slices. For bootstrap and synthesis prompts, use `~/.claude/skills/refine-plan/references/sub-agent-prompts.md`.
+This file contains only the editor prompt for refine-slices. For bootstrap and synthesis prompts, use `../../refine-plan/references/sub-agent-prompts.md`.
 
 ## Slice Editor Sub-Agent Prompt
 

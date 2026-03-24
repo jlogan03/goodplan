@@ -71,7 +71,7 @@ After all architecture files are written (Steps 8b-8d), three additional steps c
 - Every subsystem with an architecture file gets a row. All start at Experimental.
 - Derive dependents from the subsystem dependency graph established during architecture writing. If subsystem A's Dependencies section lists subsystem B, then B's Dependents column includes A.
 - Fitness Functions column starts as "—" and is updated to "candidate" after Step 8h identifies candidates.
-- Reference `~/.claude/skills/_shared/references/maturity-conventions.md` for the exact table format.
+- Reference `../../_shared/references/maturity-conventions.md` for the exact table format.
 
 **Invariants (Step 8g):**
 

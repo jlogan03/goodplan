@@ -24,7 +24,7 @@ Path can be a single markdown file or a directory containing `_overview.md` + ph
 
 ## Decisions Context
 
-Read `~/.claude/skills/_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load `.project/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions provide context for plan review — reviewers should check that the plan respects existing decisions.
+Read `../_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load `.project/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions provide context for plan review — reviewers should check that the plan respects existing decisions.
 
 Note: sub-agents load decisions themselves via codebase exploration (`.project/decisions/` is a project directory accessible to all agents), so decisions do not need to be passed in bootstrap prompts.
 
@@ -41,7 +41,7 @@ Conditional multi-reviewer approach: Holistic and Software Architecture always r
 
 ## Loop Parameters
 
-These fill in the skill-specific slots defined by `~/.claude/skills/_shared/references/iteration-loop.md`:
+These fill in the skill-specific slots defined by `../_shared/references/iteration-loop.md`:
 
 | Parameter | Value |
 |---|---|
@@ -61,7 +61,7 @@ These fill in the skill-specific slots defined by `~/.claude/skills/_shared/refe
 
 ### Step 0: Version Check and Context Loading
 
-Read `~/.claude/skills/_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
+Read `../_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
 
 Verify CLI availability and compatibility:
 
@@ -97,7 +97,7 @@ Complete this before entering the refinement loop — it prevents wasted iterati
 
 ### Step 2: Pre-Review Research
 
-Read and follow `~/.claude/skills/_shared/references/dependency-research.md` for what to research and how to structure the output. If the plan references no external libraries, frameworks, tools, or APIs, skip to Step 2b.
+Read and follow `../_shared/references/dependency-research.md` for what to research and how to structure the output. If the plan references no external libraries, frameworks, tools, or APIs, skip to Step 2b.
 
 **Execution**: Spawn research agents in parallel — one sub-agent per library/tool (`model: "opus"`). Each agent uses Context7 MCP tools first (resolve library ID -> query docs for the specific version), falls back to WebSearch for APIs/tools not in Context7. When sub-agents are unavailable, perform research inline.
 
@@ -105,9 +105,9 @@ Re-run this step after each iteration if plan edits introduce new dependencies.
 
 ### Step 2b: Codebase Context Discovery
 
-Read and follow `~/.claude/skills/_shared/references/codebase-context-discovery.md`. Delegate to a single sub-agent (`model: "opus"`) when available; otherwise perform inline.
+Read and follow `../_shared/references/codebase-context-discovery.md`. Delegate to a single sub-agent (`model: "opus"`) when available; otherwise perform inline.
 
-**Stale assumption detection**: Follow the Stale Assumption Detection Algorithm in `~/.claude/skills/_shared/references/epic-conventions.md`. When staleness is detected in refine-plan: include in the codebase context summary: "Architecture file <file> has changed since this goal was written — reviewers should verify the plan still aligns with current architecture."
+**Stale assumption detection**: Follow the Stale Assumption Detection Algorithm in `../_shared/references/epic-conventions.md`. When staleness is detected in refine-plan: include in the codebase context summary: "Architecture file <file> has changed since this goal was written — reviewers should verify the plan still aligns with current architecture."
 
 **Epic architecture awareness**: Query `goodplan status --json` and check `.activeEpic`. If an active epic exists, read `.project/epics/<activeEpic.name>/architecture/` alongside top-level architecture. Flag any conflicts between the plan and the active epic's target architecture in the codebase context summary.
 
@@ -115,7 +115,7 @@ Also load `.project/conventions.md` if it exists — project conventions provide
 
 ### Step 3: Refinement Loop
 
-Read `~/.claude/skills/_shared/references/iteration-loop.md` for the shared orchestration structure. This step fills in the plan-specific parameters.
+Read `../_shared/references/iteration-loop.md` for the shared orchestration structure. This step fills in the plan-specific parameters.
 
 **Run directory setup** (once at skill start, before the first iteration):
 ```bash
@@ -338,13 +338,13 @@ After conversion, all subsequent steps operate on the directory. The `-refined` 
 
 ## References
 
-- **Shared iteration loop**: `~/.claude/skills/_shared/references/iteration-loop.md` — orchestration pattern shared with refine-architecture and refine-slices
-- **Team defaults**: `~/.claude/skills/_shared/references/team-defaults.md` (optional) — Team-specific tool and process preferences. If this file exists, read it and fill in the `{team_defaults}` placeholder in every reviewer's shared preamble. If absent, set `{team_defaults}` to empty. The file uses a 3-tier enforcement model: enforce conventions the codebase already follows, suggest defaults when no convention exists, defer when the codebase uses a different approach.
+- **Shared iteration loop**: `../_shared/references/iteration-loop.md` — orchestration pattern shared with refine-architecture and refine-slices
+- **Team defaults**: `../_shared/references/team-defaults.md` (optional) — Team-specific tool and process preferences. If this file exists, read it and fill in the `{team_defaults}` placeholder in every reviewer's shared preamble. If absent, set `{team_defaults}` to empty. The file uses a 3-tier enforcement model: enforce conventions the codebase already follows, suggest defaults when no convention exists, defer when the codebase uses a different approach.
 - **Shared preamble**: `references/shared-preamble.md` — read by each reviewer sub-agent directly via bootstrap
 - **Reviewer registry**: `references/reviewer-registry.md` — reviewer domains and prompt file locations
 - **Sub-agent prompt templates**: `references/sub-agent-prompts.md` — reviewer bootstrap prompt template
-- **Dependency research**: `~/.claude/skills/_shared/references/dependency-research.md` — research targets, version detection, output format, and reviewer mapping
-- **Codebase context discovery**: `~/.claude/skills/_shared/references/codebase-context-discovery.md` — in-repo documentation, freshness assessment, PR history, and git activity analysis
+- **Dependency research**: `../_shared/references/dependency-research.md` — research targets, version detection, output format, and reviewer mapping
+- **Codebase context discovery**: `../_shared/references/codebase-context-discovery.md` — in-repo documentation, freshness assessment, PR history, and git activity analysis
 - **Reviewer prompts** (read only the files for spawned reviewers):
   - `references/reviewers-always.md` — Holistic
   - `references/reviewers-language.md` — Python, Rust, C++, TypeScript and JavaScript

@@ -1,6 +1,6 @@
 # Shared References
 
-Reference files consumed by multiple skills. Each skill reads these via absolute paths (`~/.claude/skills/_shared/references/<file>`).
+Reference files consumed by multiple skills. Each skill reads these via relative paths (e.g., `../_shared/references/<file>` from a SKILL.md).
 
 ## Adding a New Shared Reference
 
@@ -24,4 +24,4 @@ Consolidation criterion: only move a file here if it is expected to stay unified
 
 ## Troubleshooting
 
-If a skill fails with a Read error pointing to a `~/.claude/skills/_shared/references/` path, this directory or its files may be missing. Re-create the directory and restore the files from the skill repository.
+If a skill fails with a Read error pointing to a `_shared/references/` path, this directory or its files may be missing. Re-create the directory and restore the files from the skill repository.

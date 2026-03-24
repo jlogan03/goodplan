@@ -81,13 +81,13 @@ When test infrastructure exists, Expected Behavior items should include both for
 
 ## Stale Assumption Detection
 
-Follow the Stale Assumption Detection Algorithm in `~/.claude/skills/_shared/references/epic-conventions.md`.
+Follow the Stale Assumption Detection Algorithm in `../../_shared/references/epic-conventions.md`.
 
 When staleness is detected during create-plan: present the specific architecture changes (use `git diff` or `git log` to show what changed) and ask the user to confirm the goal still applies or update it before proceeding with planning.
 
 ## Two-Layer Architecture
 
-Architecture lives in two layers (see `~/.claude/skills/_shared/references/epic-conventions.md` for full details):
+Architecture lives in two layers (see `../../_shared/references/epic-conventions.md` for full details):
 
 | Layer | Location | Represents |
 |---|---|---|

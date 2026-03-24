@@ -21,7 +21,7 @@ When an active epic exists, all slice output is scoped to the epic (see Step 0 f
 
 ## Step 0 — Version Check and Determine Slice Output Location
 
-Read `~/.claude/skills/_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
+Read `../_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
 
 Verify CLI availability and compatibility:
 
@@ -33,7 +33,7 @@ If the command fails (not found, non-zero exit), stop: "The `goodplan` CLI is re
 
 If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill requires goodplan >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
 
-Also load `~/.claude/skills/_shared/references/epic-conventions.md` for epic directory structure and state machine.
+Also load `../_shared/references/epic-conventions.md` for epic directory structure and state machine.
 
 Detect the active epic:
 
@@ -55,7 +55,7 @@ Store these resolved paths for use throughout subsequent steps. All references t
 
 Use the Read tool to load `references/guidance.md` (relative to this skill's directory). It contains conversation guidance, templates for sequencing.md and goal.md, re-entry rules, CLAUDE.md update instructions, and graceful stop cases.
 
-Also load `~/.claude/skills/_shared/references/decisions-format.md` for the decisions format and Loading Protocol.
+Also load `../_shared/references/decisions-format.md` for the decisions format and Loading Protocol.
 
 ## Step 2 — Load Context
 
@@ -85,7 +85,7 @@ Present summary listing only what was found: "Found: idea.md, epic goal.md, conv
   - **Revise** → present existing slices. Before modifying any slice, check for downstream artifacts (`plan.md`, `plan-refined.md`, `refinement/`, `implementation/` inside the slice directory). If found, warn the user that downstream work exists. Iterate on changes. Directories are never deleted — only sequencing.md and goal.md files are overwritten.
   - **Start fresh** → proceed to Step 4 (existing files will be overwritten).
 
-Follow calibration depth guidance in `~/.claude/skills/_shared/references/expertise-tracking.md`.
+Follow calibration depth guidance in `../_shared/references/expertise-tracking.md`.
 
 ## Step 4 — Propose Slices
 
@@ -155,7 +155,7 @@ If any slice names, ordering, or dependencies changed during Step 6 iteration, r
 
 ## Step 8 — CLAUDE.md Update
 
-Re-load `references/guidance.md` (relative to this skill's directory) for the CLAUDE.md update instructions. Also read `~/.claude/skills/create-architecture/references/guidance.md` for the full Project Context section format.
+Re-load `references/guidance.md` (relative to this skill's directory) for the CLAUDE.md update instructions. Also read `../create-architecture/references/guidance.md` for the full Project Context section format.
 
 Add sequencing.md reference to CLAUDE.md. **Idempotency:** first check if sequencing.md is already referenced in CLAUDE.md — if so, verify the path is correct (should point to `$SLICES_DIR/sequencing.md`). If referencing a stale path (e.g., `.project/slices/sequencing.md` when slices are now inside an epic), update the path.
 
@@ -185,7 +185,7 @@ After updating: "Updated CLAUDE.md so future sessions will see your slice sequen
 
 Reflect on the conversation: did it reveal new information about the user's expertise? (CLAUDE.md `## Expertise` section is already in context.)
 
-- **If yes**: Read `~/.claude/skills/_shared/references/expertise-tracking.md` for the recording protocol. Update `## Expertise` section in `~/.claude/CLAUDE.md` and write/update relevant `expertise_<domain>.md` memory file.
+- **If yes**: Read `../_shared/references/expertise-tracking.md` for the recording protocol. Update `## Expertise` section in `~/.claude/CLAUDE.md` and write/update relevant `expertise_<domain>.md` memory file.
 - **If no**: Skip silently — no Read, no output, no AskUserQuestion.
 
 ## Step 9 — Submit via CLI

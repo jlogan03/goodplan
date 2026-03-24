@@ -28,7 +28,7 @@ Both produce actionable output: side quest proposals with specific scope.
 
 ## Step 0 — Version Check
 
-Read `~/.claude/skills/_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
+Read `../_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
 
 Verify CLI availability and compatibility:
 
@@ -42,7 +42,7 @@ If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill 
 
 ## Step 1 — Load Context
 
-**1a. Resolve architecture path**: Read `~/.claude/skills/_shared/references/epic-conventions.md` for epic directory structure. Detect the active epic via CLI:
+**1a. Resolve architecture path**: Read `../_shared/references/epic-conventions.md` for epic directory structure. Detect the active epic via CLI:
 
 ```bash
 goodplan status --json
@@ -62,9 +62,9 @@ If the marker is present, warn the user: "Top-level architecture is a scaffold p
 
 1. **Read architecture files**: Glob `$ARCH_DIR/**/*.md`. If the directory does not exist or is empty, tell the user: "No architecture files found — run `/create-architecture` first." Then stop.
 
-2. **Load decisions**: Read `~/.claude/skills/_shared/references/decisions-format.md` for the Loading Protocol. Glob `.project/decisions/*.md`, skip superseded, flag any `revisiting` to the user.
+2. **Load decisions**: Read `../_shared/references/decisions-format.md` for the Loading Protocol. Glob `.project/decisions/*.md`, skip superseded, flag any `revisiting` to the user.
 
-3. **Load maturity conventions**: Read `~/.claude/skills/_shared/references/maturity-conventions.md` for maturity level definitions, promotion criteria, invariant format, and fitness function format. This is the authoritative source — audit-architecture's `references/guidance.md` provides audit-specific strategies that build on these conventions.
+3. **Load maturity conventions**: Read `../_shared/references/maturity-conventions.md` for maturity level definitions, promotion criteria, invariant format, and fitness function format. This is the authoritative source — audit-architecture's `references/guidance.md` provides audit-specific strategies that build on these conventions.
 
 4. **Load learnings and conventions**: Read `.project/learnings.md` and `.project/conventions.md` (if they exist).
 
@@ -160,7 +160,7 @@ Based on all findings (gap analysis from Step 2, reassessment from Step 3, fitne
 Present as recommendations with evidence — the user decides. If approved:
 
 1. Update the maturity table in `$ARCH_DIR/_overview.md`
-2. Write a decision record to `.project/decisions/` using the format from `~/.claude/skills/_shared/references/decisions-format.md`, documenting the maturity change with rationale
+2. Write a decision record to `.project/decisions/` using the format from `../_shared/references/decisions-format.md`, documenting the maturity change with rationale
 
 ## Step 4 — Propose Side Quests
 
@@ -237,7 +237,7 @@ Audit reports are operational artifacts — NOT canonical design. They live in `
 
 Update `.project/project-health.md` with findings from this audit.
 
-1. **Read**: Read `.project/project-health.md` (if it exists) and `~/.claude/skills/_shared/references/project-health-format.md` for the canonical format.
+1. **Read**: Read `.project/project-health.md` (if it exists) and `../_shared/references/project-health-format.md` for the canonical format.
 
 2. **If missing**: Create `.project/project-health.md` using the format from `project-health-format.md`, populating initial content derived from audit findings:
    - **Health**: Areas where code drifts from architecture indicate fragility
@@ -291,7 +291,7 @@ On resume (detected in Step 1): read the partial report and continue from where 
 
 Reflect on the conversation: did it reveal new information about the user's expertise?
 
-- **If yes**: Read `~/.claude/skills/_shared/references/expertise-tracking.md` for the recording protocol. Update `## Expertise` section in `~/.claude/CLAUDE.md` and write/update relevant `expertise_<domain>.md` memory file.
+- **If yes**: Read `../_shared/references/expertise-tracking.md` for the recording protocol. Update `## Expertise` section in `~/.claude/CLAUDE.md` and write/update relevant `expertise_<domain>.md` memory file.
 - **If no**: Skip silently.
 
 > **Note:** Audit is a read-only analysis skill — it does not trigger CLI state mutations. The audit report files in `.project/audits/` serve as the provenance record.
@@ -308,8 +308,8 @@ Do NOT ask for permission to continue between analysis steps.
 
 ## References
 
-- **CLI interaction**: `~/.claude/skills/_shared/references/cli-interaction.md` — CLI conventions, error handling, invocation patterns
+- **CLI interaction**: `../_shared/references/cli-interaction.md` — CLI conventions, error handling, invocation patterns
 - **Guidance**: `references/guidance.md` — exploration strategy, severity levels, side quest format
 - **Sub-agent prompts**: `references/sub-agent-prompts.md` — self-contained exploration agent prompt
-- **Decisions format**: `~/.claude/skills/_shared/references/decisions-format.md`
-- **Expertise tracking**: `~/.claude/skills/_shared/references/expertise-tracking.md`
+- **Decisions format**: `../_shared/references/decisions-format.md`
+- **Expertise tracking**: `../_shared/references/expertise-tracking.md`

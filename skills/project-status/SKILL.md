@@ -53,10 +53,10 @@ If successful, save the `status --json` response for use in subsequent steps.
 Use the Read tool to load:
 
 1. `references/status-logic.md` (relative to this skill's directory) — display formatting rules, state-to-next-skill mapping, scope resolution, and archive conventions
-2. `~/.claude/skills/_shared/references/cli-interaction.md` — CLI interaction conventions (how to invoke commands, parse responses, handle errors)
-3. `~/.claude/skills/_shared/references/decisions-format.md` — decisions format and Loading Protocol
+2. `../_shared/references/cli-interaction.md` — CLI interaction conventions (how to invoke commands, parse responses, handle errors)
+3. `../_shared/references/decisions-format.md` — decisions format and Loading Protocol
 
-If the `status --json` response indicates an active epic exists, also load `~/.claude/skills/_shared/references/epic-conventions.md` — needed for epic state machine resolution, first-vs-subsequent epic disambiguation, and directory structure conventions.
+If the `status --json` response indicates an active epic exists, also load `../_shared/references/epic-conventions.md` — needed for epic state machine resolution, first-vs-subsequent epic disambiguation, and directory structure conventions.
 
 Load `.project/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Count active decisions and note any with `revisiting` status for the status report.
 

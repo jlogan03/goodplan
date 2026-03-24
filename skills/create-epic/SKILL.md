@@ -27,7 +27,7 @@ Verify the reported version satisfies `requires: goodplan >= 1.0.0`. If the CLI 
 
 **Stop the skill.** Do not fall back to direct file access.
 
-For all CLI commands in this skill, follow error handling patterns in `~/.claude/skills/_shared/references/cli-interaction.md` (section 10: Error Handling). Key points: exit code 1 = internal/unexpected error (present to user and stop), exit code 2 = validation/usage error (fix invocation — likely a skill bug), exit code 3 = state machine error (parse error code from JSON, apply recovery pattern).
+For all CLI commands in this skill, follow error handling patterns in `../_shared/references/cli-interaction.md` (section 10: Error Handling). Key points: exit code 1 = internal/unexpected error (present to user and stop), exit code 2 = validation/usage error (fix invocation — likely a skill bug), exit code 3 = state machine error (parse error code from JSON, apply recovery pattern).
 
 ## Step 2 — Detect Mode
 
@@ -66,9 +66,9 @@ If the user signals they want to wrap up early ("that's enough", "just write wha
 
 ### Step 3b — Expertise Calibration
 
-Follow calibration depth guidance in `~/.claude/skills/_shared/references/expertise-tracking.md`.
+Follow calibration depth guidance in `../_shared/references/expertise-tracking.md`.
 
-1. Read `~/.claude/skills/_shared/references/expertise-tracking.md` for the expertise tracking protocol.
+1. Read `../_shared/references/expertise-tracking.md` for the expertise tracking protocol.
 2. Check if `~/.claude/CLAUDE.md` has an existing `## Expertise` section.
 3. Identify domains the project idea touches that aren't already covered.
 4. If uncovered domains exist, use AskUserQuestion: "This project involves [X] and [Y] — how familiar are you with those areas?"

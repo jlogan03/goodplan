@@ -76,7 +76,7 @@ Graceful stops leave filesystem artifacts in place (learnings.md, architecture-u
 
 ## Project Health Update
 
-Reference: `~/.claude/skills/_shared/references/project-health-format.md` for canonical structure and template.
+Reference: `../../_shared/references/project-health-format.md` for canonical structure and template.
 
 Extract from slice artifacts for each section:
 - **Health**: Check implementation reviews for test coverage mentions, verification results, and any areas that broke during implementation. `merged.md` files and `result.md` note what was tested.

@@ -34,7 +34,7 @@ Resolve scope variables used throughout all subsequent steps:
    - `side-quest` → N/A (no slices directory)
 3. **Set `$EPIC_DIR`** (epic-slice and epic):
    - `.project/epics/<epic-name>/` — derive epic name from `status --json` `.activeEpic` field.
-   - Load `~/.claude/skills/_shared/references/epic-conventions.md` for epic directory structure, two-layer architecture model, and (for epic scope) archive numbering and completion conventions.
+   - Load `../_shared/references/epic-conventions.md` for epic directory structure, two-layer architecture model, and (for epic scope) archive numbering and completion conventions.
 
 These variables are referenced in Steps 2–10b. Resolve them as soon as the scope is identified (Step 1, sub-step 1–3).
 
@@ -52,13 +52,13 @@ Verify the reported version satisfies `requires: goodplan >= 1.0.0`. If the CLI 
 
 **Stop the skill.** Do not fall back to direct file access.
 
-For all CLI commands in this skill, follow error handling patterns in `~/.claude/skills/_shared/references/cli-interaction.md` (section: Error Handling). Key points: exit code 1 = internal/unexpected error (present to user and stop), exit code 2 = validation/usage error (fix invocation — likely a skill bug), exit code 3 = state machine error (parse error code from JSON, apply recovery pattern).
+For all CLI commands in this skill, follow error handling patterns in `../_shared/references/cli-interaction.md` (section: Error Handling). Key points: exit code 1 = internal/unexpected error (present to user and stop), exit code 2 = validation/usage error (fix invocation — likely a skill bug), exit code 3 = state machine error (parse error code from JSON, apply recovery pattern).
 
 ### Load References
 
 Use the Read tool to load `references/guidance.md` (relative to this skill's directory). It contains scope resolution, artifact loading strategy, learnings synthesis, architecture update protocol, remaining slice review, CLAUDE.md update rules, graceful stop cases, and re-entry handling.
 
-Also load `~/.claude/skills/_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load decisions via CLI:
+Also load `../_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load decisions via CLI:
 
 ```bash
 goodplan state --json --query '.["decisions.jsonl"]'
@@ -138,7 +138,7 @@ Present: "Epic [name]: N slices completed, M research files, K brainstorm files,
 
 **For slices/quests**, present summary: "Found: plan (N phases), M implementation reviews, K research files, [plan-learnings-and-feedback], [fixes-and-polish]. Architecture: N files."
 
-Follow calibration depth guidance in `~/.claude/skills/_shared/references/expertise-tracking.md`.
+Follow calibration depth guidance in `../_shared/references/expertise-tracking.md`.
 
 ## Step 4 — Synthesize Learnings
 
@@ -194,7 +194,7 @@ goodplan status --json
 
 If other slices/quests are active (`.activeSlice` or `.activeQuest` is non-null and different from the current scope), warn that architecture changes may conflict (informational only).
 
-**Epic slice handling**: When completing an epic slice, follow the two-layer architecture model (see `~/.claude/skills/_shared/references/epic-conventions.md`):
+**Epic slice handling**: When completing an epic slice, follow the two-layer architecture model (see `../_shared/references/epic-conventions.md`):
 - **(a) Verify alignment**: Compare the implementation against the epic's `architecture/` (the target) to verify the slice built what was intended. Surface any divergences from the target as potential issues.
 - **(b) Propose updates to top-level**: Propose updates to `.project/architecture/` (current reality) to reflect what was actually built. These are incremental per-slice updates.
 - **(c) Leave epic architecture unchanged**: The epic's `architecture/` represents the target state and is not modified during slice completion. `/complete` at epic completion handles the final reconciliation.
@@ -230,7 +230,7 @@ If architecture updates revealed additional learnings, append to `completion/lea
 
 **Skip for epic scope** (`$SCOPE_TYPE = epic`) — epic completion is a meta-operation, not an implementation. Project-health updates happen per-slice.
 
-After architecture review, read `.project/project-health.md`. If it doesn't exist, create it using the template from `~/.claude/skills/_shared/references/project-health-format.md`. If it exists, update sections with new info (don't overwrite unrelated sections).
+After architecture review, read `.project/project-health.md`. If it doesn't exist, create it using the template from `../_shared/references/project-health-format.md`. If it exists, update sections with new info (don't overwrite unrelated sections).
 
 Update each section from the current slice's artifacts:
 
@@ -293,7 +293,7 @@ If no subsystems touched by this slice/quest are at Developing, Maturing, or Fou
 
 Otherwise:
 
-1. **Re-read maturity data**: Extract the `## Subsystem Maturity` table from `.project/architecture/_overview.md`. Load `~/.claude/skills/_shared/references/maturity-conventions.md` for promotion/demotion criteria.
+1. **Re-read maturity data**: Extract the `## Subsystem Maturity` table from `.project/architecture/_overview.md`. Load `../_shared/references/maturity-conventions.md` for promotion/demotion criteria.
 
 2. **For slice/side-quest scope** (`$SCOPE_TYPE != epic`): For each subsystem touched by this slice/quest:
    - **(a) Check promotion signals**: stability across recent slices, fitness functions in place, multiple dependents, generic design.
@@ -320,7 +320,7 @@ Check if architecture files were added or renamed during this completion. Three 
 2. **Files added** → add references to CLAUDE.md Project Context "Read these" list.
 3. **Files renamed/removed** → update existing references.
 
-Load `~/.claude/skills/create-architecture/references/guidance.md` for the Project Context section format (dependency: if create-architecture's guidance.md moves, update this path). Follow the three-case CLAUDE.md update logic from create-slices: no CLAUDE.md → create with Write; no `## Project Context` section → append with Edit; existing section → extract old_string from `## Project Context` through next `## ` heading (or EOF), replace with Edit (fall back to full Write if Edit fails).
+Load `../create-architecture/references/guidance.md` for the Project Context section format (dependency: if create-architecture's guidance.md moves, update this path). Follow the three-case CLAUDE.md update logic from create-slices: no CLAUDE.md → create with Write; no `## Project Context` section → append with Edit; existing section → extract old_string from `## Project Context` through next `## ` heading (or EOF), replace with Edit (fall back to full Write if Edit fails).
 
 After updating: "Updated CLAUDE.md to reference new architecture files."
 
@@ -363,7 +363,7 @@ Present findings. For each proposed change, use AskUserQuestion. Apply approved 
 
 Reflect on the conversation: did it reveal new information about the user's expertise? (CLAUDE.md `## Expertise` section is already in context.)
 
-- **If yes**: Read `~/.claude/skills/_shared/references/expertise-tracking.md` for the recording protocol. Update `## Expertise` section in `~/.claude/CLAUDE.md` and write/update relevant `expertise_<domain>.md` memory file.
+- **If yes**: Read `../_shared/references/expertise-tracking.md` for the recording protocol. Update `## Expertise` section in `~/.claude/CLAUDE.md` and write/update relevant `expertise_<domain>.md` memory file.
 - **If no**: Skip silently — no Read, no output, no AskUserQuestion.
 
 ## Step 10 — Write Back State
@@ -447,7 +447,7 @@ On re-entry, Step 2 detects these filesystem artifacts and offers to resume:
 
 If a Write or Edit tool call fails, retry once. If it fails again, inform the user of the specific file that could not be written and continue with remaining steps.
 
-For CLI command failures, follow the error handling patterns in `~/.claude/skills/_shared/references/cli-interaction.md`:
+For CLI command failures, follow the error handling patterns in `../_shared/references/cli-interaction.md`:
 - Exit 1 (internal): present error to user and stop
 - Exit 2 (validation): fix the invocation and retry — likely a skill bug
 - Exit 3 (state machine): parse error code, apply recovery pattern (see cli-interaction.md for idempotent re-entry)

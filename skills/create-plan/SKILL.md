@@ -17,7 +17,7 @@ Interactive dialogue that takes a slice or side quest goal and produces a comple
 
 ## Step 0 — Version Check
 
-Read `~/.claude/skills/_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
+Read `../_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
 
 Verify CLI availability and compatibility:
 
@@ -35,7 +35,7 @@ Use the Read tool to load (paths relative to this skill's directory):
 
 - `references/plan-format.md` — plan structure, templates, size guidelines
 - `references/guidance.md` — scope resolution, context loading, Q&A strategy, research, architectural change detection, graceful stop
-- `~/.claude/skills/_shared/references/decisions-format.md` — decisions format and Loading Protocol
+- `../_shared/references/decisions-format.md` — decisions format and Loading Protocol
 
 ## Step 2 — Determine Scope
 
@@ -70,7 +70,7 @@ Read (skip missing):
 
 ### 3b. Stale Assumption Detection
 
-Follow the Stale Assumption Detection Algorithm in `~/.claude/skills/_shared/references/epic-conventions.md`.
+Follow the Stale Assumption Detection Algorithm in `../_shared/references/epic-conventions.md`.
 
 When staleness is detected: present the specific architecture changes (use `git diff` or `git log` to show what changed) and ask the user to confirm the goal still applies or update it before proceeding with planning.
 
@@ -78,7 +78,7 @@ Present: "Loaded: [files]. Slice context: [goal.md summary]. Missing: [list or '
 
 ## Step 4 — Interactive Planning
 
-Follow calibration depth guidance in `~/.claude/skills/_shared/references/expertise-tracking.md`.
+Follow calibration depth guidance in `../_shared/references/expertise-tracking.md`.
 
 ### 4a. Restate & confirm
 
@@ -152,7 +152,7 @@ Write to scope directory:
 
 Reflect on the conversation: did it reveal new information about the user's expertise? (CLAUDE.md `## Expertise` section is already in context.)
 
-- **If yes**: Read `~/.claude/skills/_shared/references/expertise-tracking.md` for the recording protocol. Update `## Expertise` section in `~/.claude/CLAUDE.md` and write/update relevant `expertise_<domain>.md` memory file.
+- **If yes**: Read `../_shared/references/expertise-tracking.md` for the recording protocol. Update `## Expertise` section in `~/.claude/CLAUDE.md` and write/update relevant `expertise_<domain>.md` memory file.
 - **If no**: Skip silently — no Read, no output, no AskUserQuestion.
 
 ## Step 7 — Submit via CLI
