@@ -1,9 +1,9 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
 import { assembleState } from "../../core/data/assemble.js";
-import { countFiles } from "../../core/data/files.js";
 import { resolveProjectDir } from "../../core/data/project.js";
-import { getJson, getJsonl } from "../../core/data/tree.js";
+import { getDir, getJson, getJsonl } from "../../core/data/tree.js";
+import type { DirectoryEntry, ProjectState } from "../../core/tree.js";
 import type { ActivityEntry } from "../../schemas/records/activity-log.js";
 import type { DecisionEntry } from "../../schemas/records/decision.js";
 import type { LearningEntry } from "../../schemas/records/learning.js";
@@ -42,7 +42,7 @@ export function buildStatusResult(projectDir?: string): StatusResult {
 	const activeQuest = resolveActiveQuest(project, state);
 
 	// ── Artifacts ──
-	const artifacts = countArtifacts(project, dir, state);
+	const artifacts = countArtifacts(project, state);
 
 	// ── Recommendations & warnings ──
 	const recommendations: string[] = [];
@@ -69,7 +69,7 @@ export function buildStatusResult(projectDir?: string): StatusResult {
 
 function resolveActiveEpic(
 	project: Project,
-	state: import("../../core/tree.js").ProjectState,
+	state: ProjectState,
 ): StatusResult["activeEpic"] {
 	if (project.activeEpic === null) return null;
 	const epic = getJson<Epic>(state, `epics/${project.activeEpic}/epic.json`);
@@ -79,7 +79,7 @@ function resolveActiveEpic(
 
 function resolveActiveSlice(
 	project: Project,
-	state: import("../../core/tree.js").ProjectState,
+	state: ProjectState,
 ): StatusResult["activeSlice"] {
 	if (project.activeSlice === null) return null;
 	const slice = getJson<Slice>(state, `slices/${project.activeSlice}/slice.json`);
@@ -89,7 +89,7 @@ function resolveActiveSlice(
 
 function resolveActiveQuest(
 	project: Project,
-	state: import("../../core/tree.js").ProjectState,
+	state: ProjectState,
 ): StatusResult["activeQuest"] {
 	if (project.activeQuest === null) return null;
 	const quest = getJson<Quest>(state, `quests/${project.activeQuest}/quest.json`);
@@ -99,10 +99,29 @@ function resolveActiveQuest(
 
 // ── Artifact counting ────────────────────────────────────────
 
+/**
+ * Collect .md filenames from a directory entry in the state tree.
+ * Returns state-tree-relative paths (prefixed with `dirPath`).
+ * Non-recursive — only direct children.
+ */
+function collectMdFiles(
+	state: ProjectState,
+	dirPath: string,
+): string[] {
+	const dir: DirectoryEntry | undefined = getDir(state, dirPath);
+	if (dir === undefined) return [];
+	const files: string[] = [];
+	for (const key of Object.keys(dir.contents)) {
+		if (key.endsWith(".md")) {
+			files.push(`${dirPath}/${key}`);
+		}
+	}
+	return files;
+}
+
 function countArtifacts(
 	project: Project,
-	projectDir: string,
-	state: import("../../core/tree.js").ProjectState,
+	state: ProjectState,
 ): Artifacts {
 	// Decisions and learnings from JSONL in state
 	const decisions = getJsonl<DecisionEntry>(state, "decisions.jsonl");
@@ -121,26 +140,27 @@ function countArtifacts(
 		}
 	}
 
-	// File-based artifact counts — use countFiles helper to keep filesystem I/O in Data Layer.
-	// Count across both project-level and active epic dirs.
-	let architectureFiles = countFiles(projectDir, "architecture", ".md");
-	let researchFiles = countFiles(projectDir, "research", ".md");
-	let brainstormFiles = countFiles(projectDir, "brainstorm", ".md");
-	let prototypeFiles = countFiles(projectDir, "prototypes", ".md");
+	// File-based artifacts — walk state tree for dual-directory aggregation
+	// (project-level + active epic). Files arrays use state-tree-relative paths
+	// (relative to .project/) so consumers can distinguish origin directory.
+	let architectureFiles = collectMdFiles(state, "architecture");
+	let researchFiles = collectMdFiles(state, "research");
+	let brainstormFiles = collectMdFiles(state, "brainstorm");
+	let prototypeFiles = collectMdFiles(state, "prototypes");
 
 	if (project.activeEpic !== null) {
 		const epicBase = `epics/${project.activeEpic}`;
-		architectureFiles += countFiles(projectDir, `${epicBase}/architecture`, ".md");
-		researchFiles += countFiles(projectDir, `${epicBase}/research`, ".md");
-		brainstormFiles += countFiles(projectDir, `${epicBase}/brainstorm`, ".md");
-		prototypeFiles += countFiles(projectDir, `${epicBase}/prototypes`, ".md");
+		architectureFiles = architectureFiles.concat(collectMdFiles(state, `${epicBase}/architecture`));
+		researchFiles = researchFiles.concat(collectMdFiles(state, `${epicBase}/research`));
+		brainstormFiles = brainstormFiles.concat(collectMdFiles(state, `${epicBase}/brainstorm`));
+		prototypeFiles = prototypeFiles.concat(collectMdFiles(state, `${epicBase}/prototypes`));
 	}
 
 	return {
-		architectureFiles,
-		researchFiles,
-		brainstormFiles,
-		prototypeFiles,
+		architecture: { count: architectureFiles.length, files: architectureFiles },
+		research: { count: researchFiles.length, files: researchFiles },
+		brainstorm: { count: brainstormFiles.length, files: brainstormFiles },
+		prototypes: { count: prototypeFiles.length, files: prototypeFiles },
 		decisions: decisions?.length ?? 0,
 		learnings: learnings?.length ?? 0,
 		completedSlices,
@@ -212,7 +232,7 @@ const STALE_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 function generateWarnings(
 	project: Project,
-	state: import("../../core/tree.js").ProjectState,
+	state: ProjectState,
 	warnings: string[],
 ): void {
 	const activityLog = getJsonl<ActivityEntry>(state, "activity-log.jsonl");
@@ -299,24 +319,24 @@ export function formatStatusHuman(status: StatusResult): string {
 
 	// ── Artifacts section ──
 	const hasArtifacts =
-		status.artifacts.architectureFiles > 0 ||
-		status.artifacts.researchFiles > 0 ||
-		status.artifacts.brainstormFiles > 0 ||
-		status.artifacts.prototypeFiles > 0 ||
+		status.artifacts.architecture.count > 0 ||
+		status.artifacts.research.count > 0 ||
+		status.artifacts.brainstorm.count > 0 ||
+		status.artifacts.prototypes.count > 0 ||
 		status.artifacts.decisions > 0 ||
 		status.artifacts.learnings > 0;
 
 	if (hasArtifacts) {
 		lines.push("");
 		lines.push(pc.bold("Artifacts"));
-		if (status.artifacts.architectureFiles > 0)
-			lines.push(`  Architecture: ${status.artifacts.architectureFiles} files`);
-		if (status.artifacts.researchFiles > 0)
-			lines.push(`  Research:     ${status.artifacts.researchFiles} files`);
-		if (status.artifacts.brainstormFiles > 0)
-			lines.push(`  Brainstorm:   ${status.artifacts.brainstormFiles} files`);
-		if (status.artifacts.prototypeFiles > 0)
-			lines.push(`  Prototypes:   ${status.artifacts.prototypeFiles} files`);
+		if (status.artifacts.architecture.count > 0)
+			lines.push(`  Architecture: ${status.artifacts.architecture.count} files`);
+		if (status.artifacts.research.count > 0)
+			lines.push(`  Research:     ${status.artifacts.research.count} files`);
+		if (status.artifacts.brainstorm.count > 0)
+			lines.push(`  Brainstorm:   ${status.artifacts.brainstorm.count} files`);
+		if (status.artifacts.prototypes.count > 0)
+			lines.push(`  Prototypes:   ${status.artifacts.prototypes.count} files`);
 		if (status.artifacts.decisions > 0)
 			lines.push(`  Decisions:    ${status.artifacts.decisions}`);
 		if (status.artifacts.learnings > 0)

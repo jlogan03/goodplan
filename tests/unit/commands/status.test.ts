@@ -181,10 +181,21 @@ describe("buildStatusResult", () => {
 		const projectDir = createPopulatedProject();
 		const result = buildStatusResult(projectDir);
 
-		expect(result.artifacts.architectureFiles).toBe(2); // 2 epic arch files
-		expect(result.artifacts.researchFiles).toBe(1);
-		expect(result.artifacts.brainstormFiles).toBe(1);
-		expect(result.artifacts.prototypeFiles).toBe(0);
+		expect(result.artifacts.architecture.count).toBe(2); // 2 epic arch files
+		expect(result.artifacts.architecture.files).toEqual([
+			"epics/my-epic/architecture/_overview.md",
+			"epics/my-epic/architecture/data-model.md",
+		]);
+		expect(result.artifacts.research.count).toBe(1);
+		expect(result.artifacts.research.files).toEqual([
+			"epics/my-epic/research/topic.md",
+		]);
+		expect(result.artifacts.brainstorm.count).toBe(1);
+		expect(result.artifacts.brainstorm.files).toEqual([
+			"epics/my-epic/brainstorm/ideas.md",
+		]);
+		expect(result.artifacts.prototypes.count).toBe(0);
+		expect(result.artifacts.prototypes.files).toEqual([]);
 		expect(result.artifacts.decisions).toBe(2);
 		expect(result.artifacts.learnings).toBe(1);
 		expect(result.artifacts.completedSlices).toBe(1);
@@ -286,6 +297,80 @@ describe("buildStatusResult", () => {
 				expect.stringContaining("Active slice 01-stale has had no activity for"),
 			]),
 		);
+	});
+
+	it("enriched artifact shape: count matches files array length", () => {
+		const projectDir = createPopulatedProject();
+		const result = buildStatusResult(projectDir);
+
+		expect(result.artifacts.architecture.count).toBe(result.artifacts.architecture.files.length);
+		expect(result.artifacts.research.count).toBe(result.artifacts.research.files.length);
+		expect(result.artifacts.brainstorm.count).toBe(result.artifacts.brainstorm.files.length);
+		expect(result.artifacts.prototypes.count).toBe(result.artifacts.prototypes.files.length);
+	});
+
+	it("enriched artifact shape: files use state-tree-relative paths", () => {
+		const projectDir = createPopulatedProject();
+		const result = buildStatusResult(projectDir);
+
+		// All file paths should be relative to .project/ (no absolute paths)
+		for (const f of result.artifacts.architecture.files) {
+			expect(f).not.toMatch(/^\//);
+			expect(f).toMatch(/\.md$/);
+		}
+	});
+
+	it("enriched artifact shape: dual-directory aggregation includes both project-level and epic files", () => {
+		const projectDir = createProject("dual-dir", {
+			activeEpic: "my-epic",
+			activeSlice: null,
+			activeQuest: null,
+		});
+		writeJson(projectDir, "epics/overview.json", {
+			items: [{ name: "my-epic", status: "activated", created: NOW, completed: null }],
+		});
+		writeJson(projectDir, "epics/my-epic/epic.json", {
+			name: "my-epic",
+			status: "activated",
+			goal: "Test dual-dir",
+			verifications: [],
+			refinement: null,
+			sliceSequence: [],
+			created: NOW,
+			activated: NOW,
+			updated: NOW,
+		});
+
+		// Project-level architecture
+		writeMarkdown(projectDir, "architecture/overview.md", "# Project arch");
+		// Epic-level architecture
+		writeMarkdown(projectDir, "epics/my-epic/architecture/epic-arch.md", "# Epic arch");
+
+		const result = buildStatusResult(projectDir);
+
+		expect(result.artifacts.architecture.count).toBe(2);
+		expect(result.artifacts.architecture.files).toContain("architecture/overview.md");
+		expect(result.artifacts.architecture.files).toContain("epics/my-epic/architecture/epic-arch.md");
+	});
+
+	it("enriched artifact shape: fresh project has empty files arrays", () => {
+		const projectDir = createProject("fresh");
+		const result = buildStatusResult(projectDir);
+
+		expect(result.artifacts.architecture).toEqual({ count: 0, files: [] });
+		expect(result.artifacts.research).toEqual({ count: 0, files: [] });
+		expect(result.artifacts.brainstorm).toEqual({ count: 0, files: [] });
+		expect(result.artifacts.prototypes).toEqual({ count: 0, files: [] });
+	});
+
+	it("decisions, learnings, completedSlices, totalSlices remain plain numbers", () => {
+		const projectDir = createPopulatedProject();
+		const result = buildStatusResult(projectDir);
+
+		expect(typeof result.artifacts.decisions).toBe("number");
+		expect(typeof result.artifacts.learnings).toBe("number");
+		expect(typeof result.artifacts.completedSlices).toBe("number");
+		expect(typeof result.artifacts.totalSlices).toBe("number");
 	});
 
 	it("validates against statusResultSchema", () => {

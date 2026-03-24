@@ -252,8 +252,7 @@ Use `status --json`, `show --json`, `list --json`, `state --json` commands. Thes
 
 The following commands are planned but not yet fully available for all patterns:
 
-- `show --json` with `artifacts` field (slice 02) — enriched artifact existence checks
-- `status --json` with file path arrays (slice 02) — file listings in artifact counts
+- `show --json` with `artifacts` field — enriched artifact existence checks
 
 ## 6. State Orientation
 
@@ -263,7 +262,33 @@ When a skill starts and needs to understand the current project state:
 goodplan status --json
 ```
 
-Returns active entities, their statuses, artifact counts, recommendations (suggested next actions), and warnings (stale entities). **This replaces reading `state.md`.**
+Returns active entities, their statuses, artifact counts with file listings, recommendations (suggested next actions), and warnings (stale entities). **This replaces reading `state.md`.**
+
+### `status --json` Artifact Shape
+
+Changed in 1.0.0: the `architecture`, `research`, `brainstorm`, and `prototypes` fields are now `{ count, files }` objects instead of plain numbers. Files arrays use state-tree-relative paths (relative to `.project/`), aggregating from both project-level and active epic directories. `decisions`, `learnings`, `completedSlices`, `totalSlices` remain plain numbers.
+
+```json
+{
+  "artifacts": {
+    "architecture": {
+      "count": 3,
+      "files": [
+        "architecture/_overview.md",
+        "epics/my-epic/architecture/data-model.md",
+        "epics/my-epic/architecture/cli-changes.md"
+      ]
+    },
+    "research": { "count": 1, "files": ["epics/my-epic/research/topic.md"] },
+    "brainstorm": { "count": 0, "files": [] },
+    "prototypes": { "count": 0, "files": [] },
+    "decisions": 2,
+    "learnings": 1,
+    "completedSlices": 1,
+    "totalSlices": 3
+  }
+}
+```
 
 ### Migration Reference
 
@@ -281,8 +306,6 @@ Skills previously read `state.md` for several purposes. CLI equivalents:
 
 ## 7. Deriving Workflow Phase
 
-> **Available after slice 02.** The `artifacts` field on `show --json` does not exist until then. Skills should not depend on this field yet.
-
 Instead of file-existence checks, use the enriched `show --json` response:
 
 ```json
@@ -295,15 +318,12 @@ Instead of file-existence checks, use the enriched `show --json` response:
     "plan": true,
     "planRefined": true,
     "implementation": false,
-    "completion": false,
     "abandoned": false
   }
 }
 ```
 
 The `status` field gives the entity's current state. The `artifacts` object confirms which files exist. Together they replace the file-existence state machine that skills previously implemented manually.
-
-Until slice 02, use `status --json` for the entity status and `state --json --query` for file-existence checks where needed.
 
 ## 8. Deep Dives — Full State Access
 

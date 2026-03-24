@@ -13,14 +13,27 @@ const activeEntityProjection = z
 	.nullable();
 
 /**
- * Artifact counts — all fields required with default 0 to satisfy
+ * Enriched artifact file info — count + file paths.
+ * Files arrays use state-tree-relative paths (relative to `.project/`).
+ * Changed in 1.0.0: replaces plain number counts (architectureFiles, researchFiles,
+ * brainstormFiles, prototypeFiles) with { count, files } objects.
+ */
+const fileArtifactSchema = z.object({
+	count: z.number().int().nonnegative(),
+	files: z.array(z.string()),
+});
+
+/**
+ * Artifact counts — all fields required with default values to satisfy
  * exactOptionalPropertyTypes (no `undefined` vs optional ambiguity).
+ * Changed in 1.0.0: architecture, research, brainstorm, prototypes are now
+ * { count, files } objects instead of plain numbers.
  */
 const artifactsSchema = z.object({
-	architectureFiles: z.number().int().nonnegative().default(0),
-	researchFiles: z.number().int().nonnegative().default(0),
-	brainstormFiles: z.number().int().nonnegative().default(0),
-	prototypeFiles: z.number().int().nonnegative().default(0),
+	architecture: fileArtifactSchema.default({ count: 0, files: [] }),
+	research: fileArtifactSchema.default({ count: 0, files: [] }),
+	brainstorm: fileArtifactSchema.default({ count: 0, files: [] }),
+	prototypes: fileArtifactSchema.default({ count: 0, files: [] }),
 	decisions: z.number().int().nonnegative().default(0),
 	learnings: z.number().int().nonnegative().default(0),
 	completedSlices: z.number().int().nonnegative().default(0),
