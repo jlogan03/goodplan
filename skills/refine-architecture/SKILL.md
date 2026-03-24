@@ -3,17 +3,17 @@ name: refine-architecture
 description: >
   Iteratively review and improve architecture files using the reviewer infrastructure.
   When an active epic exists, operates on the epic's architecture directory.
-  Falls back to `.project/architecture/` for side quests and project-level work.
   Evaluates module depth, subsystem boundaries, API surfaces, and alignment with decisions.
   Common triggers: 'refine my architecture', 'review the architecture', 'improve the
   architecture', 'the architecture needs work', 'architecture review', 'refine architecture',
   'make the architecture better', 'architecture could be improved', 'architecture needs
   refinement', 'let me refine the architecture'.
+requires: goodplan >= 1.0.0
 ---
 
 # Refine Architecture
 
-Iteratively improve architecture files by spawning specialized review sub-agents in parallel, synthesizing their feedback, and repeating until the architecture meets quality thresholds. When an active epic exists, operates on the epic's architecture directory; otherwise falls back to `.project/architecture/`.
+Iteratively improve architecture files by spawning specialized review sub-agents in parallel, synthesizing their feedback, and repeating until the architecture meets quality thresholds. Operates on the active epic's architecture directory (epic-only after CLI migration — project-level fallback removed; future side quest if needed).
 
 ## Usage
 
@@ -62,31 +62,40 @@ These fill in the skill-specific slots defined by `~/.claude/skills/_shared/refe
 
 ### Step 0: Load and Prepare
 
-**0a. Resolve architecture path**: Read `~/.claude/skills/_shared/references/epic-conventions.md` for epic directory structure. Detect the active epic:
+**0a. Version check and path resolution**:
+
+Read `~/.claude/skills/_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
+
+Verify CLI availability and compatibility:
 
 ```bash
-ls -d .project/epics/__active__*/ 2>/dev/null
+goodplan --version --json
 ```
 
-Resolve paths based on result:
-- **Active epic found** (e.g., `__active__initial` or `__active__<name>`):
-  - `$ARCH_DIR` = `.project/epics/__active__<name>/architecture/`
-  - `$SCOPE_ROOT` = `.project/epics/__active__<name>`
-  - `$FLOW_SCOPE` = `"epics/<name>"` (without `__active__` prefix)
-- **No active epic**:
-  - `$ARCH_DIR` = `.project/architecture/`
-  - `$SCOPE_ROOT` = `.project`
-  - `$FLOW_SCOPE` = `"project"`
+If the command fails, stop: "The `goodplan` CLI is required but not found." If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop with a version mismatch message.
 
-All subsequent references to architecture paths, run directories, and backup directories use these resolved values.
+Also load `~/.claude/skills/_shared/references/epic-conventions.md` for epic directory structure.
 
-**0b. Scaffold detection**: When falling back to `.project/architecture/` (no active epic), check whether `_overview.md` contains the `<!-- scaffold -->` marker:
+**Resolve architecture path via CLI**:
 
 ```bash
-head -5 .project/architecture/_overview.md 2>/dev/null
+goodplan status --json
 ```
 
-If the marker is present, warn the user: "Top-level architecture is a scaffold pointing to the active epic's architecture. Run `/create-architecture` first or operate on the epic architecture directly." Then stop. Do not treat the scaffold as real architecture.
+Check `.activeEpic` in the response:
+- **Active epic found**: Begin the refine-architecture phase:
+
+  ```bash
+  stdin: "" | goodplan epic:refine-architecture --epic <name> --json
+  ```
+
+  The CLI returns `{ paths: { architecture: "<absolute-path>" } }`. Use `paths.architecture` as `$ARCH_DIR` and derive `$SCOPE_ROOT` by stripping `/architecture` from the path.
+
+  If this returns `STATE_INVALID_TRANSITION` (exit 3), check `epic:show --json` for current status. If the epic is already in `refining-architecture`, this is a re-entry — proceed with the architecture path from `epic:show`.
+
+- **No active epic**: Stop. "refine-architecture requires an active epic. Run `/create-epic` first." (Project-level architecture refinement has been removed — future side quest if needed.)
+
+All subsequent references to architecture paths, run directories, and backup directories use these resolved values. Store the epic name for use in `submit-refine-architecture` at Step 4.
 
 1. **Read architecture files**: Read all files in `$ARCH_DIR/`. If the directory does not exist or is empty, tell the user: "No architecture files found — run `/create-architecture` first." Then stop.
 
@@ -102,11 +111,19 @@ If the marker is present, warn the user: "Top-level architecture is a scaffold p
 
    If any are missing, warn the user: "Deep module criteria (8-11) missing from reviewers-cross-cutting.md — architecture review quality will be degraded. Run the architecture-quality side quest Phase 1 first." Then stop.
 
-5. **Resume detection**: Check for existing `architecture-backup-*` directories at the scope root:
+5. **Resume detection** (dual detection):
+
+   **Lifecycle status**: Check `epic:show --json` — if status is `refining-architecture`, the phase is in progress (possibly from a prior session).
+
+   **Iteration progress**: Check for the `architecture-refining/` working directory at the scope root:
    ```bash
-   ls -d $SCOPE_ROOT/architecture-backup-* 2>/dev/null
+   ls -d $SCOPE_ROOT/architecture-refining/round-*/ 2>/dev/null
    ```
-   - If a backup exists AND `$SCOPE_ROOT/architecture-refining/activity-log.jsonl` shows no `"status":"complete"` entry: this is a resume. Present iteration history from the activity-log and ask the user whether to resume or start fresh.
+   If round directories exist, count them and read the last `merged.md` for iteration state. The round directory structure provides the same information as the eliminated skill-local activity-log.
+
+   Note: `architecture-refining/` is a skill-owned working directory (like `completion/`), so `mkdir -p` is retained.
+
+   - If a backup exists AND round directories show incomplete refinement: this is a resume. Present iteration history from the round directories and ask the user whether to resume or start fresh.
    - If resuming: continue from the last completed iteration.
    - If starting fresh: delete the old backup and refining directories.
 
@@ -208,15 +225,15 @@ After the review loop exits, check for goal drift:
    ```bash
    rm -rf $SCOPE_ROOT/architecture-backup-*/
    ```
-2. Write state:
-   - Read `~/.claude/skills/_shared/references/state-and-activity-formats.md` for formats
-   - Generate timestamp: `date -u +%Y-%m-%dT%H:%M:%SZ`
-   - Append to `.project/activity-log.jsonl`:
-     ```bash
-     echo '{"ts":"<timestamp>","phase":"refine-architecture","scope":"$FLOW_SCOPE","status":"complete","summary":"<one-sentence summary>"}' >> .project/activity-log.jsonl
-     ```
-   Use the `$FLOW_SCOPE` value resolved in Step 0 (`"epics/<name>"` when operating on epic architecture, `"project"` otherwise).
-3. Clean up: the `$SCOPE_ROOT/architecture-refining/` directory is retained as a record of the refinement process (round directories, merged feedback, activity-log).
+2. Complete the refine-architecture phase via CLI. Submit with the final reviewer scores:
+
+   ```bash
+   echo '{"scores":{"<reviewer1>":<score>,"<reviewer2>":<score>,...}}' | goodplan submit-refine-architecture --epic <name> --json
+   ```
+
+   Scores must pass the threshold, or use `--override` if the user approves early exit with scores below threshold. This transitions the epic from `refining-architecture` to `architecture-refined` and records the activity.
+
+3. Clean up: the `$SCOPE_ROOT/architecture-refining/` directory is retained as a record of the refinement process (round directories, merged feedback).
 
 ### Step 4b: Expertise Check
 
@@ -227,10 +244,10 @@ Reflect on the conversation: did it reveal new information about the user's expe
 
 ## Graceful Stop
 
-If the user says "stop" or "that's enough" at any point:
+If the user says "stop" or "that's enough" at any point, leave artifacts in place — no CLI state writes on graceful stop:
 
-- **No iterations completed** (stopped before first review): Delete the backup directory. Do not update state or activity-log. Tell the user nothing was changed.
-- **Mid-iteration** (at least one round exists): Keep the backup directory. Write to activity-log with `"status":"abandoned"`. Tell the user: "Architecture files have been partially refined. Backup available at `.project/architecture-backup-<ts>/`. To restore: `mv .project/architecture-backup-<ts>/ .project/architecture/`"
+- **No iterations completed** (stopped before first review): Delete the backup directory. Tell the user nothing was changed.
+- **Mid-iteration** (at least one round exists): Keep the backup directory and `architecture-refining/` round directories. Tell the user: "Architecture files have been partially refined. Backup available at `$SCOPE_ROOT/architecture-backup-<ts>/`. To restore: copy the backup over the architecture directory. Re-run `/refine-architecture` to resume — the skill will detect the prior progress via round directory structure."
 - **Loop complete, pre-finalization**: Proceed to finalization (the architecture is in good shape).
 
 ## When to Ask the User
@@ -310,6 +327,7 @@ Display at the end of Step 4.
 
 ## References
 
+- **CLI interaction**: `~/.claude/skills/_shared/references/cli-interaction.md` — CLI conventions, error handling, invocation patterns
 - **Shared iteration loop**: `~/.claude/skills/_shared/references/iteration-loop.md` — orchestration pattern shared with refine-plan
 - **Reviewer registry**: `references/reviewer-registry.md` — reviewer domains and prompt file locations
 - **Sub-agent prompts**: `references/sub-agent-prompts.md` — reviewer weighting, editor prompt, editor guardrails
@@ -317,5 +335,4 @@ Display at the end of Step 4.
 - **Team defaults**: `~/.claude/skills/_shared/references/team-defaults.md` (optional)
 - **Cross-cutting reviewers**: `~/.claude/skills/_shared/references/reviewers-cross-cutting.md` — Software Architecture, UX & IA, etc.
 - **Decisions format**: `~/.claude/skills/_shared/references/decisions-format.md`
-- **State formats**: `~/.claude/skills/_shared/references/state-and-activity-formats.md`
 - **Expertise tracking**: `~/.claude/skills/_shared/references/expertise-tracking.md`
