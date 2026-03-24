@@ -2,15 +2,15 @@
 
 ## Scope Resolution
 
-1. **Argument**: resolve path (parent dir = scope) or name (match in `slices/`, `side-quests/`, or `epics/__active__*/slices/`).
-2. **state.md**: if no argument, read active slice from `.project/state.md`.
-3. **Auto-detect**: scan `.project/slices/` and `.project/epics/__active__*/slices/` for first dir with `goal.md` + (`explore-complete.md` or `explore-skipped.md`) but no `plan.md`/`plan/`. This is the explore-gate.
+1. **Argument**: resolve path (parent dir = scope) or name. Use `goodplan status --json` → `.activeEpic` to find the epic name, then match in `.project/epics/<name>/slices/`, `.project/slices/`, or `.project/side-quests/`.
+2. **No argument**: query `goodplan status --json` → `.activeSlice` for the active slice, `.activeQuest` for the active quest.
+3. **Auto-detect**: use `goodplan status --json` → `.activeEpic` to determine the epic name (if any), then scan `.project/slices/` and `.project/epics/<name>/slices/` for first dir with `goal.md` + (`explore-complete.md` or `explore-skipped.md`) but no `plan.md`/`plan/`. This is the explore-gate.
 4. **Fallback**: slices with `goal.md` but no explore marker — use AskUserQuestion to confirm planning without exploration.
 5. **Ambiguous**: use AskUserQuestion to choose slice/quest.
 
 ## Context Loading
 
-Read (skip missing): `.project/idea.md`, `conventions.md`, `architecture/` (`_overview.md` first; if >8 files, full read only `_overview.md` + `conventions.md`, 30 lines of rest), `learnings.md`, `.project/decisions/` (follow Loading Protocol from `decisions-format.md`: glob `*.md`, skip superseded, flag `revisiting` to user), sequencing.md (for epic slices, load from `epics/__active__<name>/slices/sequencing.md` first, fall back to `.project/slices/sequencing.md`), other slice `goal.md` files, `.project/research/` + scope's `research/`, scope's `brainstorm/`.
+Read (skip missing): `.project/idea.md`, `conventions.md`, `architecture/` (`_overview.md` first; if >8 files, full read only `_overview.md` + `conventions.md`, 30 lines of rest), `learnings.md`, `.project/decisions/` (follow Loading Protocol from `decisions-format.md`: glob `*.md`, skip superseded, flag `revisiting` to user), sequencing.md (for epic slices, load from `epics/<epicName>/slices/sequencing.md` first where `<epicName>` comes from `goodplan status --json` → `.activeEpic.name`, fall back to `.project/slices/sequencing.md`), other slice `goal.md` files, `.project/research/` + scope's `research/`, scope's `brainstorm/`.
 
 Follow SKILL.md Step 3 sub-step 4 for maturity table extraction and Maturity Note loading.
 
@@ -92,15 +92,15 @@ Architecture lives in two layers (see `~/.claude/skills/_shared/references/epic-
 | Layer | Location | Represents |
 |---|---|---|
 | **Top-level** | `.project/architecture/` | Current reality — what the repo looks like now |
-| **Epic** | `epics/__active__<name>/architecture/` | Target state — where the active epic is headed |
+| **Epic** | `epics/<name>/architecture/` | Target state — where the active epic is headed |
 
 **Which layer to plan against depends on scope**:
 
 - **Epic slices**: Plan against the epic's `architecture/` (target state). Use top-level as secondary context for current reality.
-- **Side quests**: Plan against top-level `.project/architecture/` (current reality). If an active epic exists, read its `_overview.md` and note what it's targeting — check that the side quest plan is compatible and won't conflict with the epic's direction.
+- **Side quests**: Plan against top-level `.project/architecture/` (current reality). Detect the active epic via `goodplan status --json` → `.activeEpic`. If an active epic exists, read its `_overview.md` at `.project/epics/<activeEpic.name>/architecture/_overview.md` and note what it's targeting — check that the side quest plan is compatible and won't conflict with the epic's direction.
 - **No active epic**: Only top-level exists; plan against it.
 
-**Compatibility check for side quests**: When an active epic has architecture files, present: "Planning against current architecture. Active epic [name] is targeting [summary] — check for compatibility." Flag any conflicts between the side quest plan and the epic's target.
+**Compatibility check for side quests**: When an active epic has architecture files (detected via `goodplan status --json` → `.activeEpic`), present: "Planning against current architecture. Active epic [name] is targeting [summary] — check for compatibility." Flag any conflicts between the side quest plan and the epic's target.
 
 ## CLAUDE.md
 
@@ -110,8 +110,8 @@ No update needed.
 
 Trigger phrases: "that's enough", "stop here", "let's stop".
 
-- **(a) No plan.md written** (includes partial drafts not yet saved to disk) — don't touch state.md or activity-log. Research files alone don't change state.
-- **(b) plan.md written** — reload `formats.md`, update state.md and activity-log normally.
+- **(a) No plan.md written** (includes partial drafts not yet saved to disk) — no state writes needed. Research files alone don't change state. Stop.
+- **(b) plan.md written** — proceed to CLI submit (Step 7). The CLI handles state transitions and activity recording.
 
 ## When to Split
 

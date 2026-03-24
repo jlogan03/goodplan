@@ -78,7 +78,7 @@ Migrate 2 skills with higher pattern counts (15-19 hits). Both have reference fi
 
 ### Tasks
 
-- [ ] **create-plan/SKILL.md** (12 hits):
+- [x] **create-plan/SKILL.md** (12 hits):
   - Add `requires: goodplan >= 1.0.0` to frontmatter
   - Add version check (Step 0) referencing `cli-interaction.md`
   - Step 2 lines 27, 31: Replace `epics/__active__*/slices/` with `goodplan status --json` → `.activeEpic` + unprefixed paths
@@ -89,7 +89,7 @@ Migrate 2 skills with higher pattern counts (15-19 hits). Both have reference fi
   - Step 7 lines 139-154: Replace entire state write-back with CLI submit. For slice scope: use `submit-plan --slice <name> --json`. For quest scope: use `submit-plan --quest <name> --json`. Remove state.md update and activity-log.jsonl append. Note: create-plan does not invoke `quest:plan` or `slice:plan` (the begin-phase commands) because the orchestrator has already transitioned the entity to the planning phase before invoking this skill.
   - Step 2 line 29: When detecting quest scope, use `goodplan status --json` → `.activeQuest` (in addition to `.activeSlice` for slice scope)
   - Step 4c3: Remove `mkdir -p .project/decisions/` (preemptive directory creation is no longer needed). Each subsequent decision write uses `decision:create --json` with payload `{ "id", "domain", "title", "summary" }` — the CLI handles directory creation.
-- [ ] **create-plan/references/guidance.md** (7 hits):
+- [x] **create-plan/references/guidance.md** (7 hits):
   - Line 5: Replace `__active__` glob with `goodplan status --json` → `.activeEpic`, construct unprefixed path `epics/<name>/...`
   - Line 6: Replace `state.md` read with `goodplan status --json` → `.activeSlice` for slice scope detection
   - Line 7: Replace `__active__` auto-detect glob with `goodplan slice:list --json` to find plannable slices
@@ -97,7 +97,7 @@ Migrate 2 skills with higher pattern counts (15-19 hits). Both have reference fi
   - Line 95: Replace `epics/__active__<name>/architecture/` path with unprefixed `epics/<name>/architecture/`
   - Lines 99-103: These lines reference "active epic" conceptually but contain no literal `__active__` strings. Add an instruction to detect the active epic via `goodplan status --json` → `.activeEpic` rather than replacing path literals
   - Lines 113-114: Replace graceful stop state.md/activity-log references — stops leave artifacts, no state writes
-- [ ] **create-slices/SKILL.md** (14 hits):
+- [x] **create-slices/SKILL.md** (14 hits):
   - Add `requires: goodplan >= 1.0.0` to frontmatter
   - Add version check (Step 0) referencing `cli-interaction.md`
   - Step 0 line 28: Replace `ls -d .project/epics/__active__*/` with `goodplan status --json` → `.activeEpic`
@@ -105,7 +105,7 @@ Migrate 2 skills with higher pattern counts (15-19 hits). Both have reference fi
   - Graceful stop lines 125-129: Replace `state-and-activity-formats.md` load (line 125) and remove state.md/activity-log writes in all 3 stop cases (lines 127-129). Stops leave artifacts in place — no state writes. Note: create-slices has 3 stop cases: (a) no files written, (b) sequencing.md only, (c) sequencing.md + some goal.md files. Cases (b) and (c) previously wrote partial progress to state.md/activity-log. With CLI migration, partial stops are silent (no `submit-slices` call) — the written artifact files serve as resume markers. This is acceptable because the skill already checks for existing files on re-entry.
   - Step 8 (CLAUDE.md update) lines 146-148: Replace `__active__` path references with dynamic instruction: use `goodplan status --json` → `.activeEpic` to get the epic name, then construct unprefixed path `.project/epics/<name>/slices/sequencing.md`. Do NOT replace the CLAUDE.md update logic itself — only the `__active__` path references within it.
   - Step 9 (Write Back State) lines 170-187: Replace entire state write-back with CLI submit. For epic scope: use `submit-slices --epic <name> --json`. Remove state.md and activity-log.jsonl writes. Remove `state-and-activity-formats.md` reference (line 172).
-- [ ] **create-slices/references/guidance.md** (1 hit):
+- [x] **create-slices/references/guidance.md** (1 hit):
   - Lines 41-43: Replace entire Graceful Stop section. Remove state.md, activity-log, and formats.md references in all 3 stop cases (a, b, c). Stops leave artifacts in place — no state writes.
 
 ### Verification

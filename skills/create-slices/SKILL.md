@@ -8,6 +8,7 @@ description: >
   slices', 'create slices', 'break this into slices', 'what should we build first', 'let's plan the
   slices', 'define slices', 'what's our build order', 'slices', 'what should
   we build', 'add a slice', 'new slice'.
+requires: goodplan >= 1.0.0
 ---
 
 # Define Slices
@@ -18,19 +19,33 @@ When an active epic exists, all slice output is scoped to the epic (see Step 0 f
 
 **Note:** Individual slices within epics do NOT have an explore phase. All exploration happens at the epic level via `/explore`. Narrow research during slice planning is handled by `/create-plan`'s existing research step.
 
-## Step 0 — Determine Slice Output Location
+## Step 0 — Version Check and Determine Slice Output Location
 
-Use the Read tool to load `~/.claude/skills/_shared/references/epic-conventions.md` for epic directory structure and state machine.
+Read `~/.claude/skills/_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
+
+Verify CLI availability and compatibility:
+
+```bash
+goodplan --version --json
+```
+
+If the command fails (not found, non-zero exit), stop: "The `goodplan` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
+
+If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill requires goodplan >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
+
+Also load `~/.claude/skills/_shared/references/epic-conventions.md` for epic directory structure and state machine.
 
 Detect the active epic:
 
 ```bash
-ls -d .project/epics/__active__*/ 2>/dev/null
+goodplan status --json
 ```
+
+Check `.activeEpic` in the response. This field is `{ name: string, status: string } | undefined` — check for presence, not null.
 
 Determine the slice output path based on the result:
 
-- **Active epic found** (e.g., `__active__initial` or `__active__<name>`): slices go to `.project/epics/__active__<name>/slices/`. Set `$SLICES_DIR` to this path. Set `$EPIC_DIR` to `.project/epics/__active__<name>/`. Set `$FLOW_SCOPE` to `"epics/<name>"`.
+- **Active epic found**: slices go to `.project/epics/<activeEpic.name>/slices/`. Set `$SLICES_DIR` to this path. Set `$EPIC_DIR` to `.project/epics/<activeEpic.name>/`. Set `$FLOW_SCOPE` to `"epics/<name>"`.
 
 - **No active epic**: defaults to `.project/slices/` (legacy/side-quest-only projects). Set `$SLICES_DIR` to `.project/slices/`. Set `$EPIC_DIR` to empty. Set `$FLOW_SCOPE` to `"project"`.
 
@@ -84,7 +99,13 @@ Follow calibration depth guidance in `~/.claude/skills/_shared/references/expert
 
 4. Iterate. When user is satisfied, use AskUserQuestion: "Looks good — proceed to details" / "I have more changes".
 
-Throughout Steps 4 and 6, when a durable decision emerges (see threshold in `decisions-format.md`), propose the decision text to the user and confirm via AskUserQuestion before writing. Run `mkdir -p .project/decisions/` before the first write. Write in the format specified by `decisions-format.md`. Track all decisions written during this run and summarize them in Step 10 (Done Summary).
+Throughout Steps 4 and 6, when a durable decision emerges (see threshold in `decisions-format.md`), propose the decision text to the user and confirm via AskUserQuestion before writing. Create decisions via CLI:
+
+```bash
+echo '{"id":"<kebab-case-id>","domain":"<topic-area>","title":"<decision-title>","summary":"<brief-summary>"}' | goodplan decision:create --json
+```
+
+The CLI handles directory creation and state management. Track all decisions written during this run and summarize them in Step 10 (Done Summary).
 
 ## Step 4b — Three-Lens Evaluation
 
@@ -122,11 +143,11 @@ For each slice in order:
 
 **Graceful stop** — if the user says "that's enough" or "stop here" mid-slice:
 
-Load `~/.claude/skills/_shared/references/state-and-activity-formats.md` for state.md format. Then handle by case:
+Stops leave artifacts in place — no state writes. The written artifact files serve as resume markers (the skill already checks for existing files on re-entry). Handle by case:
 
-- **(a) No files written** → don't touch state.md or activity-log.jsonl. Tell user nothing was written. Stop.
-- **(b) sequencing.md written but no goal.md files** → if state.md does not exist, create it with the Write tool. Update state.md Current Phase to `create-slices in-progress — stopped after writing sequencing.md`. Generate a UTC timestamp by running: `date -u +%Y-%m-%dT%H:%M:%SZ`. Append to activity-log.jsonl with `"scope":"$FLOW_SCOPE","status":"started"` (use the `$FLOW_SCOPE` value resolved in Step 0). Update CLAUDE.md to reference sequencing.md at `$SLICES_DIR/sequencing.md` (follow Step 8 logic). Stop.
-- **(c) sequencing.md + some goal.md files written** → if state.md does not exist, create it with the Write tool. Update state.md Current Phase to `create-slices in-progress — stopped after writing sequencing.md, <comma-separated list of goal.md files written>`. Generate a UTC timestamp by running: `date -u +%Y-%m-%dT%H:%M:%SZ`. Append to activity-log.jsonl with `"scope":"$FLOW_SCOPE","status":"started"` (use the `$FLOW_SCOPE` value resolved in Step 0). Update CLAUDE.md to reference sequencing.md at `$SLICES_DIR/sequencing.md` (follow Step 8 logic). Stop.
+- **(a) No files written** → tell user nothing was written. Stop.
+- **(b) sequencing.md written but no goal.md files** → update CLAUDE.md to reference sequencing.md at `$SLICES_DIR/sequencing.md` (follow Step 8 logic). No CLI submit. Stop.
+- **(c) sequencing.md + some goal.md files written** → update CLAUDE.md to reference sequencing.md at `$SLICES_DIR/sequencing.md` (follow Step 8 logic). No CLI submit. Stop.
 
 ## Step 7 — Finalize sequencing.md
 
@@ -143,12 +164,12 @@ The line to add to the "Read these" list (using the resolved `$SLICES_DIR`):
 - `$SLICES_DIR/sequencing.md` — slice ordering and dependencies
 ```
 
-For example, when the active epic is `__active__initial`, the line would be:
+For example, when the active epic name is `initial` (from `goodplan status --json` → `.activeEpic.name`), the line would be:
 ```
-- `.project/epics/__active__initial/slices/sequencing.md` — slice ordering and dependencies
+- `.project/epics/initial/slices/sequencing.md` — slice ordering and dependencies
 ```
 
-**Migration note:** Existing projects may have `.project/slices/sequencing.md` referenced in CLAUDE.md from before the epic infrastructure. When updating CLAUDE.md, check for and replace any stale `.project/slices/sequencing.md` reference with the epic-scoped path.
+**Migration note:** Existing projects may have `.project/slices/sequencing.md` or stale `__active__`-prefixed paths referenced in CLAUDE.md. When updating CLAUDE.md, check for and replace any stale references with the correct epic-scoped path using the epic name from `goodplan status --json`.
 
 **Three-case logic for CLAUDE.md update:**
 
@@ -167,24 +188,17 @@ Reflect on the conversation: did it reveal new information about the user's expe
 - **If yes**: Read `~/.claude/skills/_shared/references/expertise-tracking.md` for the recording protocol. Update `## Expertise` section in `~/.claude/CLAUDE.md` and write/update relevant `expertise_<domain>.md` memory file.
 - **If no**: Skip silently — no Read, no output, no AskUserQuestion.
 
-## Step 9 — Write Back State
+## Step 9 — Submit via CLI
 
-Load `~/.claude/skills/_shared/references/state-and-activity-formats.md` for state.md and activity-log.jsonl formats.
+For epic-scoped slice definition, submit the completed slices via CLI. The CLI handles state transitions and activity recording:
 
-Generate a UTC timestamp: `date -u +%Y-%m-%dT%H:%M:%SZ`
-
-If state.md does not exist, create it using the Write tool.
-
-Update `.project/state.md` using the 4-section format from the shared formats reference. Set:
-- Current Phase: `create-slices complete — sequencing and goal.md files written`
-- Active Slice: unchanged (or `none (working at project level)` if project-level)
-- Work Stack: unchanged
-- Next Step: `/create-plan` for the first unplanned slice (scoped to epic if applicable, e.g., "Run `/create-plan` for the first slice in `epics/__active__<name>/slices/`")
-
-Append to `.project/activity-log.jsonl` using the `$FLOW_SCOPE` resolved in Step 0:
 ```bash
-echo '{"ts":"<timestamp>","phase":"create-slices","scope":"$FLOW_SCOPE","status":"complete","summary":"<one-sentence summary>"}' >> .project/activity-log.jsonl
+echo '{}' | goodplan submit-slices --epic <name> --json
 ```
+
+Where `<name>` is the epic name from `goodplan status --json` → `.activeEpic.name`.
+
+For non-epic scopes, no CLI mutation is needed — the written artifacts serve as the completion record.
 
 ## Step 10 — Done Summary
 

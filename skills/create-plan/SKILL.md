@@ -8,11 +8,26 @@ description: >
   Requires idea.md + goal.md for the slice.
   Common triggers: 'create a plan', 'write a plan', 'plan this slice', 'let's plan',
   'create plan', 'make a plan for'.
+requires: goodplan >= 1.0.0
 ---
 
 # Create Plan
 
 Interactive dialogue that takes a slice or side quest goal and produces a complete plan through structured conversation. Asks questions, researches dependencies, detects architectural changes, and iteratively builds the plan. Re-entrant — detects existing plans and offers overwrite/revise/cancel.
+
+## Step 0 — Version Check
+
+Read `~/.claude/skills/_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
+
+Verify CLI availability and compatibility:
+
+```bash
+goodplan --version --json
+```
+
+If the command fails (not found, non-zero exit), stop: "The `goodplan` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
+
+If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill requires goodplan >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
 
 ## Step 1 — Load References
 
@@ -24,11 +39,11 @@ Use the Read tool to load (paths relative to this skill's directory):
 
 ## Step 2 — Determine Scope
 
-1. **Argument passed**: if a path, use its parent directory as scope (works for `slices/`, `side-quests/`, and `epics/__active__*/slices/`). If a name, resolve via `.project/slices/`, `.project/side-quests/`, or `.project/epics/__active__*/slices/`.
+1. **Argument passed**: if a path, use its parent directory as scope (works for `slices/`, `side-quests/`, and `epics/<name>/slices/`). If a name, resolve via `goodplan status --json` → `.activeEpic` to find the epic name, then check `.project/epics/<name>/slices/`, `.project/slices/`, or `.project/side-quests/`.
 
-2. **No argument**: read `.project/state.md` for the active slice.
+2. **No argument**: query `goodplan status --json`. Check `.activeSlice` for the active slice, `.activeQuest` for the active quest. These fields are `{ name: string, status: string } | undefined` — check for presence, not null. If `.activeSlice` is present, use `.project/slices/<activeSlice.name>/` (or `.project/epics/<activeEpic.name>/slices/<activeSlice.name>/` if an active epic exists). If `.activeQuest` is present, use `.project/side-quests/<activeQuest.name>/`.
 
-3. **No argument and no active slice**: scan `.project/slices/` and `.project/epics/__active__*/slices/` for the first directory with `goal.md` AND (`explore-complete.md` or `explore-skipped.md`) but no `plan.md`/`plan/`. If none found, fall back to slices with `goal.md` but no explore marker — use AskUserQuestion: "This slice hasn't completed exploration — plan it anyway?" If still ambiguous, use AskUserQuestion to choose.
+3. **No argument and no active slice/quest**: use `goodplan status --json` → `.activeEpic` to determine the epic name (if any), then scan `.project/slices/` and `.project/epics/<name>/slices/` for the first directory with `goal.md` AND (`explore-complete.md` or `explore-skipped.md`) but no `plan.md`/`plan/`. If none found, fall back to slices with `goal.md` but no explore marker — use AskUserQuestion: "This slice hasn't completed exploration — plan it anyway?" If still ambiguous, use AskUserQuestion to choose.
 
 4. Read the scope's `goal.md`. If absent, tell the user and stop.
 
@@ -42,12 +57,12 @@ Read (skip missing):
 2. `.project/conventions.md`
 3. **Load architecture** (scope-dependent):
    - **Epic slices**: Load the epic's own `architecture/` as primary (target state), `.project/architecture/` as secondary (current reality).
-   - **Side quests**: Load `.project/architecture/` as primary. If an active epic exists at `.project/epics/__active__*/architecture/`, read its `_overview.md` and present: "Planning against current architecture. Active epic [name] is targeting [brief summary] — check for compatibility."
+   - **Side quests**: Load `.project/architecture/` as primary. If an active epic exists (check `goodplan status --json` → `.activeEpic`), read its architecture at `.project/epics/<activeEpic.name>/architecture/_overview.md` and present: "Planning against current architecture. Active epic [name] is targeting [brief summary] — check for compatibility."
    - **No active epic**: Load `.project/architecture/` only.
    - For whichever architecture directory is primary: start with `_overview.md`. If more than 8 files, read `_overview.md` and `conventions.md` in full, first 30 lines of each remaining file.
 4. **Maturity extraction**: Extract the `## Subsystem Maturity` table from the primary architecture's `_overview.md`. If no maturity table exists, skip maturity-aware behavior in Step 4. Also check for a `## Maturity Note` section in the loaded `goal.md` — treat this as an additional maturity signal (written by `/create-slices` for slices touching maturing+ subsystems).
 5. `.project/learnings.md`
-6. **Sequencing**: If the scope is an epic slice, load `.project/epics/__active__<name>/slices/sequencing.md` first. Fall back to `.project/slices/sequencing.md`.
+6. **Sequencing**: If the scope is an epic slice, load `.project/epics/<epicName>/slices/sequencing.md` first (where `<epicName>` comes from `goodplan status --json` → `.activeEpic.name`). Fall back to `.project/slices/sequencing.md`.
 7. Other slice `goal.md` files — for dependency and ordering context
 8. Existing research: `.project/research/` (project-level) and scope's `research/`
 9. Scope's `brainstorm/` directories
@@ -98,7 +113,13 @@ Use the maturity table (and any `## Maturity Note` from goal.md) to identify sub
 
 ### 4c3. Record durable decisions
 
-Throughout Steps 4a-4c, when a durable decision emerges (see threshold in `decisions-format.md`), propose the decision text to the user and confirm via AskUserQuestion before writing. Run `mkdir -p .project/decisions/` before the first write. Write in the format specified by `decisions-format.md`. Track all decisions written during this run and summarize them in Step 8 (Done Summary).
+Throughout Steps 4a-4c, when a durable decision emerges (see threshold in `decisions-format.md`), propose the decision text to the user and confirm via AskUserQuestion before writing. Create decisions via CLI:
+
+```bash
+echo '{"id":"<kebab-case-id>","domain":"<topic-area>","title":"<decision-title>","summary":"<brief-summary>"}' | goodplan decision:create --json
+```
+
+The CLI handles directory creation and state management. Track all decisions written during this run and summarize them in Step 8 (Done Summary).
 
 ### 4d. Readiness gate
 
@@ -108,8 +129,8 @@ Re-load `references/guidance.md` (may have left context during long session). Ch
 
 Trigger phrases: "that's enough", "stop here", "let's stop".
 
-- **No plan.md written** (regardless of research files): reload `~/.claude/skills/_shared/references/state-and-activity-formats.md`, don't touch state.md or activity-log. Research files alone don't change state.
-- **plan.md written**: reload `~/.claude/skills/_shared/references/state-and-activity-formats.md`, normal state update (Step 7).
+- **No plan.md written** (regardless of research files): no state writes needed. Research files alone don't change state. Stop.
+- **plan.md written**: proceed to Step 7 (CLI submit handles state).
 
 ## Step 5 — Draft and Approve
 
@@ -134,25 +155,21 @@ Reflect on the conversation: did it reveal new information about the user's expe
 - **If yes**: Read `~/.claude/skills/_shared/references/expertise-tracking.md` for the recording protocol. Update `## Expertise` section in `~/.claude/CLAUDE.md` and write/update relevant `expertise_<domain>.md` memory file.
 - **If no**: Skip silently — no Read, no output, no AskUserQuestion.
 
-## Step 7 — Write Back State
+## Step 7 — Submit via CLI
 
-Re-load `~/.claude/skills/_shared/references/state-and-activity-formats.md` (session may be long).
+If the plan is under `.project/` and belongs to a slice or quest scope, use the appropriate CLI submit command. The CLI handles activity recording and state transitions.
 
-Generate a UTC timestamp: `date -u +%Y-%m-%dT%H:%M:%SZ`
-
-If state.md does not exist, create it using the Write tool.
-
-Update `.project/state.md` using the 4-section format from the shared formats reference. Set:
-- Current Phase: `create-plan complete — plan written for <scope>`
-- Active Slice: the scope path
-- Work Stack: unchanged
-- Next Step: `/refine-plan` on the plan just written
-
-Append to `.project/activity-log.jsonl`:
-
+For slice scope:
 ```bash
-echo '{"ts":"<timestamp>","phase":"create-plan","scope":"<scope>","status":"complete","summary":"<one-sentence summary>"}' >> .project/activity-log.jsonl
+echo '{}' | goodplan submit-plan --slice <name> --json
 ```
+
+For quest scope:
+```bash
+echo '{}' | goodplan submit-plan --quest <name> --json
+```
+
+If the plan is standalone (not under `.project/`), skip CLI mutation.
 
 ## Step 8 — Done Summary
 

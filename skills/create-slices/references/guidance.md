@@ -38,9 +38,11 @@ Add this line to the "Read these" list (using the resolved `$SLICES_DIR`):
 
 ## Graceful Stop
 
-- **(a) No files written** — don't touch state.md or activity-log.
-- **(b) sequencing.md only** — load formats.md. State: `create-slices in-progress — stopped after writing sequencing.md`. Activity-log: `"scope":"$FLOW_SCOPE","status":"started"`.
-- **(c) sequencing.md + goal.md files** — load formats.md. State: `create-slices in-progress — stopped after writing sequencing.md, <list>`. Activity-log: `"scope":"$FLOW_SCOPE","status":"started"`.
+Stops leave artifacts in place — no state writes. The written artifact files serve as resume markers.
+
+- **(a) No files written** — tell user nothing was written. Stop.
+- **(b) sequencing.md only** — update CLAUDE.md to reference sequencing.md. No CLI submit. Stop.
+- **(c) sequencing.md + goal.md files** — update CLAUDE.md to reference sequencing.md. No CLI submit. Stop.
 
 All paths use `$SLICES_DIR` resolved in Step 0.
 
