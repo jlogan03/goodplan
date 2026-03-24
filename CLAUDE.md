@@ -19,6 +19,8 @@ Read these before doing any significant work in this repo:
 - `.project/architecture/transition-tables.md` — complete state transition spec (source of truth)
 
 Also check if relevant to your task:
+- `.project/epics/__active__skills-cli-integration/slices/sequencing.md` — slice ordering and dependencies
+- `.project/epics/__active__skills-cli-integration/architecture/` — epic target architecture (including cli-changes.md, cli-interaction-conventions.md, context-api.md)
 - `.project/research/` — tech stack and library research
 - `.project/brainstorm/` — architecture brainstorming output
 - `.project/decisions/` — active architectural decisions

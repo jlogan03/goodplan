@@ -65,3 +65,4 @@ Installed alongside Claude Code skills. Skills are versioned in the repo (`skill
 | RPC Layer | Developing | Commands | — | Workflow orchestration. Stable across 8 slices. Tested indirectly via integration tests. |
 | State Machine | Developing | RPC Layer | `tests/fitness/state-machine-purity.test.ts`, `tests/fitness/transition-completeness.test.ts` | Pure rules engine. Purity and completeness fitness functions in place. |
 | Data Layer | Developing | RPC Layer, Commands | `tests/fitness/data-determinism.test.ts`, `tests/fitness/schema-validation.test.ts`, `tests/fitness/tree-accuracy.test.ts`, `tests/fitness/concurrent-modification.test.ts`, `tests/fitness/atomic-writes.test.ts` | All planned fitness functions implemented. |
+| Context | Developing | RPC Layer, Commands | candidate | Peer module at `src/core/context/`. Budget-based content inlining, per-phase priority tables. Depends on tree types and Data Layer reads. |
