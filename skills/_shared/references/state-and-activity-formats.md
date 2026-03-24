@@ -1,5 +1,7 @@
 # State & Activity Log Formats
 
+> **Deprecated — do not follow.** The `state.md` format documented below is obsolete and retained only as a migration reference. It will be removed in a future slice. Skills MUST use CLI commands instead of reading or writing `state.md`. See `skills/_shared/references/cli-interaction.md` for the new conventions — particularly section 6 (State Orientation) which provides the migration reference from `state.md` fields to CLI equivalents.
+
 ## state.md Format
 
 ```markdown

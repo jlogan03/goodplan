@@ -97,21 +97,21 @@ Write `skills/_shared/references/cli-interaction.md` — the shared reference th
 ### Expected Behavior
 
 **Before implementation** (should fail / show absence):
-- [ ] `ls skills/_shared/references/cli-interaction.md` — file doesn't exist
+- [x] `ls skills/_shared/references/cli-interaction.md` — file now exists
 
 **After implementation** (should pass / show presence):
-- [ ] `skills/_shared/references/cli-interaction.md` exists with all required sections
-- [ ] Covers at minimum: binary detection, invocation patterns, state orientation, error handling, completion payload shapes
-- [ ] All CLI command examples use correct flag names (entity-specific `--slice`/`--epic`/`--quest`, not `--name`)
-- [ ] Documents `stdin: ""` as Bash tool syntax with explicit callout
-- [ ] Documents `start-*` always-JSON behavior and `--inline[=<bytes>]`
-- [ ] Includes migration example (before/after for a real skill section)
-- [ ] Includes error recovery patterns
+- [x] `skills/_shared/references/cli-interaction.md` exists with all required sections
+- [x] Covers at minimum: binary detection, invocation patterns, state orientation, error handling, completion payload shapes
+- [x] All CLI command examples use correct flag names (entity-specific `--slice`/`--epic`/`--quest`, not `--name`)
+- [x] Documents `stdin: ""` as Bash tool syntax with explicit callout
+- [x] Documents `start-*` always-JSON behavior and `--inline[=<bytes>]`
+- [x] Includes migration example (before/after for a real skill section)
+- [x] Includes error recovery patterns
 
 ### Tasks
 
-- [ ] **Read architecture's `cli-interaction-conventions.md`** from `.project/epics/__active__skills-cli-integration/architecture/cli-interaction-conventions.md` — this is the source material
-- [ ] **Write `skills/_shared/references/cli-interaction.md`** adapting the architecture spec. Structure:
+- [x] **Read architecture's `cli-interaction-conventions.md`** from `.project/epics/__active__skills-cli-integration/architecture/cli-interaction-conventions.md` — this is the source material
+- [x] **Write `skills/_shared/references/cli-interaction.md`** adapting the architecture spec. Structure:
   1. **Binary Detection & Version** — `goodplan --version --json`, fail-fast if missing. Note: version enforcement is convention-doc-only in this slice; CLI-side enforcement comes in slice 02
   2. **Data Ownership** — JSON/JSONL through CLI only, free-form markdown via Read tool directly. Table format matching architecture doc
   3. **What Skills Must NOT Do** — direct JSON/JSONL reads, state.md, activity-log appending, mkdir for .project/ subdirs
@@ -125,8 +125,8 @@ Write `skills/_shared/references/cli-interaction.md` — the shared reference th
   10. **Error Handling** — exit codes (0/1/2/3) and specific error codes (e.g., `DATA_NO_PROJECT`, `VALIDATION_INVALID_QUERY`, `VALIDATION_UNKNOWN_COMMAND`). Enumerate error codes that skills need for pattern-matching, not just exit codes. Include error recovery patterns with worked examples
   11. **Self-Discovery** — `goodplan schema --json`
   12. **Migration Example** — before/after for a real skill section (e.g., create-epic state writes)
-- [ ] **Add deprecation note to `skills/_shared/references/state-and-activity-formats.md`** — add a note at the top of the file that the state.md format is now obsolete, with a pointer to `cli-interaction.md`. 12 skills reference this file directly
-- [ ] **Verify convention doc completeness** — compare against architecture's cli-interaction-conventions.md checklist to ensure no sections are missed. Note topics that are "drafted but validated by subsequent slices"
+- [x] **Add deprecation note to `skills/_shared/references/state-and-activity-formats.md`** — add a note at the top of the file that the state.md format is now obsolete, with a pointer to `cli-interaction.md`. 12 skills reference this file directly
+- [x] **Verify convention doc completeness** — compare against architecture's cli-interaction-conventions.md checklist to ensure no sections are missed. Note topics that are "drafted but validated by subsequent slices"
 
 ### Verification
 
