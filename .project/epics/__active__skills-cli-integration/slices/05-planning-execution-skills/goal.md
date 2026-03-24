@@ -82,3 +82,5 @@ Migrate 6 skills that handle slice/quest planning and execution: `create-slices`
 - Dogfooding (slice 06)
 
 **Note on CLI changes:** CLI code changes are not expected but are in scope if validation reveals gaps. Track any CLI changes as convention doc updates.
+
+**Follow-up from slice 03:** The migrated `complete` skill's refactor intelligence step (`skills/complete/references/guidance.md` line 180) still uses `mkdir -p .project/side-quests/<name>/` to create side quest proposal directories directly. This should be replaced with `quest:create` CLI during this slice to maintain the "no direct mkdir in .project/" convention. The current pattern is a draft proposal workflow — the skill creates a `goal.md` and asks the user to approve before formalizing. Migrating to `quest:create` makes this consistent with how slices are created via `slice:create`.
