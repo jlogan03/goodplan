@@ -4,8 +4,8 @@
 
 ### Well-tested areas
 - Skill file structure (SKILL.md frontmatter, step numbering, reference paths): verified across 4 skill files during slice-quality-and-health implementation with 28-point checklist
-- goodplan CLI: 850 tests (728 unit + 30 integration + 92 fitness). Unit tests cover tree types, schemas, I/O, state machine, RPC, context, commands (including new state command serialization and pagination). Integration tests spawn compiled binary against real `.project/` fixtures covering init, epic/slice/quest lifecycle, error transitions, circuit breaker, runner modes, state command with query/inline/offset/limit. 9 fitness functions verify all architectural invariants. Type-clean against `tsc --noEmit`.
-- goodplan CLI main runner (`src/index.ts`): integration tests cover unknown commands, --help, --version, --json error mode, NO_COLOR, stdin validation — pre-dispatch regression now caught by tests.
+- goodplan CLI: 941 tests (unit + integration + fitness). Unit tests cover tree types, schemas, I/O, state machine, RPC (including paths, version-stamp), context, commands (including state, show artifacts, status file arrays). Integration tests spawn compiled binary covering init, epic/slice/quest lifecycle, error transitions, circuit breaker, runner modes, show artifacts, result paths, version compatibility. 9 fitness functions verify all architectural invariants. Type-clean against `tsc --noEmit`.
+- goodplan CLI main runner (`src/index.ts`): integration tests cover unknown commands, --help, --version, --json error mode, NO_COLOR, stdin validation, version compatibility checking (4 variants), --quiet suppression of warnings.
 
 ### Undertested areas
 - Runtime behavior of new skills (refine-slices, updated define-slices three-lens evaluation): not yet exercised on a real project
@@ -22,15 +22,15 @@
 - epic-conventions.md is consumed by 12+ skills: changes require updating all consumers
 - citty + `exactOptionalPropertyTypes`: requires `as unknown as CommandDef` casts in `src/index.ts`. May break on citty upgrade.
 
-<!-- Last updated by: complete for epics/__active__skills-cli-integration/slices/01-state-command-convention-doc-tracer, 2026-03-23 -->
+<!-- Last updated by: complete for epics/__active__skills-cli-integration/slices/02-show-status-enrichment, 2026-03-24 -->
 
 ## Performance Characteristics
 
-- Full test suite (850 tests, 77 files): ~5s total including binary compilation (~1s)
-- Integration tests (40 tests): ~9s (dominated by binary spawning)
+- Full test suite (941 tests, 84 files): ~6.5s total including binary compilation (~1s)
+- Integration tests (~50 tests): ~10s (dominated by binary spawning)
 - Fitness tests (92 tests): ~3s (mix of source parsing and module imports)
 
-<!-- Last updated by: complete for epics/__active__skills-cli-integration/slices/01-state-command-convention-doc-tracer, 2026-03-23 -->
+<!-- Last updated by: complete for epics/__active__skills-cli-integration/slices/02-show-status-enrichment, 2026-03-24 -->
 
 ## Extensibility
 
@@ -72,8 +72,8 @@
 
 ## Recent Changes
 
+- **02-show-status-enrichment** (2026-03-24): `artifacts` boolean flags on `show --json`, `status --json` file arrays (`{ count, files }`), `paths?` on RPC result types, semver compatibility checking, version bump to 1.0.0, deleted dead `files.ts`. 941 tests (+91 new).
 - **01-state-command-convention-doc-tracer** (2026-03-23): `goodplan state --json --query --offset --limit` command, `--version --json`, `serializeStateTree` with exhaustive type switching, convention doc (`cli-interaction.md` with 12 sections), project-status skill rewrite as CLI tracer bullet. 850 tests.
-- **08-integration-test** (2026-03-23): Integration tests (30 tests spawning compiled binary: init, epic/slice/quest lifecycle, error transitions, circuit breaker, runner modes) + 9 fitness functions (92 tests: state machine purity, transition completeness, data determinism, schema validation, tree accuracy, concurrent modification, atomic writes, stateless commands, schema output accuracy). 1 production line changed (export handlerRecord). 824 total tests.
-- **07-skills-migrate** (2026-03-23): Copy 15 goodplan workflow skills into `skills/`, create `scripts/install-skills.sh` with clean-install semantics, wire `package.json install:skills`, command reference audit (0 CLI invocations found — skills use slash commands). 702 tests unchanged.
+- **08-integration-test** (2026-03-23): Integration tests (30 tests spawning compiled binary: init, epic/slice/quest lifecycle, error transitions, circuit breaker, runner modes) + 9 fitness functions (92 tests). 824 total tests.
 
-<!-- Last updated by: complete for epics/__active__skills-cli-integration/slices/01-state-command-convention-doc-tracer, 2026-03-23 -->
+<!-- Last updated by: complete for epics/__active__skills-cli-integration/slices/02-show-status-enrichment, 2026-03-24 -->

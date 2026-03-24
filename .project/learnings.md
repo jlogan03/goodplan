@@ -2,6 +2,21 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Build-time defines must be mirrored in test compilation
+_Source: 02-show-status-enrichment_
+
+`--define __GOODPLAN_VERSION__` was missing from `tests/global-setup.ts`, breaking all integration tests that touch version parsing. Any build-time define in `package.json` scripts must also appear in the test binary compilation path.
+
+## Breaking schema changes require version boundary ordering in plans
+_Source: 02-show-status-enrichment_
+
+Phase ordering must ensure semver infrastructure is in place before breaking changes ship. The 1.0.0 bump (Phase 4) had to precede the `status --json` breaking schema change (Phase 2). Plans with breaking changes should encode this ordering explicitly.
+
+## Use z.infer as the single source of truth for function return types
+_Source: 02-show-status-enrichment_
+
+Hand-writing interfaces alongside Zod schemas creates drift risk. Using `z.infer<typeof schema>` as function return types eliminates this class of bug. Caught in Phase 1 review.
+
 ## Commands bypassing output() need explicit error, quiet, and exit code handling
 _Source: 01-state-command-convention-doc-tracer_
 

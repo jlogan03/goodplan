@@ -74,3 +74,7 @@ Migrate the two skills that exercise the broadest range of CLI interactions: `cr
 **Note on CLI changes:** CLI code changes are not expected but are in scope if validation reveals gaps. Track any CLI changes as convention doc updates.
 
 **Note:** The convention doc's `start-complete` worked example may need replacement with `state --json --query` for context loading, or `start-complete` may need to be added as a CLI command if discovered as a gap during `complete` skill migration.
+
+**Optional CLI polish from slice 02 follow-ups:**
+- `PathReferences` type (`src/core/rpc/types.ts`) is `Record<string, string>` — consider discriminated union per-phase types (e.g., `PlanPaths`, `ExplorePaths`) if skill migration reveals consumers that need compile-time key guarantees. TODO comment already in place.
+- `collectMdFiles` helper in `src/commands/global/status.ts` walks `DirectoryEntry.contents` — could migrate to `src/core/data/tree.ts` if `complete` or `create-epic` skills need similar tree-walking for artifact listing.
