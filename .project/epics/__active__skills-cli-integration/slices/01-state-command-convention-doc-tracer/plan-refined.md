@@ -4,6 +4,8 @@
 
 Implements the foundational pieces for the skills-cli-integration epic in three phases. Phase 1 delivers the `goodplan state --json --query` command (the keystone read-only command that gives agents access to the entire `.project/` state tree) and `--version --json`. Phase 2 writes the convention doc (`skills/_shared/references/cli-interaction.md`) that defines how all skills interact with the CLI. Phase 3 rewrites the `project-status` skill as the tracer bullet, proving the end-to-end integration pattern works.
 
+**Status:** COMPLETE
+**Completed:** 2026-03-23
 **Slug:** `state-cmd-tracer`
 
 **Key decisions:**
