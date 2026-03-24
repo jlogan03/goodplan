@@ -98,6 +98,16 @@ export interface BeginPayloadMap {
 	rollup: { from: string; to: string };
 }
 
+// ── Path references ──────────────────────────────────────────
+
+/**
+ * File/directory paths returned in operation results. Keys are logical names
+ * (e.g., "plan", "architecture", "research"), values are absolute filesystem paths.
+ * Always populated by the RPC layer; typed optional for backward compatibility
+ * with consumers that don't expect it.
+ */
+export type PathReferences = Record<string, string>;
+
 // ── Result types ─────────────────────────────────────────────
 
 export interface BeginResult {
@@ -105,6 +115,8 @@ export interface BeginResult {
 	phase: string;
 	previousStatus: string;
 	newStatus: string;
+	/** Always populated by the RPC layer; typed optional for backward compatibility with consumers that don't expect it. */
+	paths?: PathReferences;
 }
 
 /** Specialized result for rollup operations — no meaningful entity status. */
@@ -121,7 +133,7 @@ export interface CompleteResult {
 	newStatus: string;
 	deferredRouted?: DeferredItem[];
 	deferredSkipped?: number;
-	/** State-tree-relative paths (e.g., "epics/my-epic/architecture/"). The Commands layer resolves these to absolute filesystem paths. */
+	/** State-tree-relative paths (e.g., "epics/my-epic/architecture/"). The Commands layer resolves these to absolute filesystem paths. Retained for backward compatibility; new consumers should use `paths`. */
 	architecturePaths?: {
 		currentArchitecture: string;
 		targetArchitecture?: string;
@@ -130,6 +142,8 @@ export interface CompleteResult {
 	learningsRolledUp?: { epic: number; project: number };
 	/** Context bundle included when `options.inlineContext` is set. */
 	context?: ContextBundle;
+	/** Always populated by the RPC layer; typed optional for backward compatibility with consumers that don't expect it. Uses absolute paths (unlike architecturePaths which uses state-tree-relative paths). */
+	paths?: PathReferences;
 }
 
 export interface SubmitResult {
@@ -138,6 +152,8 @@ export interface SubmitResult {
 	previousStatus: string;
 	newStatus: string;
 	advanced: boolean;
+	/** Always populated by the RPC layer; typed optional for backward compatibility with consumers that don't expect it. */
+	paths?: PathReferences;
 }
 
 // ── Complete input ───────────────────────────────────────────

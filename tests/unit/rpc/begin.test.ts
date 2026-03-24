@@ -330,3 +330,43 @@ describe("begin — INIT_PROJECT via begin('create', {type:'project'})", () => {
 		expect(fs.existsSync(projectJson)).toBe(true);
 	});
 });
+
+describe("begin — paths field", () => {
+	it("includes paths in begin result for plan phase", () => {
+		initProject();
+		begin(projectDir, "create", { type: "epic", name: "e1" }, { name: "e1", goal: "G" });
+		begin(projectDir, "create", { type: "slice", name: "s1" }, { name: "s1", goal: "G", epic: "e1" });
+
+		const result = begin(projectDir, "plan", { type: "slice", name: "s1" }, {});
+
+		expect(result.paths).toBeDefined();
+		expect(result.paths).toEqual({
+			plan: path.join(projectDir, "slices", "s1", "plan.md"),
+		});
+	});
+
+	it("includes paths for epic explore phase", () => {
+		initProject();
+		begin(projectDir, "create", { type: "epic", name: "e1" }, { name: "e1", goal: "G" });
+
+		const result = begin(projectDir, "explore", { type: "epic", name: "e1" }, {});
+
+		expect(result.paths).toEqual({
+			research: path.join(projectDir, "epics", "e1", "research"),
+			brainstorm: path.join(projectDir, "epics", "e1", "brainstorm"),
+		});
+	});
+
+	it("returns empty paths for create phase", () => {
+		initProject();
+		const result = begin(projectDir, "create", { type: "epic", name: "e1" }, { name: "e1", goal: "G" });
+
+		expect(result.paths).toEqual({});
+	});
+
+	it("returns empty paths for project target", () => {
+		const result = begin(projectDir, "create", { type: "project" }, { name: "test" });
+
+		expect(result.paths).toEqual({});
+	});
+});

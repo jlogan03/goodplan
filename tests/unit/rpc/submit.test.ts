@@ -154,6 +154,44 @@ describe("submit — complete phase error", () => {
 	});
 });
 
+describe("submit — paths field", () => {
+	it("includes paths in submit result for explore phase", () => {
+		initWithEpic();
+		begin(projectDir, "explore", { type: "epic", name: "e1" }, {});
+
+		const result = submit(
+			projectDir,
+			"explore",
+			{ type: "epic", name: "e1" },
+			{ phase: "explore" },
+		);
+
+		expect(result.paths).toBeDefined();
+		expect(result.paths).toEqual({
+			research: path.join(projectDir, "epics", "e1", "research"),
+			brainstorm: path.join(projectDir, "epics", "e1", "brainstorm"),
+		});
+	});
+
+	it("includes paths for architecture submit", () => {
+		initWithEpic();
+		begin(projectDir, "explore", { type: "epic", name: "e1" }, {});
+		submit(projectDir, "explore", { type: "epic", name: "e1" }, { phase: "explore" });
+		begin(projectDir, "define-architecture", { type: "epic", name: "e1" }, {});
+
+		const result = submit(
+			projectDir,
+			"architecture",
+			{ type: "epic", name: "e1" },
+			{ phase: "architecture" },
+		);
+
+		expect(result.paths).toEqual({
+			architecture: path.join(projectDir, "epics", "e1", "architecture"),
+		});
+	});
+});
+
 describe("submit — full slicing lifecycle", () => {
 	it("goes through explore → architecture → refine-arch → slicing → refine-slices", () => {
 		initWithEpic();

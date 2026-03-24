@@ -19,6 +19,7 @@ import { getJson } from "../tree.js";
 import type { ProjectState } from "../tree.js";
 import type { SubmitInput, SubmitPhase, SubmitResult, Target, WorkflowOptions } from "./types.js";
 import { resolveEntityJsonPath, resolveEntityName } from "./types.js";
+import { resolvePathReferences } from "./paths.js";
 
 /**
  * Submit sub-agent content. Maps (phase, target) to the appropriate COMPLETE_* event
@@ -55,7 +56,11 @@ export function submit(
 
 	commitState(projectDir, oldState, result);
 
-	return buildSubmitResult(phase, target, oldState, result);
+	const submitResult: SubmitResult = {
+		...buildSubmitResult(phase, target, oldState, result),
+		paths: resolvePathReferences(projectDir, target, phase),
+	};
+	return submitResult;
 }
 
 // ── Event building ───────────────────────────────────────────

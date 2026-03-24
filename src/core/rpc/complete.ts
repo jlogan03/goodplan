@@ -26,6 +26,7 @@ import type {
 	WorkflowOptions,
 } from "./types.js";
 import { resolveEntityJsonPath, resolveEntityName } from "./types.js";
+import { resolvePathReferences } from "./paths.js";
 
 /**
  * Complete an entity. Maps (target, input) to the appropriate COMPLETE_* event,
@@ -49,7 +50,10 @@ export function complete(
 
 	commitState(projectDir, oldState, result);
 
-	const completeResult = buildCompleteResult(target, oldState, result);
+	const completeResult: CompleteResult = {
+		...buildCompleteResult(target, oldState, result),
+		paths: resolvePathReferences(projectDir, target, "complete"),
+	};
 
 	// Wire --inline: assemble context bundle after state transition
 	if (options?.inlineContext !== undefined) {

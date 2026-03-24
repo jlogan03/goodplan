@@ -19,6 +19,7 @@ import type { DecisionEntry } from "../../schemas/records/decision.js";
 import type { LearningEntry } from "../../schemas/records/learning.js";
 import type { BeginPayloadMap, BeginPhase, BeginResult, RollupResult, Target, WorkflowOptions } from "./types.js";
 import { resolveEntityJsonPath, resolveEntityName } from "./types.js";
+import { resolvePathReferences } from "./paths.js";
 
 /**
  * Begin a workflow phase. Maps (phase, target, payload) to a StateEvent,
@@ -43,11 +44,16 @@ export function begin<P extends BeginPhase>(
 
 	commitState(projectDir, oldState, result);
 
+	// Rollup has a different result type (RollupResult) — paths field not applicable
 	if (phase === "rollup" && target.type === "rollup") {
 		return buildRollupResult(target, oldState, result) as P extends "rollup" ? RollupResult : BeginResult;
 	}
 
-	return buildBeginResult(phase, target, oldState, result) as P extends "rollup" ? RollupResult : BeginResult;
+	const beginResult: BeginResult = {
+		...buildBeginResult(phase, target, oldState, result),
+		paths: resolvePathReferences(projectDir, target, phase),
+	};
+	return beginResult as P extends "rollup" ? RollupResult : BeginResult;
 }
 
 // ── Event building ───────────────────────────────────────────

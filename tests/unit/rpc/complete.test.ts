@@ -316,6 +316,37 @@ describe("complete — COMPLETE_SLICE", () => {
 	});
 });
 
+describe("complete — paths field", () => {
+	it("includes empty paths for complete (no specific artifact paths)", () => {
+		setupSliceInImplementationComplete();
+
+		const result = complete(
+			projectDir,
+			{ type: "slice", name: "s1" },
+			{ type: "slice", verificationPassed: true },
+		);
+
+		expect(result.paths).toBeDefined();
+		expect(result.paths).toEqual({});
+	});
+
+	it("includes empty paths for epic complete", () => {
+		setupActivatedEpic();
+
+		const verificationResults: VerificationResult[] = [
+			{ index: 0, passed: true, notes: "OK" },
+		];
+
+		const result = complete(
+			projectDir,
+			{ type: "epic", name: "e1" },
+			{ type: "epic", verificationResults },
+		);
+
+		expect(result.paths).toEqual({});
+	});
+});
+
 describe("complete — error cases", () => {
 	it("throws state error for slice when slice does not exist", () => {
 		rpcInit(projectDir, "test");
