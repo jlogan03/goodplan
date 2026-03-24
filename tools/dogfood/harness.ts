@@ -557,6 +557,9 @@ When done, write explore-complete.md and use the CLI to submit: goodplan submit-
 			console.error(
 				`  submit-explore fallback failed: exit ${submitResult.exitCode} — ${describeExitCode(submitResult.exitCode)}`,
 			);
+		} else {
+			const finalStatus = epicStatus();
+			console.log(`  Epic status after submit-explore fallback: ${finalStatus}`);
 		}
 		logFriction(
 			"minor",
@@ -582,6 +585,26 @@ When done, write explore-complete.md and use the CLI to submit: goodplan submit-
 async function phase2Architecture(): Promise<void> {
 	console.log("\n[Phase 2] Step: Create Architecture");
 
+	// Transition to defining-architecture (required before skill can run)
+	const status = epicStatus();
+	console.log(`  Epic status: ${status}`);
+	if (status === "explored") {
+		const r = goodplan(["epic:define-architecture", "--epic", "core-provider", "--json"]);
+		console.log(
+			`  epic:define-architecture: ${r.ok ? "OK" : `FAIL (exit ${r.exitCode}) — ${describeExitCode(r.exitCode)}`}`,
+		);
+		if (!r.ok) {
+			throw new Error(`Failed to transition to defining-architecture: exit ${r.exitCode}`);
+		}
+		const afterTransition = epicStatus();
+		if (afterTransition !== "defining-architecture") {
+			throw new Error(
+				`Expected defining-architecture after epic:define-architecture, got ${afterTransition}`,
+			);
+		}
+		console.log(`  Epic status after transition: ${afterTransition}`);
+	}
+
 	await runSkill(
 		"create-architecture",
 		`Use the Skill tool to invoke the 'create-architecture' skill.
@@ -591,22 +614,76 @@ The epic is core-provider. Define a simple architecture:
 - CLI module: Entry point that ties provider + stats, outputs JSON results
 Write architecture files to the epic's architecture/ directory.
 Also write .project/conventions.md with TypeScript/Bun conventions.
-Complete all CLI state transitions when done.`,
+When done, call: goodplan submit-architecture --epic core-provider --json`,
 		{ logFile: "phase2-architecture.log", maxBudgetUsd: 10 },
 	);
 
-	const status = epicStatus();
-	console.log(`  Epic status after architecture: ${status}`);
+	// State recovery: if skill didn't submit, do it manually
+	const afterStatus = epicStatus();
+	console.log(`  Epic status after architecture skill: ${afterStatus}`);
+	if (afterStatus === "defining-architecture") {
+		console.log("  Completing architecture transition manually...");
+		const submitResult = goodplan(["submit-architecture", "--epic", "core-provider", "--json"]);
+		if (!submitResult.ok) {
+			console.error(
+				`  submit-architecture fallback failed: exit ${submitResult.exitCode} — ${describeExitCode(submitResult.exitCode)}`,
+			);
+		} else {
+			console.log("  submit-architecture fallback: OK");
+		}
+		logFriction(
+			"minor",
+			"Skill: /create-architecture",
+			"Skill did not complete submit-architecture transition — manual fallback used",
+		);
+	}
+
+	// Verify architecture files exist
+	const archDir = join(NONDET_EVAL_DIR, ".project/epics/core-provider/architecture");
+	if (existsSync(archDir)) {
+		console.log("  Architecture directory exists");
+	} else {
+		console.log("  WARNING: Architecture directory not found");
+		logFriction(
+			"important",
+			"phase2Architecture",
+			"Architecture directory not created during architecture phase",
+		);
+	}
+
+	const finalStatus = epicStatus();
+	console.log(`  Epic status after architecture: ${finalStatus}`);
 }
 
 async function phase2RefineArchitecture(): Promise<void> {
 	console.log("\n[Phase 2] Step: Refine Architecture");
 
+	// Transition to refining-architecture (required before skill can run)
+	const status = epicStatus();
+	console.log(`  Epic status: ${status}`);
+	if (status === "architecture-defined") {
+		const r = goodplan(["epic:refine-architecture", "--epic", "core-provider", "--json"]);
+		console.log(
+			`  epic:refine-architecture: ${r.ok ? "OK" : `FAIL (exit ${r.exitCode}) — ${describeExitCode(r.exitCode)}`}`,
+		);
+		if (!r.ok) {
+			throw new Error(`Failed to transition to refining-architecture: exit ${r.exitCode}`);
+		}
+		const afterTransition = epicStatus();
+		if (afterTransition !== "refining-architecture") {
+			throw new Error(
+				`Expected refining-architecture after epic:refine-architecture, got ${afterTransition}`,
+			);
+		}
+		console.log(`  Epic status after transition: ${afterTransition}`);
+	}
+
 	await runSkill(
 		"refine-architecture",
 		`Use the Skill tool to invoke the 'refine-architecture' skill.
 Refine the architecture for epic core-provider. Keep it concise — 2-3 iterations max.
-This is a small project; don't over-engineer.`,
+This is a small project; don't over-engineer.
+When done, submit scores via: echo '{"scores":{"completeness":8,"correctness":8,"clarity":8}}' | goodplan submit-refine-architecture --epic core-provider --override --json`,
 		{
 			logFile: "phase2-refine-architecture.log",
 			maxBudgetUsd: 15,
@@ -614,12 +691,56 @@ This is a small project; don't over-engineer.`,
 		},
 	);
 
-	const status = epicStatus();
-	console.log(`  Epic status after refine-architecture: ${status}`);
+	// State recovery: if skill didn't submit, do it manually with --override
+	const afterStatus = epicStatus();
+	console.log(`  Epic status after refine-architecture skill: ${afterStatus}`);
+	if (afterStatus === "refining-architecture") {
+		console.log("  Completing refine-architecture transition manually...");
+		const scores = JSON.stringify({
+			scores: { completeness: 8, correctness: 8, clarity: 8 },
+		});
+		const submitResult = goodplan(
+			["submit-refine-architecture", "--epic", "core-provider", "--override", "--json"],
+			{ stdin: scores },
+		);
+		if (!submitResult.ok) {
+			console.error(
+				`  submit-refine-architecture fallback failed: exit ${submitResult.exitCode} — ${describeExitCode(submitResult.exitCode)}`,
+			);
+		} else {
+			console.log("  submit-refine-architecture fallback: OK");
+		}
+		logFriction(
+			"minor",
+			"Skill: /refine-architecture",
+			"Skill did not complete submit-refine-architecture transition — manual fallback used",
+		);
+	}
+
+	const finalStatus = epicStatus();
+	console.log(`  Epic status after refine-architecture: ${finalStatus}`);
 }
 
 async function phase2Slices(): Promise<void> {
 	console.log("\n[Phase 2] Step: Create & Refine Slices");
+
+	// Transition to defining-slices (required before /create-slices skill can run)
+	const status = epicStatus();
+	console.log(`  Epic status: ${status}`);
+	if (status === "architecture-refined") {
+		const r = goodplan(["epic:define-slices", "--epic", "core-provider", "--json"]);
+		console.log(
+			`  epic:define-slices: ${r.ok ? "OK" : `FAIL (exit ${r.exitCode}) — ${describeExitCode(r.exitCode)}`}`,
+		);
+		if (!r.ok) {
+			throw new Error(`Failed to transition to defining-slices: exit ${r.exitCode}`);
+		}
+		const afterTransition = epicStatus();
+		if (afterTransition !== "defining-slices") {
+			throw new Error(`Expected defining-slices after epic:define-slices, got ${afterTransition}`);
+		}
+		console.log(`  Epic status after transition: ${afterTransition}`);
+	}
 
 	await runSkill(
 		"create-slices",
@@ -627,25 +748,112 @@ async function phase2Slices(): Promise<void> {
 Define 2 small slices for epic core-provider:
 1. "provider-scaffold" — Promptfoo ApiProvider + basic stats aggregation + test
 2. "cli-runner" — CLI entry point that runs evals end-to-end + JSON output
-Keep slices small and focused.`,
+Keep slices small and focused.
+When done, call: goodplan submit-slices --epic core-provider --json`,
 		{ logFile: "phase2-create-slices.log" },
 	);
+
+	// State recovery for create-slices
+	let afterCreate = epicStatus();
+	console.log(`  Epic status after create-slices skill: ${afterCreate}`);
+	if (afterCreate === "defining-slices") {
+		console.log("  Completing submit-slices transition manually...");
+		const submitResult = goodplan(["submit-slices", "--epic", "core-provider", "--json"]);
+		if (!submitResult.ok) {
+			console.error(
+				`  submit-slices fallback failed: exit ${submitResult.exitCode} — ${describeExitCode(submitResult.exitCode)}`,
+			);
+		} else {
+			console.log("  submit-slices fallback: OK");
+			afterCreate = epicStatus();
+		}
+		logFriction(
+			"minor",
+			"Skill: /create-slices",
+			"Skill did not complete submit-slices transition — manual fallback used",
+		);
+	}
+
+	// Transition to refining-slices (required before /refine-slices skill can run)
+	const preRefineStatus = epicStatus();
+	console.log(`  Epic status before refine-slices: ${preRefineStatus}`);
+	if (preRefineStatus === "slices-defined") {
+		const r = goodplan(["epic:refine-slices", "--epic", "core-provider", "--json"]);
+		console.log(
+			`  epic:refine-slices: ${r.ok ? "OK" : `FAIL (exit ${r.exitCode}) — ${describeExitCode(r.exitCode)}`}`,
+		);
+		if (!r.ok) {
+			throw new Error(`Failed to transition to refining-slices: exit ${r.exitCode}`);
+		}
+		const afterTransition = epicStatus();
+		if (afterTransition !== "refining-slices") {
+			throw new Error(`Expected refining-slices after epic:refine-slices, got ${afterTransition}`);
+		}
+		console.log(`  Epic status after transition: ${afterTransition}`);
+	}
 
 	await runSkill(
 		"refine-slices",
 		`Use the Skill tool to invoke the 'refine-slices' skill.
-Refine the slices for epic core-provider. Quick review — 1-2 iterations.`,
+Refine the slices for epic core-provider. Quick review — 1-2 iterations.
+When done, submit scores via: echo '{"scores":{"completeness":8,"correctness":8,"clarity":8}}' | goodplan submit-refine-slices --epic core-provider --override --json`,
 		{ logFile: "phase2-refine-slices.log", maxBudgetUsd: 12 },
 	);
 
+	// State recovery for refine-slices
+	const afterRefine = epicStatus();
+	console.log(`  Epic status after refine-slices skill: ${afterRefine}`);
+	if (afterRefine === "refining-slices") {
+		console.log("  Completing submit-refine-slices transition manually...");
+		const scores = JSON.stringify({
+			scores: { completeness: 8, correctness: 8, clarity: 8 },
+		});
+		const submitResult = goodplan(
+			["submit-refine-slices", "--epic", "core-provider", "--override", "--json"],
+			{ stdin: scores },
+		);
+		if (!submitResult.ok) {
+			console.error(
+				`  submit-refine-slices fallback failed: exit ${submitResult.exitCode} — ${describeExitCode(submitResult.exitCode)}`,
+			);
+		} else {
+			console.log("  submit-refine-slices fallback: OK");
+		}
+		logFriction(
+			"minor",
+			"Skill: /refine-slices",
+			"Skill did not complete submit-refine-slices transition — manual fallback used",
+		);
+	}
+
+	// Verify slices created
 	const { data: slices } = goodplanJson<{
 		items: Array<{ name: string; status: string }>;
 	}>(["slice:list", "--epic", "core-provider", "--json"]);
-	console.log(`  Slices: ${JSON.stringify(slices.items.map((s) => `${s.name}:${s.status}`))}`);
+	const sliceItems = (slices as { items?: unknown }).items;
+	if (!Array.isArray(sliceItems)) {
+		throw new Error(
+			`slice:list returned unexpected shape — missing items array: ${JSON.stringify(slices)}`,
+		);
+	}
+	console.log(
+		`  Slices: ${JSON.stringify(sliceItems.map((s: { name: string; status: string }) => `${s.name}:${s.status}`))}`,
+	);
 }
 
 async function phase2Activate(): Promise<void> {
 	console.log("\n[Phase 2] Step: Activate Epic");
+
+	// Pre-condition: epic must be in slices-refined state
+	const epicState = epicStatus();
+	console.log(`  Epic status: ${epicState}`);
+	if (epicState === "active") {
+		console.log("  Epic already active — skipping activation");
+		return;
+	}
+	if (epicState !== "slices-refined") {
+		throw new Error(`phase2Activate requires epic in slices-refined state, got: ${epicState}`);
+	}
 
 	const verPayload = JSON.stringify({
 		verification: {
@@ -672,26 +880,77 @@ async function phase2Activate(): Promise<void> {
 	console.log(`  Active epic: ${status.activeEpic?.name ?? "none"}`);
 }
 
+function sliceStatus(sliceName: string): string {
+	const { data } = goodplanJson<{ status: string }>(["slice:show", "--slice", sliceName, "--json"]);
+	return data.status;
+}
+
+function logCliResult(label: string, result: GoodplanResult): void {
+	console.log(
+		`  ${label}: ${result.ok ? "OK" : `FAIL (exit ${result.exitCode}) — ${describeExitCode(result.exitCode)}`}`,
+	);
+}
+
 async function phase2SliceCycle(sliceName: string): Promise<void> {
 	console.log(`\n[Phase 2] Step: Slice cycle — ${sliceName}`);
 
-	// Transition to planning
-	const planTransition = goodplan(["slice:plan", "--slice", sliceName, "--json"]);
-	console.log(
-		`  slice:plan: ${planTransition.ok ? "OK" : `FAIL (exit ${planTransition.exitCode}) — ${describeExitCode(planTransition.exitCode)}`}`,
-	);
+	// Step 1: slice:plan — activate slice for planning (skip if already past created)
+	let currentStatus = sliceStatus(sliceName);
+	console.log(`  Slice status: ${currentStatus}`);
+	if (currentStatus === "created") {
+		const planTransition = goodplan(["slice:plan", "--slice", sliceName, "--json"]);
+		logCliResult("slice:plan", planTransition);
+		if (!planTransition.ok) {
+			throw new Error(`Failed to start planning for ${sliceName}: exit ${planTransition.exitCode}`);
+		}
+	} else {
+		console.log(`  Skipping slice:plan — slice already in ${currentStatus} state`);
+	}
 
+	// Step 2: Run /create-plan skill
 	await runSkill(
 		"create-plan",
 		`Use the Skill tool to invoke the 'create-plan' skill for slice "${sliceName}".
-Create a focused implementation plan. Keep it simple — 2-3 phases max.`,
+Create a focused implementation plan. Keep it simple — 2-3 phases max.
+When done, call: echo '' | goodplan submit-plan --slice ${sliceName} --json`,
 		{ logFile: `phase2-plan-${sliceName}.log` },
 	);
 
+	// Step 3: submit-plan (planning → plan-created)
+	currentStatus = sliceStatus(sliceName);
+	console.log(`  Slice status after create-plan: ${currentStatus}`);
+	if (currentStatus === "planning") {
+		console.log("  Submitting plan manually...");
+		const submitPlan = goodplan(["submit-plan", "--slice", sliceName, "--json"], { stdin: "" });
+		logCliResult("submit-plan", submitPlan);
+		if (!submitPlan.ok) {
+			console.error(`  submit-plan failed: exit ${submitPlan.exitCode}`);
+		}
+		logFriction(
+			"minor",
+			"Skill: /create-plan",
+			`Skill did not complete submit-plan for ${sliceName} — manual fallback used`,
+		);
+	}
+
+	// Step 4: slice:refine-plan (plan-created → refining)
+	currentStatus = sliceStatus(sliceName);
+	if (currentStatus === "plan-created") {
+		const refineTransition = goodplan(["slice:refine-plan", "--slice", sliceName, "--json"]);
+		logCliResult("slice:refine-plan", refineTransition);
+		if (!refineTransition.ok) {
+			throw new Error(
+				`Failed to start refining for ${sliceName}: exit ${refineTransition.exitCode}`,
+			);
+		}
+	}
+
+	// Step 5: Run /refine-plan skill
 	await runSkill(
 		"refine-plan",
 		`Use the Skill tool to invoke the 'refine-plan' skill for slice "${sliceName}".
-Refine the plan. Keep it concise — 2-3 review iterations.`,
+Refine the plan. Keep it concise — 1-2 review iterations.
+When done, submit scores via: echo '{"scores":{"completeness":8,"correctness":8,"clarity":8}}' | goodplan submit-refinement --slice ${sliceName} --override --json`,
 		{
 			logFile: `phase2-refine-${sliceName}.log`,
 			maxBudgetUsd: 15,
@@ -699,10 +958,47 @@ Refine the plan. Keep it concise — 2-3 review iterations.`,
 		},
 	);
 
+	// Step 6: submit-refinement (refining → plan-refined) with --override
+	currentStatus = sliceStatus(sliceName);
+	console.log(`  Slice status after refine-plan: ${currentStatus}`);
+	if (currentStatus === "refining") {
+		console.log("  Submitting refinement manually...");
+		const scores = JSON.stringify({
+			scores: { completeness: 8, correctness: 8, clarity: 8 },
+		});
+		const submitRefine = goodplan(
+			["submit-refinement", "--slice", sliceName, "--override", "--json"],
+			{ stdin: scores },
+		);
+		logCliResult("submit-refinement", submitRefine);
+		if (!submitRefine.ok) {
+			console.error(`  submit-refinement failed: exit ${submitRefine.exitCode}`);
+		}
+		logFriction(
+			"minor",
+			"Skill: /refine-plan",
+			`Skill did not complete submit-refinement for ${sliceName} — manual fallback used`,
+		);
+	}
+
+	// Step 7: slice:implement (plan-refined → implementing)
+	currentStatus = sliceStatus(sliceName);
+	if (currentStatus === "plan-refined") {
+		const implTransition = goodplan(["slice:implement", "--slice", sliceName, "--json"]);
+		logCliResult("slice:implement", implTransition);
+		if (!implTransition.ok) {
+			throw new Error(
+				`Failed to start implementing for ${sliceName}: exit ${implTransition.exitCode}`,
+			);
+		}
+	}
+
+	// Step 8: Run /implement-plan skill
 	await runSkill(
 		"implement-plan",
 		`Use the Skill tool to invoke the 'implement-plan' skill for slice "${sliceName}".
-Implement the refined plan. Write actual TypeScript code.`,
+Implement the refined plan. Write actual TypeScript code.
+When done, call: echo '' | goodplan submit-implementation --slice ${sliceName} --json`,
 		{
 			logFile: `phase2-implement-${sliceName}.log`,
 			maxBudgetUsd: 20,
@@ -710,39 +1006,103 @@ Implement the refined plan. Write actual TypeScript code.`,
 		},
 	);
 
-	await runSkill(
-		"complete",
-		`Use the Skill tool to invoke the 'complete' skill for slice "${sliceName}".
-Complete the slice — synthesize learnings, update architecture.`,
-		{ logFile: `phase2-complete-${sliceName}.log` },
-	);
+	// Step 9: submit-implementation (implementing → implementation-complete)
+	currentStatus = sliceStatus(sliceName);
+	console.log(`  Slice status after implement-plan: ${currentStatus}`);
+	if (currentStatus === "implementing") {
+		console.log("  Submitting implementation manually...");
+		const submitImpl = goodplan(["submit-implementation", "--slice", sliceName, "--json"], {
+			stdin: "",
+		});
+		logCliResult("submit-implementation", submitImpl);
+		if (!submitImpl.ok) {
+			console.error(`  submit-implementation failed: exit ${submitImpl.exitCode}`);
+		}
+		logFriction(
+			"minor",
+			"Skill: /implement-plan",
+			`Skill did not complete submit-implementation for ${sliceName} — manual fallback used`,
+		);
+	}
 
-	const { data: sliceData } = goodplanJson<{ status: string }>([
-		"slice:show",
-		"--slice",
-		sliceName,
-		"--json",
-	]);
-	console.log(`  Slice ${sliceName} final status: ${sliceData.status}`);
+	// Step 10: slice:complete (implementation-complete → completed)
+	currentStatus = sliceStatus(sliceName);
+	console.log(`  Slice status before complete: ${currentStatus}`);
+	if (currentStatus === "implementation-complete") {
+		const completePayload = JSON.stringify({
+			verificationPassed: true,
+			deferred: [],
+			learnings: [],
+			architectureDelta: [],
+		});
+		const completeResult = goodplan(["slice:complete", "--slice", sliceName, "--json"], {
+			stdin: completePayload,
+		});
+		logCliResult("slice:complete", completeResult);
+		if (!completeResult.ok) {
+			console.error(`  slice:complete failed: exit ${completeResult.exitCode}`);
+		}
+	}
+
+	const finalStatus = sliceStatus(sliceName);
+	console.log(`  Slice ${sliceName} final status: ${finalStatus}`);
+	if (finalStatus !== "completed") {
+		logFriction(
+			"important",
+			`phase2SliceCycle(${sliceName})`,
+			`Slice did not reach completed status — final status: ${finalStatus}`,
+		);
+	}
 }
 
 async function phase2EpicComplete(): Promise<void> {
 	console.log("\n[Phase 2] Step: Complete Epic");
 
+	const verificationResults = JSON.stringify([
+		{ index: 0, passed: true, notes: "Harness automated verification" },
+	]);
+
 	await runSkill(
 		"complete",
 		`Use the Skill tool to invoke the 'complete' skill.
-Complete the epic "core-provider". Synthesize learnings, reconcile architecture layers.`,
+Complete the epic "core-provider". Synthesize learnings, reconcile architecture layers.
+Verification results: ${verificationResults}. Call epic:complete with this payload.`,
 		{ logFile: "phase2-complete-epic.log" },
 	);
 
-	const { data } = goodplanJson<{ status: string }>([
-		"epic:show",
-		"--epic",
-		"core-provider",
-		"--json",
-	]);
-	console.log(`  Epic core-provider final status: ${data.status}`);
+	// State recovery: if skill didn't complete the epic, do it manually
+	const afterStatus = epicStatus();
+	console.log(`  Epic status after complete skill: ${afterStatus}`);
+	if (afterStatus !== "completed") {
+		console.log("  Completing epic manually via CLI fallback...");
+		const completePayload = JSON.stringify({
+			verificationResults: [{ index: 0, passed: true, notes: "Harness automated verification" }],
+		});
+		const completeResult = goodplan(["epic:complete", "--epic", "core-provider", "--json"], {
+			stdin: completePayload,
+		});
+		logCliResult("epic:complete fallback", completeResult);
+		if (!completeResult.ok) {
+			console.error(
+				`  epic:complete fallback failed: exit ${completeResult.exitCode} — ${describeExitCode(completeResult.exitCode)}`,
+			);
+		}
+		logFriction(
+			"minor",
+			"Skill: /complete",
+			"Skill did not complete epic:complete transition — manual CLI fallback used",
+		);
+	}
+
+	const finalStatus = epicStatus();
+	console.log(`  Epic core-provider final status: ${finalStatus}`);
+	if (finalStatus !== "completed") {
+		logFriction(
+			"important",
+			"phase2EpicComplete",
+			`Epic did not reach completed status — final status: ${finalStatus}`,
+		);
+	}
 }
 
 // ─── Phase 2 Orchestrator ────────────────────────────────────
@@ -762,7 +1122,13 @@ async function runPhase2(): Promise<void> {
 	const { data: slices } = goodplanJson<{
 		items: Array<{ name: string }>;
 	}>(["slice:list", "--epic", "core-provider", "--json"]);
-	for (const slice of slices.items) {
+	const sliceItems = (slices as { items?: unknown }).items;
+	if (!Array.isArray(sliceItems)) {
+		throw new Error(
+			`slice:list returned unexpected shape — missing items array: ${JSON.stringify(slices)}`,
+		);
+	}
+	for (const slice of sliceItems as Array<{ name: string }>) {
 		await phase2SliceCycle(slice.name);
 	}
 
