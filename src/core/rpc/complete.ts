@@ -10,7 +10,8 @@ import type { Slice } from "../../schemas/entities/slice.js";
 import type { LearningEntry } from "../../schemas/records/learning.js";
 import type { StateEvent } from "../../schemas/state-events.js";
 import { GoodplanError } from "../../util/errors.js";
-import { startContext, DEFAULT_INLINE_BUDGET } from "../context/index.js";
+import { VERSION } from "../../version.js";
+import { DEFAULT_INLINE_BUDGET, startContext } from "../context/index.js";
 import { commitState } from "../data/commit.js";
 import { loadState } from "../data/load.js";
 import { reduce } from "../state/reduce.js";
@@ -18,6 +19,7 @@ import { ACTIVITY_PHASE_DEFERRED_SKIP } from "../state/transitions/helpers.js";
 import { isStateError } from "../state/types.js";
 import { getJson, getJsonl } from "../tree.js";
 import type { ProjectState } from "../tree.js";
+import { resolvePathReferences } from "./paths.js";
 import type {
 	CompleteInput,
 	CompleteResult,
@@ -26,7 +28,7 @@ import type {
 	WorkflowOptions,
 } from "./types.js";
 import { resolveEntityJsonPath, resolveEntityName } from "./types.js";
-import { resolvePathReferences } from "./paths.js";
+import { bumpDataVersionIfNeeded } from "./version-stamp.js";
 
 /**
  * Complete an entity. Maps (target, input) to the appropriate COMPLETE_* event,
@@ -48,21 +50,27 @@ export function complete(
 		throw new GoodplanError(result.code, result.message, result.detail);
 	}
 
-	commitState(projectDir, oldState, result);
+	// Version stamp: bump project.json.version if CLI version > data version (INV-001 exception — see version-stamp.ts)
+	const stampedResult = bumpDataVersionIfNeeded(result, VERSION);
+
+	commitState(projectDir, oldState, stampedResult);
 
 	const completeResult: CompleteResult = {
-		...buildCompleteResult(target, oldState, result),
+		...buildCompleteResult(target, oldState, stampedResult),
 		paths: resolvePathReferences(projectDir, target, "complete"),
 	};
 
 	// Wire --inline: assemble context bundle after state transition
 	if (options?.inlineContext !== undefined) {
-		const budget = options.inlineContext === true
-			? DEFAULT_INLINE_BUDGET
-			: typeof options.inlineContext === "number"
-				? options.inlineContext
-				: DEFAULT_INLINE_BUDGET;
-		completeResult.context = startContext(result, "complete", target, { inlineBudget: budget });
+		const budget =
+			options.inlineContext === true
+				? DEFAULT_INLINE_BUDGET
+				: typeof options.inlineContext === "number"
+					? options.inlineContext
+					: DEFAULT_INLINE_BUDGET;
+		completeResult.context = startContext(stampedResult, "complete", target, {
+			inlineBudget: budget,
+		});
 	}
 
 	return completeResult;

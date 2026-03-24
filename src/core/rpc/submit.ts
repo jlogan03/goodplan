@@ -11,15 +11,17 @@ import type { Quest } from "../../schemas/entities/quest.js";
 import type { Slice } from "../../schemas/entities/slice.js";
 import type { StateEvent } from "../../schemas/state-events.js";
 import { GoodplanError } from "../../util/errors.js";
+import { VERSION } from "../../version.js";
 import { commitState } from "../data/commit.js";
 import { loadState } from "../data/load.js";
 import { reduce } from "../state/reduce.js";
 import { isStateError } from "../state/types.js";
 import { getJson } from "../tree.js";
 import type { ProjectState } from "../tree.js";
+import { resolvePathReferences } from "./paths.js";
 import type { SubmitInput, SubmitPhase, SubmitResult, Target, WorkflowOptions } from "./types.js";
 import { resolveEntityJsonPath, resolveEntityName } from "./types.js";
-import { resolvePathReferences } from "./paths.js";
+import { bumpDataVersionIfNeeded } from "./version-stamp.js";
 
 /**
  * Submit sub-agent content. Maps (phase, target) to the appropriate COMPLETE_* event
@@ -54,10 +56,13 @@ export function submit(
 		throw new GoodplanError(result.code, result.message, result.detail);
 	}
 
-	commitState(projectDir, oldState, result);
+	// Version stamp: bump project.json.version if CLI version > data version (INV-001 exception — see version-stamp.ts)
+	const stampedResult = bumpDataVersionIfNeeded(result, VERSION);
+
+	commitState(projectDir, oldState, stampedResult);
 
 	const submitResult: SubmitResult = {
-		...buildSubmitResult(phase, target, oldState, result),
+		...buildSubmitResult(phase, target, oldState, stampedResult),
 		paths: resolvePathReferences(projectDir, target, phase),
 	};
 	return submitResult;
@@ -112,7 +117,10 @@ function buildSubmitEvent(
 		case "complete":
 			// 'complete' phase is used only for context bundling priority tables,
 			// not for submit-* commands. If reached here, it's a routing error.
-			throw new GoodplanError("INTERNAL_ERROR", "submit('complete') is not valid — complete uses the complete() RPC function");
+			throw new GoodplanError(
+				"INTERNAL_ERROR",
+				"submit('complete') is not valid — complete uses the complete() RPC function",
+			);
 		default: {
 			const _exhaustive: never = phase;
 			throw new GoodplanError("INTERNAL_ERROR", `Unknown submit phase: ${String(_exhaustive)}`);

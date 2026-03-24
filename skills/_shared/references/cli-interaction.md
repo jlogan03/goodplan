@@ -23,7 +23,7 @@ At the start of any skill that uses the CLI, verify it is available and compatib
 
 ```bash
 goodplan --version --json
-# Returns: { "version": "0.0.1" }
+# Returns: { "version": "1.0.0" }
 ```
 
 **If the command fails** (not found, non-zero exit):
@@ -38,6 +38,21 @@ goodplan --version --json
 
 Stop the skill.
 
+### CLI Version Checking
+
+The CLI automatically checks `project.json.version` against its own version on every command that reads `.project/`. Behavior:
+
+| Condition | Behavior |
+|-----------|----------|
+| CLI major == data major, CLI minor >= data minor | Compatible. Proceed normally. |
+| CLI major == data major, CLI minor < data minor | Warn on stderr: "Version mismatch..." Proceed with best effort. |
+| CLI major > data major | Warn on stderr: "Version mismatch..." Proceed with best effort. |
+| CLI major < data major | Error: exit code 2 (`VALIDATION_VERSION_MAJOR_MISMATCH`). |
+
+Warnings are suppressed in `--json` and `--quiet` modes. The `init`, `--version`, and `--help` commands skip the check naturally (no `.project/` required).
+
+On every RPC mutation (`begin`, `submit`, `complete`), the CLI stamps `project.json.version` with the CLI's current version if it is higher — ensuring the data version reflects the highest feature level used.
+
 ### SKILL.md Frontmatter
 
 Every skill that uses the CLI declares its minimum version:
@@ -46,11 +61,11 @@ Every skill that uses the CLI declares its minimum version:
 ---
 name: project-status
 description: Query project state via the goodplan CLI
-requires: goodplan >= 0.0.1
+requires: goodplan >= 1.0.0
 ---
 ```
 
-The `requires` field is agent-behavioral — there is no runtime validation. The skill checks the version at startup and refuses to proceed if incompatible. Version enforcement in the CLI itself is coming in slice 02.
+The `requires` field is agent-behavioral — there is no runtime validation. The skill checks the version at startup and refuses to proceed if incompatible.
 
 ## 2. Data Ownership
 

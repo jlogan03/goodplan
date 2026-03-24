@@ -17,7 +17,8 @@ type ValidationErrorCode =
 	| "VALIDATION_INVALID_QUERY"
 	| "VALIDATION_INVALID_STDIN"
 	| "VALIDATION_STDIN_TOO_LARGE"
-	| "VALIDATION_UNKNOWN_COMMAND";
+	| "VALIDATION_UNKNOWN_COMMAND"
+	| "VALIDATION_VERSION_MAJOR_MISMATCH";
 
 /** Catch-all error code for unexpected internal failures. */
 type InternalErrorCode = "INTERNAL_ERROR";

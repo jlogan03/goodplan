@@ -1,23 +1,37 @@
 import type { CommandDef } from "citty";
 import { runCommand, showUsage } from "citty";
+import pc from "picocolors";
 import { mainCommand } from "./commands/main.js";
+import { loadState } from "./core/data/load.js";
+import { resolveProjectDir } from "./core/data/project.js";
+import { getJson } from "./core/tree.js";
+import type { Project } from "./schemas/entities/project.js";
 import { GoodplanError, isGoodplanError } from "./util/errors.js";
 import { deterministicStringify } from "./util/json.js";
 import { exitCodeForError, outputError, outputUnexpectedError } from "./util/output.js";
+import { checkCompatibility } from "./util/semver.js";
 import { VERSION } from "./version.js";
 
 /**
  * Parse global flags from raw argv before dispatch.
  * This allows structured JSON errors for unknown commands (e.g., `badcommand --json`).
+ *
+ * Note: `--quiet` is parsed here AND by citty via `globalArgs`. This intentional duplication
+ * exists because the compat check runs before citty dispatch. Both parsers must stay in sync
+ * if `--quiet` is renamed.
  */
-function parseGlobalFlags(rawArgs: string[]): { json: boolean } {
+function parseGlobalFlags(rawArgs: string[]): { json: boolean; quiet: boolean } {
 	let json = false;
+	let quiet = false;
 	for (const arg of rawArgs) {
 		if (arg === "--json") {
 			json = true;
 		}
+		if (arg === "--quiet") {
+			quiet = true;
+		}
 	}
-	return { json };
+	return { json, quiet };
 }
 
 /**
@@ -45,12 +59,68 @@ function isCLIError(error: unknown): error is Error & { code: string } {
 }
 
 /**
+ * Check CLI version compatibility against project data version.
+ * Uses resolveProjectDir() with DATA_NO_PROJECT try-catch for natural skip
+ * of init/version/help and any context where no .project/ exists.
+ */
+function checkVersionCompatibility(globalFlags: { json: boolean; quiet: boolean }): void {
+	let projectDir: string;
+	try {
+		projectDir = resolveProjectDir();
+	} catch (error: unknown) {
+		// No .project/ found — silently skip compat check.
+		// This naturally covers init, --version, --help, schema, etc.
+		if (isGoodplanError(error) && error.code === "DATA_NO_PROJECT") {
+			return;
+		}
+		// Re-throw unexpected errors
+		throw error;
+	}
+
+	const state = loadState(projectDir);
+	const project = getJson<Project>(state, "project.json");
+	if (project === undefined) {
+		// No project.json in tree — skip (e.g., corrupted project)
+		return;
+	}
+
+	const compat = checkCompatibility(VERSION, project.version);
+
+	switch (compat) {
+		case "compatible":
+			// No action needed
+			break;
+		case "cli-minor-behind":
+			// Suppress warnings in --json mode (only stdout matters to parsers) and --quiet mode
+			if (!globalFlags.json && !globalFlags.quiet) {
+				process.stderr.write(
+					`${pc.yellow("warning:")} Version mismatch: CLI v${VERSION} / data v${project.version}. Project data uses features from a newer CLI minor version. Consider upgrading.\n`,
+				);
+			}
+			break;
+		case "major-ahead":
+			if (!globalFlags.json && !globalFlags.quiet) {
+				process.stderr.write(
+					`${pc.yellow("warning:")} Version mismatch: CLI v${VERSION} / data v${project.version}. Project data was created with an older major version.\n`,
+				);
+			}
+			break;
+		case "major-behind":
+			throw new GoodplanError(
+				"VALIDATION_VERSION_MAJOR_MISMATCH",
+				`Project data requires goodplan >= ${project.version} but this is ${VERSION}. Upgrade the CLI.`,
+			);
+	}
+}
+
+/**
  * Custom top-level runner.
  * Uses runCommand (not runMain) to control error handling and exit codes.
  * - Detects unknown commands before dispatch (citty doesn't when subCommands is empty)
  * - Handles --help for the main command via showUsage
  * - Catches errors and maps to correct exit codes
  * - Parses global flags before dispatch so badcommand --json works
+ * - Checks CLI/data version compatibility before dispatch
  */
 async function main(): Promise<void> {
 	const rawArgs = process.argv.slice(2);
@@ -98,6 +168,26 @@ async function main(): Promise<void> {
 			outputError(gpError, globalFlags);
 			process.exitCode = 2;
 			return;
+		}
+	}
+
+	// Version compatibility check — runs after early exits (--version, --help, unknown command)
+	// but before command dispatch. Uses resolveProjectDir() with DATA_NO_PROJECT try-catch
+	// so init/version/help naturally skip the check without a fragile skip-list.
+	try {
+		checkVersionCompatibility(globalFlags);
+	} catch (error: unknown) {
+		if (isGoodplanError(error)) {
+			outputError(error, globalFlags);
+			process.exitCode = exitCodeForError(error);
+			return;
+		}
+		// Unexpected error during compat check — don't block command execution
+		// (compat check is advisory, not critical)
+		if (!globalFlags.json && !globalFlags.quiet) {
+			process.stderr.write(
+				`${pc.dim("debug:")} version compatibility check failed: ${error instanceof Error ? error.message : String(error)}\n`,
+			);
 		}
 	}
 

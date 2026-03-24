@@ -12,11 +12,26 @@ const outfile = path.join(projectRoot, "goodplan");
 
 export function setup(): void {
 	console.log("[global-setup] Compiling binary...");
-	execFileSync("bun", ["build", "--compile", "src/index.ts", "--outfile", outfile], {
-		cwd: projectRoot,
-		stdio: "inherit",
-		timeout: 60_000,
-	});
+	const pkg = JSON.parse(fs.readFileSync(path.join(projectRoot, "package.json"), "utf-8")) as {
+		version: string;
+	};
+	execFileSync(
+		"bun",
+		[
+			"build",
+			"--compile",
+			"src/index.ts",
+			"--outfile",
+			outfile,
+			"--define",
+			`__GOODPLAN_VERSION__='"${pkg.version}"'`,
+		],
+		{
+			cwd: projectRoot,
+			stdio: "inherit",
+			timeout: 60_000,
+		},
+	);
 	console.log(`[global-setup] Binary compiled to ${outfile}`);
 }
 

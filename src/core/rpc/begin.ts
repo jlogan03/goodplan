@@ -7,19 +7,28 @@ import type { Epic } from "../../schemas/entities/epic.js";
 import type { Project } from "../../schemas/entities/project.js";
 import type { Quest } from "../../schemas/entities/quest.js";
 import type { Slice } from "../../schemas/entities/slice.js";
+import type { DecisionEntry } from "../../schemas/records/decision.js";
+import type { LearningEntry } from "../../schemas/records/learning.js";
 import type { StateEvent } from "../../schemas/state-events.js";
 import { GoodplanError } from "../../util/errors.js";
+import { VERSION } from "../../version.js";
 import { commitState } from "../data/commit.js";
 import { loadState } from "../data/load.js";
 import { reduce } from "../state/reduce.js";
 import { isStateError } from "../state/types.js";
 import { getJson, getJsonl } from "../tree.js";
 import type { ProjectState } from "../tree.js";
-import type { DecisionEntry } from "../../schemas/records/decision.js";
-import type { LearningEntry } from "../../schemas/records/learning.js";
-import type { BeginPayloadMap, BeginPhase, BeginResult, RollupResult, Target, WorkflowOptions } from "./types.js";
-import { resolveEntityJsonPath, resolveEntityName } from "./types.js";
 import { resolvePathReferences } from "./paths.js";
+import type {
+	BeginPayloadMap,
+	BeginPhase,
+	BeginResult,
+	RollupResult,
+	Target,
+	WorkflowOptions,
+} from "./types.js";
+import { resolveEntityJsonPath, resolveEntityName } from "./types.js";
+import { bumpDataVersionIfNeeded } from "./version-stamp.js";
 
 /**
  * Begin a workflow phase. Maps (phase, target, payload) to a StateEvent,
@@ -42,15 +51,20 @@ export function begin<P extends BeginPhase>(
 		throw new GoodplanError(result.code, result.message, result.detail);
 	}
 
-	commitState(projectDir, oldState, result);
+	// Version stamp: bump project.json.version if CLI version > data version (INV-001 exception — see version-stamp.ts)
+	const stampedResult = bumpDataVersionIfNeeded(result, VERSION);
+
+	commitState(projectDir, oldState, stampedResult);
 
 	// Rollup has a different result type (RollupResult) — paths field not applicable
 	if (phase === "rollup" && target.type === "rollup") {
-		return buildRollupResult(target, oldState, result) as P extends "rollup" ? RollupResult : BeginResult;
+		return buildRollupResult(target, oldState, stampedResult) as P extends "rollup"
+			? RollupResult
+			: BeginResult;
 	}
 
 	const beginResult: BeginResult = {
-		...buildBeginResult(phase, target, oldState, result),
+		...buildBeginResult(phase, target, oldState, stampedResult),
 		paths: resolvePathReferences(projectDir, target, phase),
 	};
 	return beginResult as P extends "rollup" ? RollupResult : BeginResult;
@@ -122,7 +136,10 @@ function buildBeginEvent<P extends BeginPhase>(
 		case "update-decision": {
 			const udp = payload as BeginPayloadMap["update-decision"];
 			if (target.type !== "decision") {
-				throw new GoodplanError("VALIDATION_INVALID_INPUT", "update-decision requires decision target");
+				throw new GoodplanError(
+					"VALIDATION_INVALID_INPUT",
+					"update-decision requires decision target",
+				);
 			}
 			return {
 				type: "UPDATE_DECISION",
