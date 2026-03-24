@@ -177,7 +177,7 @@ Use AskUserQuestion with multiSelect to let user pick which to act on:
 ### Action Handling
 
 - **Selected inline fixes**: Apply the fix immediately (scope it, make the change, verify). Apply up to 5 inline fixes per Step 9 run. If the user selects more than 5, apply the first 5 and create a side quest for the remainder.
-- **Selected side quests**: Draft a `goal.md` and present it for approval using AskUserQuestion with the draft content and options "Approve and create / Edit first / Skip". Run `mkdir -p .project/side-quests/<name>/` and write `goal.md` only after user approves. Include in the goal: what to refactor, which files, why, risk level, and success criteria.
+- **Selected side quests**: Draft a `goal.md` and present it for approval using AskUserQuestion with the draft content and options "Approve and create / Edit first / Skip". After user approves, create the quest via CLI: `echo '{"name":"<name>","goal":"<goal>"}' | goodplan quest:create --json` (the CLI handles directory creation and `goal.md` writing). Include in the goal: what to refactor, which files, why, risk level, and success criteria.
 - **Skip all** (nothing selected): No activity-log entry needed (Step 10 captures overall completion). Proceed to the next step.
 
 ### Skip Conditions

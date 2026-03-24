@@ -121,25 +121,25 @@ Comprehensive check across all 7 skills (6 migrated + complete fix), CLI smoke t
 ### Expected Behavior
 
 **Before implementation** (should fail / show absence):
-- [ ] `grep -rn 'mkdir -p .project/side-quests' skills/complete/references/guidance.md` — returns hit (the follow-up from slice 03)
+- [x] `grep -rn 'mkdir -p .project/side-quests' skills/complete/references/guidance.md` — returns hit (the follow-up from slice 03)
 
 **After implementation** (should pass / show presence):
-- [ ] `grep -rn 'mkdir -p .project/side-quests' skills/complete/references/guidance.md` — returns zero hits (replaced with `quest:create`)
-- [ ] `grep -rn 'state\.md\|activity-log\|state-and-activity-formats\|ls -d.*__active__' skills/create-slices/ skills/refine-slices/ skills/create-plan/ skills/refine-plan/ skills/implement-plan/ skills/migrate/` — zero hits (excluding jq key references)
-- [ ] `diff -r skills/<name>/ ~/.claude/skills/<name>/` — match for all 7 skills
-- [ ] `bun test` — all pass
+- [x] `grep -rn 'mkdir -p .project/side-quests' skills/complete/references/guidance.md` — returns zero hits (replaced with `quest:create`)
+- [x] `grep -rn 'state\.md\|activity-log\|state-and-activity-formats\|ls -d.*__active__' skills/create-slices/ skills/refine-slices/ skills/create-plan/ skills/refine-plan/ skills/implement-plan/ skills/migrate/` — zero hits (excluding jq key references)
+- [x] `diff -r skills/<name>/ ~/.claude/skills/<name>/` — match for all 7 skills
+- [x] `bun test` — all pass
 
 ### Tasks
 
-- [ ] **Fix complete/references/guidance.md** line 180: Replace `mkdir -p .project/side-quests/<name>/` + Write tool with `quest:create --json` (stdin payload: `{ "name": "<name>", "goal": "<goal>" }`). The CLI handles directory creation.
-- [ ] **Comprehensive grep check** across all 7 skills (6 migrated + complete):
+- [x] **Fix complete/references/guidance.md** line 180: Replace `mkdir -p .project/side-quests/<name>/` + Write tool with `quest:create --json` (stdin payload: `{ "name": "<name>", "goal": "<goal>" }`). The CLI handles directory creation.
+- [x] **Comprehensive grep check** across all 7 skills (6 migrated + complete):
   ```
   grep -rn 'state\.md\|activity-log' skills/create-slices/ skills/refine-slices/ skills/create-plan/ skills/refine-plan/ skills/implement-plan/ skills/migrate/ skills/complete/
   grep -rn 'state-and-activity-formats\|ls -d.*__active__' skills/create-slices/ skills/refine-slices/ skills/create-plan/ skills/refine-plan/ skills/implement-plan/ skills/migrate/
   ```
   Fix any remaining hits.
-- [ ] **Install updated skills**: `bun run install:skills` and verify diffs for all 7 skills
-- [ ] **CLI smoke test** — build binary, exercise the slice/quest lifecycle commands each skill would invoke:
+- [x] **Install updated skills**: `bun run install:skills` and verify diffs for all 7 skills
+- [x] **CLI smoke test** — build binary, exercise the slice/quest lifecycle commands each skill would invoke:
   1. `goodplan init --name test --json`
   2. `echo '{"name":"smoke","goal":"test"}' | goodplan epic:create --json`
   3. Advance epic through explore + architecture + refine-architecture (same as slice 04 smoke test steps 3-10)
@@ -159,7 +159,7 @@ Comprehensive check across all 7 skills (6 migrated + complete fix), CLI smoke t
   17. `goodplan start-implementation --slice s01 --inline` — verify sub-agent context
   18. `echo '{}' | goodplan submit-implementation --slice s01 --json` — complete implementation
   19. `echo '{"name":"test-quest","goal":"test quest creation"}' | goodplan quest:create --json` — verify quest:create works (complete skill fix)
-- [ ] **Verify no CLI code changes needed**
+- [x] **Verify no CLI code changes needed**
 
 ### Verification
 
