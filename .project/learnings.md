@@ -2,6 +2,21 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Commands bypassing output() need explicit error, quiet, and exit code handling
+_Source: 01-state-command-convention-doc-tracer_
+
+The always-JSON `state` command bypasses `output()` and initially missed error formatting, `--quiet` suppression, and exit code handling — all three are normally inherited from `output()`. Any future always-JSON command should verify these three concerns explicitly.
+
+## Convention docs must verify CLI commands exist before inclusion
+_Source: 01-state-command-convention-doc-tracer_
+
+The architecture source included `start-complete` (non-existent command). Convention docs referencing CLI commands must verify each command against `goodplan schema --json` or `src/commands/main.ts` before inclusion.
+
+## citty string-type flags consume the next token — prefer boolean when value isn't needed
+_Source: 01-state-command-convention-doc-tracer_
+
+`--inline --query X` causes citty to parse `--query` as inline's string value. Prefer boolean-type flags when the value isn't needed, or document the ordering constraint in convention docs.
+
 ## Strict layered architecture with a pure reducer is the highest-leverage early investment
 _Source: goodplan-cli_
 
