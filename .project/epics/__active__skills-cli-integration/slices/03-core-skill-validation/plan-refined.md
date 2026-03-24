@@ -70,21 +70,21 @@ Rewrite `complete` SKILL.md + `references/guidance.md` to use CLI commands. The 
 - [ ] No `requires:` field in SKILL.md frontmatter
 
 **After implementation** (should pass / show presence):
-- [ ] `grep -n 'state\.md' skills/complete/SKILL.md skills/complete/references/guidance.md` — returns zero hits (excluding comments about elimination)
-- [ ] `grep -n 'echo.*activity-log' skills/complete/SKILL.md skills/complete/references/guidance.md` — returns zero hits (no direct appends)
-- [ ] `grep -n 'goodplan status' skills/complete/SKILL.md` — returns hits (uses CLI for scope detection)
-- [ ] `grep -n 'slice:complete\|epic:complete\|quest:complete' skills/complete/SKILL.md` — returns hits (uses CLI for completion)
-- [ ] `grep -n 'decision:create' skills/complete/SKILL.md skills/complete/references/guidance.md` — returns hits (uses CLI for decisions)
-- [ ] `grep -n 'state.*--query' skills/complete/SKILL.md skills/complete/references/guidance.md` — returns hits (uses CLI for activity-log reads)
-- [ ] `grep -n 'requires:' skills/complete/SKILL.md` — returns `requires: goodplan >= 1.0.0`
-- [ ] `bun test` — all existing tests still pass
+- [x] `grep -n 'state\.md' skills/complete/SKILL.md skills/complete/references/guidance.md` — returns zero hits (excluding comments about elimination)
+- [x] `grep -n 'echo.*activity-log' skills/complete/SKILL.md skills/complete/references/guidance.md` — returns zero hits (no direct appends)
+- [x] `grep -n 'goodplan status' skills/complete/SKILL.md` — returns hits (uses CLI for scope detection)
+- [x] `grep -n 'slice:complete\|epic:complete\|quest:complete' skills/complete/SKILL.md` — returns hits (uses CLI for completion)
+- [x] `grep -n 'decision:create' skills/complete/SKILL.md skills/complete/references/guidance.md` — returns hits (uses CLI for decisions)
+- [x] `grep -n 'state.*--query' skills/complete/SKILL.md skills/complete/references/guidance.md` — returns hits (uses CLI for activity-log reads)
+- [x] `grep -n 'requires:' skills/complete/SKILL.md` — returns `requires: goodplan >= 1.0.0`
+- [x] `bun test` — all existing tests still pass
 
 ### Tasks
 
-- [ ] **Read current `skills/complete/SKILL.md`** (342 lines) and `skills/complete/references/guidance.md` (286 lines) in full
-- [ ] **Read `cli-interaction-conventions.md`** sections on: Binary Detection, Data Ownership, State Orientation, Mutation Commands, Error Handling
-- [ ] **Verify activity-log entry shape** — The activity-log schema is `{ ts, phase, scope, status, summary, detail? }` (per `activityEntrySchema` in `src/schemas/records/activity-log.ts`). The `.phase` field is confirmed as a required string. Run `goodplan state --json --query '.["activity-log.jsonl"][0]'` on a test project to confirm field values match expectations before constructing the Step 6d jq filter
-- [ ] **Rewrite `skills/complete/SKILL.md`** — step by step replacement:
+- [x] **Read current `skills/complete/SKILL.md`** (342 lines) and `skills/complete/references/guidance.md` (286 lines) in full
+- [x] **Read `cli-interaction-conventions.md`** sections on: Binary Detection, Data Ownership, State Orientation, Mutation Commands, Error Handling
+- [x] **Verify activity-log entry shape** — The activity-log schema is `{ ts, phase, scope, status, summary, detail? }` (per `activityEntrySchema` in `src/schemas/records/activity-log.ts`). The `.phase` field is confirmed as a required string. Run `goodplan state --json --query '.["activity-log.jsonl"][0]'` on a test project to confirm field values match expectations before constructing the Step 6d jq filter
+- [x] **Rewrite `skills/complete/SKILL.md`** — step by step replacement:
   - Add `requires: goodplan >= 1.0.0` to frontmatter
   - **Step 0 (Scope Resolution Preamble)**: Keep the `$SCOPE_TYPE` / `$SLICES_DIR` / `$EPIC_DIR` variable resolution, but derive from CLI commands instead of filesystem scanning. Specifically: derive `$SCOPE_TYPE` from `goodplan status --json` (`.activeSlice` vs `.activeEpic`), derive `$EPIC_DIR` from the deterministic convention `.project/epics/<epic>/` using the epic name from `status --json`, and derive `$SLICES_DIR` as `.project/slices/` (note: slices live at `.project/slices/<name>/`, not under the epic directory — see `resolveEntityDir` in data layer). Per-slice directory is `$SLICES_DIR/<name>/`; completion artifacts go to `$SLICES_DIR/<name>/completion/`
   - **Step 1 (Load References)**: Keep. Add version check (`goodplan --version --json`). Replace decisions loading with `goodplan state --json --query '.["decisions.jsonl"]'` or `goodplan decision:list --json`
@@ -112,13 +112,13 @@ Rewrite `complete` SKILL.md + `references/guidance.md` to use CLI commands. The 
   - **Step 10b (Archive)**: **Retain.** The CLI does not perform `~~archived~~` directory renaming — this remains skill-owned. Keep the existing archive rename logic.
   - **Graceful Stop**: Update all cases — cases (b) through (f) previously wrote `state.md` and `activity-log.jsonl`. Now: graceful stops before the final `slice:complete` call just leave filesystem artifacts in place. Re-entry (Step 2) detects these. No `state.md` updates needed.
   - Eliminate all references to: `state-and-activity-formats.md`, `state.md` (read or write), `echo.*activity-log.jsonl`, `epic-conventions.md` for state machine logic (keep for directory structure conventions and archive numbering convention if needed for epic completion)
-- [ ] **Rewrite `skills/complete/references/guidance.md`** — same replacements as SKILL.md for the guidance reference sections:
+- [x] **Rewrite `skills/complete/references/guidance.md`** — same replacements as SKILL.md for the guidance reference sections:
   - Replace Graceful Stop state.md/activity-log patterns with "filesystem artifacts in place, re-entry detects"
   - Replace Signal Tracking `activity-log.jsonl` reads with `state --json --query`
   - Replace Decision File Format write instructions with `decision:create` CLI call
   - Replace Learnings rollup direct edit with note that rollup is handled atomically by `slice:complete` payload (no separate `learning:rollup` call)
   - Keep: Refactor Intelligence Protocol (git-based), Maturity Evaluation Protocol (reads LLM-owned markdown), Archive Convention (informational)
-- [ ] **Verify no references to eliminated patterns** in both files
+- [x] **Verify no references to eliminated patterns** in both files
 
 ### Verification
 
