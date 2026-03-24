@@ -134,36 +134,36 @@ Verify both migrated skills against real CLI workflows, update the convention do
 ### Expected Behavior
 
 **Before implementation** (should fail / show absence):
-- [ ] `grep -r 'state\.md\|activity-log\.jsonl\|\.project/.*\.json' skills/create-epic/ skills/complete/` — returns hits (if any direct access patterns remain)
-- [ ] No "Migration Patterns" section in `cli-interaction-conventions.md`
+- [x] `grep -r 'state\.md\|activity-log\.jsonl\|\.project/.*\.json' skills/create-epic/ skills/complete/` — returns hits (if any direct access patterns remain)
+- [x] No "Migration Patterns" section in `cli-interaction-conventions.md`
 
 **After implementation** (should pass / show presence):
-- [ ] `grep -r 'state\.md\|activity-log\.jsonl\|\.project/.*\.json' skills/create-epic/ skills/complete/` — returns zero hits (excluding references to convention doc, architecture files, and LLM-owned markdown paths)
-- [ ] `grep -n 'Migration Patterns' skills/_shared/references/cli-interaction.md` — returns a hit (new section)
-- [ ] `diff -r skills/create-epic/ ~/.claude/skills/create-epic/` and `diff -r skills/complete/ ~/.claude/skills/complete/` show the updated files are installed (or `bun run install:skills` succeeds)
-- [ ] `bun test` — all pass
+- [x] `grep -r 'state\.md\|activity-log\.jsonl\|\.project/.*\.json' skills/create-epic/ skills/complete/` — returns zero hits (excluding references to convention doc, architecture files, and LLM-owned markdown paths)
+- [x] `grep -n 'Migration Patterns' skills/_shared/references/cli-interaction.md` — returns a hit (new section)
+- [x] `diff -r skills/create-epic/ ~/.claude/skills/create-epic/` and `diff -r skills/complete/ ~/.claude/skills/complete/` show the updated files are installed (or `bun run install:skills` succeeds)
+- [x] `bun test` — all pass
 
 ### Tasks
 
-- [ ] **Comprehensive grep check** — run the full exclusion-aware grep from the goal's success criteria:
+- [x] **Comprehensive grep check** — run the full exclusion-aware grep from the goal's success criteria:
   ```
   grep -rn 'state\.md\|activity-log\.jsonl' skills/create-epic/ skills/complete/
   grep -rn '\.project/.*\.json\|\.project/.*\.jsonl' skills/create-epic/ skills/complete/
   ```
   Exclude: references to convention doc paths, architecture file paths (LLM-owned), and markdown content paths. Any remaining hits are bugs — fix them.
-- [ ] **Manual validation: create-epic Mode A** — In a temporary empty directory, read through the migrated `create-epic` SKILL.md and trace the flow: does the version check make sense? Does `goodplan init` get called correctly? Does `epic:create` get the right stdin shape? Are the `idea.md` and `goal.md` write paths correct?
-- [ ] **Manual validation: create-epic Mode B** — In a project that already has `.project/`: does the `goodplan status --json` detection work? Does `epic:create` construct the correct payload for a subsequent epic?
-- [ ] **Manual validation: complete slice flow** — Trace the migrated `complete` SKILL.md through a slice completion: scope detection via `status --json`, artifact loading with `state --query`, learnings synthesis (filesystem write), architecture review (filesystem write + `decision:create`), and final `slice:complete` with assembled payload (learnings included atomically — no separate rollup call). Verify the payload shape matches what the CLI expects.
-- [ ] **Manual validation: complete epic flow** — Same trace for epic completion: `epic:complete` payload shape, archive handling, artifact promotion.
-- [ ] **Fix convention doc worked example** — File: `.project/epics/__active__skills-cli-integration/architecture/cli-interaction-conventions.md` (line ~206). The worked example references a `start-complete` command that does not exist. Correct it to show the actual pattern: `slice:show --json`, `state --json --query`, and direct LLM-owned markdown reads.
-- [ ] **Add Migration Patterns section to convention doc** — File: `skills/_shared/references/cli-interaction.md` (long-term shared reference, survives post-epic). Append the Migration Patterns section at the end of the file, after the existing content. The epic's `cli-interaction-conventions.md` is authoritative during the epic but the shared file survives post-epic. Document patterns discovered during migration:
+- [x] **Manual validation: create-epic Mode A** — In a temporary empty directory, read through the migrated `create-epic` SKILL.md and trace the flow: does the version check make sense? Does `goodplan init` get called correctly? Does `epic:create` get the right stdin shape? Are the `idea.md` and `goal.md` write paths correct?
+- [x] **Manual validation: create-epic Mode B** — In a project that already has `.project/`: does the `goodplan status --json` detection work? Does `epic:create` construct the correct payload for a subsequent epic?
+- [x] **Manual validation: complete slice flow** — Trace the migrated `complete` SKILL.md through a slice completion: scope detection via `status --json`, artifact loading with `state --query`, learnings synthesis (filesystem write), architecture review (filesystem write + `decision:create`), and final `slice:complete` with assembled payload (learnings included atomically — no separate rollup call). Verify the payload shape matches what the CLI expects.
+- [x] **Manual validation: complete epic flow** — Same trace for epic completion: `epic:complete` payload shape, archive handling, artifact promotion.
+- [x] **Fix convention doc worked example** — File: `.project/epics/__active__skills-cli-integration/architecture/cli-interaction-conventions.md` (line ~206). The worked example references a `start-complete` command that does not exist. Correct it to show the actual pattern: `slice:show --json`, `state --json --query`, and direct LLM-owned markdown reads.
+- [x] **Add Migration Patterns section to convention doc** — File: `skills/_shared/references/cli-interaction.md` (long-term shared reference, survives post-epic). Append the Migration Patterns section at the end of the file, after the existing content. The epic's `cli-interaction-conventions.md` is authoritative during the epic but the shared file survives post-epic. Document patterns discovered during migration:
   - Simplification rule: skills should drop state machine awareness; let CLI errors guide recovery
   - Filesystem-backed accumulation: for multi-step interactive flows, write intermediate results to disk, read back to construct CLI payloads
   - CLI command mapping table: common direct-access patterns → CLI equivalents
   - What stays direct: LLM-owned markdown (plans, goals, architecture, research, brainstorm, project-health, CLAUDE.md)
   - Version check pattern: `goodplan --version --json` + `requires:` frontmatter
-- [ ] **Install updated skills** — `bun run install:skills` and verify the installed copies match
-- [ ] **End-to-end smoke test** — In a temp directory, manually run the CLI commands that each migrated skill would invoke and verify outputs match what the skill expects. Minimum trace:
+- [x] **Install updated skills** — `bun run install:skills` and verify the installed copies match
+- [x] **End-to-end smoke test** — In a temp directory, manually run the CLI commands that each migrated skill would invoke and verify outputs match what the skill expects. Minimum trace:
     1. `goodplan init --name test --json` — verify response shape
     2. `echo '{"name":"smoke","goal":"test"}' | goodplan epic:create --json` — verify response includes paths
     3. `echo '{"name":"smoke-slice","goal":"test"}' | goodplan slice:create --epic smoke --json` — create a slice
@@ -173,7 +173,7 @@ Verify both migrated skills against real CLI workflows, update the convention do
     7. `echo '{"id":"test-dec","domain":"test","title":"Test","summary":"..."}' | goodplan decision:create --json` — verify the `decision:create` interaction pattern introduced in Step 6
     8. `echo '<payload>' | goodplan slice:complete --slice smoke-slice --json` — construct payload with `verificationPassed`, `learnings`, `architectureDelta` and verify state transition
   This validates the CLI surface that both skills depend on. Skills themselves are invoked via natural language and cannot be reliably automated in isolation.
-- [ ] **Verify no CLI code changes needed** — if any were made during Phases 1-2, ensure they have tests and the convention doc is updated. If no CLI changes were made, note this as validation that the existing CLI surface is sufficient.
+- [x] **Verify no CLI code changes needed** — if any were made during Phases 1-2, ensure they have tests and the convention doc is updated. If no CLI changes were made, note this as validation that the existing CLI surface is sufficient.
 
 ### Verification
 

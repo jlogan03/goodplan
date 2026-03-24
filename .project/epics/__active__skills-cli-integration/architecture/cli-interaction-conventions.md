@@ -195,22 +195,26 @@ Interactive orchestrators differ from pure orchestrators in that they touch cont
 
 **Worked example: `complete` orchestrator pattern**
 
-The `/complete` skill is an interactive orchestrator that requires stdin with verification results. Here is the full CLI interaction:
+The `/complete` skill is an interactive orchestrator. There is no `start-complete` command — the skill assembles its own context from multiple CLI queries and LLM-owned markdown reads, then constructs a single completion payload.
 
 ```bash
 # 1. Check current state — is the entity ready for completion?
 goodplan slice:show --slice my-slice --json
 # Verify status is "implementation-complete"
+# Artifacts are boolean flags: { goal, exploreComplete, plan, planRefined, implementation, abandoned }
 
-# 2. Get deep context for verification review
-goodplan start-complete --slice my-slice --inline --json
-# Returns: { context: { inline: {...}, references: [...] }, paths: {...} }
+# 2. Assemble context from multiple sources (no single start-complete command)
+goodplan state --json --query '.["activity-log.jsonl"] | .[-10:]'   # recent activity
+goodplan state --json --query '.["decisions.jsonl"]'                 # active decisions
+# Plus direct reads of LLM-owned markdown: plan-refined.md, implementation/, architecture/, learnings.md
 
-# 3. Interactive verification work happens here
-# The orchestrator reviews implementation against verification criteria,
-# then constructs the completion payload.
+# 3. Interactive work: synthesize learnings, review architecture, propose updates
+# Write intermediate results to <scope-dir>/completion/ (filesystem-backed accumulation)
+# Create decisions via CLI as architecture updates are approved:
+echo '{"id":"arch-update-1","domain":"data-layer","title":"Added atomic writes","summary":"..."}' | goodplan decision:create --json
 
-# 4. Submit completion with stdin payload (note: stdin is a Claude Code Bash tool parameter)
+# 4. Read back accumulated results and submit completion payload
+# (stdin is a Claude Code Bash tool parameter)
 stdin: '{"verificationPassed":true,"learnings":[{"category":"worked","summary":"...","detail":"...","tags":["zod"],"rollupTo":["epic"]}],"architectureDelta":[{"subsystem":"data-layer","type":"modify","description":"Added atomic writes"}]}' | goodplan slice:complete --slice my-slice --json
 # Returns: { entity, previousStatus, newStatus, deferredRouted, architecturePaths, learningsRolledUp }
 ```
