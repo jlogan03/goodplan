@@ -182,7 +182,7 @@ Add quest lifecycle. Run end-to-end building on Step 2's state.
 
 ### Tasks
 
-- [ ] **Implement Phase 3** (`runPhase3()`):
+- [x] **Implement Phase 3** (`runPhase3()`):
   - Create a deliberate quest: `echo '{"name":"add-readme","goal":"Add a README.md to the project"}' | goodplan quest:create --json`
   - Run quest lifecycle with full state machine path:
     1. `goodplan quest:plan --quest add-readme --json` (created → planning)

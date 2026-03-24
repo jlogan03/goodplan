@@ -885,6 +885,11 @@ function sliceStatus(sliceName: string): string {
 	return data.status;
 }
 
+function questStatus(questName: string): string {
+	const { data } = goodplanJson<{ status: string }>(["quest:show", "--quest", questName, "--json"]);
+	return data.status;
+}
+
 function logCliResult(label: string, result: GoodplanResult): void {
 	console.log(
 		`  ${label}: ${result.ok ? "OK" : `FAIL (exit ${result.exitCode}) — ${describeExitCode(result.exitCode)}`}`,
@@ -1105,6 +1110,214 @@ Verification results: ${verificationResults}. Call epic:complete with this paylo
 	}
 }
 
+// ─── Phase 3: Quest Lifecycle ─────────────────────────────────
+
+async function runPhase3(): Promise<void> {
+	console.log(`\n${"═".repeat(60)}`);
+	console.log("  PHASE 3: Quest Lifecycle");
+	console.log(`${"═".repeat(60)}`);
+
+	const questName = "add-readme";
+
+	// Create quest
+	console.log("\n[Phase 3] Step: Create Quest");
+	const createPayload = JSON.stringify({
+		name: questName,
+		goal: "Add a README.md to the project",
+	});
+	const createResult = goodplan(["quest:create", "--json"], { stdin: createPayload });
+	logCliResult("quest:create", createResult);
+	if (!createResult.ok) {
+		if (createResult.exitCode === 3) {
+			console.log("  Quest already exists (exit 3) — skipping create");
+		} else {
+			throw new Error(`Failed to create quest: exit ${createResult.exitCode}`);
+		}
+	}
+
+	// Step 1: quest:plan (created → planning)
+	console.log("\n[Phase 3] Step: Plan Quest");
+	let currentStatus = questStatus(questName);
+	console.log(`  Quest status: ${currentStatus}`);
+	if (currentStatus === "created") {
+		const planTransition = goodplan(["quest:plan", "--quest", questName, "--json"]);
+		logCliResult("quest:plan", planTransition);
+		if (!planTransition.ok) {
+			throw new Error(
+				`Failed to start planning for quest ${questName}: exit ${planTransition.exitCode}`,
+			);
+		}
+	} else {
+		console.log(`  Skipping quest:plan — quest already in ${currentStatus} state`);
+	}
+
+	// Step 2: Run /create-plan skill
+	currentStatus = questStatus(questName);
+	if (currentStatus === "planning") {
+		await runSkill(
+			"create-plan",
+			`Use the Skill tool to invoke the 'create-plan' skill for quest "${questName}".
+Create a focused implementation plan for adding a README.md. Keep it simple — 1-2 phases.
+When done, call: echo '' | goodplan submit-plan --quest ${questName} --json`,
+			{ logFile: `phase3-plan-${questName}.log` },
+		);
+	}
+
+	// Step 3: submit-plan (planning → plan-created)
+	currentStatus = questStatus(questName);
+	console.log(`  Quest status after create-plan: ${currentStatus}`);
+	if (currentStatus === "planning") {
+		console.log("  Submitting plan manually...");
+		const submitPlan = goodplan(["submit-plan", "--quest", questName, "--json"], { stdin: "" });
+		logCliResult("submit-plan", submitPlan);
+		if (!submitPlan.ok) {
+			console.error(`  submit-plan failed: exit ${submitPlan.exitCode}`);
+		}
+		logFriction(
+			"minor",
+			"Skill: /create-plan",
+			`Skill did not complete submit-plan for quest ${questName} — manual fallback used`,
+		);
+	}
+
+	// Step 4: quest:refine-plan (plan-created → refining)
+	currentStatus = questStatus(questName);
+	console.log(`  Quest status before refine: ${currentStatus}`);
+	if (currentStatus === "plan-created") {
+		const refineTransition = goodplan(["quest:refine-plan", "--quest", questName, "--json"]);
+		logCliResult("quest:refine-plan", refineTransition);
+		if (!refineTransition.ok) {
+			throw new Error(
+				`Failed to start refining for quest ${questName}: exit ${refineTransition.exitCode}`,
+			);
+		}
+	} else {
+		console.log(`  Skipping quest:refine-plan — quest already in ${currentStatus} state`);
+	}
+
+	// Step 5: Run /refine-plan skill
+	currentStatus = questStatus(questName);
+	if (currentStatus === "refining") {
+		await runSkill(
+			"refine-plan",
+			`Use the Skill tool to invoke the 'refine-plan' skill for quest "${questName}".
+Refine the plan for adding a README.md. Keep it concise — 1-2 review iterations.
+When done, submit scores via: echo '{"scores":{"completeness":8,"correctness":8,"clarity":8}}' | goodplan submit-refinement --quest ${questName} --override --json`,
+			{
+				logFile: `phase3-refine-${questName}.log`,
+				maxBudgetUsd: 15,
+				maxTurns: 300,
+			},
+		);
+	}
+
+	// Step 6: submit-refinement (refining → plan-refined) with --override
+	currentStatus = questStatus(questName);
+	console.log(`  Quest status after refine-plan: ${currentStatus}`);
+	if (currentStatus === "refining") {
+		console.log("  Submitting refinement manually...");
+		const scores = JSON.stringify({
+			scores: { completeness: 8, correctness: 8, clarity: 8 },
+		});
+		const submitRefine = goodplan(
+			["submit-refinement", "--quest", questName, "--override", "--json"],
+			{ stdin: scores },
+		);
+		logCliResult("submit-refinement", submitRefine);
+		if (!submitRefine.ok) {
+			console.error(`  submit-refinement failed: exit ${submitRefine.exitCode}`);
+		}
+		logFriction(
+			"minor",
+			"Skill: /refine-plan",
+			`Skill did not complete submit-refinement for quest ${questName} — manual fallback used`,
+		);
+	}
+
+	// Step 7: quest:implement (plan-refined → implementing)
+	currentStatus = questStatus(questName);
+	console.log(`  Quest status before implement: ${currentStatus}`);
+	if (currentStatus === "plan-refined") {
+		const implTransition = goodplan(["quest:implement", "--quest", questName, "--json"]);
+		logCliResult("quest:implement", implTransition);
+		if (!implTransition.ok) {
+			throw new Error(
+				`Failed to start implementing for quest ${questName}: exit ${implTransition.exitCode}`,
+			);
+		}
+	} else {
+		console.log(`  Skipping quest:implement — quest already in ${currentStatus} state`);
+	}
+
+	// Step 8: Run /implement-plan skill
+	currentStatus = questStatus(questName);
+	if (currentStatus === "implementing") {
+		await runSkill(
+			"implement-plan",
+			`Use the Skill tool to invoke the 'implement-plan' skill for quest "${questName}".
+Implement the plan: write a README.md file for the nondet-eval project.
+When done, call: echo '' | goodplan submit-implementation --quest ${questName} --json`,
+			{
+				logFile: `phase3-implement-${questName}.log`,
+				maxBudgetUsd: 20,
+				maxTurns: 400,
+			},
+		);
+	}
+
+	// Step 9: submit-implementation (implementing → implementation-complete)
+	currentStatus = questStatus(questName);
+	console.log(`  Quest status after implement-plan: ${currentStatus}`);
+	if (currentStatus === "implementing") {
+		console.log("  Submitting implementation manually...");
+		const submitImpl = goodplan(["submit-implementation", "--quest", questName, "--json"], {
+			stdin: "",
+		});
+		logCliResult("submit-implementation", submitImpl);
+		if (!submitImpl.ok) {
+			console.error(`  submit-implementation failed: exit ${submitImpl.exitCode}`);
+		}
+		logFriction(
+			"minor",
+			"Skill: /implement-plan",
+			`Skill did not complete submit-implementation for quest ${questName} — manual fallback used`,
+		);
+	}
+
+	// Step 10: quest:complete (implementation-complete → completed)
+	currentStatus = questStatus(questName);
+	console.log(`  Quest status before complete: ${currentStatus}`);
+	if (currentStatus === "implementation-complete") {
+		const completePayload = JSON.stringify({
+			verificationPassed: true,
+			learnings: [],
+			architectureDelta: [],
+		});
+		const completeResult = goodplan(["quest:complete", "--quest", questName, "--json"], {
+			stdin: completePayload,
+		});
+		logCliResult("quest:complete", completeResult);
+		if (!completeResult.ok) {
+			console.error(`  quest:complete failed: exit ${completeResult.exitCode}`);
+		}
+	}
+
+	// Verify final state
+	const finalStatus = questStatus(questName);
+	console.log(`  Quest ${questName} final status: ${finalStatus}`);
+	if (finalStatus !== "completed") {
+		logFriction(
+			"important",
+			`runPhase3(${questName})`,
+			`Quest did not reach completed status — final status: ${finalStatus}`,
+		);
+	}
+
+	console.log(`\n${"═".repeat(60)}`);
+	console.log("  PHASE 3 COMPLETE");
+	console.log(`${"═".repeat(60)}`);
+}
+
 // ─── Phase 2 Orchestrator ────────────────────────────────────
 
 async function runPhase2(): Promise<void> {
@@ -1151,7 +1364,7 @@ async function main(): Promise<void> {
 		console.log("  Commands:");
 		console.log("    reset          — Reset nondet-eval to clean state");
 		console.log("    2 [step]       — Phase 2: First epic lifecycle");
-		console.log("    3              — Phase 3 (not yet implemented)");
+		console.log("    3              — Phase 3: Quest lifecycle");
 		console.log("    4              — Phase 4 (not yet implemented)");
 		console.log("");
 		console.log("  Phase 2 steps:");
@@ -1212,7 +1425,7 @@ async function main(): Promise<void> {
 				}
 				break;
 			case "3":
-				console.log("Phase 3 not yet implemented");
+				await runPhase3();
 				break;
 			case "4":
 				console.log("Phase 4 not yet implemented");
