@@ -1,5 +1,8 @@
 # Plan: Show/Status Enrichment & Spec Alignment
 
+**Status**: COMPLETE
+**Completed**: 2026-03-24
+
 ## Overview
 
 Implements ergonomic CLI enrichments that make skill migration cleaner, plus result type spec alignment and semver compatibility. Phase 1 adds `artifacts` boolean fields to all `show --json` commands. Phase 2 upgrades `status --json` artifact counts to include file arrays. Phase 3 adds `paths?` fields to RPC result types. Phase 4 implements semver compatibility checking and bumps to version 1.0.0.
