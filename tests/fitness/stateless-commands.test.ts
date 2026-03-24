@@ -15,6 +15,7 @@ const GLOBAL_ARG_NAMES = new Set(["json", "quiet", "query", "verbose"]);
 const READ_ONLY_COMMANDS = new Set([
 	"init",
 	"schema",
+	"state",
 	"status",
 	"epic:list",
 	"slice:list",

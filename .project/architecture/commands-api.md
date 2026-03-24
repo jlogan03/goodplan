@@ -221,9 +221,12 @@ goodplan submit-refine-slices --epic <name>
 
 ```
 goodplan status [--json] [--query <jq>]
+goodplan state [--json] [--query <jq>] [--inline] [--offset <n>] [--limit <n>]
 goodplan init [--name <name>]
 goodplan schema [--command <command-path>] [--json] [--query <jq>]
 ```
+
+`state` exposes the full `.project/` state tree as JSON. Always outputs JSON regardless of `--json` flag (this is an explicit exception to the "no `--json` = human-readable" convention). The `--json` flag is accepted but has no effect. `--query` applies a jq expression to filter the tree. `--inline` includes markdown file content as strings instead of `true` markers. `--offset` and `--limit` paginate array results from `--query` (silently ignored without `--query`). Read-only — routes directly to the Data Layer, bypassing RPC and State Machine.
 
 `init` initializes the `.project/` directory structure and `project.json`. Maps to `INIT_PROJECT` event. When `--name` is provided, uses it as the project name. When `--name` is omitted, falls back to the current directory name (`path.basename(cwd)`). If `.project/` already exists, returns error `STATE_ALREADY_INITIALIZED`.
 

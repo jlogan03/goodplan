@@ -1,18 +1,26 @@
 import { defineCommand } from "citty";
 import { z } from "zod";
-import { createEpicInputSchema, completeEpicInputSchema, addVerificationInputSchema, updateVerificationInputSchema } from "../../schemas/commands/epic.js";
-import { createSliceInputSchema, completeSliceInputSchema } from "../../schemas/commands/slice.js";
-import { createQuestInputSchema, completeQuestInputSchema } from "../../schemas/commands/quest.js";
-import { createDecisionInputSchema, updateDecisionInputSchema } from "../../schemas/commands/decision.js";
 import {
-	submitPlanInputSchema,
-	submitRefinementInputSchema,
-	submitImplementationInputSchema,
-	submitExploreInputSchema,
+	createDecisionInputSchema,
+	updateDecisionInputSchema,
+} from "../../schemas/commands/decision.js";
+import {
+	addVerificationInputSchema,
+	completeEpicInputSchema,
+	createEpicInputSchema,
+	updateVerificationInputSchema,
+} from "../../schemas/commands/epic.js";
+import { completeQuestInputSchema, createQuestInputSchema } from "../../schemas/commands/quest.js";
+import { completeSliceInputSchema, createSliceInputSchema } from "../../schemas/commands/slice.js";
+import {
 	submitArchitectureInputSchema,
-	submitSlicesInputSchema,
+	submitExploreInputSchema,
+	submitImplementationInputSchema,
+	submitPlanInputSchema,
 	submitRefineArchitectureInputSchema,
 	submitRefineSlicesInputSchema,
+	submitRefinementInputSchema,
+	submitSlicesInputSchema,
 } from "../../schemas/commands/submit.js";
 import { GoodplanError } from "../../util/errors.js";
 import { output } from "../../util/output.js";
@@ -70,7 +78,11 @@ export const stdinSchemaRegistry: Record<string, z.ZodType> = {
 export const commandRegistry: Map<string, CommandRegistryEntry> = new Map();
 
 /** Register a command's metadata in the parallel registry. */
-export function registerCommand(name: string, description: string, args: Record<string, ArgDefinition>): void {
+export function registerCommand(
+	name: string,
+	description: string,
+	args: Record<string, ArgDefinition>,
+): void {
 	commandRegistry.set(name, { name, description, args });
 }
 
@@ -102,14 +114,36 @@ registerCommand("schema", "Show CLI command tree with input/output schemas", {
 	...globalArgDefs,
 	command: { type: "string", description: "Show detail for a specific command" },
 });
+registerCommand(
+	"state",
+	"Expose the full .project/ state tree as JSON. Always outputs JSON regardless of --json flag.",
+	{
+		...globalArgDefs,
+		inline: { type: "string", description: "Include markdown content in state tree", required: false },
+		offset: {
+			type: "string",
+			description: "Skip N entries when result is an array (requires --query)",
+			required: false,
+		},
+		limit: {
+			type: "string",
+			description: "Return at most N entries when result is an array (requires --query)",
+			required: false,
+		},
+	},
+);
 
 // Epic commands
 registerCommand("epic:create", "Create a new epic. Stdin: {name, goal}.", {
 	...globalArgDefs,
 });
-registerCommand("epic:list", "List all epics with name, status, created, and completed timestamps.", {
-	...globalArgDefs,
-});
+registerCommand(
+	"epic:list",
+	"List all epics with name, status, created, and completed timestamps.",
+	{
+		...globalArgDefs,
+	},
+);
 registerCommand("epic:show", "Show details for a specific epic.", {
 	...globalArgDefs,
 	epic: { type: "string", description: "Epic name", required: true },
@@ -147,15 +181,23 @@ registerCommand("epic:abandon", "Abandon an epic.", {
 	epic: { type: "string", description: "Epic name", required: true },
 	reason: { type: "string", description: "Reason for abandoning", required: true },
 });
-registerCommand("epic:add-verification", "Add a verification criterion to an epic. Stdin: {verification}.", {
-	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
-});
-registerCommand("epic:update-verification", "Update a verification criterion. Stdin: {verification}.", {
-	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
-	index: { type: "string", description: "Verification index", required: true },
-});
+registerCommand(
+	"epic:add-verification",
+	"Add a verification criterion to an epic. Stdin: {verification}.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+	},
+);
+registerCommand(
+	"epic:update-verification",
+	"Update a verification criterion. Stdin: {verification}.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+		index: { type: "string", description: "Verification index", required: true },
+	},
+);
 
 // Slice commands
 registerCommand("slice:create", "Create a new slice. Stdin: {name, goal}.", {
@@ -182,10 +224,14 @@ registerCommand("slice:implement", "Begin implementation for a slice.", {
 	...globalArgDefs,
 	slice: { type: "string", description: "Slice name", required: true },
 });
-registerCommand("slice:complete", "Complete a slice. Stdin: {verificationPassed, deferred?, learnings?, architectureDelta?}.", {
-	...globalArgDefs,
-	slice: { type: "string", description: "Slice name", required: true },
-});
+registerCommand(
+	"slice:complete",
+	"Complete a slice. Stdin: {verificationPassed, deferred?, learnings?, architectureDelta?}.",
+	{
+		...globalArgDefs,
+		slice: { type: "string", description: "Slice name", required: true },
+	},
+);
 registerCommand("slice:abandon", "Abandon a slice.", {
 	...globalArgDefs,
 	slice: { type: "string", description: "Slice name", required: true },
@@ -215,10 +261,14 @@ registerCommand("quest:implement", "Begin implementation for a quest.", {
 	...globalArgDefs,
 	quest: { type: "string", description: "Quest name", required: true },
 });
-registerCommand("quest:complete", "Complete a quest. Stdin: {verificationPassed, learnings?, architectureDelta?}.", {
-	...globalArgDefs,
-	quest: { type: "string", description: "Quest name", required: true },
-});
+registerCommand(
+	"quest:complete",
+	"Complete a quest. Stdin: {verificationPassed, learnings?, architectureDelta?}.",
+	{
+		...globalArgDefs,
+		quest: { type: "string", description: "Quest name", required: true },
+	},
+);
 registerCommand("quest:abandon", "Abandon a quest.", {
 	...globalArgDefs,
 	quest: { type: "string", description: "Quest name", required: true },
@@ -236,10 +286,14 @@ registerCommand("decision:show", "Show details for a specific decision.", {
 	...globalArgDefs,
 	id: { type: "string", description: "Decision ID", required: true },
 });
-registerCommand("decision:update", "Update a decision. Stdin: {changes: {status?, domain?, title?, summary?, supersededBy?}}.", {
-	...globalArgDefs,
-	id: { type: "string", description: "Decision ID", required: true },
-});
+registerCommand(
+	"decision:update",
+	"Update a decision. Stdin: {changes: {status?, domain?, title?, summary?, supersededBy?}}.",
+	{
+		...globalArgDefs,
+		id: { type: "string", description: "Decision ID", required: true },
+	},
+);
 
 // Learning commands
 registerCommand("learning:list", "List learnings.", {
@@ -309,7 +363,11 @@ registerCommand("submit-refinement", "Submit refinement scores.", {
 	...globalArgDefs,
 	slice: { type: "string", description: "Slice name" },
 	quest: { type: "string", description: "Quest name" },
-	override: { type: "boolean", description: "Bypass score threshold circuit breaker", default: false },
+	override: {
+		type: "boolean",
+		description: "Bypass score threshold circuit breaker",
+		default: false,
+	},
 });
 registerCommand("submit-implementation", "Submit implementation results.", {
 	...globalArgDefs,
@@ -331,12 +389,20 @@ registerCommand("submit-slices", "Submit slice definitions.", {
 registerCommand("submit-refine-architecture", "Submit architecture refinement scores.", {
 	...globalArgDefs,
 	epic: { type: "string", description: "Epic name", required: true },
-	override: { type: "boolean", description: "Bypass score threshold circuit breaker", default: false },
+	override: {
+		type: "boolean",
+		description: "Bypass score threshold circuit breaker",
+		default: false,
+	},
 });
 registerCommand("submit-refine-slices", "Submit slice refinement scores.", {
 	...globalArgDefs,
 	epic: { type: "string", description: "Epic name", required: true },
-	override: { type: "boolean", description: "Bypass score threshold circuit breaker", default: false },
+	override: {
+		type: "boolean",
+		description: "Bypass score threshold circuit breaker",
+		default: false,
+	},
 });
 
 // ── Schema command ───────────────────────────────────────────
@@ -354,11 +420,9 @@ function buildCommandHierarchy(): { commands: CommandRegistryEntry[] } {
 function buildCommandDetail(commandName: string): Record<string, unknown> {
 	const entry = commandRegistry.get(commandName);
 	if (entry === undefined) {
-		throw new GoodplanError(
-			"VALIDATION_INVALID_INPUT",
-			`Unknown command: ${commandName}`,
-			{ command: commandName },
-		);
+		throw new GoodplanError("VALIDATION_INVALID_INPUT", `Unknown command: ${commandName}`, {
+			command: commandName,
+		});
 	}
 
 	const result: Record<string, unknown> = {

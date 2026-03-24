@@ -5,7 +5,7 @@
 	"scripts": {
 		"check": "biome check .",
 		"test": "vitest",
-		"build": "bun build --compile src/index.ts --outfile goodplan",
+		"build": "bun build --compile src/index.ts --outfile goodplan --define __GOODPLAN_VERSION__='\"'$(node -p 'require(\"./package.json\").version')'\"'",
 		"install:skills": "bash scripts/install-skills.sh"
 	},
 	"dependencies": {

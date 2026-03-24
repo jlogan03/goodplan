@@ -37,7 +37,7 @@ Implement `goodplan state --json --query --offset --limit` and `--version --json
 
 ### Tasks
 
-- [ ] **Create `src/core/data/serialize.ts`** (alternative: `src/core/serialize.ts` — the function is a pure transformation with no I/O, so placing it outside the Data Layer keeps that layer focused on entity CRUD and filesystem I/O; either location works without circular dependencies) — `serializeStateTree(state: ProjectState, options: { inline: boolean }): Record<string, unknown>` function. Return type is `Record<string, unknown>` (not `unknown`) since the top-level is always an object. Add a code comment noting this return type is a public API contract. Recursively transforms the typed `StateEntry` tree into a plain JSON-serializable object:
+- [x] **Create `src/core/data/serialize.ts`** (alternative: `src/core/serialize.ts` — the function is a pure transformation with no I/O, so placing it outside the Data Layer keeps that layer focused on entity CRUD and filesystem I/O; either location works without circular dependencies) — `serializeStateTree(state: ProjectState, options: { inline: boolean }): Record<string, unknown>` function. Return type is `Record<string, unknown>` (not `unknown`) since the top-level is always an object. Add a code comment noting this return type is a public API contract. Recursively transforms the typed `StateEntry` tree into a plain JSON-serializable object:
   - `DirectoryEntry` → plain object (keys = child names, values = serialized children)
   - `JsonEntry<T>` → `T` directly (unwrapped — strip `type` discriminator)
   - `JsonlEntry<T>` → `T[]` directly (unwrapped)
@@ -46,7 +46,7 @@ Implement `goodplan state --json --query --offset --limit` and `--version --json
   - Internal recursive helper returns `unknown`; the outer function casts the top-level result to `Record<string, unknown>`
   - Do not add key-sorting logic — key ordering is handled by `deterministicStringify` in the output layer
   - Use `import type` for all type-only imports (`ProjectState`, `DirectoryEntry`, etc.) per `verbatimModuleSyntax`
-- [ ] **Create `src/commands/global/state.ts`** — new command following `status.ts` pattern:
+- [x] **Create `src/commands/global/state.ts`** — new command following `status.ts` pattern:
   - Import `assembleState` from data layer, `serializeStateTree` from serialize module
   - Define command with `globalArgs` + state-specific flags: `inline` (string type for citty, parsed with `parseInlineBudget` — coerced to simple boolean for this slice: `const inline = parseInlineBudget(args.inline) !== undefined`. Add code comment: `// Budget form deferred — parseInlineBudget returns true|number|undefined, collapsed to boolean here`. Budget support deferred to later slice), `offset` (string, optional), `limit` (string, optional)
   - `run()`: call `resolveProjectDir()`, `assembleState(dir)`, `serializeStateTree(state, { inline })`
@@ -56,13 +56,13 @@ Implement `goodplan state --json --query --offset --limit` and `--version --json
   - **Error handling:** Catch errors from `assembleState` and `serializeStateTree` within the command handler and format as JSON (using `deterministicStringify`). Do not let errors fall through to the top-level handler, which would produce human-readable stderr since `args.json` is not set for bare `state` invocations
   - Register in command registry (`src/commands/global/schema.ts`) per INV-006, with explicit `ArgDefinition` entries: `{ ...globalArgDefs, inline: { type: "string", description: "Include markdown content in state tree" }, offset: { type: "string", description: "Skip N entries when result is an array (requires --query)" }, limit: { type: "string", description: "Return at most N entries when result is an array (requires --query)" } }`. Parse offset/limit via `parseInt(value, 10)` (not `Number()` — `Number("")` returns 0 instead of NaN), validate non-negative finite integer, throw `GoodplanError('VALIDATION_INVALID_INPUT')` if invalid
   - Export as `stateCommand`
-- [ ] **Register state command in `src/commands/main.ts`** — import `stateCommand`, add to `subCommands` map
-- [ ] **Modify `src/index.ts` for `--version --json`** — in the `--version` handler (lines 60-63), check if `rawArgs.includes("--json")`. If true, output `deterministicStringify({ version })`. If false, keep existing plain text output. Version must come from a single source of truth: import from `package.json` or define a `const VERSION` that both plain-text and JSON paths use — never hardcode `"0.0.1"` in two places. Add a comment noting that `--version` is handled pre-dispatch and will not appear in `goodplan schema --json` output — this is a known limitation; the convention doc documents it manually
-- [ ] **Unit tests `tests/unit/commands/state.test.ts`** — follow `status.test.ts` pattern:
+- [x] **Register state command in `src/commands/main.ts`** — import `stateCommand`, add to `subCommands` map
+- [x] **Modify `src/index.ts` for `--version --json`** — in the `--version` handler (lines 60-63), check if `rawArgs.includes("--json")`. If true, output `deterministicStringify({ version })`. If false, keep existing plain text output. Version must come from a single source of truth: import from `package.json` or define a `const VERSION` that both plain-text and JSON paths use — never hardcode `"0.0.1"` in two places. Add a comment noting that `--version` is handled pre-dispatch and will not appear in `goodplan schema --json` output — this is a known limitation; the convention doc documents it manually
+- [x] **Unit tests `tests/unit/commands/state.test.ts`** — follow `status.test.ts` pattern:
   - Create minimal `.project/` fixture with project.json, a slice with slice.json, activity-log.jsonl with at least 5 entries (required for offset/limit test coverage), and a markdown file
   - Test `serializeStateTree()` directly: verify JSON entries unwrapped, JSONL entries as arrays, markdown as `true` (no inline), markdown as string (with inline)
   - Test state command output: `--json` returns valid JSON matching fixture, `--query` filters correctly, `--offset`/`--limit` paginates arrays, invalid query returns error, offset/limit is a no-op without `--query`
-- [ ] **Integration tests `tests/integration/state.test.ts`** — follow existing integration pattern (spawn compiled binary):
+- [x] **Integration tests `tests/integration/state.test.ts`** — follow existing integration pattern (spawn compiled binary):
   - `state --json` on a real `.project/` returns valid JSON with `project.json` content
   - `state --json --query '.["project.json"].name'` returns project name
   - `state --json --query '.["activity-log.jsonl"]' --limit 2` returns exactly 2 entries
@@ -71,9 +71,9 @@ Implement `goodplan state --json --query --offset --limit` and `--version --json
   - `state --json --inline` includes markdown content as strings
   - `--version --json` returns `{ "version": "..." }` (JSON)
   - `--version` (no `--json`) returns plain text
-- [ ] **Update `.project/architecture/commands-api.md`** — add the `state` command to the CLI command surface documentation
-- [ ] **Rebuild binary** — `bun run build` to compile with new command
-- [ ] **Run full test suite and fitness functions** — `bun test` to verify no regressions. Verify `state` command passes existing fitness functions (`stateless-commands.test.ts`, `schema-output-accuracy.test.ts`) or update them if needed
+- [x] **Update `.project/architecture/commands-api.md`** — add the `state` command to the CLI command surface documentation
+- [x] **Rebuild binary** — `bun run build` to compile with new command
+- [x] **Run full test suite and fitness functions** — `bun test` to verify no regressions. Verify `state` command passes existing fitness functions (`stateless-commands.test.ts`, `schema-output-accuracy.test.ts`) or update them if needed
 
 ### Verification
 

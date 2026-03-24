@@ -17,6 +17,10 @@ import { epicRefineSlicesCommand } from "./epic/refine-slices.js";
 import { epicShowCommand } from "./epic/show.js";
 import { epicUpdateVerificationCommand } from "./epic/update-verification.js";
 import { globalArgs } from "./global-args.js";
+import { initCommand } from "./global/init.js";
+import { schemaCommand } from "./global/schema.js";
+import { stateCommand } from "./global/state.js";
+import { statusCommand } from "./global/status.js";
 import { learningListCommand } from "./learning/list.js";
 import { learningRollupCommand } from "./learning/rollup.js";
 import { questAbandonCommand } from "./quest/abandon.js";
@@ -27,9 +31,6 @@ import { questListCommand } from "./quest/list.js";
 import { questPlanCommand } from "./quest/plan.js";
 import { questRefinePlanCommand } from "./quest/refine-plan.js";
 import { questShowCommand } from "./quest/show.js";
-import { initCommand } from "./global/init.js";
-import { schemaCommand } from "./global/schema.js";
-import { statusCommand } from "./global/status.js";
 import { sliceAbandonCommand } from "./slice/abandon.js";
 import { sliceCompleteCommand } from "./slice/complete.js";
 import { sliceCreateCommand } from "./slice/create.js";
@@ -70,6 +71,7 @@ export const mainCommand = defineCommand({
 	subCommands: {
 		init: initCommand,
 		schema: schemaCommand,
+		state: stateCommand,
 		status: statusCommand,
 		"decision:create": decisionCreateCommand,
 		"decision:list": decisionListCommand,

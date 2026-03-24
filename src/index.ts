@@ -2,7 +2,9 @@ import type { CommandDef } from "citty";
 import { runCommand, showUsage } from "citty";
 import { mainCommand } from "./commands/main.js";
 import { GoodplanError, isGoodplanError } from "./util/errors.js";
+import { deterministicStringify } from "./util/json.js";
 import { exitCodeForError, outputError, outputUnexpectedError } from "./util/output.js";
+import { VERSION } from "./version.js";
 
 /**
  * Parse global flags from raw argv before dispatch.
@@ -57,9 +59,15 @@ async function main(): Promise<void> {
 	// Find first non-flag argument (potential subcommand)
 	const firstNonFlag = rawArgs.find((a) => !a.startsWith("-"));
 
-	// Handle --version (runCommand doesn't auto-handle it)
+	// Handle --version (runCommand doesn't auto-handle it).
+	// --version is handled pre-dispatch and will not appear in `goodplan schema --json`
+	// output — this is a known limitation; the convention doc documents it manually.
 	if (rawArgs.includes("--version")) {
-		process.stdout.write("goodplan 0.0.1\n");
+		if (rawArgs.includes("--json")) {
+			process.stdout.write(`${deterministicStringify({ version: VERSION })}\n`);
+		} else {
+			process.stdout.write(`goodplan ${VERSION}\n`);
+		}
 		return;
 	}
 
