@@ -2,6 +2,21 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Old lifecycle concepts that don't survive state machine redesigns should be retired, not force-migrated
+_Source: 04-exploration-architecture-skills_
+
+The old start-epic skill's "activation" mapped to a completely different lifecycle point than `epic:activate`. Retirement and responsibility redistribution was cleaner than forced mapping. Apply this when migrating any skill whose core concept doesn't exist in the new model.
+
+## Graceful stop scenarios are hidden complexity in skill migration — inventory all scenarios upfront
+_Source: 04-exploration-architecture-skills_
+
+create-architecture had 6 graceful stop scenarios with ~15 state.md/activity-log references. Plans should inventory every stop scenario and map re-entry detection (CLI status + file existence) for each, not just say "leave artifacts in place."
+
+## Skill-only slices don't need formal review cycles — grep + smoke test is sufficient
+_Source: 04-exploration-architecture-skills_
+
+All 4 skill SKILL.md migrations passed first iteration. Skill files are LLM prompts, not code — changes are structural pattern replacements with no runtime behavior. Future skill-only slices should skip formal review cycles and use grep checks + CLI smoke tests as verification.
+
 ## `__active__` prefix is a pre-CLI skill convention — CLI paths don't use it
 _Source: 03-core-skill-validation_
 
