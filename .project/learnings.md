@@ -2,6 +2,21 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## `__active__` prefix is a pre-CLI skill convention — CLI paths don't use it
+_Source: 03-core-skill-validation_
+
+The CLI creates entity directories at `epics/<name>/` without any prefix. The `__active__` convention was managed by old skills manually. Migrated skills must use unprefixed paths. Reviewers flagged this as CRITICAL when the actual filesystem (old-style) didn't match CLI behavior — significant confusion source.
+
+## Entity paths are flat, not nested under parent entities
+_Source: 03-core-skill-validation_
+
+`resolveEntityDir` places slices at `.project/slices/<name>/`, not `.project/epics/<epic>/slices/<name>/`. Quests similarly at `.project/quests/<name>/`. This flat structure is non-obvious when epics "own" slices conceptually. Would have caused runtime bugs writing to non-existent nested paths.
+
+## Migrated skills need a project migration path for pre-CLI adoption
+_Source: 03-core-skill-validation_
+
+Skills rewritten to use CLI commands can't run on projects without `project.json` (predating the CLI). The CLI returns `DATA_NO_PROJECT`. A `migrate` command or init-from-existing feature is needed before these tools can be used on the project that created them.
+
 ## Build-time defines must be mirrored in test compilation
 _Source: 02-show-status-enrichment_
 
