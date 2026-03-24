@@ -8,6 +8,7 @@ description: >
   define the architecture', 'what's our tech stack', 'I want to start on architecture',
   'define architecture', 'create architecture', 'set up conventions', 'help me set up project conventions', 'what
   coding standards should we use', 'define project conventions'.
+requires: goodplan >= 1.0.0
 ---
 
 # Define Architecture
@@ -16,44 +17,72 @@ Interactive dialogue that drives architecture decisions from project idea to a f
 
 When an active epic exists, architecture output is scoped to the epic (see Step 0 for path resolution).
 
-## Step 0 — Determine Architecture Output Location
+## Step 0 — Version Check and Architecture Path Resolution
 
-Use the Read tool to load `~/.claude/skills/_shared/references/epic-conventions.md` for epic directory structure and state machine.
+Read `~/.claude/skills/_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
 
-Detect the active epic:
+Verify CLI availability and compatibility:
 
 ```bash
-ls -d .project/epics/__active__*/ 2>/dev/null
+goodplan --version --json
 ```
 
-Determine the architecture output path based on the result:
+If the command fails, stop: "The `goodplan` CLI is required but not found." If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop with a version mismatch message.
 
-- **First epic** (directory name is `__active__initial`): architecture output goes to `.project/epics/__active__initial/architecture/`. Also create a top-level scaffold at `.project/architecture/_overview.md` containing:
+Also load `~/.claude/skills/_shared/references/epic-conventions.md` for epic directory structure.
+
+### Resolve architecture path
+
+Query current state:
+
+```bash
+goodplan status --json
+```
+
+Check `.activeEpic` in the response to determine the architecture output path:
+
+- **Active epic with name `initial`** (first epic): Begin the architecture phase via CLI:
+
+  ```bash
+  stdin: "" | goodplan epic:define-architecture --epic initial --json
+  ```
+
+  Use `paths.architecture` from the response as `$ARCH_DIR`. Also create a top-level scaffold at `.project/architecture/_overview.md` containing:
   ```markdown
   <!-- scaffold -->
   # Architecture Overview
 
-  Architecture is being defined in the active epic. See `epics/__active__initial/architecture/` for the current target.
+  Architecture is being defined in the active epic. See `epics/initial/architecture/` for the current target.
 
   ## Subsystem Maturity
 
   | Subsystem | Maturity | Dependents | Fitness Functions | Notes |
   |---|---|---|---|---|
   ```
-  Run `mkdir -p .project/architecture/` before writing the scaffold. No maturity data is populated until the first slice completes via `/complete`.
+  Run `mkdir -p .project/architecture/` before writing the scaffold (skill-owned LLM artifact directory). No maturity data is populated until the first slice completes via `/complete`.
 
-- **Subsequent epic** (active epic exists but name is not `initial`): architecture output goes to `.project/epics/__active__<name>/architecture-proposal/`. This is a proposal — not committed until `/start-epic` approves it.
+- **Active epic with a different name** (subsequent epic): Begin the architecture phase:
 
-- **Non-active epic** (directory without `__active__` prefix found via state.md or argument — e.g., exploring a subsequent epic before activation): architecture output goes to `.project/epics/<name>/architecture-proposal/`.
+  ```bash
+  stdin: "" | goodplan epic:define-architecture --epic <name> --json
+  ```
 
-- **No active epic**: defaults to `.project/architecture/` (legacy/side-quest-only projects).
+  Use `paths.architecture` from the response as `$ARCH_DIR`. This writes to the epic's `architecture-proposal/` directory.
 
-Store the resolved `$ARCH_DIR` path for use throughout subsequent steps. All references to `.project/architecture/` in later steps should use `$ARCH_DIR` instead. Also set `$FLOW_SCOPE` = `"epics/<name>"` when operating on an epic, or `"project"` otherwise — used in Step 10 for activity-log writing.
+- **No active epic**: defaults to `.project/architecture/` (legacy/side-quest-only projects). No CLI phase transition — no epic to transition.
 
-Also detect exploration output at the epic level when applicable:
+If `epic:define-architecture` returns `STATE_INVALID_TRANSITION` (exit 3), check `epic:show --json` for current status. If the epic is already in `defining-architecture` or later, this is a re-entry — proceed with the existing architecture path.
+
+Store the resolved `$ARCH_DIR` path for use throughout subsequent steps. Also store the epic name (if applicable) for use in `submit-architecture` at Step 10.
+
+Note: `start-architecture` exists as a CLI command but no sub-agents in create-architecture need its context bundling — the conventions research sub-agent (Step 4.1) does web research only, and all other work is orchestrator-level.
+
+### Detect exploration output
+
+Check for exploration artifacts at the epic level when applicable:
 
 ```bash
-ls .project/epics/__active__*/brainstorm/ .project/epics/__active__*/research/ .project/epics/__active__*/prototypes/ 2>/dev/null
+ls .project/epics/<epic-name>/brainstorm/ .project/epics/<epic-name>/research/ .project/epics/<epic-name>/prototypes/ 2>/dev/null
 ```
 
 ## Step 1 — Load References
@@ -81,7 +110,7 @@ Read the following project files to understand what exists:
    ```bash
    ls $EPIC_DIR/brainstorm/ $EPIC_DIR/research/ $EPIC_DIR/prototypes/ 2>/dev/null
    ```
-   Also check project-level: `ls .project/brainstorm/ .project/research/ .project/prototypes/ 2>/dev/null`. If any exist, read the relevant `explore-complete.md` (or `explore-skipped.md`) first as the summary. Then read individual exploration files only if the summary references something needing more detail. If there are more than 5 files across those directories, read only the first 50 lines of each.
+   Also check project-level: `ls .project/brainstorm/ .project/research/ .project/prototypes/ 2>/dev/null`. Use `$EPIC_DIR` as resolved from `paths.architecture` in Step 0 (stripping the `/architecture` suffix gives the epic directory). If any exist, read the relevant `explore-complete.md` (or `explore-skipped.md`) first as the summary. Then read individual exploration files only if the summary references something needing more detail. If there are more than 5 files across those directories, read only the first 50 lines of each.
 
 3. Check for existing architecture files by running: `ls .project/conventions.md $ARCH_DIR/ 2>/dev/null` (where `$ARCH_DIR` is the resolved path from Step 0).
 
@@ -125,7 +154,15 @@ Distinguish this file from `architecture/conventions.md`: this file is project-l
 
 ### Decision writing during Conventions and Architecture phases
 
-Throughout Steps 4 through 8, when a durable decision emerges (see threshold in `decisions-format.md`), propose the decision text to the user and confirm via AskUserQuestion before writing. Run `mkdir -p .project/decisions/` before the first write. Write in the format specified by `decisions-format.md`. Track all decisions written during this run and summarize them in Step 11 (Done Summary).
+Throughout Steps 4 through 8, when a durable decision emerges (see threshold in `decisions-format.md`), propose the decision text to the user and confirm via AskUserQuestion before writing.
+
+Create decisions via CLI:
+
+```bash
+echo '{"id":"<kebab-case-id>","domain":"<topic-area>","title":"<decision-title>","summary":"<brief-summary>"}' | goodplan decision:create --json
+```
+
+The CLI handles directory creation and state management. Track all decisions written during this run and summarize them in Step 11 (Done Summary).
 
 ## Step 5 — Design Tree: Broad Pass
 
@@ -200,13 +237,16 @@ If the user requests a file type not in the applicability table (e.g., `architec
 
 ### 8e. Graceful stop
 
-If the user says "that's enough" or "stop here" at any point, handle based on current progress:
+If the user says "that's enough" or "stop here" at any point, leave filesystem artifacts in place and stop. The CLI status stays `defining-architecture` (no CLI mutation on graceful stop). On re-entry, the skill detects progress via `epic:show --json` status + file existence (see Step 3 re-entry check).
 
-- **No files written yet** (stopped during conventions draft before approval): do not update state.md and do not append to activity-log.jsonl. Tell the user nothing was written and state.md is unchanged. Stop.
-- **Stopped during design tree broad pass** (conventions.md written, no architecture files): load `~/.claude/skills/_shared/references/state-and-activity-formats.md` for the state.md and activity-log.jsonl formats. Update state.md Current Phase to `create-architecture in-progress -- design tree broad pass`. Before updating CLAUDE.md, re-load `references/guidance.md` (relative to this skill's directory) to get the Project Context format. Update CLAUDE.md Project Context to reference only conventions.md (Step 9). Append to activity-log.jsonl with `"status":"started"` using the format from the shared formats reference. Stop.
-- **Stopped during design tree deep pass**: load shared formats reference. Update state.md Current Phase to `create-architecture in-progress -- design tree deep pass, [chosen design] chosen`. Update CLAUDE.md Project Context to reference conventions.md (Step 9). Append to activity-log.jsonl with `"status":"started"`. Stop.
-- **conventions.md written but no architecture files** (stopped after design tree): load `~/.claude/skills/_shared/references/state-and-activity-formats.md`. Update state.md Current Phase to `create-architecture in-progress -- stopped after writing conventions.md`. Before updating CLAUDE.md, re-load `references/guidance.md` to get the Project Context format. Update CLAUDE.md Project Context to reference only conventions.md (Step 9). Append to activity-log.jsonl with `"status":"started"`. Stop.
-- **One or more architecture files written** (with or without conventions.md): load `~/.claude/skills/_shared/references/state-and-activity-formats.md`. Update state.md Current Phase to `create-architecture in-progress -- stopped after writing [comma-separated list of all files written, including conventions.md if written]`. Before updating CLAUDE.md, re-load `references/guidance.md` to get the Project Context format. Update CLAUDE.md Project Context to reference only the files actually written (Step 9). Append to activity-log.jsonl with `"status":"started"`. Stop.
+Handle based on current progress:
+
+- **(a) No files written yet** (stopped during conventions draft before approval): Tell the user nothing was written. Stop.
+- **(b) conventions.md written but no architecture files**: Before updating CLAUDE.md, re-load `references/guidance.md` to get the Project Context format. Update CLAUDE.md Project Context to reference only conventions.md (Step 9). Stop.
+- **(c) Design tree in progress**: Q&A notes exist but no `_overview.md`. Update CLAUDE.md to reference conventions.md. Stop.
+- **(d) Design tree complete, conventions research not started**: `_overview.md` complete, no `conventions.md`. Update CLAUDE.md to reference `_overview.md`. Stop.
+- **(e) Conventions research in progress**: partial `conventions.md` exists. Update CLAUDE.md to reference files written so far. Stop.
+- **(f) All content written, not submitted**: all architecture files present. Update CLAUDE.md to reference all files (Step 9). Tell the user to run `/create-architecture` again to submit. Stop.
 
 ### 8f. Create Maturity Table
 
@@ -221,7 +261,7 @@ After all architecture files are written (Steps 8b-8d), populate the `## Subsyst
 3. Present the completed maturity table to the user for review using AskUserQuestion.
 4. Apply any corrections and update `_overview.md` with the final table.
 
-**Graceful stop:** If the user stops during this step, load shared formats reference. Add a partial marker to `_overview.md`'s Subsystem Maturity section: `<!-- partial — interrupted during maturity table creation — completed: [list of subsystems added] -->`. Update state.md Current Phase to `create-architecture in-progress -- stopped during maturity table creation`. Update CLAUDE.md Project Context to reference all files written so far, following the same process as Step 9 but scoped to files written so far. Append to activity-log.jsonl with `"status":"started"`. Stop.
+**Graceful stop:** If the user stops during this step, add a partial marker to `_overview.md`'s Subsystem Maturity section: `<!-- partial — interrupted during maturity table creation — completed: [list of subsystems added] -->`. Update CLAUDE.md Project Context to reference all files written so far, following the same process as Step 9 but scoped to files written so far. Stop.
 
 ### 8g. Create Invariants
 
@@ -232,7 +272,7 @@ After the maturity table, interactively define system-wide invariants.
 3. **If the user provides invariants:** Draft `architecture/invariants.md` with each invariant in the format from `maturity-conventions.md` (Statement as heading, Rationale, Scope, Verification fields). Present the draft and use AskUserQuestion for approval. Iterate until the user approves. Write the file.
 4. **If the user has nothing yet:** Create a stub `architecture/invariants.md` with the format header, an examples section showing the format, and a note: "Add invariants as the project matures. Good candidates: error handling rules, data integrity constraints, security requirements, performance guarantees." Write the stub file.
 
-**Graceful stop:** If the user stops during this step, load shared formats reference. Add a partial marker to `architecture/invariants.md` if it exists: `<!-- partial — interrupted during invariant definition — state: [drafted/stub/not started] -->`. Update state.md Current Phase to `create-architecture in-progress -- stopped during invariant definition`. Update CLAUDE.md Project Context to reference all files written so far, following the same process as Step 9 but scoped to files written so far. Append to activity-log.jsonl with `"status":"started"`. Stop.
+**Graceful stop:** If the user stops during this step, add a partial marker to `architecture/invariants.md` if it exists: `<!-- partial — interrupted during invariant definition — state: [drafted/stub/not started] -->`. Update CLAUDE.md Project Context to reference all files written so far, following the same process as Step 9 but scoped to files written so far. Stop.
 
 ### 8h. Identify Fitness Function Candidates
 
@@ -251,7 +291,7 @@ For each subsystem, identify architectural properties that should eventually be 
 5. Present the candidates to the user using AskUserQuestion. Accept after one round of user feedback — this is a starting point, not a final specification. Apply any corrections.
 6. Write the updated files.
 
-**Graceful stop:** If the user stops during this step, load shared formats reference. Add a partial marker to any subsystem API files that have been updated: `<!-- partial — interrupted during fitness function candidate identification — completed: [list of subsystems with candidates] -->`. Update state.md Current Phase to `create-architecture in-progress -- stopped during fitness function identification`. Update CLAUDE.md Project Context to reference all files written so far, following the same process as Step 9 but scoped to files written so far. Append to activity-log.jsonl with `"status":"started"`. Stop.
+**Graceful stop:** If the user stops during this step, add a partial marker to any subsystem API files that have been updated: `<!-- partial — interrupted during fitness function candidate identification — completed: [list of subsystems with candidates] -->`. Update CLAUDE.md Project Context to reference all files written so far, following the same process as Step 9 but scoped to files written so far. Stop.
 
 ## Step 9 — CLAUDE.md Update
 
@@ -281,28 +321,21 @@ Reflect on the conversation: did it reveal new information about the user's expe
 - **If yes**: Read `~/.claude/skills/_shared/references/expertise-tracking.md` for the recording protocol. Update `## Expertise` section in `~/.claude/CLAUDE.md` and write/update relevant `expertise_<domain>.md` memory file.
 - **If no**: Skip silently — no Read, no output, no AskUserQuestion.
 
-## Step 10 — Write Back State
+## Step 10 — Complete Architecture Phase
 
-Use the Read tool to load `~/.claude/skills/_shared/references/state-and-activity-formats.md` for state.md and activity-log.jsonl formats. (This is the normal completion path. The graceful stop cases in Step 8e exit before reaching Step 10, so the double load never occurs in practice.)
+### For epic scope
 
-Generate a UTC timestamp by running: `date -u +%Y-%m-%dT%H:%M:%SZ`
-
-Update `.project/state.md` using the 4-section format from the shared formats reference. If state.md does not exist, create it using the Write tool. Set:
-- Current Phase: `create-architecture complete -- conventions and architecture/* written`
-- Active Slice: unchanged from before (or `none (working at project level)` if project-level)
-- Work Stack: unchanged
-- Next Step: depends on context:
-  - **First epic**: `/create-slices`
-  - **Subsequent epic** (wrote architecture-proposal): `/start-epic` (to review and approve the proposal)
-  - **No active epic**: `/create-slices`
-
-Append to `.project/activity-log.jsonl` by running:
+Complete the architecture phase via CLI (no stdin required — content is already on disk):
 
 ```bash
-echo '{"ts":"<timestamp>","phase":"create-architecture","scope":"$FLOW_SCOPE","status":"complete","summary":"<one-sentence summary>"}' >> .project/activity-log.jsonl
+stdin: "" | goodplan submit-architecture --epic <name> --json
 ```
 
-Use the `$FLOW_SCOPE` value resolved in Step 0 (`"epics/<name>"` when operating on an epic, `"project"` otherwise). Replace `<timestamp>` with the generated UTC timestamp and `<summary>` with a concise description of what was written.
+This transitions the epic from `defining-architecture` to `architecture-defined` and records the activity. The CLI handles all state management.
+
+### For non-epic scope
+
+When no active epic exists (project-level architecture), there is no CLI phase transition. The architecture files written to `.project/architecture/` serve as the completion record.
 
 ## Step 11 — Done Summary
 

@@ -8,15 +8,28 @@ description: >
   Common triggers: 'I need to research X', 'let's brainstorm', 'what are my options for...',
   'let's explore', 'what should I use for...', 'compare X vs Y', 'help me decide between...',
   'I'm not sure which approach...', 'skip exploration'.
+requires: goodplan >= 1.0.0
 ---
 
 # Explore
 
 Iterative research/brainstorm/prototype loop. Facilitates open-ended investigation and captures whatever emerges.
 
-## Step 0 — Load Epic Conventions
+## Step 0 — Version Check and Context Loading
 
-Use the Read tool to load `~/.claude/skills/_shared/references/epic-conventions.md` for epic directory structure and state machine awareness.
+Read `~/.claude/skills/_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
+
+Verify CLI availability and compatibility:
+
+```bash
+goodplan --version --json
+```
+
+If the command fails (not found, non-zero exit), stop: "The `goodplan` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
+
+If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill requires goodplan >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
+
+Also load `~/.claude/skills/_shared/references/epic-conventions.md` for epic directory structure.
 
 ## Step 1 — Load Explore Logic and Decisions Format
 
@@ -32,7 +45,7 @@ Normalize the argument:
 
 1. Strip trailing slashes.
 2. If it is a full path starting with `.project/` (e.g. `.project/slices/03-explore`), use as-is.
-3. If it is a relative path like `slices/03-explore`, `side-quests/foo`, or `epics/__active__foo`, prepend `.project/`.
+3. If it is a relative path like `slices/03-explore`, `side-quests/foo`, or `epics/foo`, prepend `.project/`.
 4. If it is a short name (e.g. `03-explore`), search for a match:
 
 ```bash
@@ -41,20 +54,24 @@ ls -d .project/slices/*"$SHORT_NAME"* .project/side-quests/*"$SHORT_NAME"* .proj
 
 If exactly one match, use it. If multiple, list them and ask the user to pick. If none, tell the user and ask for a valid scope.
 
-**Reject epic slice paths**: If the resolved path matches `epics/*/slices/*` (e.g., `.project/epics/__active__foo/slices/02-bar`), tell the user: "Per-slice exploration is not supported for epic slices — all exploration happens at the epic level. Run `/explore` at the epic scope instead (e.g., `/explore epics/__active__foo`)." Then stop.
+**Reject epic slice paths**: If the resolved path matches `epics/*/slices/*` (e.g., `.project/epics/foo/slices/02-bar`), tell the user: "Per-slice exploration is not supported for epic slices — all exploration happens at the epic level. Run `/explore` at the epic scope instead (e.g., `/explore epics/foo`)." Then stop.
 
 ### If no argument was passed
 
-Use the Read tool to read `.project/state.md`. Determine scope using resolution order:
+Query current project state for scope resolution:
 
-1. **Work Stack top** — if the Work Stack has entries, take the top entry. Extract only the path portion (ignore any parenthetical metadata like `(interrupted ...)`). Use that as scope. If the path is an epic slice path (matches `epics/*/slices/*`), use the parent epic directory instead.
-2. **Active Epic** — check for an active epic directory:
-   ```bash
-   ls -d .project/epics/__active__*/ 2>/dev/null
-   ```
-   If one exists and its state (per `epic-conventions.md` state machine) indicates it is in "Ready for exploration" or "Exploring" state, use the epic directory as scope.
-3. **Active Slice** — if Active Slice is set and not `none`, use that as scope.
-4. **Project level** — otherwise, scope is project-level.
+```bash
+goodplan status --json
+```
+
+Determine scope using resolution order (check fields in the status response):
+
+1. **Active Slice** — if `.activeSlice` is present (not `undefined`/absent), use `.project/slices/<activeSlice.name>/` as scope.
+2. **Active Quest** — if `.activeQuest` is present, use `.project/side-quests/<activeQuest.name>/` as scope.
+3. **Active Epic** — if `.activeEpic` is present, use `.project/epics/<activeEpic.name>/` as scope. If the epic's status is `created` or `exploring`, it is ready for exploration.
+4. **Project level** — if no active entities, scope is project-level.
+
+> **Note:** These fields are `{ name: string, status: string } | undefined` — check for presence, not null.
 
 ### Validate and announce
 
@@ -100,34 +117,19 @@ Then proceed directly to Step 4 (the exploration loop). If the user responds wit
 
 If the user explicitly requests to skip exploration (e.g., replies "skip", "I already know what to do", or invokes `/explore skip`):
 
-1. Use the Read tool to load `~/.claude/skills/_shared/references/state-and-activity-formats.md` for state.md and activity-log.jsonl formats.
-2. Ask for the reason why exploration is being skipped.
-3. Write `explore-skipped.md` at the scope path using the template from `references/explore-logic.md`. Use the Write tool.
-4. Generate a UTC timestamp:
+1. Ask for the reason why exploration is being skipped.
+2. Write `explore-skipped.md` at the scope path using the template from `references/explore-logic.md`. Use the Write tool.
+3. **For epic scope**: Complete the exploration phase via CLI. The `submit-explore` command handles both skip (from `created` state — without ever calling `epic:explore`) and normal completion (from `exploring`). The state machine guard accepts both statuses: `["created", "exploring"]`.
 
-```bash
-date -u +%Y-%m-%dT%H:%M:%SZ
-```
+   ```bash
+   stdin: "" | goodplan submit-explore --epic <name> --json
+   ```
 
-5. Update `.project/state.md` using the 4-section format from the shared formats reference. Set:
-   - **Current Phase**: `explore-complete — skipped: <brief reason>`
-   - **Active Slice**: unchanged from before
-   - **Work Stack**: unchanged
-   - **Next Step**: appropriate recommendation:
-     - Epic: `/create-architecture`
-     - Project-level (no epic): `/create-architecture`
-     - Slice: `/create-plan`
-     - Side quest: `/create-plan`
+   This transitions the epic to `explored` status and records the activity.
 
-6. Append to `.project/activity-log.jsonl`:
+4. **For non-epic scopes** (project, slice, quest): The CLI only supports epic-scoped exploration state transitions. Leave the `explore-skipped.md` artifact in place as the record — no CLI mutation is needed.
 
-```bash
-echo '{"ts":"<timestamp>","phase":"explore","scope":"<scope>","status":"complete","summary":"Exploration skipped: <reason>"}' >> .project/activity-log.jsonl
-```
-
-Scope value mapping: project-level uses `"project"`, slice uses `"slices/<name>"`, quest uses `"side-quests/<name>"`, epic uses `"epics/<name>"`.
-
-7. **Stop.** Do not continue to Step 4.
+5. **Stop.** Do not continue to Step 4.
 
 ## Step 4 — Exploration Loop
 
@@ -158,7 +160,17 @@ Execute the mode following the detailed behavior in `references/explore-logic.md
 
 ### 4b2. Record durable decisions
 
-During any mode (Research, Brainstorm, Prototype), if a durable decision emerges (see threshold in `decisions-format.md`), propose the decision text to the user and confirm via AskUserQuestion before writing. Run `mkdir -p .project/decisions/` before the first write. Write in the format specified by `decisions-format.md`. Track all decisions written during this run and summarize them in Step 5 and at the end of the skill run.
+During any mode (Research, Brainstorm, Prototype), if a durable decision emerges (see threshold in `decisions-format.md`), propose the decision text to the user and confirm via AskUserQuestion before writing.
+
+Create decisions via CLI — construct the payload from user responses and pipe to:
+
+```bash
+echo '{"id":"<kebab-case-id>","domain":"<topic-area>","title":"<decision-title>","summary":"<brief-summary>"}' | goodplan decision:create --json
+```
+
+The `id` is derived from kebab-casing the title, `domain` from the topic area of the decision. The CLI handles directory creation and state management.
+
+Track all decisions written during this run and summarize them in Step 5 and at the end of the skill run.
 
 ### 4c. Tally and continue prompt
 
@@ -194,33 +206,34 @@ Reflect on the conversation: did it reveal new information about the user's expe
 - **If yes**: Read `~/.claude/skills/_shared/references/expertise-tracking.md` for the recording protocol. Update `## Expertise` section in `~/.claude/CLAUDE.md` and write/update relevant `expertise_<domain>.md` memory file.
 - **If no**: Skip silently — no Read, no output, no AskUserQuestion.
 
-## Step 6 — Write Back State
+## Step 6 — Complete Exploration
 
-Use the Read tool to load `~/.claude/skills/_shared/references/state-and-activity-formats.md` for state.md and activity-log.jsonl formats.
+### For epic scope
 
-Generate a UTC timestamp:
-
-```bash
-date -u +%Y-%m-%dT%H:%M:%SZ
-```
-
-Update `.project/state.md` using the 4-section format from the shared formats reference. Set:
-
-- **Current Phase**: `explore-complete — <brief summary of what was explored>`
-- **Active Slice**: unchanged from before
-- **Work Stack**: unchanged
-- **Next Step**: appropriate recommendation based on scope:
-  - Epic: `/create-architecture`
-  - Project-level (no epic): `/create-architecture`
-  - Slice: `/create-plan`
-  - Side quest: `/create-plan`
-
-Append to `.project/activity-log.jsonl`:
+If the exploration was not already begun via `epic:explore` in this session, begin it now (this may already have been done if the user started exploration explicitly):
 
 ```bash
-echo '{"ts":"<timestamp>","phase":"explore","scope":"<scope>","status":"complete","summary":"<one-sentence summary>"}' >> .project/activity-log.jsonl
+stdin: "" | goodplan epic:explore --epic <name> --json
 ```
 
-Scope value mapping: project-level uses `"project"`, slice uses `"slices/<name>"`, quest uses `"side-quests/<name>"`, epic uses `"epics/<name>"`.
+If this returns `STATE_INVALID_TRANSITION` (exit 3), the epic is already past the `created` state — check `epic:show --json` for current status and proceed.
 
-After updating state, summarize all decisions written during this run (if any). List each decision file path and title.
+Complete the exploration phase:
+
+```bash
+stdin: "" | goodplan submit-explore --epic <name> --json
+```
+
+This transitions the epic to `explored` and records the activity. The skill writes `explore-complete.md` (Step 5); this command transitions state only.
+
+### For non-epic scopes
+
+The CLI only supports epic-scoped exploration state transitions. For project, slice, and quest scopes, the `explore-complete.md` artifact serves as the completion record. No CLI mutation is needed.
+
+### After completion
+
+Summarize all decisions written during this run (if any). List each decision title and recommend next steps:
+- Epic: `/create-architecture`
+- Project-level (no epic): `/create-architecture`
+- Slice: `/create-plan`
+- Side quest: `/create-plan`

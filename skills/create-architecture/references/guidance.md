@@ -51,16 +51,16 @@ Only include files/directories that actually exist. For each architecture file w
 
 ### Early Stop
 
-If the user says "that's enough" or "stop here" at any point, handle based on what has been written so far:
+If the user says "that's enough" or "stop here" at any point, leave filesystem artifacts in place and stop. The CLI status stays `defining-architecture` (no CLI mutation on graceful stop). On re-entry, detect progress via `epic:show --json` status + file existence:
 
-- **(a) No files written yet** (stopped during conventions draft before approval): don't update state.md. Tell the user nothing was written and state.md is unchanged.
-- **(b) conventions.md written but no architecture files**: update state.md Current Phase to `create-architecture in-progress — stopped after writing conventions.md`. Update CLAUDE.md Project Context to reference only conventions.md.
-- **(c) One or more architecture files written** (with or without conventions.md): update state.md Current Phase to `create-architecture in-progress — stopped after writing <comma-separated list of all files written>` (include conventions.md if written). Update CLAUDE.md Project Context to reference only the files actually written before stopping.
-- **(d) Stopped during maturity table creation (Step 8f)**: add a partial marker to `_overview.md`'s Subsystem Maturity section. Update state.md and CLAUDE.md Project Context to reference all files written so far.
-- **(e) Stopped during invariant definition (Step 8g)**: add a partial marker to `architecture/invariants.md` if it exists. Update state.md and CLAUDE.md Project Context to reference all files written so far.
-- **(f) Stopped during fitness function candidate identification (Step 8h)**: add a partial marker to any updated subsystem API files. Update state.md and CLAUDE.md Project Context to reference all files written so far.
+- **(a) No files written yet**: Tell the user nothing was written. Stop.
+- **(b) Q&A complete, design tree not started**: Q&A notes exist, no `_overview.md`. Resume from design tree.
+- **(c) Design tree in progress**: partial `_overview.md` exists. Resume design tree.
+- **(d) Design tree complete, conventions research not started**: `_overview.md` complete, no `conventions.md`. Start conventions.
+- **(e) Conventions research in progress**: partial `conventions.md`. Resume conventions.
+- **(f) All content written, not submitted**: all architecture files present. Proceed to `submit-architecture`.
 
-In stop cases (b) through (f), append to activity-log.jsonl with `"status":"started"` (not `"complete"`). Case (a) (no files written) does not append to activity-log.jsonl.
+In all stop cases, update CLAUDE.md Project Context to reference files written so far. Re-entry detection uses `epic:show --json` (status = `defining-architecture` means resume) combined with file existence checks.
 
 ### Maturity, Invariants, and Fitness Functions
 

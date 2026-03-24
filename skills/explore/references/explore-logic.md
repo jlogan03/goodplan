@@ -1,17 +1,15 @@
 # Explore Logic Reference
 
-> See also: `~/.claude/skills/_shared/references/state-and-activity-formats.md` for state.md and activity-log.jsonl formats.
-
 ## Scope Path Mapping
 
 | Scope | research/ | brainstorm/ | prototypes/ | explore-complete.md | explore-skipped.md |
 |---|---|---|---|---|---|
-| Epic | `.project/epics/__active__<name>/research/` | `.project/epics/__active__<name>/brainstorm/` | `.project/epics/__active__<name>/prototypes/<name>/` | `.project/epics/__active__<name>/explore-complete.md` | `.project/epics/__active__<name>/explore-skipped.md` |
+| Epic | `.project/epics/<name>/research/` | `.project/epics/<name>/brainstorm/` | `.project/epics/<name>/prototypes/<name>/` | `.project/epics/<name>/explore-complete.md` | `.project/epics/<name>/explore-skipped.md` |
 | Project | `.project/research/` | `.project/brainstorm/` | `.project/prototypes/<name>/` | `.project/explore-complete.md` | `.project/explore-skipped.md` |
 | Slice | `.project/slices/<name>/research/` | `.project/slices/<name>/brainstorm/` | N/A | `.project/slices/<name>/explore-complete.md` | `.project/slices/<name>/explore-skipped.md` |
 | Quest | `.project/side-quests/<name>/research/` | `.project/side-quests/<name>/brainstorm/` | N/A | `.project/side-quests/<name>/explore-complete.md` | `.project/side-quests/<name>/explore-skipped.md` |
 
-> **Note**: Epic scope supports Prototype mode (like Project scope). Per-slice exploration is not supported for epic slices — all exploration happens at the epic level. For non-active epics (no `__active__` prefix), use the epic directory path without the prefix (e.g., `.project/epics/<name>/research/`).
+> **Note**: Epic scope supports Prototype mode (like Project scope). Per-slice exploration is not supported for epic slices — all exploration happens at the epic level. Epic paths use unprefixed names (e.g., `.project/epics/<name>/research/`) — the CLI manages active epic state via `project.json.activeEpic`, not directory prefixes.
 
 ## explore-complete.md Template
 
