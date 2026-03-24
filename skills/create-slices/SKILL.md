@@ -193,7 +193,7 @@ Reflect on the conversation: did it reveal new information about the user's expe
 For epic-scoped slice definition, submit the completed slices via CLI. The CLI handles state transitions and activity recording:
 
 ```bash
-echo '{}' | goodplan submit-slices --epic <name> --json
+stdin: "" | goodplan submit-slices --epic <name> --json
 ```
 
 Where `<name>` is the epic name from `goodplan status --json` → `.activeEpic.name`.

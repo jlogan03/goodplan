@@ -161,12 +161,12 @@ If the plan is under `.project/` and belongs to a slice or quest scope, use the 
 
 For slice scope:
 ```bash
-echo '{}' | goodplan submit-plan --slice <name> --json
+stdin: "" | goodplan submit-plan --slice <name> --json
 ```
 
 For quest scope:
 ```bash
-echo '{}' | goodplan submit-plan --quest <name> --json
+stdin: "" | goodplan submit-plan --quest <name> --json
 ```
 
 If the plan is standalone (not under `.project/`), skip CLI mutation.
