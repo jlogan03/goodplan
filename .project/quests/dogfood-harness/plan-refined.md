@@ -43,20 +43,20 @@ Get the Agent SDK `query()` working end-to-end for a single skill (`/explore`), 
 
 ### Tasks
 
-- [ ] **Update `LOG_DIR` and `FRICTION_LOG` constants** to `.project/quests/dogfood-harness/harness-logs/` (old paths point to stale epic slice directory)
+- [x] **Update `LOG_DIR` and `FRICTION_LOG` constants** to `.project/quests/dogfood-harness/harness-logs/` (old paths point to stale epic slice directory)
 
-- [ ] **Validate required environment variables at startup**: Check `process.env.HOME` (and other required env vars) with clear error messages instead of non-null assertion (`!`)
+- [x] **Validate required environment variables at startup**: Check `process.env.HOME` (and other required env vars) with clear error messages instead of non-null assertion (`!`)
 
-- [ ] **Harden `goodplan()` helper**:
+- [x] **Harden `goodplan()` helper**:
   - Expose exit code and parsed error JSON in return value
   - Branch state-recovery logic on exit code: exit 2 = fix invocation, exit 3 = check idempotent re-entry (recoverable), exit 1 = internal error (stop)
   - Replace `as { stdout?: string; ... }` catch block with type guard: `err instanceof Error && 'status' in err && 'stdout' in err`, then cast to `NodeJS.ErrnoException & { stdout?: Buffer; stderr?: Buffer; status?: number | null }`. Add `// known shape from execFileSync` comment at the cast site.
 
-- [ ] **Harden `goodplanJson()`**: **REQUIRED:** Check `result.ok` before parsing. **REQUIRED:** Wrap `JSON.parse` in try/catch with descriptive error including raw stdout. Optionally accept a Zod schema parameter (`goodplanJson(args, schema)` returning `z.infer<typeof schema>`) for runtime validation instead of `as T` — not blocking, but improves robustness.
+- [x] **Harden `goodplanJson()`**: **REQUIRED:** Check `result.ok` before parsing. **REQUIRED:** Wrap `JSON.parse` in try/catch with descriptive error including raw stdout. Optionally accept a Zod schema parameter (`goodplanJson(args, schema)` returning `z.infer<typeof schema>`) for runtime validation instead of `as T` — not blocking, but improves robustness.
 
-- [ ] **Fix `logFriction()`**: Unify to canonical signature `logFriction(severity: string, source: string, message: string)`. All existing call sites (e.g. `logFriction(2, "Skill: /explore", "...", "MINOR")`) must be updated to the new 3-arg signature. Create friction log file if absent before writing, or use `appendFileSync` directly (current `readFileSync` throws on missing file).
+- [x] **Fix `logFriction()`**: Unify to canonical signature `logFriction(severity: string, source: string, message: string)`. All existing call sites (e.g. `logFriction(2, "Skill: /explore", "...", "MINOR")`) must be updated to the new 3-arg signature. Create friction log file if absent before writing, or use `appendFileSync` directly (current `readFileSync` throws on missing file).
 
-- [ ] **Rewrite `runSkill()`** to use `canUseTool` callback:
+- [x] **Rewrite `runSkill()`** to use `canUseTool` callback:
   - Intercept `AskUserQuestion` tool calls — import `AskUserQuestionInput` type from SDK's `sdk-tools.d.ts` for type-safe narrowing of the `Record<string, unknown>` input. The `as AskUserQuestionInput` cast is an accepted exception here since it's guarded by `toolName === "AskUserQuestion"` (no `as any` elsewhere)
   - Auto-select the first option (or "approve/continue" when available)
   - Build answers as `Record<string, string>` keyed by `q.question` (NOT a positional array):
@@ -71,12 +71,12 @@ Get the Agent SDK `query()` working end-to-end for a single skill (`/explore`), 
   - Do NOT add `AskUserQuestion` to `disallowedTools` — this is mutually exclusive with `canUseTool` at the SDK level
   - Keep system prompt append as soft secondary guard only
 
-- [ ] **Add `model` option** defaulting to `"claude-haiku-4-5"`:
+- [x] **Add `model` option** defaulting to `"claude-haiku-4-5"`:
   - Add `model?: string` to `runSkill()`'s opts type (defaulting to `"claude-haiku-4-5"`)
   - Pass `model` to `query()` options (SDK field is `model?: string`)
   - Also append to system prompt: "Use haiku (claude-haiku-4-5) for ALL Agent sub-agent calls, not opus or sonnet"
 
-- [ ] **Add `patchSkillModels()` / `restoreSkillModels()`**:
+- [x] **Add `patchSkillModels()` / `restoreSkillModels()`**:
   - Discover all skill files with model references via `grep -rl "opus\|sonnet" skills/` (do not maintain an explicit file list — let grep find them all)
   - Store original file contents in a `Map<string, string>` (path → content; safer than `Record` with `noUncheckedIndexedAccess`)
   - Replace `"opus"` and `"sonnet"` with `"haiku"` in all matched files
@@ -84,14 +84,14 @@ Get the Agent SDK `query()` working end-to-end for a single skill (`/explore`), 
   - **Verify replacements**: After each file patch, confirm the replacement actually changed something. Log a warning if a file's content was unchanged (pattern may have moved)
   - Call `patchSkillModels()` before running skills, `restoreSkillModels()` in a `finally` block after
 
-- [ ] **Add `reset` command** that:
+- [x] **Add `reset` command** that:
   - Deletes nondet-eval's `.project/` directory — verify removal succeeded (handle permissions errors, file locks). Also handle the case where `.project/` doesn't exist (first run)
   - Runs `goodplan init --name nondet-eval --json`
   - Runs `echo '{"name":"core-provider","goal":"Implement a core provider..."}' | goodplan epic:create --json` (epic goal is set via stdin, not a separate `goal.md`)
   - Error handling: check exit code at each step, abort with descriptive message on failure
   - Verifies via `goodplan status --json`
 
-- [ ] **Improve logging**:
+- [x] **Improve logging**:
   - Switch result detection from `"result" in message` to `message.type === "result" && message.subtype === "success"` (discriminated union, not implementation detail)
   - Fix tool call counting: check `message.type === "assistant"` then count `content.filter(b => b.type === "tool_use")` (current code checks system messages — counter is always 0)
   - Log `SDKAssistantMessage` content summaries (tool names used, text length)
@@ -99,14 +99,14 @@ Get the Agent SDK `query()` working end-to-end for a single skill (`/explore`), 
   - Accumulate `total_cost_usd` from `SDKResultSuccess` across all runs
   - Print elapsed time, message count, tool call count, and aggregate cost summary at end
 
-- [ ] **Implement `phase2Explore()`**:
+- [x] **Implement `phase2Explore()`**:
   - Check epic status; if `created`, run `goodplan epic:explore --epic core-provider --json`
   - Call `runSkill("explore", ...)` with prompt telling skill to research and write files
   - After skill completes: verify epic status, if still `exploring` → run `submit-explore --epic core-provider --json` manually, log as friction
   - Verify research files exist
   - Note: Phase 1 defers state recovery logic to Step 2 — the existing `submit-explore` fallback is the only recovery path here
 
-- [ ] **Add top-level try/catch and structured exit codes**: Harness exits 0 on success, 1 on any failure. Final summary report printed before exit.
+- [x] **Add top-level try/catch and structured exit codes**: Harness exits 0 on success, 1 on any failure. Final summary report printed before exit.
 
 - [ ] **Verify**: Reset nondet-eval → run `bun tools/dogfood/harness.ts 2 explore` → epic reaches `explored`, research files exist, log produced
 
