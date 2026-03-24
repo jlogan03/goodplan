@@ -8,7 +8,7 @@
 - goodplan CLI main runner (`src/index.ts`): integration tests cover unknown commands, --help, --version, --json error mode, NO_COLOR, stdin validation, version compatibility checking (4 variants), --quiet suppression of warnings.
 
 ### Undertested areas
-- Runtime behavior of new skills (refine-slices, updated define-slices three-lens evaluation): not yet exercised on a real project
+- Runtime behavior of migrated planning/execution skills (create-plan, create-slices, refine-plan, implement-plan, refine-slices): CLI integration paths verified via grep + 19-step smoke test but not yet exercised on a real project
 - Signal tracking algorithm (Step 6d in complete): requires 3+ completed slices to produce data
 - Refactor Intelligence Protocol (Step 9 in complete): new detection algorithm, batch table presentation, inline fix application, side quest proposal — all untested on a real codebase
 - Maturity/invariants/fitness workflow: Steps 8f/8g/8h in define-architecture, Steps 3b/3c/3d in audit-architecture, maturity evaluation in refine-architecture, reviewer criteria 12/13 — all untested on a real project
@@ -22,7 +22,7 @@
 - epic-conventions.md is consumed by 12+ skills: changes require updating all consumers
 - citty + `exactOptionalPropertyTypes`: requires `as unknown as CommandDef` casts in `src/index.ts`. May break on citty upgrade.
 
-<!-- Last updated by: complete for epics/__active__skills-cli-integration/slices/02-show-status-enrichment, 2026-03-24 -->
+<!-- Last updated by: complete for 05-planning-execution-skills, 2026-03-24 -->
 
 ## Performance Characteristics
 
@@ -72,8 +72,8 @@
 
 ## Recent Changes
 
+- **05-planning-execution-skills** (2026-03-24): Migrated 6 skills (create-plan, create-slices, refine-plan, implement-plan, refine-slices, migrate) to goodplan CLI. Fixed complete skill's mkdir to use quest:create. All direct state.md/activity-log access eliminated. 941 tests (no new — skill-only changes).
 - **02-show-status-enrichment** (2026-03-24): `artifacts` boolean flags on `show --json`, `status --json` file arrays (`{ count, files }`), `paths?` on RPC result types, semver compatibility checking, version bump to 1.0.0, deleted dead `files.ts`. 941 tests (+91 new).
 - **01-state-command-convention-doc-tracer** (2026-03-23): `goodplan state --json --query --offset --limit` command, `--version --json`, `serializeStateTree` with exhaustive type switching, convention doc (`cli-interaction.md` with 12 sections), project-status skill rewrite as CLI tracer bullet. 850 tests.
-- **08-integration-test** (2026-03-23): Integration tests (30 tests spawning compiled binary: init, epic/slice/quest lifecycle, error transitions, circuit breaker, runner modes) + 9 fitness functions (92 tests). 824 total tests.
 
-<!-- Last updated by: complete for epics/__active__skills-cli-integration/slices/02-show-status-enrichment, 2026-03-24 -->
+<!-- Last updated by: complete for 05-planning-execution-skills, 2026-03-24 -->

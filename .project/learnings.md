@@ -2,6 +2,21 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## CLI command syntax in skills must be concrete, not abstract — agents copy what they see
+_Source: 05-planning-execution-skills_
+
+Abstract descriptions like "use `decision:create --json`" get interpreted inconsistently by implementing agents. Always show the exact piped invocation (`echo '...' | goodplan command --json` or `stdin: "" | goodplan command --json`). Inconsistencies in stdin convention (`echo '{}' |` vs `stdin: "" |`) were caught during integration review — match the canonical form from `cli-interaction.md`.
+
+## Run actual verification commands during planning, not estimated counts
+_Source: 05-planning-execution-skills_
+
+Expected grep counts took 3 refinement iterations to converge. Running the actual `grep` commands during plan creation and recording real output eliminates this back-and-forth. Applies to any plan with "before/after" verification sections.
+
+## Consider including version in all --json CLI response envelopes
+_Source: 05-planning-execution-skills_
+
+Every migrated skill runs a dedicated `goodplan --version --json` check at startup. If all `--json` responses included a `version` field, skills could verify compatibility from any CLI call — eliminating the separate version check step. Future CLI enhancement candidate.
+
 ## Old lifecycle concepts that don't survive state machine redesigns should be retired, not force-migrated
 _Source: 04-exploration-architecture-skills_
 
