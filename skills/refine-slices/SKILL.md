@@ -8,6 +8,7 @@ description: >
   slice goals', 'slice quality', 'are these slices good', 'refine slices', 'are my
   slices well-ordered', 'check slice dependencies', 'slice ordering review', 'improve
   slice sequencing', 'reorder slices'.
+requires: goodplan >= 1.0.0
 ---
 
 # Refine Slices
@@ -23,17 +24,17 @@ Iteratively improve slice goal definitions and sequencing by spawning specialize
 | **Early exit** | All reviewers >= 8 after minimum 3 iterations |
 | **Max iterations** | 4 (expect 2-3 typically) |
 | **Sub-agent prompts** | Bootstrap and synthesis: `~/.claude/skills/refine-plan/references/sub-agent-prompts.md`. Editor only: `references/sub-agent-prompts.md` (local) |
-| **Working directory** | In-place working copies alongside originals (e.g., `$SLICES_ROOT/01-user-auth/goal-refining.md`) plus `sequencing-refining.md` alongside `sequencing.md`. A manifest lists all working copy full paths. `$SLICES_ROOT` is `.project/slices/` (top-level) or `.project/epics/__active__<name>/slices/` (epic-scoped). |
+| **Working directory** | In-place working copies alongside originals (e.g., `$SLICES_ROOT/01-user-auth/goal-refining.md`) plus `sequencing-refining.md` alongside `sequencing.md`. A manifest lists all working copy full paths. `$SLICES_ROOT` is `.project/slices/` (top-level) or `.project/epics/<name>/slices/` (epic-scoped, where `<name>` comes from `goodplan status --json` → `.activeEpic.name`). |
 | **Run directory** | `$SLICES_ROOT/slices-refining/` (holding `round-N/reviews/`, `merged.md`) |
 | **review_context** | `"slice goal definitions and sequencing"` |
 
 ## Scope Resolution
 
-**Epic detection**: Before beginning, load `~/.claude/skills/_shared/references/epic-conventions.md` for epic directory structure and conventions. Check for an active epic by globbing `.project/epics/__active__*/`. If found, set `$SLICES_ROOT` to `.project/epics/__active__<name>/slices/`. If not found, use `.project/slices/`. All paths below use `$SLICES_ROOT` as the base. When epic-scoped, also load the epic's `goal.md` and `architecture/` as additional context for refinement.
+**Epic detection**: Before beginning, load `~/.claude/skills/_shared/references/epic-conventions.md` for epic directory structure and conventions. Query `goodplan status --json` and check `.activeEpic`. If an active epic exists, set `$SLICES_ROOT` to `.project/epics/<activeEpic.name>/slices/`. If no active epic, use `.project/slices/`. All paths below use `$SLICES_ROOT` as the base. When epic-scoped, also load the epic's `goal.md` and `architecture/` as additional context for refinement.
 
 ## Scope Exclusion
 
-**IMPORTANT**: Side quest `goal.md` files (`.project/side-quests/*/goal.md`) are explicitly excluded from this skill. Only slice goal files under `.project/slices/` or `epics/__active__*/slices/` are in scope. When discovering files, filter these out before creating working copies.
+**IMPORTANT**: Side quest `goal.md` files (`.project/side-quests/*/goal.md`) are explicitly excluded from this skill. Only slice goal files under `.project/slices/` or `epics/<name>/slices/` (where `<name>` is the active epic name from `goodplan status --json`) are in scope. When discovering files, filter these out before creating working copies.
 
 ## Decisions Context
 
@@ -56,6 +57,18 @@ For Software Architecture (shared prompt from `../../_shared/references/reviewer
 ## Workflow
 
 ### Step 0: Load Context
+
+Read `~/.claude/skills/_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
+
+Verify CLI availability and compatibility:
+
+```bash
+goodplan --version --json
+```
+
+If the command fails, stop: "The `goodplan` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
+
+If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill requires goodplan >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
 
 Resolve `$SLICES_ROOT` per the Scope Resolution section above.
 
@@ -109,15 +122,20 @@ On loop exit:
 2. Rename `sequencing-refining.md` to `sequencing.md` (overwriting original)
 3. Leave the run directory (`$SLICES_ROOT/slices-refining/`) in place for audit
 
-### Step 5: State Write-Back
+### Step 5: Submit via CLI
 
-1. Update `state.md`: `Current Phase: refine-slices complete — slice goals and sequencing refined`, `Next Step: /create-plan for the first unplanned slice`
-2. Append activity-log entry: `{"ts":"...","phase":"refine-slices","scope":"<slices-root relative to .project/>","status":"complete","summary":"..."}` (e.g., scope is `slices` for top-level, or `epics/<name>/slices` for epic-scoped)
+For epic-scoped refinement, submit the completed refinement via CLI. The CLI handles state transitions and activity recording:
+
+```bash
+echo '{"scores":{"overall":<min_score>}}' | goodplan submit-refine-slices --epic <name> --json
+```
+
+For non-epic scopes, no CLI mutation is needed — the renamed artifacts serve as the completion record.
 
 ## Cleanup on Interruption
 
 - **Before any iteration** (no `round-1/` exists): Delete all working copies using manifest (or glob `*-refining.md` under `$SLICES_ROOT` if no manifest). Remove the run directory.
-- **Mid-iteration** (at least one `round-N/` exists): Leave working copies in place for resume. Write activity-log with `"status":"abandoned"`.
+- **Mid-iteration** (at least one `round-N/` exists): Leave working copies in place for resume. No state writes needed — the CLI status stays at the current phase, and re-running the skill detects progress via existing working copies.
 
 ## When to Ask the User
 

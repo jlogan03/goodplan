@@ -30,28 +30,28 @@ Migrate 4 skills with low pattern counts (4-5 hits each). migrate is already cle
 
 ### Tasks
 
-- [ ] **refine-plan/SKILL.md** (4 hits):
+- [x] **refine-plan/SKILL.md** (4 hits):
   - Add `requires: goodplan >= 1.0.0` to frontmatter
   - Step 2b line 97: Replace `epics/__active__*/architecture/` glob with `goodplan status --json` → `.activeEpic` check, then read `epics/<name>/architecture/` using the name from status
   - Step 5 lines 183-189: Replace activity-log.jsonl append with note that CLI handles activity recording via the submit command. If the plan scope is a slice/quest, use the appropriate `submit-refinement` command. If it's a standalone plan (not under `.project/`), skip CLI mutation.
   - Step 5 lines 189-195: Replace state.md update with note that CLI manages state. Remove `state-and-activity-formats.md` reference.
-- [ ] **refine-plan/references/shared-preamble.md** (1 hit):
+- [x] **refine-plan/references/shared-preamble.md** (1 hit):
   - Line 45: Replace `epics/__active__*/architecture/` glob with instruction to use `goodplan status --json` → `.activeEpic` and read `epics/<name>/architecture/`
-- [ ] **implement-plan/SKILL.md** (2 hits):
+- [x] **implement-plan/SKILL.md** (2 hits):
   - Add `requires: goodplan >= 1.0.0` to frontmatter
   - Step 4.2 lines 296-299: Replace activity-log.jsonl append with CLI submit note (same pattern as refine-plan)
-- [ ] **implement-plan/references/shared-preamble.md** (1 hit):
+- [x] **implement-plan/references/shared-preamble.md** (1 hit):
   - Line 36: Replace `epics/__active__*/architecture/` glob — same fix as refine-plan's shared-preamble
-- [ ] **implement-plan/references/sub-agent-prompts.md** (1 hit):
+- [x] **implement-plan/references/sub-agent-prompts.md** (1 hit):
   - Line 59: Replace `ls -d .project/epics/__active__*/ 2>/dev/null` with `goodplan status --json` → `.activeEpic` instruction
-- [ ] **refine-slices/SKILL.md** (6 hits):
+- [x] **refine-slices/SKILL.md** (6 hits):
   - Add `requires: goodplan >= 1.0.0` to frontmatter
   - Prepend version check to existing Step 0 (which has epic detection via `__active__` glob — the version check is added before it, not replacing it). Reference `cli-interaction.md` and use explore/create-architecture skills as pattern.
   - Lines 26, 32, 36: Replace `__active__` paths with `goodplan status --json` → `.activeEpic` + unprefixed paths. Epic detection via `goodplan status --json` instead of globbing.
   - Line 114: Replace state.md update with note about CLI managing state via `submit-refine-slices`
   - Line 115: Replace activity-log.jsonl append with note that CLI handles activity recording via the submit command
   - Line 120 (Cleanup on Interruption): Replace or remove the `activity-log` write with `"status":"abandoned"` — interrupted/abandoned states are not tracked through CLI submit commands; remove this write entirely
-- [ ] **migrate/SKILL.md** (0 hits — already clean):
+- [x] **migrate/SKILL.md** (0 hits — already clean):
   - Add `requires: goodplan >= 1.0.0` to frontmatter only
 
 ### Verification

@@ -5,6 +5,7 @@ description: >
   has a plan file/directory ready for implementation. Applies to any domain: web dev,
   ML/data science, scientific computing, systems programming, CLI tools, agent skills,
   MCP servers. Accepts a path to a plan file or directory.
+requires: goodplan >= 1.0.0
 ---
 
 # Implement Plan
@@ -46,6 +47,20 @@ Note: sub-agents load decisions themselves via codebase exploration (`.project/d
 Read `references/reviewer-registry.md` for the list of domain specialist reviewers and their domains. These specialists are spawned alongside the generalist review agent during Step 3.2 to provide deeper domain-specific code review.
 
 ## Workflow
+
+### Step 0: Version Check and Context Loading
+
+Read `~/.claude/skills/_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
+
+Verify CLI availability and compatibility:
+
+```bash
+goodplan --version --json
+```
+
+If the command fails (not found, non-zero exit), stop: "The `goodplan` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
+
+If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill requires goodplan >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
 
 ### Step 1: Load and Parse the Plan
 
@@ -293,11 +308,19 @@ Run a holistic review covering all phases together. This catches integration iss
 1. **Update plan status**: Add `Status: COMPLETE` and `Completed: YYYY-MM-DD` to the plan file (or `_overview.md`).
 2. **Move plan to completed**: If the project uses a `planning/active/` directory, move the plan to `planning/completed/`. Otherwise, leave it in place — the status marker is sufficient.
 3. **Final git commit**: If any uncommitted changes remain, commit with `[<plan-slug>] Complete implementation`.
-4. **Append to activity-log**: If `.project/activity-log.jsonl` exists, append a completion entry. Derive the scope from the plan path: strip the `.project/` prefix and plan filename from `scope_dir` (e.g., `.project/side-quests/foo/` → `side-quests/foo`). If the plan is not under `.project/`, skip.
+4. **Submit implementation via CLI**: If the plan is under `.project/` and belongs to a slice or quest scope, use the appropriate CLI submit command. The CLI handles activity recording and state transitions.
 
+   For slice scope:
    ```bash
-   echo '{"ts":"<timestamp>","phase":"implement-plan","scope":"<scope>","status":"complete","summary":"<plan-slug>: implemented N phases in M total iterations"}' >> .project/activity-log.jsonl
+   stdin: "" | goodplan submit-implementation --slice <name> --json
    ```
+
+   For quest scope:
+   ```bash
+   stdin: "" | goodplan submit-implementation --quest <name> --json
+   ```
+
+   If the plan is standalone (not under `.project/`), skip CLI mutation.
 
 5. **Present summary**: Display the Completion Summary Template (see "Output Templates" below).
 

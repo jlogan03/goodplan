@@ -56,7 +56,7 @@ Work in priority order:
 
 Read all `.md` files in `.project/architecture/` (starting with `_overview.md` if it exists). This gives you the current system architecture to compare your changes against.
 
-Also check for an active epic (`ls -d .project/epics/__active__*/ 2>/dev/null`); if found, read its `architecture/` directory as the target architecture. The epic architecture represents where the codebase is headed — use it alongside top-level architecture when evaluating your changes.
+Also check for an active epic by running `goodplan status --json` and checking `.activeEpic`. If an active epic exists, read `.project/epics/<activeEpic.name>/architecture/` as the target architecture. The epic architecture represents where the codebase is headed — use it alongside top-level architecture when evaluating your changes.
 
 ## Step 3: Implement
 

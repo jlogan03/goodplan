@@ -6,6 +6,7 @@ description: >
   two-layer architecture (current + epic target) for context-aware review. Applies
   to any domain: web dev, ML/data science, scientific computing, systems programming,
   CLI tools, agent skills, MCP servers. Accepts a path to a plan file or directory.
+requires: goodplan >= 1.0.0
 ---
 
 # Refine Plan
@@ -50,15 +51,29 @@ These fill in the skill-specific slots defined by `~/.claude/skills/_shared/refe
 | **Max iterations** | 12 |
 | **Editor prompt path** | `references/sub-agent-prompts.md` § "Plan Editor Sub-Agent Prompt" |
 | **Score thresholds** | Full pass: 9+, Early exit: 8+ after 5 iterations |
-| **Scope constraints** | `<plan-name>-refining.md` (single file) or `<plan-name>-refining/` (directory) — never the original (path determined at Step 0) |
-| **Working directory** | `<plan-name>-refining.md` or `<plan-name>-refining/` (whichever exists after Step 0) |
+| **Scope constraints** | `<plan-name>-refining.md` (single file) or `<plan-name>-refining/` (directory) — never the original (path determined at Step 0b) |
+| **Working directory** | `<plan-name>-refining.md` or `<plan-name>-refining/` (whichever exists after Step 0b) |
 | **Run directory** | `<scope_dir>/refinement/` (where `scope_dir = dirname(plan_path)`) |
 | **Backup directory** | N/A (original plan is preserved as backup) |
 | **review_context** | `an implementation plan` |
 
 ## Workflow
 
-### Step 0: Load Plan and Prepare Working Copy
+### Step 0: Version Check and Context Loading
+
+Read `~/.claude/skills/_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
+
+Verify CLI availability and compatibility:
+
+```bash
+goodplan --version --json
+```
+
+If the command fails (not found, non-zero exit), stop: "The `goodplan` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
+
+If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill requires goodplan >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
+
+### Step 0b: Load Plan and Prepare Working Copy
 
 1. Detect plan type (file vs directory). For directories, read `_overview.md` and list phase files.
 2. Duplicate to a `-refining` working copy:
@@ -94,7 +109,7 @@ Read and follow `~/.claude/skills/_shared/references/codebase-context-discovery.
 
 **Stale assumption detection**: Follow the Stale Assumption Detection Algorithm in `~/.claude/skills/_shared/references/epic-conventions.md`. When staleness is detected in refine-plan: include in the codebase context summary: "Architecture file <file> has changed since this goal was written — reviewers should verify the plan still aligns with current architecture."
 
-**Epic architecture awareness**: If `epics/__active__*/architecture/` exists, read it alongside top-level architecture. Flag any conflicts between the plan and the active epic's target architecture in the codebase context summary.
+**Epic architecture awareness**: Query `goodplan status --json` and check `.activeEpic`. If an active epic exists, read `.project/epics/<activeEpic.name>/architecture/` alongside top-level architecture. Flag any conflicts between the plan and the active epic's target architecture in the codebase context summary.
 
 Also load `.project/conventions.md` if it exists — project conventions provide context for reviewers evaluating the plan.
 
@@ -180,19 +195,21 @@ After the review loop exits (score 9+, no critical/important issues), perform a 
 
 ### Step 5: Completion
 
-1. **Append to activity-log**: If `.project/activity-log.jsonl` exists, append a completion entry. Derive the scope from the plan path: strip the `.project/` prefix and plan filename from `scope_dir` (e.g., `.project/side-quests/foo/` → `side-quests/foo`). If the plan is not under `.project/`, skip.
+1. **Submit refinement via CLI**: If the plan is under `.project/` and belongs to a slice or quest scope, use the appropriate CLI submit command. The CLI handles activity recording and state transitions.
 
+   For slice scope:
    ```bash
-   echo '{"ts":"<timestamp>","phase":"refine-plan","scope":"<scope>","status":"complete","summary":"<plan-slug>: refined in N iterations, final scores: <reviewer>: X/10, ..."}' >> .project/activity-log.jsonl
+   echo '{"scores":{"overall":<min_score>}}' | goodplan submit-refinement --slice <name> --json
    ```
 
-2. **Update state.md**: If `.project/state.md` exists, update it. Re-load `~/.claude/skills/_shared/references/state-and-activity-formats.md` for the format. Set:
-   - Current Phase: `refine-plan complete — plan refined for <scope>`
-   - Active Slice: the scope path (derived from plan path)
-   - Work Stack: unchanged
-   - Next Step: `/implement-plan` on the refined plan
+   For quest scope:
+   ```bash
+   echo '{"scores":{"overall":<min_score>}}' | goodplan submit-refinement --quest <name> --json
+   ```
 
-3. **Display summary**: Display the Completion Summary Template (see "Output Templates" below).
+   If the plan is standalone (not under `.project/`), skip CLI mutation.
+
+2. **Display summary**: Display the Completion Summary Template (see "Output Templates" below).
 
 
 ## Important Behaviors

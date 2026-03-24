@@ -42,7 +42,7 @@ Each reviewer's prompt includes a domain-specific Codebase Exploration Focus sec
 
 If `architecture/invariants.md` exists, read it — the document under review must not violate documented system invariants without explicit justification and an amendment step.
 
-If `epics/__active__*/architecture/` exists, read its `_overview.md` for context. The orchestrator has already checked for epic architecture conflicts in Step 2b — if you notice additional conflicts the orchestrator may have missed, note them in your review output for the orchestrator to surface to the user.
+Query `goodplan status --json` and check `.activeEpic`. If an active epic exists, read `.project/epics/<activeEpic.name>/architecture/_overview.md` for context. The orchestrator has already checked for epic architecture conflicts in Step 2b — if you notice additional conflicts the orchestrator may have missed, note them in your review output for the orchestrator to surface to the user.
 
 ## Output
 

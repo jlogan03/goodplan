@@ -33,7 +33,7 @@ Each reviewer's prompt includes a domain-specific Codebase Exploration Focus sec
 
 If `architecture/invariants.md` exists, read it — implementation must not violate documented system invariants — flag violations as CRITICAL with a note to discuss invariant amendment if the violation is intentional. (Severity is CRITICAL here because implementation violations are harder to catch than plan-level ones: they exist in running code, not just a document.)
 
-If `epics/__active__*/architecture/` exists, read its `_overview.md` for context. The epic architecture represents the target state the codebase is moving toward — if you notice conflicts between the implementation and the epic's target architecture, flag them in your review output.
+Query `goodplan status --json` and check `.activeEpic`. If an active epic exists, read `.project/epics/<activeEpic.name>/architecture/_overview.md` for context. The epic architecture represents the target state the codebase is moving toward — if you notice conflicts between the implementation and the epic's target architecture, flag them in your review output.
 
 ## Output
 
