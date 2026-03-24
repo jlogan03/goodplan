@@ -1,8 +1,9 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { resolveProjectDir } from "../../core/data/project.js";
+import { detectArtifacts } from "../../core/artifacts.js";
 import { loadState } from "../../core/data/load.js";
-import { getJson } from "../../core/tree.js";
+import { resolveProjectDir } from "../../core/data/project.js";
+import { getDir, getJson } from "../../core/tree.js";
 import type { Epic } from "../../schemas/entities/epic.js";
 import { GoodplanError } from "../../util/errors.js";
 import { output } from "../../util/output.js";
@@ -34,14 +35,12 @@ export const epicShowCommand = defineCommand({
 
 		const epic = getJson<Epic>(state, `epics/${args.epic}/epic.json`);
 		if (epic === undefined) {
-			throw new GoodplanError(
-				"DATA_FILE_NOT_FOUND",
-				`Epic '${args.epic}' not found`,
-			);
+			throw new GoodplanError("DATA_FILE_NOT_FOUND", `Epic '${args.epic}' not found`);
 		}
 
 		if (args.json || args.query) {
-			output(epic, args);
+			const artifacts = detectArtifacts(getDir(state, `epics/${args.epic}`), "epic", epic);
+			output({ ...epic, artifacts }, args);
 		} else if (!args.quiet) {
 			const lines: string[] = [];
 			lines.push(`${pc.bold(epic.name)}  ${epic.status}`);

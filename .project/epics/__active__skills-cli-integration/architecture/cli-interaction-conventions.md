@@ -235,7 +235,6 @@ Instead of file-existence checks, use the enriched `show --json` response:
     "plan": true,
     "planRefined": true,
     "implementation": false,
-    "completion": false,
     "abandoned": false
   }
 }

@@ -1,8 +1,9 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
+import { detectArtifacts } from "../../core/artifacts.js";
 import { loadState } from "../../core/data/load.js";
 import { resolveProjectDir } from "../../core/data/project.js";
-import { getJson } from "../../core/tree.js";
+import { getDir, getJson } from "../../core/tree.js";
 import type { Slice } from "../../schemas/entities/slice.js";
 import { GoodplanError } from "../../util/errors.js";
 import { output } from "../../util/output.js";
@@ -38,7 +39,8 @@ export const sliceShowCommand = defineCommand({
 		}
 
 		if (args.json || args.query) {
-			output(slice, args);
+			const artifacts = detectArtifacts(getDir(state, `slices/${args.slice}`), "slice", slice);
+			output({ ...slice, artifacts }, args);
 		} else if (!args.quiet) {
 			const lines: string[] = [];
 			lines.push(`${pc.bold(slice.name)}  ${slice.status}  (epic: ${slice.epic})`);

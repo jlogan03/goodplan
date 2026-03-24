@@ -1,8 +1,9 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
+import { detectArtifacts } from "../../core/artifacts.js";
 import { loadState } from "../../core/data/load.js";
 import { resolveProjectDir } from "../../core/data/project.js";
-import { getJson } from "../../core/tree.js";
+import { getDir, getJson } from "../../core/tree.js";
 import type { Quest } from "../../schemas/entities/quest.js";
 import { GoodplanError } from "../../util/errors.js";
 import { output } from "../../util/output.js";
@@ -38,7 +39,8 @@ export const questShowCommand = defineCommand({
 		}
 
 		if (args.json || args.query) {
-			output(quest, args);
+			const artifacts = detectArtifacts(getDir(state, `quests/${args.quest}`), "quest", quest);
+			output({ ...quest, artifacts }, args);
 		} else if (!args.quiet) {
 			const lines: string[] = [];
 			lines.push(`${pc.bold(quest.name)}  ${quest.status}`);
@@ -46,9 +48,7 @@ export const questShowCommand = defineCommand({
 			lines.push(`  Created: ${quest.created}`);
 			lines.push(`  Updated: ${quest.updated}`);
 			if (quest.refinement !== null) {
-				lines.push(
-					`  Refinement: round ${quest.refinement.round}/${quest.refinement.maxRounds}`,
-				);
+				lines.push(`  Refinement: round ${quest.refinement.round}/${quest.refinement.maxRounds}`);
 			}
 			output(lines.join("\n"), args);
 		}
