@@ -155,10 +155,10 @@ Rewrite the `project-status` skill to use CLI commands per the convention doc. T
 
 ### Tasks
 
-- [ ] **Read current `project-status` skill** — `skills/project-status/SKILL.md` and its references (especially `references/status-logic.md`). Identify every direct `.project/` file read
-- [ ] **Update `project-status` SKILL.md frontmatter** — add `requires: goodplan >= 0.0.1` field. Note: `requires` is agent-behavioral, not machine-enforced — there is no runtime validation. Enforcement relies on the agent loading `cli-interaction.md` and following the check procedure. Update description from "Read .project/ state" to "Query project state via the goodplan CLI"
-- [ ] **Add convention doc reference** — insert a Read step in the skill for `~/.claude/skills/_shared/references/cli-interaction.md` so agents understand CLI interaction rules
-- [ ] **Rewrite `skills/project-status/SKILL.md`** replacing direct file access:
+- [x] **Read current `project-status` skill** — `skills/project-status/SKILL.md` and its references (especially `references/status-logic.md`). Identify every direct `.project/` file read
+- [x] **Update `project-status` SKILL.md frontmatter** — add `requires: goodplan >= 0.0.1` field. Note: `requires` is agent-behavioral, not machine-enforced — there is no runtime validation. Enforcement relies on the agent loading `cli-interaction.md` and following the check procedure. Update description from "Read .project/ state" to "Query project state via the goodplan CLI"
+- [x] **Add convention doc reference** — insert a Read step in the skill for `~/.claude/skills/_shared/references/cli-interaction.md` so agents understand CLI interaction rules
+- [x] **Rewrite `skills/project-status/SKILL.md`** replacing direct file access:
   - Step 1 (check for .project/): two-stage detection: (a) `goodplan --version --json` to confirm binary exists, (b) `goodplan status --json` to confirm a project exists (check for `DATA_NO_PROJECT`). These are distinct checks — `--version --json` only proves the binary is installed, not that a project exists
   - Step 2 (load status logic): still load `references/status-logic.md` for display formatting. BUT: the file-existence state machine is now replaced by `status --json` which derives state from the CLI
   - Step 3 (read state.md): **eliminate entirely** — use `goodplan status --json` for active entities, phase, recommendations
@@ -169,9 +169,9 @@ Rewrite the `project-status` skill to use CLI commands per the convention doc. T
   - **Remove Step 9 entirely** — `project-status` is a pure read-only skill with no state mutations per convention doc. The state.md writeback and activity-log.jsonl append are both prohibited
   - Step 10 (offer detail): keep this step but rewrite to use CLI-based retrieval. "Show full activity-log" uses `goodplan state --json --query '.["activity-log.jsonl"]'`. "Show all slice statuses" uses `slice:list --json` if available, otherwise `goodplan state --json --query` for slice directories
   - Keep markdown reads (architecture, idea.md) via Read tool — convention doc says this is correct
-- [ ] **Update `skills/project-status/references/status-logic.md`** — simplify now that CLI handles state derivation. Remove the "state.md Write-Back Format" section (no longer applicable). Keep display formatting rules
-- [ ] **Install updated skill** — `bun run install:skills`
-- [ ] **Test end-to-end** — run `/project-status` on the goodplan repo and verify correct output
+- [x] **Update `skills/project-status/references/status-logic.md`** — simplify now that CLI handles state derivation. Remove the "state.md Write-Back Format" section (no longer applicable). Keep display formatting rules
+- [x] **Install updated skill** — `bun run install:skills`
+- [ ] **Test end-to-end** — run `/project-status` on the goodplan repo and verify correct output (requires interactive skill invocation — deferred to verification)
 
 ### Verification
 

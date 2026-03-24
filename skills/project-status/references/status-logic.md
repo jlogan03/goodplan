@@ -1,22 +1,21 @@
 # Status Logic Reference
 
-## No `.project/` Directory
+## No Project Detected
 
-If `.project/` does not exist, respond: "No `.project/` directory found — run `/create-epic` to set up structured project planning." Stop.
+If `goodplan status --json` returns a `DATA_NO_PROJECT` error, respond: "No `.project/` directory found — run `/create-epic` to set up structured project planning." Stop.
 
 ## Scope Resolution Order
 
-Determine active scope. File-existence takes precedence over `state.md` hints.
+Determine active scope from `goodplan status --json` response fields.
 
-1. **Work Stack** top entry from `state.md` (highest priority)
-2. **Active epic's active slice** — detect via `ls .project/epics/__active__*/ 2>/dev/null`. If an `__active__` epic exists, scan its `slices/` using the per-slice state machine to find an in-progress slice
-3. **Active epic itself** — if `__active__` epic exists but no slice is in progress within it, the epic is the active scope
-4. **Active Slice from state.md** (if not "none") — fallback only when no `__active__` epic was found in steps 2-3. If state.md's Active Slice references a path that no longer exists on disk (directory renamed/deleted), treat it as stale and skip
-5. **Project level** (fallback)
+1. **Active quest** — `activeQuest` field (highest priority)
+2. **Active slice** — `activeSlice` field
+3. **Active epic** — `activeEpic` field (when no active slice)
+4. **Project level** (fallback — no active entities)
 
 ## File-Existence State Machine
 
-Authoritative source of truth. `state.md` is an optimization hint — these rules override it.
+Authoritative source of truth. These rules define state semantics.
 
 ### Per Slice or Quest
 
@@ -43,10 +42,12 @@ Side quests (`side-quests/<name>/`) follow this same state machine.
 
 ### Checking Implementation Progress
 
+Use CLI commands (`state --json --query`, `show --json`) to evaluate these conditions — not direct filesystem access.
+
 To evaluate states #5, #6, and #7:
 
-1. List directories under `implementation/` — each `phase-N-*/` is a phase
-2. For each phase directory, check if `review.md` exists
+1. Query implementation phase directories via `state --json --query` — each `phase-N-*/` key is a phase
+2. For each phase, check if `review.md` exists in the state tree or read it via the Read tool (LLM-owned markdown)
 3. A review is **passing** if it contains "READY FOR IMPLEMENTATION" (case-insensitive). If absent or contains "NEEDS CHANGES", the phase is not passing.
 4. **All phases passing** = every phase directory has a passing `review.md`
 5. If no phase directories exist under `implementation/`, implementation has not started (state #7 applies if `plan-refined.md` exists)
@@ -57,21 +58,17 @@ Epic-level state machine is defined in `~/.claude/skills/_shared/references/epic
 
 **First vs subsequent epic**: The first epic is named `initial` and created as `__active__initial/` (auto-active, no approval gate, writes directly to `architecture/`). Subsequent epics start without `__active__` prefix, use `architecture-proposal/` instead, and require `/start-epic` approval. Use the directory name to disambiguate which state table to apply.
 
-#### `__active__` Detection
+#### Active Epic Detection
 
-```bash
-ls -d .project/epics/__active__*/ 2>/dev/null
-```
-
-At most one `__active__` epic exists at a time. If found, this epic is the primary context for scope resolution (see Scope Resolution Order above).
+Use `goodplan status --json` → `activeEpic` field. At most one active epic exists at a time.
 
 #### Epic Directory Scanning
 
-When scanning `.project/epics/`:
-- Skip `~~archived~~`-prefixed directories (completed/abandoned)
-- Identify the `__active__`-prefixed directory (if any) as the active epic
-- Remaining directories are non-active epics (exploring, proposal pending, etc.)
-- For the active epic, also scan its `slices/` and apply the per-slice state machine
+Use `goodplan epic:list --json` to get all epics with statuses. Categorize:
+- **Archived** (archived status or `~~archived~~` prefix): count as archived, skip further checks
+- **Active** (matches `activeEpic` from status): primary context for scope resolution
+- **Other**: non-active epics — use their status for reporting
+- For the active epic, use `goodplan slice:list --json` to get its slices
 
 ### Project Level
 
@@ -133,25 +130,6 @@ Completed, superseded, or abandoned scopes are renamed with a `~~archived~~` pre
 - **Finding active work**: Skip `~~archived~~`-prefixed directories — they are not actionable
 - **Display**: Show `~~archived~~` items in a separate "Completed" section, or just count them (e.g., "7 completed")
 
-## state.md Write-Back Format
+## State Orientation (CLI)
 
-All four sections required:
-
-```markdown
-# State
-
-## Current Phase
-<phase> <status> — <brief context>
-
-## Active Slice
-<slice path | "none (working at project level)">
-
-## Work Stack
-<LIFO entries or "(empty)">
-- side-quests/<name> (interrupted slices/<name> at <phase>)
-
-## Next Step
-<Actionable one-sentence instruction>
-```
-
-`phase`: kebab-case identifier (e.g. `implement-plan`). `status`: `complete`, `started`, or `in-progress`.
+Skills no longer read or write `state.md`. Use `goodplan status --json` for active entities and phase information. See `~/.claude/skills/_shared/references/cli-interaction.md` section 6 for the full migration reference.

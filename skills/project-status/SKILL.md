@@ -1,120 +1,166 @@
 ---
 name: project-status
+requires: goodplan >= 0.0.1
 description: >
-  Read .project/ state — including epic detection, slice progress, and side quests —
+  Query project state via the goodplan CLI — including epic detection, slice progress, and side quests —
   and report the current phase, recent activity, and what to do next.
-  Use at the start of any session, after context compaction, or whenever you need to
-  re-orient in a project using the goodplan structured development workflow.
+  Use at the start of any session, after context compaction, after completing a slice or epic,
+  or whenever you need to re-orient in a project using the goodplan structured development workflow.
 ---
 
 # Project Status
 
-Read `.project/` state and present a concise status report with the current phase, recent activity, and recommended next action.
+Query project state via the `goodplan` CLI and present a concise status report with the current phase, recent activity, and recommended next action. This is a **read-only skill** — it never mutates state.
 
-## Step 1 — Check for `.project/` Directory
+## Step 1 — Detect goodplan CLI and Project
 
-Run:
+Two-stage detection:
+
+**Stage A — Binary exists:**
 
 ```bash
-ls .project/ 2>/dev/null
+goodplan --version --json
 ```
 
-If the directory does not exist, tell the user:
+If the command fails (not found, non-zero exit), tell the user:
+
+> The `goodplan` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH.
+
+**Stop here** — do not fall back to direct file access.
+
+If the version does not satisfy `>= 0.0.1`, tell the user:
+
+> This skill requires goodplan >= 0.0.1 but found <version>. Upgrade the CLI.
+
+**Stop here.**
+
+**Stage B — Project exists:**
+
+```bash
+goodplan status --json
+```
+
+If this returns a `DATA_NO_PROJECT` error (exit code 1), tell the user:
 
 > No `.project/` directory found — run `/create-epic` to set up structured project planning.
 
 **Stop here** — do not continue with subsequent steps.
 
-## Step 2 — Load Status Logic and Decisions Format
+If successful, save the `status --json` response for use in subsequent steps.
 
-Use the Read tool to load `references/status-logic.md` (relative to this skill's directory). Use the rules loaded here for all phase inference in subsequent steps — the file-existence state machine, scope resolution order, and state-to-next-skill mapping.
+## Step 2 — Load References
 
-Also load `~/.claude/skills/_shared/references/decisions-format.md` for the decisions format and Loading Protocol.
+Use the Read tool to load:
 
-If `.project/epics/` exists, also load `~/.claude/skills/_shared/references/epic-conventions.md` — needed for epic state machine resolution, first-vs-subsequent epic disambiguation, and directory structure conventions. Load `.project/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Count active decisions and note any with `revisiting` status for the status report.
+1. `references/status-logic.md` (relative to this skill's directory) — display formatting rules, state-to-next-skill mapping, scope resolution, and archive conventions
+2. `~/.claude/skills/_shared/references/cli-interaction.md` — CLI interaction conventions (how to invoke commands, parse responses, handle errors)
+3. `~/.claude/skills/_shared/references/decisions-format.md` — decisions format and Loading Protocol
 
-## Step 3 — Read state.md (If Present)
+If the `status --json` response indicates an active epic exists, also load `~/.claude/skills/_shared/references/epic-conventions.md` — needed for epic state machine resolution, first-vs-subsequent epic disambiguation, and directory structure conventions.
 
-Use the Read tool to try reading `.project/state.md`.
+Load `.project/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Count active decisions and note any with `revisiting` status for the status report.
 
-**If it exists**, extract:
-- Current Phase
-- Active Slice
-- Work Stack entries
-- Next Step hint
+## Step 3 — Get Project Status
 
-**If it does not exist**, note its absence and rely entirely on the file-existence state machine from Step 2.
+Use the `status --json` response saved from Step 1B. Extract:
+- Active entities (`activeEpic`, `activeSlice`, `activeQuest`)
+- Entity statuses and phases
+- Recommendations (suggested next actions)
+- Warnings (stale entities)
 
-## Step 4 — Read Recent Activity-Log Entries
+This replaces the previous `state.md` read — `status --json` is now the authoritative source for active entities and phase information.
+
+## Step 4 — Get Recent Activity
 
 Run:
 
 ```bash
-tail -5 .project/activity-log.jsonl 2>/dev/null
+goodplan state --json --query '.["activity-log.jsonl"] | .[-5:]'
 ```
 
-Parse each JSON line and extract: `phase`, `scope`, `status`, and `ts` (timestamp). Format timestamps as human-readable short form (e.g., "Mar 15 16:45"). Arrange entries most recent first for the status report.
+Parse the returned array and extract: `phase`, `scope`, `status`, and `ts` (timestamp). Format timestamps as human-readable short form (e.g., "Mar 15 16:45"). Arrange entries most recent first for the status report.
 
 ## Step 5 — Determine Active Scope
 
-Using the scope resolution order from `references/status-logic.md`:
+Derive the active scope from the `status --json` response:
 
-1. Check the Work Stack (from Step 3) for any entries — the top entry is highest priority
-2. Check for an active epic's active slice — detect via `ls -d .project/epics/__active__*/ 2>/dev/null`. If an `__active__` epic exists, scan its `slices/` using the per-slice state machine to find an in-progress slice
-3. Check the active epic itself — if `__active__` epic exists but no slice is in progress within it, the epic is the active scope
-4. Check the Active Slice field from state.md (if not "none") — fallback only when no `__active__` epic was found in steps 2-3. If the path no longer exists on disk, treat it as stale and skip
-5. Fall back to project level
+1. Check `activeQuest` — if non-null, the active quest is highest priority
+2. Check `activeSlice` — if non-null, this is the active slice
+3. Check `activeEpic` — if non-null but no active slice, the epic is the active scope
+4. Fall back to project level
 
-The result is the **active scope** used in the next step.
+For Format B reporting (all slices/epics/quests with states), use:
 
-## Step 6 — Apply File-Existence State Machine
+```bash
+goodplan slice:list --json
+goodplan quest:list --json
+goodplan epic:list --json
+```
 
-For the active scope, run `ls` commands on the relevant directory to inspect which files exist. Apply the state machine rules from `references/status-logic.md`:
+Note: `epic:list --json` has no `--status` filter — filtering is client-side.
 
-- **Check `abandoned.md` first** — it takes precedence over all other states
-- The state machine is **authoritative** — `state.md` is an optimization hint, not the truth
+For interrupted work detection, use:
+
+```bash
+goodplan state --json --query '.epics | .. | .["interrupted.md"]? // empty'
+```
+
+> Note: recursive `..` queries traverse all values (strings, arrays, objects) and may need optimization for larger state trees. A more targeted alternative: `.epics[][].slices[][] | select(has("interrupted.md")) | .["interrupted.md"]`
+
+For sequencing order, read the relevant `sequencing.md` via the Read tool (this is LLM-owned markdown, direct read is permitted).
+
+## Step 6 — Derive Entity State and Details
+
+Use `status --json` for phase derivation and entity status. For entity details, use `show --json`:
+
+```bash
+goodplan slice:show --slice <name> --json
+goodplan epic:show --epic <name> --json
+goodplan quest:show --quest <name> --json
+```
+
+Skills can rely on `status`, `name`, `goal` fields from entity JSON. The `artifacts` field is not yet available (deferred to slice 02).
+
+For deeper lookups where `show --json` is insufficient, use `state --json --query`:
+
+```bash
+goodplan state --json --query '.epics["__active__<name>"].slices | keys'
+```
+
+### Slice / Quest State
+
+Use the `status` field from `show --json` or `list --json` responses. The state-to-next-skill mapping from `references/status-logic.md` translates these statuses to recommended skills.
+
+For implementation progress checking (when the status indicates implementation is in progress), use `state --json --query` to check implementation phase directories:
+
+```bash
+goodplan state --json --query '.epics["__active__<name>"].slices["<slice>"].implementation | keys'
+```
+
+Then check for passing reviews via the Read tool on `review.md` files (these are LLM-owned markdown).
 
 ### Epic Directory Scanning
 
-Epic scanning always runs when `.project/epics/` exists — it is needed for Format B reporting regardless of what the active scope resolved to. Scan to build the epic picture:
+Epic scanning always runs when epics exist — needed for Format B reporting. Use `epic:list --json` to get all epics with their statuses:
 
 ```bash
-ls -d .project/epics/*/ 2>/dev/null
+goodplan epic:list --json
 ```
 
-For each directory found:
-- **`~~archived~~` prefix**: count as archived, skip further checks
-- **`__active__` prefix**: this is the active epic — apply the epic state machine from `~/.claude/skills/_shared/references/epic-conventions.md`, then also scan its `slices/` using the per-slice state machine
-- **Other directories**: non-active epics — apply the epic state machine to determine their state (exploring, proposal pending, etc.)
-
-### Slice / Quest State Checking
-
-If the active scope is a slice or quest that needs implementation progress checking (states #5 or #6 from the reference), inspect `implementation/` subdirectories:
-
-```bash
-ls <scope-path>/implementation/ 2>/dev/null
-```
-
-For each phase directory found, check if `review.md` exists and search for "READY FOR IMPLEMENTATION" (case-insensitive):
-
-```bash
-grep -il "READY FOR IMPLEMENTATION" <scope-path>/implementation/*/review.md 2>/dev/null
-```
-
-A phase is passing only if its `review.md` contains that string.
+For each epic, categorize:
+- **Archived** (`~~archived~~` prefix or archived status): count as archived, skip further checks
+- **Active** (`__active__` prefix): this is the active epic — also get its slices via `slice:list --json`
+- **Other**: non-active epics — use their status for reporting
 
 ## Step 7 — Check for Interrupted Work
 
-Check for interrupted work from two sources:
-
-1. Work Stack entries from state.md (Step 3)
-2. Any `interrupted.md` files in slice or quest directories:
+Check for interrupted work using `state --json --query`:
 
 ```bash
-ls .project/slices/*/interrupted.md 2>/dev/null
-ls .project/side-quests/*/interrupted.md 2>/dev/null
-ls .project/epics/__active__*/slices/*/interrupted.md 2>/dev/null
+goodplan state --json --query '[.. | .["interrupted.md"]? | select(. != null)]'
 ```
+
+Also check the `status --json` response for any entities with interrupted/paused status.
 
 If any interrupted work is found, surface it clearly in the status report.
 
@@ -155,13 +201,13 @@ Omit the **Expertise** line if no `## Expertise` section exists in `~/.claude/CL
 
 ### Format B — Between Work Items
 
-Use this when the work stack is empty AND no slice is currently in progress (e.g., just completed a slice, or at the very start of the project).
+Use this when no slice or quest is currently in progress (e.g., just completed a slice, or at the very start of the project).
 
-To determine slice sequencing order, read the relevant `sequencing.md`. When an active epic exists, slices are under `epics/__active__<name>/slices/`. Otherwise check `.project/slices/`. List slice directories and apply the state machine to each.
+To determine slice sequencing order, read the relevant `sequencing.md` via the Read tool. When an active epic exists, slices are under `epics/__active__<name>/slices/`. Otherwise check `.project/slices/`. Use `slice:list --json` to get statuses for each.
 
 #### Format B with Active Epic
 
-When an `__active__` epic exists, show epic-scoped reporting:
+When an active epic exists, show epic-scoped reporting:
 
 ```
 ## Project Status
@@ -230,46 +276,10 @@ Omit the **Expertise** line if no `## Expertise` section exists in `~/.claude/CL
 
 For each slice, quest, or epic shown, use the state-to-next-skill mapping from `references/status-logic.md` to suggest the appropriate command. Complete items do not need a suggestion.
 
-## Step 9 — Write Back State
-
-Generate a UTC timestamp:
-
-```bash
-date -u +%Y-%m-%dT%H:%M:%SZ
-```
-
-Update `.project/state.md` using the Write tool with the 4-section format from `references/status-logic.md`:
-
-```markdown
-# State
-
-## Current Phase
-<phase> <status> — <brief context>
-
-## Active Slice
-<slice path | "none (working at project level)">
-
-## Work Stack
-<LIFO entries or "(empty)">
-
-## Next Step
-<Actionable one-sentence instruction>
-```
-
-All four sections are required. Even if unchanged from what was read in Step 3, rewrite the file to refresh it for the next session.
-
-Append one entry to `.project/activity-log.jsonl`:
-
-```bash
-echo '{"ts":"<timestamp>","phase":"project-status","scope":"project","status":"complete","summary":"Ran /project-status: <one-sentence summary of current state>"}' >> .project/activity-log.jsonl
-```
-
-Replace `<timestamp>` with the generated UTC value and `<one-sentence summary>` with a brief description of what was found (e.g., "slice 02-project-status needs implementation, no interrupted work").
-
-## Step 10 — Offer Detail
+## Step 9 — Offer Detail
 
 After presenting the status report, offer:
 
 > Want me to show the full activity-log or all slice statuses?
 
-Only expand if the user asks. Format B already shows an overview when between work items — do not repeat it unprompted.
+Only expand if the user asks. For full activity-log, use `goodplan state --json --query '.["activity-log.jsonl"]'`. For all slice statuses, use `goodplan slice:list --json` if available, otherwise `goodplan state --json --query` for slice directories. Format B already shows an overview when between work items — do not repeat it unprompted.
