@@ -153,6 +153,23 @@ Stops leave artifacts in place — no state writes. The written artifact files s
 
 If any slice names, ordering, or dependencies changed during Step 6 iteration, rewrite `$SLICES_DIR/sequencing.md` to reflect the final state.
 
+## Step 7b — Register Slices via CLI
+
+For each slice defined in Step 6, register it as a CLI entity so that `slice:list`, `slice:show`, and downstream skills can find it:
+
+```bash
+echo '{"name":"<NN-slice-name>","goal":"<one-line goal from goal.md>","epic":"<epic-name>"}' | goodplan slice:create --json
+```
+
+Where:
+- `<NN-slice-name>` is the directory name (e.g., `01-provider-scaffold`)
+- `<one-line goal>` is the first line of the slice's Behavior/Goal section
+- `<epic-name>` is from `goodplan status --json` → `.activeEpic.name`
+
+This creates the slice entity at `.project/slices/<name>/slice.json` and registers it in `slices/overview.json`. Without this step, `slice:list` returns empty and per-slice planning/implementation cannot proceed.
+
+**Note:** This step is independent of `submit-slices` (Step 9), which transitions the epic's phase. Both are required: `slice:create` registers individual entities, `submit-slices` advances the epic state machine.
+
 ## Step 8 — CLAUDE.md Update
 
 Re-load `references/guidance.md` (relative to this skill's directory) for the CLAUDE.md update instructions. Also read `../create-architecture/references/guidance.md` for the full Project Context section format.

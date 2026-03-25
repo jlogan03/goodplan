@@ -139,8 +139,22 @@ function goodplanJson<T = unknown>(
 }
 
 function epicStatus(epicName = "core-provider"): string {
-	const { data } = goodplanJson<{ status: string }>(["epic:show", "--epic", epicName, "--json"]);
-	return data.status;
+	const result = goodplan(["epic:show", "--epic", epicName, "--json"]);
+	if (!result.ok) {
+		// Check if the epic was archived (~~archived~~ rename by /complete skill)
+		try {
+			const epicsDir = join(NONDET_EVAL_DIR, ".project/epics");
+			const entries = execFileSync("ls", [epicsDir], { encoding: "utf-8" }).trim().split("\n");
+			const archived = entries.find((e) => e.includes(epicName) && e.startsWith("~~archived~~"));
+			if (archived) {
+				return "archived";
+			}
+		} catch {
+			// ignore
+		}
+		throw new Error(`epic:show --epic ${epicName} failed: ${result.stdout}`);
+	}
+	return (JSON.parse(result.stdout) as { status: string }).status;
 }
 
 function projectStatus(): { activeEpic: { name: string } | null } {
