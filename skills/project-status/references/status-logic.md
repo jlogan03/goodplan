@@ -19,7 +19,7 @@ Authoritative source of truth. These rules define state semantics.
 
 ### Per Slice or Quest
 
-Directories with a `~~archived~~` prefix are already completed/archived. Skip them when looking for active work. Include them when counting completed items.
+Completed entities keep their original directory names. Use CLI status queries to identify completed vs active entities.
 
 Check in order — **first match wins**:
 
@@ -65,7 +65,7 @@ Use `goodplan status --json` → `activeEpic` field. At most one active epic exi
 #### Epic Directory Scanning
 
 Use `goodplan epic:list --json` to get all epics with statuses. Categorize:
-- **Archived** (archived status or `~~archived~~` prefix): count as archived, skip further checks
+- **Completed** (`status === "completed"`): count as completed, skip further checks
 - **Active** (matches `activeEpic` from status): primary context for scope resolution
 - **Other**: non-active epics — use their status for reporting
 - For the active epic, use `goodplan slice:list --json` to get its slices
@@ -122,13 +122,9 @@ Load `../../_shared/references/epic-conventions.md` for the full state machine. 
 | Project: `idea.md`, no architecture | `/explore` or `/create-architecture` |
 | Project: architecture done, no sequencing | `/create-slices` |
 
-## Archive Convention
+## Archive Convention (REMOVED)
 
-Completed, superseded, or abandoned scopes are renamed with a `~~archived~~` prefix (e.g., `~~archived~~03-explore/`). When scanning directories:
-
-- **Counting completed work**: Include `~~archived~~`-prefixed directories (they have `completion/learnings.md`)
-- **Finding active work**: Skip `~~archived~~`-prefixed directories — they are not actionable
-- **Display**: Show `~~archived~~` items in a separate "Completed" section, or just count them (e.g., "7 completed")
+Directories are no longer renamed with `~~archived~~` prefixes. Completed entities keep their original directory names and are identified by `status === "completed"` via CLI queries (`epic:show`, `slice:show`, `quest:show`). Use `epic:list --json`, `slice:list --json`, `quest:list --json` to get lists with status fields.
 
 ## State Orientation (CLI)
 

@@ -55,6 +55,9 @@ if (!existsSync(FRICTION_LOG)) {
 // Aggregate cost tracking across all skill runs
 let totalCostUsd = 0;
 
+// Track direct .project/ access violations
+const directAccessViolations: Array<{ tool: string; path: string; skill: string }> = [];
+
 // ─── CLI Helper ──────────────────────────────────────────────
 
 interface GoodplanResult {
@@ -349,6 +352,49 @@ async function runSkill(
 							},
 						};
 					}
+					// ─── Direct .project/ Access Detection ─────────
+					// Catch tools that read/write structured state directly
+					const filePath = typeof input.file_path === "string" ? input.file_path : "";
+					const command = typeof input.command === "string" ? input.command : "";
+
+					if (filePath && filePath.includes(".project/")) {
+						const isStructuredState =
+							filePath.endsWith(".json") ||
+							filePath.endsWith(".jsonl") ||
+							filePath.endsWith("state.md") ||
+							filePath.endsWith("activity-log.jsonl");
+
+						if (isStructuredState && (toolName === "Read" || toolName === "Write" || toolName === "Edit")) {
+							const violation = `[VIOLATION] ${toolName} on structured state: ${filePath}`;
+							log(logName, violation);
+							console.warn(`  │  ${violation}`);
+							directAccessViolations.push({ tool: toolName, path: filePath, skill: skillName });
+							// Allow it to proceed (don't break the run) but log as friction
+							logFriction("important", `Direct access: ${skillName}`, `${toolName} on ${filePath.split(".project/")[1]} — should use CLI`);
+						}
+					}
+
+					// Check Bash commands for direct .project/ file operations
+					if (toolName === "Bash" && command) {
+						const directOps = [
+							/cat\s+[^\|]*\.project\/.*\.json/,
+							/echo\s+.*>>\s*.*\.project\/.*\.jsonl/,
+							/echo\s+.*>\s*.*\.project\/.*\.json/,
+							/Write.*\.project\/.*\.json/,
+							/mv\s+.*\.project\/.*~~archived~~/,
+						];
+						for (const pattern of directOps) {
+							if (pattern.test(command)) {
+								const violation = `[VIOLATION] Bash direct access: ${command.slice(0, 100)}`;
+								log(logName, violation);
+								console.warn(`  │  ${violation}`);
+								directAccessViolations.push({ tool: "Bash", path: command.slice(0, 100), skill: skillName });
+								logFriction("important", `Direct access: ${skillName}`, `Bash command accesses .project/ structured state directly`);
+								break;
+							}
+						}
+					}
+
 					return { behavior: "allow" as const, updatedInput: input };
 				},
 			},
@@ -2171,6 +2217,16 @@ async function main(): Promise<void> {
 	console.log(`  Total elapsed: ${elapsed}s`);
 	console.log(`  Friction log:  ${FRICTION_LOG}`);
 	console.log(`  Logs dir:      ${LOG_DIR}`);
+
+	if (directAccessViolations.length > 0) {
+		console.log(`\n  ⚠ DIRECT .project/ ACCESS VIOLATIONS: ${directAccessViolations.length}`);
+		for (const v of directAccessViolations) {
+			console.log(`    - [${v.skill}] ${v.tool}: ${v.path}`);
+		}
+	} else {
+		console.log("\n  ✓ No direct .project/ access violations detected");
+	}
+
 	console.log("─".repeat(60));
 }
 

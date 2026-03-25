@@ -109,7 +109,7 @@ Examine the last 3 completed slices for trend signals.
 
 **Discovery logic**:
 1. Glob for `completion/learnings.md` under `.project/slices/*/`, `.project/side-quests/*/`, and `.project/quests/*/`
-2. Derive scope from path: strip `.project/` prefix and `/completion/learnings.md` suffix. If the directory name starts with `~~archived~~`, strip that prefix before matching against activity-log `scope` entries. For archived epics (e.g., `~~archived~~01_initial`), strip `~~archived~~NN_` (prefix including numeric counter and underscore) to recover the original name
+2. Derive scope from path: strip `.project/` prefix and `/completion/learnings.md` suffix to get the scope path (e.g., `slices/my-slice`)
 3. Correlate with activity-log via CLI:
 
 ```bash
@@ -243,11 +243,9 @@ For `$SCOPE_TYPE = epic`: check promotions only (demotions were caught per-slice
 
 If all criteria met, suggest promotion with evidence. Write decision files for approved promotions.
 
-## Archive Convention
+## Archive Convention (REMOVED)
 
-Completed scopes are renamed with a `~~archived~~` prefix (e.g., `~~archived~~03-explore/`) to visually separate archived work from active work in filesystem listings. This is the final step of completion. The CLI does not perform this renaming — it remains skill-owned.
-
-Skills that scan for completed scopes (signal tracking, project-status) use glob patterns that match both prefixed and unprefixed directories. When correlating activity-log entries with archived scopes, strip `~~archived~~` from the directory name to match the scope field in activity-log (which records the path at the time of the event).
+**Do NOT rename directories with `~~archived~~` prefix.** Directory renaming breaks CLI path resolution and triggers permanent concurrent modification errors. Completed entities are identified by their `status === "completed"` field via CLI queries (`epic:show`, `slice:show`, `quest:show`), not by directory naming conventions.
 
 ## Re-entry
 
@@ -291,9 +289,9 @@ Record all decisions in `$EPIC_DIR/completion/architecture-updates.md`. If "inco
 
 Copy (not move) artifacts from `$EPIC_DIR/research/`, `brainstorm/`, `prototypes/` to `.project/research/`, `.project/brainstorm/`, `.project/prototypes/`. Originals stay in the archived epic for context. Use AskUserQuestion for each artifact. If same-name conflict at destination, prefix with `<epic-name>_`. If prefixed also conflicts, append numeric suffix.
 
-### Archive Numbering
+### Archive Numbering (REMOVED)
 
-Count existing `~~archived~~*` directories in `.project/epics/`. Set NN = count + 1 (one-indexed, zero-padded two digits; first archive is `01`). Rename from `<name>/` to `~~archived~~NN_<name>/`.
+Directory renaming has been removed. Completed epics keep their original directory names. Use CLI status queries to identify completed vs active epics.
 
 ### Recency Marker Matching
 

@@ -258,7 +258,7 @@ Use AskUserQuestion for each finding: "Fix now (localized) / Propose side quest 
 Examine artifact directories for the last 3 completed slices. Discovery logic:
 
 1. **Discover completed scopes**: Scan for `.project/slices/*/completion/learnings.md`, `.project/side-quests/*/completion/learnings.md`, and `.project/quests/*/completion/learnings.md`
-2. **Derive scope values**: Strip `.project/` prefix and `/completion/learnings.md` suffix. If a directory name starts with `~~archived~~`, strip that prefix before matching activity-log scope entries. For archived epics (`~~archived~~NN_<name>`), strip `~~archived~~NN_` (including numeric counter and underscore) to recover the original name
+2. **Derive scope values**: Strip `.project/` prefix and `/completion/learnings.md` suffix to get the scope path (e.g., `slices/my-slice`)
 3. **Correlate with activity-log**: Use CLI to query activity-log entries:
 
 ```bash
@@ -400,29 +400,11 @@ Different shape — `epic:complete` does NOT accept `learnings` or `architecture
 
 The CLI handles the state transition and activity-log entry. No manual state.md writes or activity-log appends needed.
 
-## Step 10b — Archive Completed Scope
+## Step 10b — Archive Convention (REMOVED)
 
-The CLI does not perform `~~archived~~` directory renaming — this remains skill-owned. Rename the scope directory with a `~~archived~~` prefix to visually separate completed work from active work in the filesystem:
+**Do NOT rename directories with `~~archived~~` prefix.** The CLI uses entity names to resolve directory paths (e.g., `epics/<name>/epic.json`). Renaming directories breaks CLI path resolution and triggers permanent `DATA_CONCURRENT_MODIFICATION` errors that block all subsequent operations.
 
-```bash
-# For top-level slices ($SCOPE_TYPE = top-level-slice):
-mv .project/slices/<name> '.project/slices/~~archived~~<name>'
-
-# For side quests ($SCOPE_TYPE = side-quest):
-mv .project/side-quests/<name> '.project/side-quests/~~archived~~<name>'
-
-# For epic slices ($SCOPE_TYPE = epic-slice):
-# Slices live at .project/slices/<name>/, not under the epic directory
-mv .project/slices/<slice> '.project/slices/~~archived~~<slice>'
-
-# For epics ($SCOPE_TYPE = epic):
-# Count existing archived epics, add 1 (one-indexed, zero-padded)
-NN=$(printf "%02d" $(($(ls -d .project/epics/~~archived~~* 2>/dev/null | wc -l) + 1)))
-mv ".project/epics/<name>" ".project/epics/~~archived~~${NN}_<name>"
-ls .project/epics/  # verify
-```
-
-This is a cosmetic convention — skills that scan for completed scopes (signal tracking, project-status) check both prefixed and unprefixed directories. For epics, the `~~archived~~NN_<name>` format uses a zero-padded two-digit counter (one-indexed; first archive is `01`).
+Completed entities are identified by their `status === "completed"` field in the CLI (via `epic:show`, `slice:show`, `quest:show`), not by directory naming. The `/project-status` skill and other consumers should use CLI status queries to distinguish active from completed work.
 
 ## Step 11 — Done Summary
 

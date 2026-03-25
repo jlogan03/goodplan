@@ -50,8 +50,8 @@ Scan for epics in `proposal-pending` state (have `architecture-proposal/` but no
 ```bash
 for dir in .project/epics/*/; do
   name=$(basename "$dir")
-  # Skip __active__ and ~~archived~~ prefixed directories
-  [[ "$name" == __active__* || "$name" == ~~archived~~* ]] && continue
+  # Skip __active__ prefixed directories
+  [[ "$name" == __active__* ]] && continue
   # Check for proposal-pending state
   if [ -d "$dir/architecture-proposal" ] && [ ! -f "$dir/approved.md" ] && [ ! -f "$dir/abandoned.md" ]; then
     echo "$name"
@@ -64,7 +64,7 @@ Also scan for epics in `needs-architecture-proposal` state (have `explore-comple
 ```bash
 for dir in .project/epics/*/; do
   name=$(basename "$dir")
-  [[ "$name" == __active__* || "$name" == ~~archived~~* ]] && continue
+  [[ "$name" == __active__* ]] && continue
   if { [ -f "$dir/explore-complete.md" ] || [ -f "$dir/explore-skipped.md" ]; } &&
      [ ! -d "$dir/architecture-proposal" ] &&
      [ ! -f "$dir/architecture-proposal-skipped.md" ] &&

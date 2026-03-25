@@ -147,9 +147,9 @@ Epic scanning always runs when epics exist — needed for Format B reporting. Us
 goodplan epic:list --json
 ```
 
-For each epic, categorize:
-- **Archived** (`~~archived~~` prefix or archived status): count as archived, skip further checks
-- **Active** (`__active__` prefix): this is the active epic — also get its slices via `slice:list --json`
+For each epic, categorize by CLI status:
+- **Completed** (`status === "completed"`): count as completed, skip further checks
+- **Active** (matches `activeEpic.name` from `status --json`): this is the active epic — also get its slices via `slice:list --json`
 - **Other**: non-active epics — use their status for reporting
 
 ## Step 7 — Check for Interrupted Work

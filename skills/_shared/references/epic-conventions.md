@@ -73,9 +73,8 @@ Created by `/create-epic`. Starts without `__active__` prefix. Renamed to `__act
 
 ```
 .project/epics/
-├── __active__<name>/                # one active epic at a time
-├── ~~archived~~NN_<name>/           # completed/superseded/abandoned
-└── <name>/                          # exploring or proposal pending
+├── __active__<name>/                # one active epic at a time (pre-CLI convention)
+└── <name>/                          # all epics use bare names; status via CLI
     ├── goal.md
     ├── abandoned.md                 # if present, epic is abandoned
     ├── explore-complete.md          # or explore-skipped.md
@@ -235,13 +234,9 @@ Since top-level architecture is only updated by `/complete` as slices land (not 
 
 ---
 
-## Archive Numbering
+## Archive Convention (REMOVED)
 
-Completed epics are renamed: `__active__<name>/` → `~~archived~~NN_<name>/`
-
-- `NN` = completion-order counter (zero-padded two digits).
-- To determine the next number: count existing `~~archived~~` directories in `epics/`.
-- Example sequence: `~~archived~~01_initial/`, `~~archived~~02_payments/`, `~~archived~~03_notifications/`.
+Completed epics keep their original directory names. Directory renaming (the former `~~archived~~NN_<name>` convention) has been removed because it breaks CLI path resolution — the CLI uses entity names to construct paths (`epics/<name>/epic.json`). Completed entities are identified by `status === "completed"` via CLI queries.
 
 ---
 
