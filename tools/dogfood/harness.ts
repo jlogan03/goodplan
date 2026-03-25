@@ -1001,17 +1001,25 @@ When done, submit scores via: echo '{"scores":{"completeness":8,"correctness":8,
 	}
 
 	// Step 7: slice:implement (plan-refined → implementing)
-	// Fix-up: if plan-refining.md exists but plan-refined.md doesn't, rename it
-	// (the /refine-plan skill sometimes submits scores but skips the final rename)
+	// Fix-up: ensure plan-refined.md exists (the CLI guard requires it)
+	// The /refine-plan skill may: (a) create plan-refining.md but not rename it,
+	// (b) submit scores without writing any file, or (c) work correctly.
 	currentStatus = sliceStatus(sliceName);
 	if (currentStatus === "plan-refined") {
 		const sliceDir = join(NONDET_EVAL_DIR, ".project/slices", sliceName);
 		const refiningPath = join(sliceDir, "plan-refining.md");
 		const refinedPath = join(sliceDir, "plan-refined.md");
-		if (existsSync(refiningPath) && !existsSync(refinedPath)) {
-			execFileSync("mv", [refiningPath, refinedPath]);
-			console.log(`  Fixed: renamed plan-refining.md → plan-refined.md for ${sliceName}`);
-			logFriction("minor", "Skill: /refine-plan", `plan-refining.md not renamed to plan-refined.md for ${sliceName} — harness fixed`);
+		const planPath = join(sliceDir, "plan.md");
+		if (!existsSync(refinedPath)) {
+			if (existsSync(refiningPath)) {
+				execFileSync("mv", [refiningPath, refinedPath]);
+				console.log(`  Fixed: renamed plan-refining.md → plan-refined.md for ${sliceName}`);
+				logFriction("minor", "Skill: /refine-plan", `plan-refining.md not renamed for ${sliceName}`);
+			} else if (existsSync(planPath)) {
+				execFileSync("cp", [planPath, refinedPath]);
+				console.log(`  Fixed: copied plan.md → plan-refined.md for ${sliceName} (no refinement file created)`);
+				logFriction("important", "Skill: /refine-plan", `Neither plan-refining.md nor plan-refined.md created for ${sliceName} — copied plan.md as fallback`);
+			}
 		}
 
 		const implTransition = goodplan(["slice:implement", "--slice", sliceName, "--json"]);
