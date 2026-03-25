@@ -294,6 +294,7 @@ async function runSkill(
 				model,
 				settingSources: ["project"],
 				env: {
+					...process.env,
 					PATH: `${HOME}/bin:${process.env.PATH ?? ""}`,
 				},
 				systemPrompt: {
