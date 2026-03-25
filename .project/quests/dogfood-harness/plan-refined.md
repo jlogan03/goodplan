@@ -221,7 +221,7 @@ Add second epic lifecycle with architecture proposal path. Run all steps end-to-
 
 ### Tasks
 
-- [ ] **Implement Phase 4** (`runPhase4()`):
+- [x] **Implement Phase 4** (`runPhase4()`):
   - Create second epic: `echo '{"name":"llm-judge","goal":"Implement an LLM judge..."}' | goodplan epic:create --json`
   - Run explore → `goodplan epic:define-architecture --epic llm-judge --json` → `/create-architecture` (proposal path — skill writes to `architecture-proposal/`)
   - Architecture approval: No CLI command exists for proposal approval. Perform manual filesystem copy of `architecture-proposal/` → `architecture/` and write `approved.md`. This is NOT a state machine bypass (INV-001) — it is a free-form markdown content operation (LLM-owned files). The actual state transition happens via `goodplan submit-architecture --epic llm-judge --json` which goes through the state machine. Log the missing approval CLI command as a friction item (`logFriction("important", "phase4-architecture", "No CLI command for architecture proposal approval — required manual filesystem copy of architecture-proposal/ to architecture/")`). Then run `goodplan submit-architecture --epic llm-judge --json`.
@@ -230,11 +230,11 @@ Add second epic lifecycle with architecture proposal path. Run all steps end-to-
   - When completing the second epic, use the same verificationResults pattern as Step 2 but confirm the verification `index` matches the epic's own verification item (added during its `phase2Activate()` equivalent). Parameterize the index rather than hardcoding `0`.
   - Verify second epic completed via `goodplan epic:show --epic llm-judge --json`
 
-- [ ] **Add `all` command**: `bun tools/dogfood/harness.ts all` runs reset → Phase 2 → Phase 3 → Phase 4. Wire both `reset` and `all` into the CLI argument parser / entry point switch statement (lines ~383-446 in harness.ts) alongside the existing phase commands.
+- [x] **Add `all` command**: `bun tools/dogfood/harness.ts all` runs reset → Phase 2 → Phase 3 → Phase 4. Wire both `reset` and `all` into the CLI argument parser / entry point switch statement (lines ~383-446 in harness.ts) alongside the existing phase commands.
 
 - [ ] **Run full execution**: `bun tools/dogfood/harness.ts all`. Fix issues. Update friction log with comprehensive findings.
 
-- [ ] **Produce friction summary**: After full run, print a summary of all friction items discovered, categorized by skill and severity. Include aggregate cost report.
+- [x] **Produce friction summary**: After full run, print a summary of all friction items discovered, categorized by skill and severity. Include aggregate cost report.
 
 ### Verification
 
