@@ -293,6 +293,9 @@ async function runSkill(
 				maxBudgetUsd,
 				model,
 				settingSources: ["project"],
+				env: {
+					PATH: `${HOME}/bin:${process.env.PATH ?? ""}`,
+				},
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",
