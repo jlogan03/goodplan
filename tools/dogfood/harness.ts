@@ -1001,8 +1001,19 @@ When done, submit scores via: echo '{"scores":{"completeness":8,"correctness":8,
 	}
 
 	// Step 7: slice:implement (plan-refined → implementing)
+	// Fix-up: if plan-refining.md exists but plan-refined.md doesn't, rename it
+	// (the /refine-plan skill sometimes submits scores but skips the final rename)
 	currentStatus = sliceStatus(sliceName);
 	if (currentStatus === "plan-refined") {
+		const sliceDir = join(NONDET_EVAL_DIR, ".project/slices", sliceName);
+		const refiningPath = join(sliceDir, "plan-refining.md");
+		const refinedPath = join(sliceDir, "plan-refined.md");
+		if (existsSync(refiningPath) && !existsSync(refinedPath)) {
+			execFileSync("mv", [refiningPath, refinedPath]);
+			console.log(`  Fixed: renamed plan-refining.md → plan-refined.md for ${sliceName}`);
+			logFriction("minor", "Skill: /refine-plan", `plan-refining.md not renamed to plan-refined.md for ${sliceName} — harness fixed`);
+		}
+
 		const implTransition = goodplan(["slice:implement", "--slice", sliceName, "--json"]);
 		logCliResult("slice:implement", implTransition);
 		if (!implTransition.ok) {
