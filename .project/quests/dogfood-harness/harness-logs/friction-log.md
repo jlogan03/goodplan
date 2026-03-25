@@ -39,3 +39,14 @@
 | 34 | minor | Skill: /complete | Skill did not complete epic:complete transition — manual CLI fallback used |
 | 35 | important | phase2EpicComplete | Epic did not reach completed status — final status: archived |
 | 36 | important | phase4-architecture | No CLI command for architecture proposal approval — required manual filesystem copy of architecture-proposal/ to architecture/ |
+| 37 | important | Skill: /refine-plan | Neither plan-refining.md nor plan-refined.md created for 01-provider-scaffold — copied plan.md as fallback |
+| 38 | minor | Skill: /refine-plan | plan-refining.md not renamed for 02-cli-runner |
+| 39 | important | phase4-architecture | No CLI command for architecture proposal approval — required manual filesystem copy of architecture-proposal/ to architecture/ |
+| 40 | minor | Skill: /explore | Skill did not complete submit-explore transition — manual fallback used |
+| 41 | important | Skill: /refine-plan | Neither plan-refining.md nor plan-refined.md created for 01-provider-scaffold — copied plan.md as fallback |
+| 42 | important | Skill: /refine-plan | Neither plan-refining.md nor plan-refined.md created for 02-cli-runner — copied plan.md as fallback |
+| 43 | minor | Skill: /explore | Skill did not complete submit-explore for llm-judge — manual fallback used |
+| 44 | important | phase4-architecture | No CLI command for architecture proposal approval — required manual filesystem copy of architecture-proposal/ to architecture/ |
+| 45 | important | Skill: /refine-plan | Neither plan-refining.md nor plan-refined.md created for 01-judge-core — copied plan.md as fallback |
+| 46 | important | phase4SliceCycle(01-judge-core) | Slice did not reach completed status — final status: implementation-complete |
+| 47 | important | Skill: /refine-plan | Neither plan-refining.md nor plan-refined.md created for 01-provider-scaffold — copied plan.md as fallback |
