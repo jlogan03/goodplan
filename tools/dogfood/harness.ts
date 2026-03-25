@@ -1847,9 +1847,25 @@ When done, submit scores via: echo '{"scores":{"completeness":8,"correctness":8,
 		);
 	}
 
-	// Step 7: slice:implement
+	// Step 7: slice:implement (with plan-refined.md fix-up)
 	currentStatus = sliceStatus(sliceName);
 	if (currentStatus === "plan-refined") {
+		const sliceDir = join(NONDET_EVAL_DIR, ".project/slices", sliceName);
+		const refiningPath = join(sliceDir, "plan-refining.md");
+		const refinedPath = join(sliceDir, "plan-refined.md");
+		const planPath = join(sliceDir, "plan.md");
+		if (!existsSync(refinedPath)) {
+			if (existsSync(refiningPath)) {
+				execFileSync("mv", [refiningPath, refinedPath]);
+				console.log(`  Fixed: renamed plan-refining.md → plan-refined.md for ${sliceName}`);
+				logFriction("minor", "Skill: /refine-plan", `plan-refining.md not renamed for ${sliceName}`);
+			} else if (existsSync(planPath)) {
+				execFileSync("cp", [planPath, refinedPath]);
+				console.log(`  Fixed: copied plan.md → plan-refined.md for ${sliceName} (no refinement file created)`);
+				logFriction("important", "Skill: /refine-plan", `Neither plan-refining.md nor plan-refined.md created for ${sliceName} — copied plan.md as fallback`);
+			}
+		}
+
 		const implTransition = goodplan(["slice:implement", "--slice", sliceName, "--json"]);
 		logCliResult("slice:implement", implTransition);
 		if (!implTransition.ok) {
