@@ -1096,41 +1096,23 @@ When done, call: echo '' | goodplan submit-implementation --slice ${sliceName} -
 	if (currentStatus === "implementing") {
 		console.log("  Submitting implementation manually...");
 
-		// Nuclear recovery for concurrent modification: directly update
-		// the slice.json status field to bypass the concurrent mod check.
-		// The CLI's concurrent mod check compares on-disk bytes against
-		// its in-memory state. When a sub-agent modifies overview.json
-		// directly, the check fails permanently. The only recovery is
-		// to modify the state file directly (yes, this is direct access,
-		// but it's the harness recovering from a known limitation).
+		// Try normal submit first, then --force if concurrent modification blocks it
 		const submitImpl = goodplan(["submit-implementation", "--slice", sliceName, "--json"], {
 			stdin: "",
 		});
 		if (submitImpl.ok) {
 			logCliResult("submit-implementation", submitImpl);
 		} else if (submitImpl.stdout.includes("CONCURRENT_MODIFICATION")) {
-			console.log("  Concurrent modification — applying nuclear recovery...");
-			// Read the slice.json directly and update status
-			const sliceJsonPath = join(NONDET_EVAL_DIR, ".project/slices", sliceName, "slice.json");
-			try {
-				const sliceJson = JSON.parse(readFileSync(sliceJsonPath, "utf-8"));
-				sliceJson.status = "implementation-complete";
-				sliceJson.updated = new Date().toISOString();
-				writeFileSync(sliceJsonPath, JSON.stringify(sliceJson, Object.keys(sliceJson).sort(), "\t") + "\n");
-				// Also update overview.json
-				const overviewPath = join(NONDET_EVAL_DIR, ".project/slices/overview.json");
-				const overview = JSON.parse(readFileSync(overviewPath, "utf-8"));
-				const item = overview.items?.find((i: { name: string }) => i.name === sliceName);
-				if (item) {
-					item.status = "implementation-complete";
-					item.updated = new Date().toISOString();
-				}
-				writeFileSync(overviewPath, JSON.stringify(overview, Object.keys(overview).sort(), "\t") + "\n");
-				console.log("  Nuclear recovery: updated slice.json + overview.json directly");
-				logFriction("important", "CLI: concurrent-mod", `Had to write slice.json/overview.json directly to recover from permanent DATA_CONCURRENT_MODIFICATION for ${sliceName}`);
-			} catch (err) {
-				const msg = err instanceof Error ? err.message : String(err);
-				console.error(`  Nuclear recovery failed: ${msg}`);
+			console.log("  Concurrent modification — retrying with --force...");
+			const forceSubmit = goodplan(["submit-implementation", "--slice", sliceName, "--json", "--force"], {
+				stdin: "",
+			});
+			if (forceSubmit.ok) {
+				console.log("  --force submit succeeded");
+				logFriction("minor", "CLI: concurrent-mod", `Used --force to recover from DATA_CONCURRENT_MODIFICATION for ${sliceName}`);
+			} else {
+				console.error(`  --force submit also failed: exit ${forceSubmit.exitCode}`);
+				logCliResult("submit-implementation --force", forceSubmit);
 			}
 		} else {
 			console.error(`  submit-implementation failed: exit ${submitImpl.exitCode}`);

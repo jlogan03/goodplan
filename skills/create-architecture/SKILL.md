@@ -325,13 +325,13 @@ Reflect on the conversation: did it reveal new information about the user's expe
 
 ### For epic scope
 
-Complete the architecture phase via CLI (no stdin required — content is already on disk):
+**CRITICAL — Do this BEFORE the Done Summary.** Complete the architecture phase via CLI (no stdin required — content is already on disk):
 
 ```bash
 stdin: "" | goodplan submit-architecture --epic <name> --json
 ```
 
-This transitions the epic from `defining-architecture` to `architecture-defined` and records the activity. The CLI handles all state management.
+This transitions the epic from `defining-architecture` to `architecture-defined` and records the activity. The CLI handles all state management. If this step is skipped, the epic will be stuck in `defining-architecture` and downstream skills cannot proceed.
 
 ### For non-epic scope
 

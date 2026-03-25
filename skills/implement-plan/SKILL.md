@@ -308,7 +308,7 @@ Run a holistic review covering all phases together. This catches integration iss
 1. **Update plan status**: Add `Status: COMPLETE` and `Completed: YYYY-MM-DD` to the plan file (or `_overview.md`).
 2. **Move plan to completed**: If the project uses a `planning/active/` directory, move the plan to `planning/completed/`. Otherwise, leave it in place — the status marker is sufficient.
 3. **Final git commit**: If any uncommitted changes remain, commit with `[<plan-slug>] Complete implementation`.
-4. **Submit implementation via CLI**: If the plan is under `.project/` and belongs to a slice or quest scope, use the appropriate CLI submit command. The CLI handles activity recording and state transitions.
+4. **CRITICAL — Submit implementation via CLI**: If the plan is under `.project/` and belongs to a slice or quest scope, use the appropriate CLI submit command. The CLI handles activity recording and state transitions. **This must happen before the completion summary. If skipped, the slice/quest will be stuck in `implementing` and cannot be completed.**
 
    For slice scope:
    ```bash

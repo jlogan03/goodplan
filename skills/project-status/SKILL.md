@@ -121,10 +121,12 @@ goodplan quest:show --quest <name> --json
 
 Skills can rely on `status`, `name`, `goal` fields from entity JSON. The `artifacts` field is not yet available (deferred to slice 02).
 
-For deeper lookups where `show --json` is insufficient, use `state --json --query`:
+For deeper lookups where `show --json` is insufficient, use `state --json --query`. First get the active epic name from `goodplan status --json` (`.activeEpic.name`), then use it to construct the query path:
 
 ```bash
-goodplan state --json --query '.epics["__active__<name>"].slices | keys'
+# Get the active epic name dynamically
+EPIC_NAME=$(goodplan status --json | jq -r '.activeEpic.name')
+goodplan state --json --query ".epics[\"$EPIC_NAME\"].slices | keys"
 ```
 
 ### Slice / Quest State
@@ -134,7 +136,8 @@ Use the `status` field from `show --json` or `list --json` responses. The state-
 For implementation progress checking (when the status indicates implementation is in progress), use `state --json --query` to check implementation phase directories:
 
 ```bash
-goodplan state --json --query '.epics["__active__<name>"].slices["<slice>"].implementation | keys'
+EPIC_NAME=$(goodplan status --json | jq -r '.activeEpic.name')
+goodplan state --json --query ".epics[\"$EPIC_NAME\"].slices[\"<slice>\"].implementation | keys"
 ```
 
 Then check for passing reviews via the Read tool on `review.md` files (these are LLM-owned markdown).
@@ -203,7 +206,7 @@ Omit the **Expertise** line if no `## Expertise` section exists in `~/.claude/CL
 
 Use this when no slice or quest is currently in progress (e.g., just completed a slice, or at the very start of the project).
 
-To determine slice sequencing order, read the relevant `sequencing.md` via the Read tool. When an active epic exists, slices are under `epics/__active__<name>/slices/`. Otherwise check `.project/slices/`. Use `slice:list --json` to get statuses for each.
+To determine slice sequencing order, read the relevant `sequencing.md` via the Read tool. When an active epic exists, get the epic name from `goodplan status --json` (`.activeEpic.name`) and read slices under `epics/<activeEpic.name>/slices/`. Otherwise check `.project/slices/`. Use `slice:list --json` to get statuses for each.
 
 #### Format B with Active Epic
 

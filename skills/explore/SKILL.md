@@ -218,13 +218,13 @@ stdin: "" | goodplan epic:explore --epic <name> --json
 
 If this returns `STATE_INVALID_TRANSITION` (exit 3), the epic is already past the `created` state — check `epic:show --json` for current status and proceed.
 
-Complete the exploration phase:
+**CRITICAL — Do this BEFORE the Done Summary.** Complete the exploration phase:
 
 ```bash
 stdin: "" | goodplan submit-explore --epic <name> --json
 ```
 
-This transitions the epic to `explored` and records the activity. The skill writes `explore-complete.md` (Step 5); this command transitions state only.
+This transitions the epic to `explored` and records the activity. If this step is skipped, the epic will be stuck in `exploring` and downstream skills cannot proceed. The skill writes `explore-complete.md` (Step 5); this command transitions state only.
 
 ### For non-epic scopes
 

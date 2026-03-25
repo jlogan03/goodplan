@@ -157,7 +157,7 @@ Reflect on the conversation: did it reveal new information about the user's expe
 
 ## Step 7 — Submit via CLI
 
-If the plan is under `.project/` and belongs to a slice or quest scope, use the appropriate CLI submit command. The CLI handles activity recording and state transitions.
+**CRITICAL — Do this BEFORE the Done Summary.** If the plan is under `.project/` and belongs to a slice or quest scope, use the appropriate CLI submit command. The CLI handles activity recording and state transitions. If this step is skipped, the slice/quest will be stuck in `planning` and downstream skills cannot proceed.
 
 For slice scope:
 ```bash

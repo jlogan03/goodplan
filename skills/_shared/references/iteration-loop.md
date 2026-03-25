@@ -27,7 +27,6 @@ All review artifacts live in a run directory, separate from the files being refi
 ```
 <run-dir>/
   goal.md                    # Confirmed goal for this refinement
-  activity-log.jsonl             # Iteration-level events for resume detection
   round-1/
     reviews/
       <reviewer-name>.md     # Individual reviewer output
@@ -40,7 +39,7 @@ All review artifacts live in a run directory, separate from the files being refi
 
 **Naming convention**: The run directory is named `<thing>-refining/` — e.g., `plan-refining/`, `architecture-refining/`. It is co-located with the files being refined.
 
-**Resume detection**: If the run directory already exists, check `activity-log.jsonl` for the last entry. If the last entry's `status` is not `complete`, this is a resume. Present the iteration history to the user and ask whether to resume or start fresh.
+**Resume detection**: If the run directory already exists, check for completed round directories (`round-N/merged.md`). If rounds exist but the refinement isn't complete, this is a resume. Present the iteration history to the user and ask whether to resume or start fresh.
 
 ## Reviewer Spawn Pattern
 

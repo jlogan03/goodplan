@@ -50,13 +50,13 @@ Write a concise summary to `<scope_dir>/research/_codebase-context.md` including
 Check for an active epic:
 
 ```bash
-ls -d .project/epics/__active__*/ 2>/dev/null
+goodplan status --json
 ```
 
-If found, read the epic's `architecture/` directory alongside top-level `.project/architecture/`. Start with `_overview.md` in each. The two layers represent:
+If `.activeEpic` exists in the response, read the epic's `architecture/` directory alongside top-level `.project/architecture/`. Start with `_overview.md` in each. The two layers represent:
 
 - **Top-level** (`.project/architecture/`): Current reality — what the repo looks like now
-- **Epic** (`epics/__active__<name>/architecture/`): Target state — where the active epic is headed
+- **Epic** (`epics/<activeEpic.name>/architecture/`): Target state — where the active epic is headed
 
 Include both in the codebase context summary. Flag any conflicts between the two layers — areas where the epic's target architecture diverges from current reality are important context for both reviewers and implementation agents.
 

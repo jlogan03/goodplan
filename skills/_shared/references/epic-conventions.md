@@ -102,9 +102,10 @@ Created by `/create-epic`. Starts without `__active__` prefix. Renamed to `__act
 
 ## `__active__` Prefix Convention
 
-- Only **one** `__active__` epic at a time.
+- Only **one** active epic at a time.
 - First epic: created as `__active__initial/` by `/create-epic` (auto-active, no approval gate).
-- Subsequent epics: `__active__` prefix applied by `/start-epic` when the architecture proposal is approved.
+- Subsequent epics: activation is handled by the `epic:activate` CLI command when the architecture proposal is approved. **Skills should not rename directories** — the CLI manages this internally.
+- The `__active__` prefix is a legacy convention that the CLI may use internally. Skills should use `goodplan status --json` (`.activeEpic`) to detect the active epic rather than relying on directory naming.
 - Indicates the epic is approved and being built (slices defined, execution in progress).
 
 ---
