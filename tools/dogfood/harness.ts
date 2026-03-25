@@ -1135,9 +1135,15 @@ When done, call: echo '' | goodplan submit-implementation --slice ${sliceName} -
 			learnings: [],
 			architectureDelta: [],
 		});
-		const completeResult = goodplan(["slice:complete", "--slice", sliceName, "--json"], {
+		let completeResult = goodplan(["slice:complete", "--slice", sliceName, "--json"], {
 			stdin: completePayload,
 		});
+		if (!completeResult.ok && completeResult.stdout.includes("CONCURRENT_MODIFICATION")) {
+			console.log("  Concurrent modification — retrying with --force...");
+			completeResult = goodplan(["slice:complete", "--slice", sliceName, "--json", "--force"], {
+				stdin: completePayload,
+			});
+		}
 		logCliResult("slice:complete", completeResult);
 		if (!completeResult.ok) {
 			console.error(`  slice:complete failed: exit ${completeResult.exitCode}`);
@@ -1178,9 +1184,15 @@ Verification results: ${verificationResults}. Call epic:complete with this paylo
 		const completePayload = JSON.stringify({
 			verificationResults: [{ index: 0, passed: true, notes: "Harness automated verification" }],
 		});
-		const completeResult = goodplan(["epic:complete", "--epic", "core-provider", "--json"], {
+		let completeResult = goodplan(["epic:complete", "--epic", "core-provider", "--json"], {
 			stdin: completePayload,
 		});
+		if (!completeResult.ok && completeResult.stdout.includes("CONCURRENT_MODIFICATION")) {
+			console.log("  Concurrent modification — retrying with --force...");
+			completeResult = goodplan(["epic:complete", "--epic", "core-provider", "--json", "--force"], {
+				stdin: completePayload,
+			});
+		}
 		logCliResult("epic:complete fallback", completeResult);
 		if (!completeResult.ok) {
 			console.error(
@@ -1388,9 +1400,15 @@ When done, call: echo '' | goodplan submit-implementation --quest ${questName} -
 			learnings: [],
 			architectureDelta: [],
 		});
-		const completeResult = goodplan(["quest:complete", "--quest", questName, "--json"], {
+		let completeResult = goodplan(["quest:complete", "--quest", questName, "--json"], {
 			stdin: completePayload,
 		});
+		if (!completeResult.ok && completeResult.stdout.includes("CONCURRENT_MODIFICATION")) {
+			console.log("  Concurrent modification — retrying with --force...");
+			completeResult = goodplan(["quest:complete", "--quest", questName, "--json", "--force"], {
+				stdin: completePayload,
+			});
+		}
 		logCliResult("quest:complete", completeResult);
 		if (!completeResult.ok) {
 			console.error(`  quest:complete failed: exit ${completeResult.exitCode}`);
@@ -1888,14 +1906,20 @@ When done, call: echo '' | goodplan submit-implementation --slice ${sliceName} -
 		},
 	);
 
-	// Step 9: submit-implementation fallback
+	// Step 9: submit-implementation fallback (with --force for concurrent mod)
 	currentStatus = sliceStatus(sliceName);
 	console.log(`  Slice status after implement-plan: ${currentStatus}`);
 	if (currentStatus === "implementing") {
 		console.log("  Submitting implementation manually...");
-		const submitImpl = goodplan(["submit-implementation", "--slice", sliceName, "--json"], {
+		let submitImpl = goodplan(["submit-implementation", "--slice", sliceName, "--json"], {
 			stdin: "",
 		});
+		if (!submitImpl.ok && submitImpl.stdout.includes("CONCURRENT_MODIFICATION")) {
+			console.log("  Concurrent modification — retrying with --force...");
+			submitImpl = goodplan(["submit-implementation", "--slice", sliceName, "--json", "--force"], {
+				stdin: "",
+			});
+		}
 		logCliResult("submit-implementation", submitImpl);
 		logFriction(
 			"minor",
@@ -1904,7 +1928,7 @@ When done, call: echo '' | goodplan submit-implementation --slice ${sliceName} -
 		);
 	}
 
-	// Step 10: slice:complete
+	// Step 10: slice:complete (with --force fallback for concurrent mod)
 	currentStatus = sliceStatus(sliceName);
 	console.log(`  Slice status before complete: ${currentStatus}`);
 	if (currentStatus === "implementation-complete") {
@@ -1914,9 +1938,18 @@ When done, call: echo '' | goodplan submit-implementation --slice ${sliceName} -
 			learnings: [],
 			architectureDelta: [],
 		});
-		const completeResult = goodplan(["slice:complete", "--slice", sliceName, "--json"], {
+		let completeResult = goodplan(["slice:complete", "--slice", sliceName, "--json"], {
 			stdin: completePayload,
 		});
+		if (!completeResult.ok && completeResult.stdout.includes("CONCURRENT_MODIFICATION")) {
+			console.log("  Concurrent modification — retrying with --force...");
+			completeResult = goodplan(["slice:complete", "--slice", sliceName, "--json", "--force"], {
+				stdin: completePayload,
+			});
+			if (completeResult.ok) {
+				logFriction("minor", "CLI: concurrent-mod", `Used --force for slice:complete on ${sliceName}`);
+			}
+		}
 		logCliResult("slice:complete", completeResult);
 	}
 
@@ -1956,9 +1989,15 @@ Verification results: ${verificationResults}. Call epic:complete with this paylo
 				{ index: verificationIndex, passed: true, notes: "Harness automated verification" },
 			],
 		});
-		const completeResult = goodplan(["epic:complete", "--epic", epicName, "--json"], {
+		let completeResult = goodplan(["epic:complete", "--epic", epicName, "--json"], {
 			stdin: completePayload,
 		});
+		if (!completeResult.ok && completeResult.stdout.includes("CONCURRENT_MODIFICATION")) {
+			console.log("  Concurrent modification — retrying with --force...");
+			completeResult = goodplan(["epic:complete", "--epic", epicName, "--json", "--force"], {
+				stdin: completePayload,
+			});
+		}
 		logCliResult("epic:complete fallback", completeResult);
 		logFriction(
 			"minor",
