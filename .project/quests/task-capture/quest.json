@@ -2,7 +2,18 @@
 	"created": "2026-03-26T05:53:50.853Z",
 	"goal": "A lightweight task capture system — a place to jot down anything you notice while working that you don't want to forget but don't want to act on right now.",
 	"name": "task-capture",
-	"refinement": null,
-	"status": "created",
-	"updated": "2026-03-26T05:53:50.853Z"
+	"refinement": {
+		"maxRounds": 10,
+		"round": 1,
+		"scoreHistory": [
+			{
+				"round": 1,
+				"scores": {
+					"overall": 9
+				}
+			}
+		]
+	},
+	"status": "implementation-complete",
+	"updated": "2026-03-26T19:17:39.766Z"
 }
