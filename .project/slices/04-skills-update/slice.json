@@ -1,0 +1,10 @@
+{
+	"created": "2026-03-26T23:02:18.743Z",
+	"deferred": [],
+	"epic": "entity-restructuring",
+	"goal": "Update all 11 skill files referencing .project/slices/ to nested paths",
+	"name": "04-skills-update",
+	"refinement": null,
+	"status": "created",
+	"updated": "2026-03-26T23:02:18.743Z"
+}

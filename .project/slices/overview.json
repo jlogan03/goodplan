@@ -146,6 +146,41 @@
 			"epic": "skills-cli-integration",
 			"name": "dogfooding",
 			"status": "completed"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-26T23:02:10.403Z",
+			"epic": "entity-restructuring",
+			"name": "01-schema-and-state-machine",
+			"status": "created"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-26T23:02:18.619Z",
+			"epic": "entity-restructuring",
+			"name": "02-rpc-and-commands",
+			"status": "created"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-26T23:02:18.681Z",
+			"epic": "entity-restructuring",
+			"name": "03-context-and-learnings",
+			"status": "created"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-26T23:02:18.743Z",
+			"epic": "entity-restructuring",
+			"name": "04-skills-update",
+			"status": "created"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-26T23:02:18.808Z",
+			"epic": "entity-restructuring",
+			"name": "05-tests-and-migration",
+			"status": "created"
 		}
 	]
 }

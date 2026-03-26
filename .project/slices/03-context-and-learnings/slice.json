@@ -1,0 +1,10 @@
+{
+	"created": "2026-03-26T23:02:18.681Z",
+	"deferred": [],
+	"epic": "entity-restructuring",
+	"goal": "Context layer updates, remove learnings.md direct writes from /complete",
+	"name": "03-context-and-learnings",
+	"refinement": null,
+	"status": "created",
+	"updated": "2026-03-26T23:02:18.681Z"
+}

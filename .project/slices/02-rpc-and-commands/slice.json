@@ -1,0 +1,10 @@
+{
+	"created": "2026-03-26T23:02:18.619Z",
+	"deferred": [],
+	"epic": "entity-restructuring",
+	"goal": "RPC layer, all slice commands, status, schema registry updates for nested paths",
+	"name": "02-rpc-and-commands",
+	"refinement": null,
+	"status": "created",
+	"updated": "2026-03-26T23:02:18.619Z"
+}
