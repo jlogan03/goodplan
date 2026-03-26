@@ -30,7 +30,7 @@ Test migration end-to-end on a copy of this repo's actual `.project/`, fix bugs 
     - Schema validation failures on real data
   - Verify post-migration: `goodplan status --json`, `epic:list`, `slice:list`, `quest:list`
   - Diff sample markdown files between `.project/` and `.project-old/` to confirm content preservation
-- [ ] **Create synthetic fixture** at `tests/fixtures/pre-cli-project/`:
+- [x] **Create synthetic fixture** at `tests/fixtures/pre-cli-project/`:
   - Minimal `.project/` structure that exercises all migration paths:
     - An archived epic (`~~archived~~01_test-epic/`) with `completion/learnings.md`, goal.md, architecture/, 2 slices
     - A side-quest with goal.md only (status: created)
@@ -39,7 +39,7 @@ Test migration end-to-end on a copy of this repo's actual `.project/`, fix bugs 
     - `state.md` (old format — should be ignored by migration)
     - `activity-log.jsonl` (old format — should be preserved as-is or converted)
   - Based on patterns discovered during dogfood
-- [ ] **Write automated integration test** at `tests/integration/migrate.test.ts`:
+- [x] **Write automated integration test** at `tests/integration/migrate.test.ts`:
   - Copy fixture to temp dir (isolated from repo state)
   - `rpcMigrate()` should accept a `projectDir` argument (like `rpcInit()`) — this is the established pattern. Do NOT rely on `GOODPLAN_DIR` env var or `process.chdir()`.
   - Run full migration flow programmatically:
