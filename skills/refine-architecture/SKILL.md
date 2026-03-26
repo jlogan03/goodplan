@@ -265,29 +265,7 @@ Do NOT ask for permission to continue between iterations.
 
 ### Iteration Summary Template
 
-Display after every iteration.
-
-```
----
-
-### Iteration {N} Review
-
-**Reviewers**: {reviewer1} ({score}/10), {reviewer2} ({score}/10), ...
-
-| # | Severity | Issue | Source | Resolution |
-|---|----------|-------|--------|------------|
-| 1 | CRITICAL | {brief issue description} | {Reviewer name(s)} | {DIRECTLY_ACTIONABLE / USER_INPUT / RESEARCH_NEEDED / CODEBASE_EXPLORATION} |
-| 2 | IMPORTANT | {brief issue description} | {Reviewer} | {resolution} |
-| ... | ... | ... | ... | ... |
-
-**Contradictions**: {N resolved, N unresolved — or "None"}
-**USER_INPUT needed**: {brief list — or "None"}
-**RESEARCH_NEEDED**: {brief list — or "None"}
-
-**Actions**: {what will be done next}
-
----
-```
+Use the shared Iteration Summary from `../_shared/references/output-templates.md` with `{scope_prefix}` = empty (omit).
 
 ### Completion Summary Template
 

@@ -134,9 +134,15 @@ Note: `slice:show` artifacts are boolean flags (`{ goal, exploreComplete, plan, 
 - `$EPIC_DIR/research/`, `brainstorm/`, `prototypes/` (for promotion step)
 - `.project/learnings.md` (to avoid duplication in rollup)
 
-Present: "Epic [name]: N slices completed, M research files, K brainstorm files, J prototypes."
+Present using this Context Load Summary template:
 
-**For slices/quests**, present summary: "Found: plan (N phases), M implementation reviews, K research files, [plan-learnings-and-feedback], [fixes-and-polish]. Architecture: N files."
+```
+**Loaded**: {list of files loaded}
+**Context**: {brief summary of what was found}
+**Missing**: {list of expected but missing files, or "None"}
+```
+
+For epic scope, the Context line should read: "Epic [name]: {N} slices completed, {M} research files, {K} brainstorm files, {J} prototypes." For slices/quests: "Plan ({N} phases), {M} implementation reviews, {K} research files, architecture ({N} files)."
 
 Follow calibration depth guidance in `../_shared/references/expertise-tracking.md`.
 
@@ -408,7 +414,21 @@ Completed entities are identified by their `status === "completed"` field in the
 
 ## Step 11 — Done Summary
 
-List: learnings written, architecture updates made (if any), decisions written during this run (if any), slice goal changes (if any), recommended next step.
+Display using this template:
+
+```
+---
+
+## Completion Summary
+
+**Scope**: {slice/quest/epic name}
+**Artifacts written**: {list of files written during completion}
+**Architecture updates**: {count} proposed
+**Learnings**: {count} recorded
+**Recommended next step**: {what to do next}
+
+---
+```
 
 ## Graceful Stop (Steps 4-9)
 

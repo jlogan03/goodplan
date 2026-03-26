@@ -146,6 +146,44 @@ Only stop and ask when you encounter:
 
 Do NOT ask for permission to continue between iterations.
 
+## Output Templates
+
+### Iteration Summary Template
+
+Use the shared Iteration Summary from `../_shared/references/output-templates.md` with `{scope_prefix}` = empty (omit).
+
+### Completion Summary Template
+
+Display at the end of Step 5 when the refinement loop exits.
+
+```
+---
+
+## Refinement Complete
+
+**Final score**: {min score}/10
+**Iterations**: {N}
+
+### Score Progression
+
+| Iteration | {Reviewer1} | {Reviewer2} | ... |
+|-----------|-------------|-------------|-----|
+| 1         | {score}     | {score}     |     |
+| ...       |             |             |     |
+
+### Issues Resolved
+
+**Total**: {N} issues ({breakdown by severity})
+
+### Slices Modified
+
+| Slice | Change |
+|-------|--------|
+| {name} | {what changed} |
+
+---
+```
+
 ## References
 
 - **Shared iteration loop**: `../_shared/references/iteration-loop.md`

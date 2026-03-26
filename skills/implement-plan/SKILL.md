@@ -75,7 +75,13 @@ If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill 
    - **Derive plan slug**: Kebab-case, 2-4 words (e.g., `user-auth`, `api-refactor`). **CRITICAL: Use this exact slug for ALL commits throughout the plan.**
    - **Derive scope directory**: `scope_dir=$(dirname "<plan_path>")` — the directory containing the plan file (or plan directory). All research and implementation artifacts are stored here.
    - **Derive plan URL**: GitHub URL if remote exists, otherwise absolute local path.
-   - Present summary: plan type, slug, total phases, completed vs remaining.
+   - Present summary using this template:
+
+     ```
+     **Plan**: {plan type} — `{slug}`
+     **Phases**: {total} total, {completed} complete, {remaining} remaining
+     **Scope**: {scope_dir}
+     ```
 
 Also load `.project/conventions.md` if it exists — project conventions inform implementation decisions.
 
@@ -264,11 +270,28 @@ Verify the commit exists with `git log --oneline -1`.
 
 #### 3.6: Progress Report
 
-Output:
-- `"Phase {X} of {Y} complete: {phase_name}"`
-- Brief summary, iteration count, plan modifications, commit hash
+Display after every phase completion:
 
-Every 3 phases: overall progress, completed summary, upcoming preview.
+```
+**Phase {X} of {Y} complete**: {phase_name}
+**Iterations**: {N}
+**Commit**: {short hash}
+**Plan modifications**: {list of changes, or "None"}
+```
+
+Every 3 phases, append an extended summary:
+
+```
+### Overall Progress
+
+**Completed**: {N} of {M} phases
+| Phase | Name | Iterations | Commit |
+|-------|------|------------|--------|
+| 1 | {name} | {N} | {hash} |
+| ... | | | |
+
+**Upcoming**: {next 1-2 phase names and objectives}
+```
 
 #### 3.7: Continue to Next Phase
 
@@ -366,35 +389,7 @@ Display these templates exactly as shown (with actual values substituted). These
 
 ### Iteration Summary Template
 
-Display after every review iteration within a phase, immediately after synthesizing feedback and before applying fixes.
-
-```
----
-
-### Phase {X} — Iteration {N} Review
-
-**Reviewers**: {reviewer1} ({score}/10), {reviewer2} ({score}/10), ...
-
-| # | Severity | Issue | Source | Resolution |
-|---|----------|-------|--------|------------|
-| 1 | CRITICAL | {brief issue description} | {Reviewer name(s)} | {DIRECTLY_ACTIONABLE / USER_INPUT / RESEARCH_NEEDED / CODEBASE_EXPLORATION} |
-| 2 | IMPORTANT | {brief issue description} | {Reviewer} | {resolution} |
-| ... | ... | ... | ... | ... |
-
-**Contradictions**: {N resolved, N unresolved — or "None"}
-**USER_INPUT needed**: {brief list — or "None"}
-**RESEARCH_NEEDED**: {brief list of topics to research — or "None"}
-
-**Actions**: {what will be done — e.g., "Researching 2 topics, then passing 4 IMPORTANT and 3 MINOR issues as feedback to next implementation iteration."}
-
----
-```
-
-Notes:
-- List ALL issues, not just a summary count. Users want to see what was found.
-- Order by severity (CRITICAL first, then IMPORTANT, then MINOR).
-- Keep issue descriptions to one line — enough to identify the issue, not the full explanation.
-- The "Source" column shows which reviewer(s) flagged the issue. If multiple reviewers flagged the same issue (deduplicated), list all of them (e.g., "Generalist, Backend").
+Use the shared Iteration Summary from `../_shared/references/output-templates.md` with `{scope_prefix}` = `Phase {X} — `.
 
 ### Completion Summary Template
 

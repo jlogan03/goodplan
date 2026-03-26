@@ -75,7 +75,13 @@ Also load `../_shared/references/decisions-format.md` for the decisions format a
 
 8. Check for existing slices by running: `ls $SLICES_DIR/sequencing.md $SLICES_DIR/*/goal.md 2>/dev/null` (using the resolved `$SLICES_DIR` from Step 0).
 
-Present summary listing only what was found: "Found: idea.md, epic goal.md, conventions.md, N architecture files, learnings.md. Existing slices: [list or 'none']." Omit items that don't exist rather than showing them in brackets.
+Present using this Context Load Summary template:
+
+```
+**Loaded**: {list of files loaded}
+**Context**: {brief summary — epic/project scope, architecture state}
+**Missing**: {list of expected but missing files, or "None"}
+```
 
 ## Step 3 — Re-entry Check
 
@@ -93,7 +99,18 @@ Follow calibration depth guidance in `../_shared/references/expertise-tracking.m
 
 1. Based on idea.md, architecture, and conventions, propose an initial set of slices. Ground each slice in specific architecture subsystems or flows. Order so each builds on the last. **Each slice must deliver a complete end-to-end flow** that the implementing agent can verify by actually running the code — executing scripts, calling APIs, interacting with a UI in the browser, or running the system and inspecting its output. If a proposed slice can't be verified this way, it's too thin or too abstract — merge it with another slice or redefine it.
 
-2. Present as a numbered list with: name, one-line description, key dependencies, brief ordering rationale.
+2. Present using this template:
+
+   ```
+   ### Proposed Slices
+
+   | # | Name | Objective |
+   |---|------|-----------|
+   | 1 | {name} | {one-line objective} |
+   | ... | | |
+
+   **Sequencing rationale**: {why this order}
+   ```
 
 3. Ask: "What needs changing? Add, remove, reorder, or rename slices. Or say 'looks good' to proceed to details."
 
@@ -137,7 +154,11 @@ For each slice in order:
    mkdir -p $SLICES_DIR/NN-slice-name/
    ```
    Write goal.md with the Write tool.
-7. Show progress: "Defined N of M slices. Next: [next slice]."
+7. Show progress using this template:
+
+   ```
+   **Progress**: Defined {N} of {M} slices. Next: {next slice name}.
+   ```
 
 **Graceful stop** — if the user says "that's enough" or "stop here" mid-slice:
 
@@ -217,7 +238,20 @@ For non-epic scopes, no CLI mutation is needed — the written artifacts serve a
 
 ## Step 10 — Done Summary
 
-List all slices defined. Recommend `/create-plan` for the first unplanned slice.
+Display using this template:
+
+```
+---
+
+## Slices Defined
+
+**Total**: {N} slices
+**Output**: {path to slices directory}
+**Slices**: {numbered list of slice names}
+**Recommended next step**: `/create-plan` for {first unplanned slice name}
+
+---
+```
 
 ## Error Handling
 

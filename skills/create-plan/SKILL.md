@@ -74,7 +74,13 @@ Follow the Stale Assumption Detection Algorithm in `../_shared/references/epic-c
 
 When staleness is detected: present the specific architecture changes (use `git diff` or `git log` to show what changed) and ask the user to confirm the goal still applies or update it before proceeding with planning.
 
-Present: "Loaded: [files]. Slice context: [goal.md summary]. Missing: [list or 'nothing']."
+Present using this Context Load Summary template:
+
+```
+**Loaded**: {list of files loaded}
+**Context**: {brief summary — slice goal, architecture, conventions}
+**Missing**: {list of expected but missing files, or "None"}
+```
 
 ## Step 4 — Interactive Planning
 
@@ -92,10 +98,20 @@ Present phase names and one-line objectives. Use AskUserQuestion: "Does this pha
 
 For each phase:
 
-1. **Present phase context first**: Before asking any questions, state the phase name, its objective (from 4b), and how it connects to the prior phase. Example: "**Phase 2: Data Layer** — Goal: set up the database schema and seed data. This builds on Phase 1's project scaffolding." Then lead with outcome questions: "What should be observable when this phase is done that isn't true now?" and "How would you verify that right now, before any code is written?" Then ask about implementation approach, technology choices, integration points, and error handling.
+1. **Present phase context first**: Before asking any questions, display the phase header using this template:
+
+   ```
+   **Phase {N}: {name}** — Goal: {one-line objective}. Builds on: {prior phase name or "N/A"}.
+   ```
+
+   Then lead with outcome questions: "What should be observable when this phase is done that isn't true now?" and "How would you verify that right now, before any code is written?" Then ask about implementation approach, technology choices, integration points, and error handling.
 2. Follow up immediately if answers raise new questions.
 3. **Research dependencies** as they surface: check `.project/research/` and scope's `research/` first. Only research what's new or stale. Spawn sub-agents using the Agent tool (model: "opus") with WebSearch and Context7 MCP tools. Save to scope's `research/` with header: `# <Topic>\n\nResearched: <date> | Source: <tool>\n\n---`. Present findings summary before incorporating.
-4. After each phase: show progress ("Phase 2 of 5 fleshed out. Moving to Phase 3: [name].") and offer a natural pause point.
+4. After each phase, show progress using this template and offer a natural pause point:
+
+   ```
+   **Progress**: Phase {N} of {M} fleshed out. Next: Phase {N+1}: {name}.
+   ```
 
 ### 4c2. Architectural change detection
 
@@ -173,7 +189,20 @@ If the plan is standalone (not under `.project/`), skip CLI mutation.
 
 ## Step 8 — Done Summary
 
-Present: plan location, phase count, research files written during this session, recommended next step (`/refine-plan`).
+Display using this template:
+
+```
+---
+
+## Plan Created
+
+**Plan**: {path to plan file}
+**Phases**: {N}
+**Research files written**: {list or "None"}
+**Recommended next step**: `/refine-plan {path}`
+
+---
+```
 
 ## Error Handling
 
