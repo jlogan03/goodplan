@@ -1,1 +1,5 @@
 {"detail":"3 epics, 21 slices, 20 quests","phase":"migration","scope":"project","status":"complete","summary":"Migrated from pre-CLI .project/ format","ts":"2026-03-26T05:53:50.853Z"}
+{"phase":"create-quest","scope":"quests/consistent-skill-output","status":"complete","summary":"Quest \"consistent-skill-output\" created","ts":"2026-03-26T13:57:32.257Z"}
+{"phase":"complete-quest-implementation","scope":"quests/migrate-to-cli","status":"complete","summary":"Quest \"migrate-to-cli\" implementation completed","ts":"2026-03-26T14:06:34.318Z"}
+{"phase":"complete-quest","scope":"quests/migrate-to-cli","status":"complete","summary":"Quest \"migrate-to-cli\" completed","ts":"2026-03-26T14:12:08.790Z"}
+{"phase":"create-quest","scope":"quests/migration-sibling-check","status":"complete","summary":"Quest \"migration-sibling-check\" created","ts":"2026-03-26T14:12:13.645Z"}

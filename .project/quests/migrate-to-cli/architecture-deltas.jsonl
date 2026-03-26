@@ -1,0 +1,2 @@
+{"description":"Added goodplan migrate global command with multi-round Q&A protocol","subsystem":"commands","ts":"2026-03-26T14:12:08.790Z","type":"add"}
+{"description":"Added rpcMigrate() with direct state construction (INV-001 exception)","subsystem":"rpc","ts":"2026-03-26T14:12:08.790Z","type":"add"}
