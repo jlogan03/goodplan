@@ -6,3 +6,4 @@
 {"phase":"complete-quest-implementation","scope":"quests/dogfood-harness","status":"complete","summary":"Quest \"dogfood-harness\" implementation completed","ts":"2026-03-26T14:22:09.849Z"}
 {"phase":"complete-quest","scope":"quests/dogfood-harness","status":"complete","summary":"Quest \"dogfood-harness\" completed","ts":"2026-03-26T14:22:46.535Z"}
 {"phase":"abandon-quest","scope":"quests/migration-sibling-check","status":"complete","summary":"Quest \"migration-sibling-check\" abandoned: Consolidated into skill-workflow-bugs quest as bug #5","ts":"2026-03-26T14:23:13.005Z"}
+{"phase":"abandon-quest","scope":"quests/consistent-skill-output","status":"complete","summary":"Quest \"consistent-skill-output\" abandoned: Consolidated into skill-workflow-bugs quest as Part B","ts":"2026-03-26T14:33:55.915Z"}
