@@ -2,6 +2,16 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Convention-doc-first enables consistent cross-cutting migrations
+_Source: skills-cli-integration (epic)_
+
+Writing the shared reference (`cli-interaction.md`) before migrating any consumers meant 15 skills coded against the same contract. Cross-skill inconsistencies were caught by comparing against it. Use this approach for any epic changing a cross-cutting concern.
+
+## Automated Agent SDK dogfooding finds integration bugs that unit tests miss
+_Source: skills-cli-integration (epic)_
+
+The harness ($52/run with Opus) found 7 bugs invisible to static analysis: hardcoded paths, missing entity registration, incompatible naming conventions, env inheritance. These only surface when skills actually call CLI commands end-to-end. Should be standard for release validation.
+
 ## Directory rename conventions (~~archived~~, __active__) are incompatible with CLI path resolution
 _Source: 06-dogfooding_
 
