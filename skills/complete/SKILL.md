@@ -164,7 +164,7 @@ Analyze the gap between plan and implementation through these lenses:
 
 Each learning should be actionable — it should change how a future slice is planned, architected, or implemented. Skip observations that don't affect future work.
 
-Present the draft. Iterate on corrections. Write `completion/learnings.md` when approved.
+Present the learnings for visibility, then write `completion/learnings.md`.
 
 **For epic scope** (`$SCOPE_TYPE = epic`): instead of the above per-slice questions, synthesize epic-level learnings:
 1. Cross-reference per-slice learnings for patterns — themes recurring across 2+ slices

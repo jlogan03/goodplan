@@ -9,6 +9,7 @@ Shared reference for all goodplan workflow skills. Defines how skills detect, in
 3. [What Skills Must NOT Do](#3-what-skills-must-not-do)
 4. [Invocation Patterns](#4-invocation-patterns)
 5. [Interaction Patterns by Role](#5-interaction-patterns-by-role)
+   - [Workflow Action Principle](#workflow-action-principle)
 6. [State Orientation](#6-state-orientation)
 7. [Deriving Workflow Phase](#7-deriving-workflow-phase)
 8. [Deep Dives — Full State Access](#8-deep-dives--full-state-access)
@@ -247,6 +248,10 @@ stdin: "" | goodplan submit-explore --epic my-epic --json
 Skills that only query state: `/project-status`, `/audit-architecture` (read phase).
 
 Use `status --json`, `show --json`, `list --json`, `state --json` commands. These bypass the RPC layer and go directly to the Data Layer — they're fast and side-effect-free.
+
+### Workflow Action Principle
+
+Present what you're doing for visibility. Do not ask permission for actions the workflow defines (writing files, saving learnings, updating state). Only use AskUserQuestion for genuine decisions the user needs to make — approach choices, scope questions, architecture tradeoffs.
 
 ## 6. State Orientation
 
