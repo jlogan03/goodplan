@@ -1,0 +1,10 @@
+{
+	"created": "2026-03-26T05:53:50.853Z",
+	"deferred": [],
+	"epic": "skills-cli-integration",
+	"goal": "Migrate create-epic and complete skills to use CLI per convention doc, validating the broadest interaction range before mechanical rollout.",
+	"name": "core-skill-validation",
+	"refinement": null,
+	"status": "completed",
+	"updated": "2026-03-26T05:53:50.853Z"
+}

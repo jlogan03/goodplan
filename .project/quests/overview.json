@@ -1,0 +1,124 @@
+{
+	"items": [
+		{
+			"completed": "2026-03-26T05:53:50.853Z",
+			"created": "2026-03-26T05:53:50.853Z",
+			"name": "architecture-quality",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-26T05:53:50.853Z",
+			"created": "2026-03-26T05:53:50.853Z",
+			"name": "archived-prefix-migration",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-26T05:53:50.853Z",
+			"created": "2026-03-26T05:53:50.853Z",
+			"name": "complete-rename",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-26T05:53:50.853Z",
+			"created": "2026-03-26T05:53:50.853Z",
+			"name": "decisions-and-expertise",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-26T05:53:50.853Z",
+			"created": "2026-03-26T05:53:50.853Z",
+			"name": "initiatives-infrastructure",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-26T05:53:50.853Z",
+			"created": "2026-03-26T05:53:50.853Z",
+			"name": "maturity-invariants-fitness",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-26T05:53:50.853Z",
+			"created": "2026-03-26T05:53:50.853Z",
+			"name": "onboarding-and-refactors",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-26T05:53:50.853Z",
+			"created": "2026-03-26T05:53:50.853Z",
+			"name": "refactor-intelligence",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-26T05:53:50.853Z",
+			"created": "2026-03-26T05:53:50.853Z",
+			"name": "refine-plan-shared-loop",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-26T05:53:50.853Z",
+			"created": "2026-03-26T05:53:50.853Z",
+			"name": "slice-quality-and-health",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-26T05:53:50.853Z",
+			"created": "2026-03-26T05:53:50.853Z",
+			"name": "workflow-v2",
+			"status": "completed"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-26T05:53:50.853Z",
+			"name": "audit-docs-and-tests",
+			"status": "created"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-26T05:53:50.853Z",
+			"name": "maturity-context-loading",
+			"status": "created"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-26T05:53:50.853Z",
+			"name": "migrate-to-cli",
+			"status": "implementing"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-26T05:53:50.853Z",
+			"name": "onboard-repo",
+			"status": "created"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-26T05:53:50.853Z",
+			"name": "side-quest-interruption-lifecycle",
+			"status": "created"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-26T05:53:50.853Z",
+			"name": "skill-workflow-bugs",
+			"status": "created"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-26T05:53:50.853Z",
+			"name": "task-capture",
+			"status": "created"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-26T05:53:50.853Z",
+			"name": "upgrade-workflow",
+			"status": "created"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-26T05:53:50.853Z",
+			"name": "dogfood-harness",
+			"status": "implementing"
+		}
+	]
+}
