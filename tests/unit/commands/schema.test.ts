@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { commandRegistry, stdinSchemaRegistry } from "../../../src/commands/global/schema.js";
 import { globalArgs } from "../../../src/commands/global-args.js";
+import { commandRegistry, stdinSchemaRegistry } from "../../../src/commands/global/schema.js";
 import { mainCommand } from "../../../src/commands/main.js";
 
 describe("schema command", () => {
@@ -198,8 +198,8 @@ describe("command registry drift detection (INV-006)", () => {
 			const cmdArgs = (cmd as Record<string, unknown>).args as Record<string, unknown> | undefined;
 			const actualArgKeys = cmdArgs
 				? Object.keys(cmdArgs)
-					.filter((k) => !globalArgKeys.has(k))
-					.sort()
+						.filter((k) => !globalArgKeys.has(k))
+						.sort()
 				: [];
 
 			expect(
@@ -225,6 +225,7 @@ describe("stdinSchemaRegistry drift detection", () => {
 			"slice:complete",
 			"quest:create",
 			"quest:complete",
+			"task:create",
 			"decision:create",
 			"decision:update",
 			"submit-plan",

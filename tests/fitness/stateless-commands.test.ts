@@ -22,18 +22,21 @@ const READ_ONLY_COMMANDS = new Set([
 	"quest:list",
 	"decision:list",
 	"learning:list",
+	"task:list",
+	"task:show",
 ]);
 
 /**
  * Entity-identifying arg names. At least one of these (or a stdin schema
  * with a required name/id field) must be present on mutation commands.
  */
-const ENTITY_ARGS = new Set(["epic", "slice", "quest", "id", "from", "to"]);
+const ENTITY_ARGS = new Set(["epic", "slice", "quest", "task", "id", "from", "to"]);
 
 /** Commands that accept stdin with required entity-identifying fields. */
 const STDIN_ENTITY_COMMANDS = new Set([
-	"epic:create",     // stdin has required 'name'
-	"quest:create",    // stdin has required 'name'
+	"epic:create", // stdin has required 'name'
+	"quest:create", // stdin has required 'name'
+	"task:create", // stdin has required 'name'
 	"decision:create", // stdin has required 'id'
 ]);
 
@@ -67,9 +70,7 @@ describe("INV-004: Stateless commands — entity-identifying flags required", ()
 			if (STDIN_ENTITY_COMMANDS.has(cmd.name)) continue;
 
 			// Check if any non-global arg is entity-identifying
-			const commandArgs = Object.keys(cmd.args).filter(
-				(a) => !GLOBAL_ARG_NAMES.has(a),
-			);
+			const commandArgs = Object.keys(cmd.args).filter((a) => !GLOBAL_ARG_NAMES.has(a));
 			const hasEntityArg = commandArgs.some((a) => ENTITY_ARGS.has(a));
 
 			if (!hasEntityArg) {
@@ -80,9 +81,7 @@ describe("INV-004: Stateless commands — entity-identifying flags required", ()
 		}
 
 		if (violations.length > 0) {
-			expect.fail(
-				`Commands missing entity-identifying flags:\n${violations.join("\n")}`,
-			);
+			expect.fail(`Commands missing entity-identifying flags:\n${violations.join("\n")}`);
 		}
 	});
 });

@@ -56,6 +56,11 @@ import { submitRefineArchitectureCommand } from "./subagent/submit-refine-archit
 import { submitRefineSlicesCommand } from "./subagent/submit-refine-slices.js";
 import { submitRefinementCommand } from "./subagent/submit-refinement.js";
 import { submitSlicesCommand } from "./subagent/submit-slices.js";
+import { taskConvertCommand } from "./task/convert.js";
+import { taskCreateCommand } from "./task/create.js";
+import { taskDropCommand } from "./task/drop.js";
+import { taskListCommand } from "./task/list.js";
+import { taskShowCommand } from "./task/show.js";
 
 /**
  * Main goodplan command. Subcommands are registered here.
@@ -102,6 +107,11 @@ export const mainCommand = defineCommand({
 		"quest:implement": questImplementCommand,
 		"quest:complete": questCompleteCommand,
 		"quest:abandon": questAbandonCommand,
+		"task:create": taskCreateCommand,
+		"task:list": taskListCommand,
+		"task:show": taskShowCommand,
+		"task:drop": taskDropCommand,
+		"task:convert": taskConvertCommand,
 		"slice:create": sliceCreateCommand,
 		"slice:list": sliceListCommand,
 		"slice:show": sliceShowCommand,

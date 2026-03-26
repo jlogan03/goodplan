@@ -38,6 +38,8 @@ const artifactsSchema = z.object({
 	learnings: z.number().int().nonnegative().default(0),
 	completedSlices: z.number().int().nonnegative().default(0),
 	totalSlices: z.number().int().nonnegative().default(0),
+	openTasks: z.number().int().nonnegative().default(0),
+	totalTasks: z.number().int().nonnegative().default(0),
 });
 
 export const statusResultSchema = z.object({

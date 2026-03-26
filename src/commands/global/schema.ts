@@ -23,6 +23,7 @@ import {
 	submitRefinementInputSchema,
 	submitSlicesInputSchema,
 } from "../../schemas/commands/submit.js";
+import { taskCreateInputSchema } from "../../schemas/commands/task.js";
 import { GoodplanError } from "../../util/errors.js";
 import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
@@ -57,6 +58,7 @@ export const stdinSchemaRegistry: Record<string, z.ZodType> = {
 	"slice:complete": completeSliceInputSchema,
 	"quest:create": createQuestInputSchema,
 	"quest:complete": completeQuestInputSchema,
+	"task:create": taskCreateInputSchema,
 	"decision:create": createDecisionInputSchema,
 	"decision:update": updateDecisionInputSchema,
 	"submit-plan": submitPlanInputSchema,
@@ -287,6 +289,47 @@ registerCommand("quest:abandon", "Abandon a quest.", {
 	quest: { type: "string", description: "Quest name", required: true },
 	reason: { type: "string", description: "Reason for abandoning", required: true },
 });
+
+// Task commands
+registerCommand(
+	"task:create",
+	"Create a new task. Stdin: {name, title, description?, context?}. Transitions to 'open' status.",
+	{
+		...globalArgDefs,
+	},
+);
+registerCommand(
+	"task:list",
+	"List tasks. Defaults to open tasks only; use --all to include converted/dropped. JSON includes filter field.",
+	{
+		...globalArgDefs,
+		all: { type: "boolean", description: "Include converted and dropped tasks", default: false },
+	},
+);
+registerCommand("task:show", "Show full task entity details.", {
+	...globalArgDefs,
+	task: { type: "string", description: "Task name", required: true },
+});
+registerCommand(
+	"task:drop",
+	"Drop a task with a reason. Requires --task and --reason flags. Transition: open -> dropped.",
+	{
+		...globalArgDefs,
+		task: { type: "string", description: "Task name", required: true },
+		reason: { type: "string", description: "Reason for dropping", required: true },
+	},
+);
+registerCommand(
+	"task:convert",
+	"Convert a task to a quest or epic. Requires --task and --to flags. Optional --name and --goal overrides. Transition: open -> converted.",
+	{
+		...globalArgDefs,
+		task: { type: "string", description: "Task name", required: true },
+		to: { type: "string", description: 'Target entity type: "quest" or "epic"', required: true },
+		name: { type: "string", description: "Override name for created entity" },
+		goal: { type: "string", description: "Override goal for created entity" },
+	},
+);
 
 // Decision commands
 registerCommand("decision:create", "Create a new decision. Stdin: {id, domain, title, summary}.", {
