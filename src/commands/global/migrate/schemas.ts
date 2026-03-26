@@ -225,6 +225,7 @@ export const QUESTION_IDS = {
 	PROJECT_INFO: "project-info",
 	EPIC_INVENTORY: "epic-inventory",
 	QUEST_INVENTORY: "quest-inventory",
+	CONFIRMATION: "confirmation",
 } as const;
 
 /** Generate a parameterized question ID for epic detail rounds */

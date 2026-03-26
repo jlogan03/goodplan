@@ -14,12 +14,15 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { z } from "zod";
 import {
+	type ConfirmationResponse,
+	type EpicDetailResponse,
 	type MigrationAnswer,
 	type MigrationQuestion,
 	type MigrationResult,
 	type MigrationRound,
 	type MigrationState,
 	QUESTION_IDS,
+	confirmationResponseSchema,
 	epicDetailQuestionId,
 	epicDetailResponseSchema,
 	inventoryResponseSchema,
@@ -35,6 +38,7 @@ import { deterministicStringify } from "../../util/json.js";
 // ---------------------------------------------------------------------------
 
 const MIGRATION_STATE_FILE = ".migration-in-progress.json";
+const MAX_CORRECTION_ROUNDS = 3;
 
 /** Convert a MigrationRound (readonly arrays) to a MigrationResult questions variant */
 function questionsResult(round: MigrationRound): MigrationResult {
@@ -111,6 +115,108 @@ function generateEpicDetailQuestions(inventoryAnswers: Record<string, unknown>):
 	}));
 
 	return { round: 2, questions };
+}
+
+// ---------------------------------------------------------------------------
+// Confirmation Round Generation
+// ---------------------------------------------------------------------------
+
+interface StateSummary {
+	readonly projectName: string;
+	readonly projectGoal: string;
+	readonly epics: ReadonlyArray<{
+		readonly name: string;
+		readonly status: string;
+		readonly sliceCount: number;
+		readonly slices: ReadonlyArray<{ readonly name: string; readonly status: string }>;
+	}>;
+	readonly quests: ReadonlyArray<{
+		readonly name: string;
+		readonly status: string;
+	}>;
+	readonly totalEpics: number;
+	readonly totalQuests: number;
+	readonly totalSlices: number;
+}
+
+function buildStateSummary(answers: Record<string, unknown>): StateSummary {
+	const project = answers[QUESTION_IDS.PROJECT_INFO] as { name: string; goal: string };
+	const epicInventory =
+		(answers[QUESTION_IDS.EPIC_INVENTORY] as Array<{ name: string; status: string }>) ?? [];
+	const questInventory =
+		(answers[QUESTION_IDS.QUEST_INVENTORY] as Array<{ name: string; status: string }>) ?? [];
+
+	let totalSlices = 0;
+	const epics = epicInventory.map((epic) => {
+		const detailKey = epicDetailQuestionId(epic.name);
+		const detail = answers[detailKey] as EpicDetailResponse | undefined;
+		const slices = detail?.slices ?? [];
+		totalSlices += slices.length;
+		return {
+			name: epic.name,
+			status: epic.status,
+			sliceCount: slices.length,
+			slices: slices.map((s) => ({ name: s.name, status: s.status })),
+		};
+	});
+
+	const quests = questInventory.map((q) => ({ name: q.name, status: q.status }));
+
+	return {
+		projectName: project.name,
+		projectGoal: project.goal,
+		epics,
+		quests,
+		totalEpics: epics.length,
+		totalQuests: quests.length,
+		totalSlices,
+	};
+}
+
+function generateConfirmationRound(answers: Record<string, unknown>, round = 3): MigrationRound {
+	const summary = buildStateSummary(answers);
+
+	const summaryLines: string[] = [
+		`Project: ${summary.projectName}`,
+		`Goal: ${summary.projectGoal}`,
+		"",
+		`Epics (${String(summary.totalEpics)}):`,
+	];
+	for (const epic of summary.epics) {
+		summaryLines.push(`  - ${epic.name} [${epic.status}] (${String(epic.sliceCount)} slices)`);
+		for (const slice of epic.slices) {
+			summaryLines.push(`    - ${slice.name} [${slice.status}]`);
+		}
+	}
+	summaryLines.push("");
+	summaryLines.push(`Quests (${String(summary.totalQuests)}):`);
+	if (summary.quests.length === 0) {
+		summaryLines.push("  (none)");
+	} else {
+		for (const quest of summary.quests) {
+			summaryLines.push(`  - ${quest.name} [${quest.status}]`);
+		}
+	}
+	summaryLines.push("");
+	summaryLines.push(
+		`Totals: ${String(summary.totalEpics)} epics, ${String(summary.totalQuests)} quests, ${String(summary.totalSlices)} slices`,
+	);
+
+	const hint = summaryLines.join("\n");
+
+	return {
+		round,
+		questions: [
+			{
+				id: QUESTION_IDS.CONFIRMATION,
+				question: "Review the migration summary below and confirm or request corrections.",
+				hint,
+				responseSchema: z.toJSONSchema(confirmationResponseSchema, {
+					unrepresentable: "any",
+				}),
+			},
+		],
+	};
 }
 
 // ---------------------------------------------------------------------------
@@ -322,8 +428,19 @@ export async function rpcMigrate(
 		return handleRound1(response.answers, projectDir, cwd);
 	}
 
-	if (response.round === 2 && existingState !== null) {
+	if (existingState === null) {
+		throw new GoodplanError(
+			"VALIDATION_MIGRATION_INVALID",
+			`No migration state found for round ${String(response.round)}`,
+		);
+	}
+
+	if (response.round === 2) {
 		return handleRound2(response.answers, existingState, projectDir, cwd);
+	}
+
+	if (response.round >= 3) {
+		return handleConfirmationOrCorrection(response.answers, existingState, projectDir, cwd);
 	}
 
 	throw new GoodplanError(
@@ -344,7 +461,22 @@ function handleRound1(
 	const questions = generateInventoryQuestions().questions;
 	const validated = validateRound1Answers(answers, questions, projectDir);
 
-	// Write migration state
+	// Generate round 2 questions
+	const round2 = generateEpicDetailQuestions(validated);
+
+	if (round2.questions.length === 0) {
+		// No epics to detail — skip straight to confirmation
+		const state: MigrationState = {
+			status: "confirming",
+			round: 3,
+			answers: validated,
+			correctionRound: 0,
+		};
+		writeMigrationState(cwd, state);
+		return questionsResult(generateConfirmationRound(validated));
+	}
+
+	// Write migration state for round 2
 	const state: MigrationState = {
 		status: "in-progress",
 		round: 2,
@@ -352,16 +484,6 @@ function handleRound1(
 		correctionRound: 0,
 	};
 	writeMigrationState(cwd, state);
-
-	// Generate round 2 questions
-	const round2 = generateEpicDetailQuestions(validated);
-
-	if (round2.questions.length === 0) {
-		// No epics to detail — skip to confirmation (Phase 3 will handle this)
-		// For now, advance to round 3 placeholder
-		state.round = 3;
-		writeMigrationState(cwd, state);
-	}
 
 	return questionsResult(round2);
 }
@@ -437,7 +559,7 @@ function handleRound2(
 		);
 	}
 
-	// Update state — advance to confirmation round (Phase 3)
+	// Update state — advance to confirmation round
 	const newState: MigrationState = {
 		status: "confirming",
 		round: 3,
@@ -446,22 +568,250 @@ function handleRound2(
 	};
 	writeMigrationState(cwd, newState);
 
-	// Phase 3 will implement the confirmation round.
-	// For now, emit a placeholder that indicates we need confirmation.
-	return {
-		status: "questions",
-		round: {
-			round: 3,
-			questions: [
-				{
-					id: "confirmation",
-					question: "Review the migration summary and confirm or request corrections.",
-					hint: "Confirmation round will be implemented in Phase 3.",
-					responseSchema: {},
-				},
-			],
-		},
+	return questionsResult(generateConfirmationRound(validated));
+}
+
+// ---------------------------------------------------------------------------
+// Confirmation / Correction Handler
+// ---------------------------------------------------------------------------
+
+function handleConfirmationOrCorrection(
+	answers: readonly MigrationAnswer[],
+	existingState: MigrationState,
+	projectDir: string,
+	cwd: string,
+): MigrationResult {
+	// Determine if this is a confirmation answer or a correction re-answer
+	const confirmationAnswer = answers.find((a) => a.id === QUESTION_IDS.CONFIRMATION);
+
+	if (confirmationAnswer !== undefined) {
+		// This is a confirmation round response
+		return handleConfirmation(confirmationAnswer, existingState, cwd);
+	}
+
+	// This is a correction re-answer — validate and merge back
+	return handleCorrectionAnswers(answers, existingState, projectDir, cwd);
+}
+
+function handleConfirmation(
+	answer: MigrationAnswer,
+	existingState: MigrationState,
+	cwd: string,
+): MigrationResult {
+	// Validate against confirmation schema
+	const result = validateAnswer(answer, confirmationResponseSchema);
+	const data = result.data as ConfirmationResponse;
+
+	if (data.approved) {
+		// Migration approved — return complete
+		const summary = buildStateSummary(existingState.answers);
+		const completeState: MigrationState = {
+			status: "complete",
+			round: existingState.round,
+			answers: existingState.answers,
+			correctionRound: existingState.correctionRound,
+		};
+		writeMigrationState(cwd, completeState);
+
+		return {
+			status: "complete",
+			summary: {
+				projectName: summary.projectName,
+				epicCount: summary.totalEpics,
+				questCount: summary.totalQuests,
+				sliceCount: summary.totalSlices,
+			},
+		};
+	}
+
+	// Rejected — check circuit breaker
+	const nextCorrectionRound = existingState.correctionRound + 1;
+	if (nextCorrectionRound > MAX_CORRECTION_ROUNDS) {
+		throw new GoodplanError(
+			"VALIDATION_MIGRATION_CORRECTION_LIMIT",
+			`Exceeded maximum correction rounds (${String(MAX_CORRECTION_ROUNDS)}). Migration cannot proceed.`,
+			{
+				correctionRound: nextCorrectionRound,
+				answers: existingState.answers,
+			},
+		);
+	}
+
+	// Validate reAnswerIds exist in known question IDs
+	const knownIds = collectKnownQuestionIds(existingState.answers);
+	const invalidIds = data.reAnswerIds.filter((id) => !knownIds.has(id));
+	if (invalidIds.length > 0) {
+		throw new GoodplanError(
+			"VALIDATION_MIGRATION_INVALID",
+			"Invalid reAnswerIds — these question IDs were not found in previous rounds",
+			{ invalidIds },
+		);
+	}
+
+	// Update state for correction round
+	const correctionState: MigrationState = {
+		status: "confirming",
+		round: existingState.round + 1,
+		answers: existingState.answers,
+		correctionRound: nextCorrectionRound,
 	};
+	writeMigrationState(cwd, correctionState);
+
+	// Re-emit only the requested questions
+	return questionsResult(
+		regenerateQuestions(data.reAnswerIds, existingState.answers, correctionState.round),
+	);
+}
+
+function handleCorrectionAnswers(
+	answers: readonly MigrationAnswer[],
+	existingState: MigrationState,
+	projectDir: string,
+	cwd: string,
+): MigrationResult {
+	const updatedAnswers: Record<string, unknown> = { ...existingState.answers };
+	const errors: string[] = [];
+
+	for (const answer of answers) {
+		// Determine which schema to validate against based on the question ID
+		const schema = schemaForQuestionId(answer.id);
+		if (schema === undefined) {
+			errors.push(`Unknown question ID for correction: "${answer.id}"`);
+			continue;
+		}
+
+		try {
+			const result = validateAnswer(answer, schema);
+			updatedAnswers[answer.id] = result.data;
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			errors.push(`Answer "${answer.id}" failed validation: ${msg}`);
+		}
+	}
+
+	if (errors.length > 0) {
+		throw new GoodplanError("VALIDATION_MIGRATION_INVALID", "Invalid correction answers", {
+			errors,
+		});
+	}
+
+	// Validate sourcePaths for any correction answers
+	const sourcePathErrors: string[] = [];
+	for (const answer of answers) {
+		validateSourcePathsForAnswer(
+			answer.id,
+			updatedAnswers[answer.id],
+			projectDir,
+			sourcePathErrors,
+		);
+	}
+
+	if (sourcePathErrors.length > 0) {
+		throw new GoodplanError(
+			"VALIDATION_MIGRATION_INVALID",
+			"Invalid source paths in correction answers",
+			{ errors: sourcePathErrors },
+		);
+	}
+
+	// Merge corrections and return to confirmation
+	const newState: MigrationState = {
+		status: "confirming",
+		round: existingState.round + 1,
+		answers: updatedAnswers,
+		correctionRound: existingState.correctionRound,
+	};
+	writeMigrationState(cwd, newState);
+
+	return questionsResult(generateConfirmationRound(updatedAnswers, newState.round));
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Collect all known question IDs from accumulated answers */
+function collectKnownQuestionIds(answers: Record<string, unknown>): Set<string> {
+	return new Set(Object.keys(answers));
+}
+
+/** Determine the Zod schema for a given question ID */
+function schemaForQuestionId(questionId: string): z.ZodType | undefined {
+	if (questionId === QUESTION_IDS.PROJECT_INFO) {
+		return inventoryResponseSchema.shape.project;
+	}
+	if (questionId === QUESTION_IDS.EPIC_INVENTORY) {
+		return inventoryResponseSchema.shape.epics;
+	}
+	if (questionId === QUESTION_IDS.QUEST_INVENTORY) {
+		return inventoryResponseSchema.shape.quests;
+	}
+	if (questionId.startsWith("epic-details-")) {
+		return epicDetailResponseSchema;
+	}
+	return undefined;
+}
+
+/** Validate sourcePaths in a single answer */
+function validateSourcePathsForAnswer(
+	questionId: string,
+	data: unknown,
+	projectDir: string,
+	errors: string[],
+): void {
+	if (questionId === QUESTION_IDS.EPIC_INVENTORY) {
+		const epics = data as Array<{ sourcePath: string }> | undefined;
+		if (epics) {
+			for (const epic of epics) {
+				if (validateSourcePath(epic.sourcePath, projectDir) === null) {
+					errors.push(`Epic sourcePath does not exist: ${epic.sourcePath}`);
+				}
+			}
+		}
+	} else if (questionId === QUESTION_IDS.QUEST_INVENTORY) {
+		const quests = data as Array<{ sourcePath: string }> | undefined;
+		if (quests) {
+			for (const quest of quests) {
+				if (validateSourcePath(quest.sourcePath, projectDir) === null) {
+					errors.push(`Quest sourcePath does not exist: ${quest.sourcePath}`);
+				}
+			}
+		}
+	} else if (questionId.startsWith("epic-details-")) {
+		const detail = data as { slices?: Array<{ sourcePath: string }> } | undefined;
+		if (detail?.slices) {
+			for (const slice of detail.slices) {
+				if (validateSourcePath(slice.sourcePath, projectDir) === null) {
+					errors.push(`Slice sourcePath does not exist: ${slice.sourcePath} (in ${questionId})`);
+				}
+			}
+		}
+	}
+}
+
+/** Regenerate specific questions by ID for correction rounds */
+function regenerateQuestions(
+	questionIds: readonly string[],
+	answers: Record<string, unknown>,
+	round: number,
+): MigrationRound {
+	const questions: MigrationQuestion[] = [];
+	const allRound1 = generateInventoryQuestions();
+	const round2 = generateEpicDetailQuestions(answers);
+
+	for (const id of questionIds) {
+		const r1q = allRound1.questions.find((q) => q.id === id);
+		if (r1q !== undefined) {
+			questions.push(r1q);
+			continue;
+		}
+		const r2q = round2.questions.find((q) => q.id === id);
+		if (r2q !== undefined) {
+			questions.push(r2q);
+		}
+	}
+
+	return { round, questions };
 }
 
 // ---------------------------------------------------------------------------
@@ -477,19 +827,11 @@ function emitQuestionsForRound(state: MigrationState, _projectDir: string): Migr
 		return questionsResult(generateEpicDetailQuestions(state.answers));
 	}
 
-	// Rounds 3+ will be handled by Phase 3
-	return {
-		status: "questions",
-		round: {
-			round: state.round,
-			questions: [
-				{
-					id: "confirmation",
-					question: "Review the migration summary and confirm or request corrections.",
-					hint: "Confirmation round will be implemented in Phase 3.",
-					responseSchema: {},
-				},
-			],
-		},
-	};
+	// Round 3+: confirmation or correction
+	if (state.status === "confirming") {
+		return questionsResult(generateConfirmationRound(state.answers, state.round));
+	}
+
+	// Fallback — shouldn't happen but be safe
+	return questionsResult(generateConfirmationRound(state.answers, state.round));
 }
