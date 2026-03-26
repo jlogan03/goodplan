@@ -6,3 +6,4 @@
 node_modules
 goodplan
 skills/**/.DS_Store
+.migration-in-progress.json

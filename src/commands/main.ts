@@ -18,6 +18,7 @@ import { epicShowCommand } from "./epic/show.js";
 import { epicUpdateVerificationCommand } from "./epic/update-verification.js";
 import { globalArgs } from "./global-args.js";
 import { initCommand } from "./global/init.js";
+import { migrateCommand } from "./global/migrate.js";
 import { schemaCommand } from "./global/schema.js";
 import { stateCommand } from "./global/state.js";
 import { statusCommand } from "./global/status.js";
@@ -70,6 +71,7 @@ export const mainCommand = defineCommand({
 	},
 	subCommands: {
 		init: initCommand,
+		migrate: migrateCommand,
 		schema: schemaCommand,
 		state: stateCommand,
 		status: statusCommand,

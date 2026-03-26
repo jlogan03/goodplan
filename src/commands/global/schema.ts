@@ -1,5 +1,6 @@
 import { defineCommand } from "citty";
 import { z } from "zod";
+import { migrationResponseSchema } from "../../core/rpc/migrate.js";
 import {
 	createDecisionInputSchema,
 	updateDecisionInputSchema,
@@ -66,6 +67,7 @@ export const stdinSchemaRegistry: Record<string, z.ZodType> = {
 	"submit-slices": submitSlicesInputSchema,
 	"submit-refine-architecture": submitRefineArchitectureInputSchema,
 	"submit-refine-slices": submitRefineSlicesInputSchema,
+	migrate: migrationResponseSchema,
 };
 
 // ── Command Registry ─────────────────────────────────────────
@@ -107,6 +109,13 @@ registerCommand("init", "Initialize a new .project/ directory", {
 	...globalArgDefs,
 	name: { type: "string", description: "Project name (defaults to directory name)" },
 });
+registerCommand(
+	"migrate",
+	"Migrate a pre-CLI .project/ directory to CLI format. Stdin: {round, answers: [{id, data}]}. Requires .project/ to exist and .project/project.json to NOT exist.",
+	{
+		...globalArgDefs,
+	},
+);
 registerCommand("status", "Show current project status", {
 	...globalArgDefs,
 });
@@ -119,7 +128,11 @@ registerCommand(
 	"Expose the full .project/ state tree as JSON. Always outputs JSON regardless of --json flag.",
 	{
 		...globalArgDefs,
-		inline: { type: "string", description: "Include markdown content in state tree", required: false },
+		inline: {
+			type: "string",
+			description: "Include markdown content in state tree",
+			required: false,
+		},
 		offset: {
 			type: "string",
 			description: "Skip N entries when result is an array (requires --query)",
@@ -434,7 +447,7 @@ function buildCommandDetail(commandName: string): Record<string, unknown> {
 	// Include stdin schema if this command accepts stdin
 	const stdinSchema = stdinSchemaRegistry[commandName];
 	if (stdinSchema !== undefined) {
-		result["stdinSchema"] = z.toJSONSchema(stdinSchema, { unrepresentable: "any" });
+		result.stdinSchema = z.toJSONSchema(stdinSchema, { unrepresentable: "any" });
 	}
 
 	return result;

@@ -211,15 +211,16 @@ describe("command registry drift detection (INV-006)", () => {
 });
 
 describe("stdinSchemaRegistry drift detection", () => {
-	it("every command that uses validateInput has a stdinSchemaRegistry entry", async () => {
-		// Commands known to use validateInput (read stdin + validate).
-		// This list is derived from grep for validateInput in src/commands/.
+	it("every command that accepts stdin has a stdinSchemaRegistry entry", async () => {
+		// Commands known to accept stdin input (via validateInput or direct safeParse).
+		// This list is derived from grep for validateInput/readStdin in src/commands/.
 		// If a new stdin-accepting command is added, it must appear here AND in stdinSchemaRegistry.
 		const stdinCommands = [
 			"epic:create",
 			"epic:complete",
 			"epic:add-verification",
 			"epic:update-verification",
+			"migrate",
 			"slice:create",
 			"slice:complete",
 			"quest:create",
@@ -249,7 +250,7 @@ describe("stdinSchemaRegistry drift detection", () => {
 		for (const key of registryKeys) {
 			expect(
 				stdinCommands,
-				`stdinSchemaRegistry entry "${key}" has no corresponding validateInput usage`,
+				`stdinSchemaRegistry entry "${key}" has no corresponding stdin-accepting command`,
 			).toContain(key);
 		}
 	});
