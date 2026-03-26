@@ -1,23 +1,41 @@
 {
-	"activated": null,
+	"activated": "2026-03-26T23:21:09.517Z",
 	"created": "2026-03-26T20:23:37.272Z",
 	"goal": "Restructure slice storage from flat .project/slices/<name>/ to nested .project/epics/<epic>/slices/<name>/. Consolidate slice overview into epics/overview.json (eliminating slices/overview.json and sequencing.md). Fix learnings.md duplication. Update /migrate to handle flat-to-nested restructuring and run it on this repo.",
 	"name": "entity-restructuring",
 	"refinement": {
 		"maxRounds": 10,
-		"round": 1,
+		"round": 2,
 		"scoreHistory": [
 			{
 				"round": 1,
 				"scores": {
-					"api-contract": 9,
-					"software-architecture": 9
+					"overall": 8
+				}
+			},
+			{
+				"round": 2,
+				"scores": {
+					"overall": 8
 				}
 			}
 		]
 	},
-	"sliceSequence": [],
-	"status": "architecture-refined",
-	"updated": "2026-03-26T22:43:19.383Z",
-	"verifications": []
+	"sliceSequence": [
+		"01-schema-and-state-machine",
+		"02-rpc-and-commands",
+		"03-context-and-learnings",
+		"04-skills-update",
+		"05-tests-and-migration"
+	],
+	"status": "activated",
+	"updated": "2026-03-26T23:21:09.517Z",
+	"verifications": [
+		{
+			"addedDuring": "create-slices",
+			"description": "All slices pass: bun test, tsc --noEmit, goodplan status --json valid after self-migration",
+			"modifiedDuring": null,
+			"status": "pending"
+		}
+	]
 }
