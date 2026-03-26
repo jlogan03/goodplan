@@ -16,7 +16,15 @@ The CLI owns the state format and knows exactly what it needs. The migration wor
 
 ### Schema-driven question generation
 
-Questions are derived from the Zod entity schemas using `.describe()` annotations. Each schema field carries its own question text and hints. The CLI groups related fields into logical "question units" — each one maps to a meaningful chunk the LLM can answer by reading a few files, not one field at a time.
+Questions are derived from dedicated Zod "migration phase" schemas — small, focused schemas that each represent one logical chunk of information. The CLI walks these phases in order, emitting each phase's JSON Schema (via `z.toJSONSchema()`) as the `responseSchema` for the question. The LLM fills in the response, the CLI validates it against the same Zod schema, and moves to the next phase.
+
+Phase schemas are separate from entity schemas (not tagged fields on the main schemas) so they can be small, self-contained, and independently testable. The CLI uses the phase answers to construct full entity state internally.
+
+**Phase structure:**
+- **Phase 1 (inventory):** Project name/goal, list of epics with names and statuses, list of quests
+- **Phase 2 (per-epic details):** Emitted once per epic from phase 1 — slices, activation date, architecture presence
+- **Phase 3 (per-slice details):** Emitted once per slice from phase 2 — status, refinement state, implementation state
+- **Phase N:** Additional phases as needed — the CLI drives iteration based on previous answers
 
 Each question includes a `responseSchema` so the LLM knows the exact shape to return:
 
@@ -63,8 +71,8 @@ echo '{"answers": {"project": {"name":"goodplan","goal":"..."}, "epics": [...]}}
 
 ### Key properties
 
-- **Schema is the single source of truth** — Zod schemas with `.describe()` define both validation AND migration questions. Adding a new field to a schema automatically adds a migration question.
-- **Grouped questions** — related fields are asked together with a `responseSchema` so the LLM returns structured objects/arrays, not individual values
+- **Phased schemas** — dedicated Zod migration phase schemas (separate from entity schemas) keep each question small and manageable. The CLI iterates phases based on previous answers (e.g., one per-epic detail phase per epic discovered in inventory).
+- **Schema-generated questions** — `z.toJSONSchema()` produces the `responseSchema` for each question automatically. Adding a field to a phase schema adds it to the question.
 - **CLI writes all state** — the LLM/skill never touches JSON files, only reads old-format artifacts to answer questions
 - **CLI validates answers** — against the same Zod schemas used for normal operation
 - **Multi-round** — first round asks about project and entity inventory, subsequent rounds ask per-entity details based on the inventory
