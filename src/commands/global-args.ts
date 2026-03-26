@@ -27,6 +27,11 @@ export const globalArgs = {
 		description: "Enable diagnostic output on stderr",
 		default: false,
 	},
+	force: {
+		type: "boolean" as const,
+		description: "Skip concurrent modification check (use when external changes are intentional)",
+		default: false,
+	},
 } as const;
 
 /**

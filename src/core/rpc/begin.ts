@@ -39,7 +39,7 @@ export function begin<P extends BeginPhase>(
 	phase: P,
 	target: Target,
 	payload: BeginPayloadMap[P],
-	_options?: WorkflowOptions,
+	options?: WorkflowOptions,
 ): P extends "rollup" ? RollupResult : BeginResult {
 	const oldState = loadState(projectDir);
 	const ts = new Date().toISOString();
@@ -54,7 +54,7 @@ export function begin<P extends BeginPhase>(
 	// Version stamp: bump project.json.version if CLI version > data version (INV-001 exception — see version-stamp.ts)
 	const stampedResult = bumpDataVersionIfNeeded(result, VERSION);
 
-	commitState(projectDir, oldState, stampedResult);
+	commitState(projectDir, oldState, stampedResult, options?.force === true ? { force: true } : undefined);
 
 	// Rollup has a different result type (RollupResult) — paths field not applicable
 	if (phase === "rollup" && target.type === "rollup") {

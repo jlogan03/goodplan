@@ -20,9 +20,10 @@ import { VERSION } from "./version.js";
  * exists because the compat check runs before citty dispatch. Both parsers must stay in sync
  * if `--quiet` is renamed.
  */
-function parseGlobalFlags(rawArgs: string[]): { json: boolean; quiet: boolean } {
+function parseGlobalFlags(rawArgs: string[]): { json: boolean; quiet: boolean; force: boolean } {
 	let json = false;
 	let quiet = false;
+	let force = false;
 	for (const arg of rawArgs) {
 		if (arg === "--json") {
 			json = true;
@@ -30,8 +31,15 @@ function parseGlobalFlags(rawArgs: string[]): { json: boolean; quiet: boolean } 
 		if (arg === "--quiet") {
 			quiet = true;
 		}
+		if (arg === "--force") {
+			force = true;
+		}
 	}
-	return { json, quiet };
+	// Set globalThis flag so data layer can check without explicit plumbing
+	if (force) {
+		(globalThis as Record<string, unknown>).__goodplan_force = true;
+	}
+	return { json, quiet, force };
 }
 
 /**

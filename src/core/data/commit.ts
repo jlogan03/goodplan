@@ -20,6 +20,10 @@ import type {
 	StateEntry,
 } from "./tree.js";
 
+export interface CommitOptions {
+	force?: boolean;
+}
+
 interface PendingWrite {
 	absPath: string;
 	content: string;
@@ -31,11 +35,13 @@ export function commitState(
 	projectDir: string,
 	oldState: ProjectState,
 	newState: ProjectState,
+	options?: CommitOptions,
 ): void {
 	const jsonWrites: PendingWrite[] = [];
 	const jsonlWrites: PendingWrite[] = [];
+	const force = options?.force === true;
 
-	diffTree(projectDir, "", oldState, newState, jsonWrites, jsonlWrites);
+	diffTree(projectDir, "", oldState, newState, jsonWrites, jsonlWrites, force);
 
 	// Write ordering: JSON first, JSONL second
 	for (const write of jsonWrites) {
@@ -62,6 +68,7 @@ function diffTree(
 	newDir: DirectoryEntry,
 	jsonWrites: PendingWrite[],
 	jsonlWrites: PendingWrite[],
+	force: boolean,
 ): void {
 	for (const [name, newEntry] of Object.entries(newDir.contents)) {
 		const childRelative = relativePath ? `${relativePath}/${name}` : name;
@@ -80,9 +87,9 @@ function diffTree(
 					? oldEntry
 					: { type: "directory", contents: {} };
 
-			diffTree(projectDir, childRelative, oldChild, newEntry, jsonWrites, jsonlWrites);
+			diffTree(projectDir, childRelative, oldChild, newEntry, jsonWrites, jsonlWrites, force);
 		} else if (newEntry.type === "json") {
-			processJsonEntry(childRelative, childAbs, oldEntry, newEntry.content, jsonWrites);
+			processJsonEntry(childRelative, childAbs, oldEntry, newEntry.content, jsonWrites, force);
 		} else if (newEntry.type === "jsonl") {
 			processJsonlEntry(
 				childRelative,
@@ -104,6 +111,7 @@ function processJsonEntry(
 	oldEntry: StateEntry | undefined,
 	newContent: unknown,
 	jsonWrites: PendingWrite[],
+	force: boolean,
 ): void {
 	// Validate against schema before writing.
 	// Use result.data (Zod-parsed output) to ensure on-disk matches what Zod produced
@@ -133,7 +141,7 @@ function processJsonEntry(
 		}
 
 		// Concurrent modification detection: verify on-disk matches oldState
-		checkConcurrentModification(absPath, relativePath, oldEntry.content);
+		checkConcurrentModification(absPath, relativePath, oldEntry.content, force);
 	}
 
 	debug(`write json: ${relativePath}`);
@@ -232,6 +240,7 @@ function checkConcurrentModification(
 	absPath: string,
 	relativePath: string,
 	oldContent: unknown,
+	force: boolean,
 ): void {
 	if (!fs.existsSync(absPath)) {
 		// File doesn't exist on disk but was in oldState — skip check
@@ -246,6 +255,13 @@ function checkConcurrentModification(
 	const expectedRaw = `${deterministicStringify(oldContent)}\n`;
 
 	if (diskRaw !== expectedRaw) {
+		const globalForce = (globalThis as Record<string, unknown>).__goodplan_force === true;
+		if (force || globalForce) {
+			process.stderr.write(
+				`[goodplan] --force: overwriting externally modified file ${relativePath}\n`,
+			);
+			return;
+		}
 		throw new GoodplanError(
 			"DATA_CONCURRENT_MODIFICATION",
 			`File ${relativePath} was externally modified since last read`,

@@ -70,6 +70,7 @@ export type Target =
 export interface WorkflowOptions {
 	inlineContext?: boolean | number;
 	override?: boolean;
+	force?: boolean;
 }
 
 // ── Begin payload map ────────────────────────────────────────

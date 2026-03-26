@@ -59,7 +59,7 @@ export function submit(
 	// Version stamp: bump project.json.version if CLI version > data version (INV-001 exception — see version-stamp.ts)
 	const stampedResult = bumpDataVersionIfNeeded(result, VERSION);
 
-	commitState(projectDir, oldState, stampedResult);
+	commitState(projectDir, oldState, stampedResult, options?.force === true ? { force: true } : undefined);
 
 	const submitResult: SubmitResult = {
 		...buildSubmitResult(phase, target, oldState, stampedResult),
