@@ -4,7 +4,18 @@
 	"epic": "entity-restructuring",
 	"goal": "New epicOverviewSchema, Target type epic field, event epic fields, nested handler paths, remove sliceSequence",
 	"name": "01-schema-and-state-machine",
-	"refinement": null,
-	"status": "plan-created",
-	"updated": "2026-03-26T23:24:51.975Z"
+	"refinement": {
+		"maxRounds": 10,
+		"round": 1,
+		"scoreHistory": [
+			{
+				"round": 1,
+				"scores": {
+					"overall": 9
+				}
+			}
+		]
+	},
+	"status": "plan-refined",
+	"updated": "2026-03-26T23:47:25.135Z"
 }
