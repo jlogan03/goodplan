@@ -7,6 +7,7 @@ import type { Epic } from "../../schemas/entities/epic.js";
 import type { Project } from "../../schemas/entities/project.js";
 import type { Quest } from "../../schemas/entities/quest.js";
 import type { Slice } from "../../schemas/entities/slice.js";
+import type { Task } from "../../schemas/entities/task.js";
 import type { DecisionEntry } from "../../schemas/records/decision.js";
 import type { LearningEntry } from "../../schemas/records/learning.js";
 import type { StateEvent } from "../../schemas/state-events.js";
@@ -54,7 +55,12 @@ export function begin<P extends BeginPhase>(
 	// Version stamp: bump project.json.version if CLI version > data version (INV-001 exception — see version-stamp.ts)
 	const stampedResult = bumpDataVersionIfNeeded(result, VERSION);
 
-	commitState(projectDir, oldState, stampedResult, options?.force === true ? { force: true } : undefined);
+	commitState(
+		projectDir,
+		oldState,
+		stampedResult,
+		options?.force === true ? { force: true } : undefined,
+	);
 
 	// Rollup has a different result type (RollupResult) — paths field not applicable
 	if (phase === "rollup" && target.type === "rollup") {
@@ -122,6 +128,46 @@ function buildBeginEvent<P extends BeginPhase>(
 			return buildRefinePlanEvent(target, ts);
 		case "implement":
 			return buildImplementEvent(target, ts);
+		case "create-task": {
+			const ctp = payload as BeginPayloadMap["create-task"];
+			if (target.type !== "task") {
+				throw new GoodplanError("VALIDATION_INVALID_INPUT", "create-task requires task target");
+			}
+			return {
+				type: "CREATE_TASK",
+				name: target.name,
+				title: ctp.title,
+				ts,
+				...(ctp.description ? { description: ctp.description } : {}),
+				...(ctp.context ? { context: ctp.context } : {}),
+			};
+		}
+		case "drop-task": {
+			const dtp = payload as BeginPayloadMap["drop-task"];
+			if (target.type !== "task") {
+				throw new GoodplanError("VALIDATION_INVALID_INPUT", "drop-task requires task target");
+			}
+			return {
+				type: "DROP_TASK",
+				name: target.name,
+				reason: dtp.reason,
+				ts,
+			};
+		}
+		case "convert-task": {
+			const cvp = payload as BeginPayloadMap["convert-task"];
+			if (target.type !== "task") {
+				throw new GoodplanError("VALIDATION_INVALID_INPUT", "convert-task requires task target");
+			}
+			return {
+				type: "CONVERT_TASK",
+				name: target.name,
+				to: cvp.to,
+				convertedName: cvp.name ?? target.name,
+				ts,
+				...(cvp.goal ? { convertedGoal: cvp.goal } : {}),
+			};
+		}
 		case "create-decision": {
 			const cdp = payload as BeginPayloadMap["create-decision"];
 			return {
@@ -218,6 +264,11 @@ function buildCreateEvent(
 				ts,
 			};
 		}
+		case "task":
+			throw new GoodplanError(
+				"INTERNAL_ERROR",
+				"Use begin('create-task', ...) for task creation, not begin('create', {type:'task'})",
+			);
 		case "decision":
 			throw new GoodplanError(
 				"INTERNAL_ERROR",
@@ -330,6 +381,11 @@ function buildBeginResult(
 		const newQuest = getJson<Quest>(newState, entityPath);
 		previousStatus = oldQuest?.status ?? "none";
 		newStatus = newQuest?.status ?? "unknown";
+	} else if (target.type === "task") {
+		const oldTask = getJson<Task>(oldState, entityPath);
+		const newTask = getJson<Task>(newState, entityPath);
+		previousStatus = oldTask?.status ?? "none";
+		newStatus = newTask?.status ?? "unknown";
 	} else if (target.type === "decision") {
 		// Decision entries live in decisions.jsonl — find by id to extract status
 		const oldDecisions = getJsonl<DecisionEntry>(oldState, "decisions.jsonl") ?? [];

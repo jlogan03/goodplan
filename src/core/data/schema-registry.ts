@@ -1,13 +1,14 @@
 import type { z } from "zod";
-import { projectSchema } from "../../schemas/entities/project.js";
 import { epicSchema } from "../../schemas/entities/epic.js";
-import { sliceSchema } from "../../schemas/entities/slice.js";
-import { questSchema } from "../../schemas/entities/quest.js";
 import { overviewSchema } from "../../schemas/entities/overview.js";
+import { projectSchema } from "../../schemas/entities/project.js";
+import { questSchema } from "../../schemas/entities/quest.js";
+import { sliceSchema } from "../../schemas/entities/slice.js";
+import { taskSchema } from "../../schemas/entities/task.js";
 import { activityEntrySchema } from "../../schemas/records/activity-log.js";
+import { architectureDeltaSchema } from "../../schemas/records/architecture-delta.js";
 import { decisionEntrySchema } from "../../schemas/records/decision.js";
 import { learningEntrySchema } from "../../schemas/records/learning.js";
-import { architectureDeltaSchema } from "../../schemas/records/architecture-delta.js";
 
 export interface SchemaRegistryEntry {
 	pattern: RegExp;
@@ -22,11 +23,13 @@ export const schemaRegistry: SchemaRegistryEntry[] = [
 	{ pattern: /^epics\/overview\.json$/, schema: overviewSchema },
 	{ pattern: /^slices\/overview\.json$/, schema: overviewSchema },
 	{ pattern: /^quests\/overview\.json$/, schema: overviewSchema },
+	{ pattern: /^tasks\/overview\.json$/, schema: overviewSchema },
 
 	// Entity JSON (per-instance)
 	{ pattern: /^epics\/[^/]+\/epic\.json$/, schema: epicSchema },
 	{ pattern: /^slices\/[^/]+\/slice\.json$/, schema: sliceSchema },
 	{ pattern: /^quests\/[^/]+\/quest\.json$/, schema: questSchema },
+	{ pattern: /^tasks\/[^/]+\/task\.json$/, schema: taskSchema },
 
 	// JSONL records — project-level first (more specific), then per-entity
 	{ pattern: /^activity-log\.jsonl$/, schema: activityEntrySchema },

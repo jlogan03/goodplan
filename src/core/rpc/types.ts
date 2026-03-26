@@ -3,15 +3,16 @@
  * Defined per rpc-layer-api.md (source of truth).
  */
 
+import type { Verification, VerificationResult } from "../../schemas/entities/epic.js";
+import type { DeferredItem } from "../../schemas/entities/slice.js";
+import type { TaskContext } from "../../schemas/entities/task.js";
+import type { ArchitectureDeltaInput } from "../../schemas/records/architecture-delta.js";
+import type { DecisionEntry } from "../../schemas/records/decision.js";
+import type { LearningInput } from "../../schemas/records/learning.js";
 // Type-only import — no runtime circular dependency. The context module
 // imports Target/SubmitPhase from here; this imports ContextBundle from there.
 // Both are `import type` (erased at compile time), which is safe.
 import type { ContextBundle } from "../context/types.js";
-import type { Verification, VerificationResult } from "../../schemas/entities/epic.js";
-import type { DeferredItem } from "../../schemas/entities/slice.js";
-import type { ArchitectureDeltaInput } from "../../schemas/records/architecture-delta.js";
-import type { DecisionEntry } from "../../schemas/records/decision.js";
-import type { LearningInput } from "../../schemas/records/learning.js";
 
 /** Changes allowed on decision:update — mirrors Partial<Omit<DecisionEntry, "id" | "date">> */
 export type UpdateDecisionChanges = Partial<Omit<DecisionEntry, "id" | "date">>;
@@ -23,6 +24,9 @@ export type { DeferredItem } from "../../schemas/entities/slice.js";
 export type BeginPhase =
 	| "create"
 	| "create-decision"
+	| "create-task"
+	| "drop-task"
+	| "convert-task"
 	| "explore"
 	| "define-architecture"
 	| "refine-architecture"
@@ -62,6 +66,7 @@ export type Target =
 	| { type: "epic"; name: string }
 	| { type: "slice"; name: string }
 	| { type: "quest"; name: string }
+	| { type: "task"; name: string }
 	| { type: "decision"; id: string }
 	| { type: "rollup"; from: string; to: string };
 
@@ -83,6 +88,9 @@ export interface WorkflowOptions {
 export interface BeginPayloadMap {
 	create: { name: string; goal?: string; epic?: string };
 	"create-decision": { id: string; domain: string; title: string; summary: string };
+	"create-task": { name: string; title: string; description?: string; context?: TaskContext };
+	"drop-task": { reason: string };
+	"convert-task": { to: "quest" | "epic"; name?: string; goal?: string };
 	explore: Record<string, never>;
 	"define-architecture": Record<string, never>;
 	"refine-architecture": Record<string, never>;
@@ -205,6 +213,8 @@ export function resolveEntityName(target: Target): string {
 			return target.name;
 		case "quest":
 			return target.name;
+		case "task":
+			return target.name;
 		case "decision":
 			return target.id;
 		case "rollup":
@@ -223,6 +233,8 @@ export function resolveEntityJsonPath(target: Target): string {
 			return `slices/${target.name}/slice.json`;
 		case "quest":
 			return `quests/${target.name}/quest.json`;
+		case "task":
+			return `tasks/${target.name}/task.json`;
 		case "decision":
 			return "decisions.jsonl";
 		case "rollup":

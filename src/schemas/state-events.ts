@@ -1,5 +1,6 @@
 import type { Verification, VerificationResult } from "./entities/epic.js";
 import type { DeferredItem } from "./entities/slice.js";
+import type { TaskContext } from "./entities/task.js";
 import type { ArchitectureDeltaInput } from "./records/architecture-delta.js";
 import type { DecisionEntry } from "./records/decision.js";
 import type { LearningInput } from "./records/learning.js";
@@ -97,9 +98,39 @@ export type StateEvent =
 			architectureDelta: ArchitectureDeltaInput[];
 	  }
 	| { type: "ABANDON_QUEST"; quest: string; ts: string; reason: string }
+	// Task lifecycle
+	| {
+			type: "CREATE_TASK";
+			name: string;
+			title: string;
+			description?: string;
+			context?: TaskContext;
+			ts: string;
+	  }
+	| { type: "DROP_TASK"; name: string; reason: string; ts: string }
+	| {
+			type: "CONVERT_TASK";
+			name: string;
+			to: "quest" | "epic";
+			convertedName: string;
+			convertedGoal?: string;
+			ts: string;
+	  }
 	// Cross-cutting: decisions and learnings rollup
-	| { type: "CREATE_DECISION"; id: string; domain: string; title: string; summary: string; ts: string }
-	| { type: "UPDATE_DECISION"; id: string; changes: Partial<Omit<DecisionEntry, "id" | "date">>; ts: string }
+	| {
+			type: "CREATE_DECISION";
+			id: string;
+			domain: string;
+			title: string;
+			summary: string;
+			ts: string;
+	  }
+	| {
+			type: "UPDATE_DECISION";
+			id: string;
+			changes: Partial<Omit<DecisionEntry, "id" | "date">>;
+			ts: string;
+	  }
 	| { type: "ROLLUP_LEARNINGS"; from: string; to: string; ts: string };
 
 /** Error codes produced by state machine transitions. Single source of truth — also used by GoodplanErrorCode. */

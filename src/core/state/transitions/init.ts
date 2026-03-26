@@ -5,7 +5,7 @@
  */
 import type { ProjectState } from "../../tree.js";
 import { hasChild, setEntry } from "../../tree.js";
-import type { StateEvent, StateError } from "../types.js";
+import type { StateError, StateEvent } from "../types.js";
 
 type InitProjectEvent = Extract<StateEvent, { type: "INIT_PROJECT" }>;
 
@@ -50,6 +50,10 @@ export function handleInitProject(
 		content: { items: [] },
 	});
 	tree = setEntry(tree, "quests/overview.json", {
+		type: "json",
+		content: { items: [] },
+	});
+	tree = setEntry(tree, "tasks/overview.json", {
 		type: "json",
 		content: { items: [] },
 	});

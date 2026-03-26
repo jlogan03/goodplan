@@ -3,6 +3,7 @@ import type { Overview } from "../../../schemas/entities/overview.js";
 import type { Project } from "../../../schemas/entities/project.js";
 import type { Quest, QuestStatus } from "../../../schemas/entities/quest.js";
 import type { Slice, SliceStatus } from "../../../schemas/entities/slice.js";
+import type { Task, TaskStatus } from "../../../schemas/entities/task.js";
 import type { Refinement } from "../../../schemas/shared.js";
 /**
  * Shared helpers for transition handlers.
@@ -88,7 +89,7 @@ export function setEpicJson(state: ProjectState, name: string, content: Epic): P
 export function updateOverviewStatus(
 	state: ProjectState,
 	epicName: string,
-	newStatus: string,
+	newStatus: EpicStatus,
 ): ProjectState {
 	const overview = getJson<Overview>(state, "epics/overview.json");
 	if (overview === undefined) return state;
@@ -168,7 +169,7 @@ export function setSliceStatus(
 export function updateSliceOverviewStatus(
 	state: ProjectState,
 	sliceName: string,
-	newStatus: string,
+	newStatus: SliceStatus,
 ): ProjectState {
 	const overview = getJson<Overview>(state, "slices/overview.json");
 	if (overview === undefined) return state;
@@ -347,7 +348,7 @@ export function setQuestStatus(
 export function updateQuestOverviewStatus(
 	state: ProjectState,
 	questName: string,
-	newStatus: string,
+	newStatus: QuestStatus,
 ): ProjectState {
 	const overview = getJson<Overview>(state, "quests/overview.json");
 	if (overview === undefined) return state;
@@ -369,19 +370,18 @@ export function updateQuestOverviewStatus(
 export function addQuestToOverview(
 	state: ProjectState,
 	questName: string,
-	status: string,
+	status: QuestStatus,
 	ts: string,
 ): ProjectState {
 	const overview = getJson<Overview>(state, "quests/overview.json");
-	if (overview === undefined) return state;
+	if (overview === undefined) {
+		throw new Error("quests/overview.json not found — is the project initialized?");
+	}
 	return setEntry(state, "quests/overview.json", {
 		type: "json",
 		content: {
 			...overview,
-			items: [
-				...overview.items,
-				{ name: questName, status, created: ts, completed: null },
-			],
+			items: [...overview.items, { name: questName, status, created: ts, completed: null }],
 		},
 	});
 }
@@ -392,4 +392,118 @@ const QUEST_TERMINAL_STATUSES: ReadonlySet<QuestStatus> = new Set(["completed", 
 
 export function isQuestTerminal(status: QuestStatus): boolean {
 	return QUEST_TERMINAL_STATUSES.has(status);
+}
+
+// ── Epic overview helper ────────────────────────────────────
+
+/**
+ * Add a new epic entry to epics/overview.json.
+ * Centralises the overview item shape for epic creation.
+ * Parallels addQuestToOverview for quests.
+ */
+export function addEpicToOverview(
+	state: ProjectState,
+	epicName: string,
+	status: EpicStatus,
+	ts: string,
+): ProjectState {
+	const overview = getJson<Overview>(state, "epics/overview.json");
+	if (overview === undefined) {
+		throw new Error("epics/overview.json not found — is the project initialized?");
+	}
+	return setEntry(state, "epics/overview.json", {
+		type: "json",
+		content: {
+			...overview,
+			items: [...overview.items, { name: epicName, status, created: ts, completed: null }],
+		},
+	});
+}
+
+// ── Entity builders ─────────────────────────────────────────
+
+/**
+ * Build initial quest.json content.
+ * Shared by handleCreateQuest and handleConvertTask to avoid shape duplication.
+ */
+export function buildInitialQuestJson(name: string, goal: string, ts: string) {
+	return {
+		name,
+		goal,
+		status: "created" as const,
+		refinement: null,
+		created: ts,
+		updated: ts,
+	};
+}
+
+/**
+ * Build initial epic.json content.
+ * Shared by handleCreateEpic and handleConvertTask to avoid shape duplication.
+ */
+export function buildInitialEpicJson(name: string, goal: string, ts: string) {
+	return {
+		name,
+		goal,
+		status: "created" as const,
+		verifications: [] as string[],
+		refinement: null,
+		sliceSequence: [] as string[],
+		created: ts,
+		activated: null,
+		updated: ts,
+	};
+}
+
+/**
+ * Create the 4 standard epic subdirectories via setEntry.
+ * Shared by handleCreateEpic and handleConvertTask.
+ */
+export function createEpicSubdirectories(state: ProjectState, epicName: string): ProjectState {
+	let tree = state;
+	for (const dir of ["architecture", "research", "brainstorm", "prototypes"]) {
+		tree = setEntry(tree, `epics/${epicName}/${dir}`, {
+			type: "directory",
+			contents: {},
+		});
+	}
+	return tree;
+}
+
+// ── Task helpers ────────────────────────────────────────────
+
+export function getTask(state: ProjectState, name: string): Task | undefined {
+	return getJson<Task>(state, `tasks/${name}/task.json`);
+}
+
+const TASK_TERMINAL_STATUSES: ReadonlySet<TaskStatus> = new Set(["converted", "dropped"]);
+
+export function isTaskTerminal(status: TaskStatus): boolean {
+	return TASK_TERMINAL_STATUSES.has(status);
+}
+
+/**
+ * Update the task's status in tasks/overview.json.
+ * Sets `completed` timestamp on terminal transitions (dropped/converted).
+ */
+export function updateTaskOverviewStatus(
+	state: ProjectState,
+	taskName: string,
+	newStatus: TaskStatus,
+	ts?: string,
+): ProjectState {
+	const overview = getJson<Overview>(state, "tasks/overview.json");
+	if (overview === undefined) return state;
+	const completed = isTaskTerminal(newStatus) && ts ? ts : null;
+	return setEntry(state, "tasks/overview.json", {
+		type: "json",
+		content: {
+			...overview,
+			items: overview.items.map((item) =>
+				item.name === taskName
+					? { ...item, status: newStatus, ...(completed ? { completed } : {}) }
+					: item,
+			),
+		},
+	});
 }

@@ -1,3 +1,5 @@
+import type { EpicStatus } from "../../../schemas/entities/epic.js";
+import type { Overview } from "../../../schemas/entities/overview.js";
 /**
  * CREATE_EPIC transition handler.
  * Guard: epic name must not already exist in tree.
@@ -5,10 +7,8 @@
  */
 import type { ProjectState } from "../../tree.js";
 import { getJson, hasChild, setEntry } from "../../tree.js";
-import type { StateEvent, StateError } from "../types.js";
-import type { EpicStatus } from "../../../schemas/entities/epic.js";
-import type { Overview } from "../../../schemas/entities/overview.js";
-import { appendActivityLog } from "./helpers.js";
+import type { StateError, StateEvent } from "../types.js";
+import { appendActivityLog, buildInitialEpicJson, createEpicSubdirectories } from "./helpers.js";
 
 type CreateEpicEvent = Extract<StateEvent, { type: "CREATE_EPIC" }>;
 
@@ -31,36 +31,11 @@ export function handleCreateEpic(
 	// Create epic.json
 	tree = setEntry(tree, `epics/${event.name}/epic.json`, {
 		type: "json",
-		content: {
-			name: event.name,
-			status: "created",
-			goal: event.goal,
-			verifications: [],
-			refinement: null,
-			sliceSequence: [],
-			created: now,
-			activated: null,
-			updated: now,
-		},
+		content: buildInitialEpicJson(event.name, event.goal, now),
 	});
 
 	// Create subdirectories
-	tree = setEntry(tree, `epics/${event.name}/architecture`, {
-		type: "directory",
-		contents: {},
-	});
-	tree = setEntry(tree, `epics/${event.name}/research`, {
-		type: "directory",
-		contents: {},
-	});
-	tree = setEntry(tree, `epics/${event.name}/brainstorm`, {
-		type: "directory",
-		contents: {},
-	});
-	tree = setEntry(tree, `epics/${event.name}/prototypes`, {
-		type: "directory",
-		contents: {},
-	});
+	tree = createEpicSubdirectories(tree, event.name);
 
 	// Update overview
 	const overview = getJson<Overview>(tree, "epics/overview.json");
@@ -97,6 +72,4 @@ export const createEpicTransitions: ReadonlyArray<{
 	from: "(none)";
 	event: StateEvent["type"];
 	to: EpicStatus;
-}> = [
-	{ from: "(none)", event: "CREATE_EPIC", to: "created" },
-] as const;
+}> = [{ from: "(none)", event: "CREATE_EPIC", to: "created" }] as const;
