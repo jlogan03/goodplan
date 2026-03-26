@@ -1,5 +1,8 @@
 # Plan: Migrate Pre-CLI .project/ to CLI Format
 
+**Status:** COMPLETE
+**Completed:** 2026-03-26
+
 ## Overview
 
 Build `goodplan migrate`, a global CLI command that drives a multi-round Q&A protocol to convert a pre-CLI `.project/` directory into valid CLI-managed state. The CLI emits schema-driven questions (with `responseSchema` auto-generated via `z.toJSONSchema()`), validates answers against Zod schemas, and constructs all state files when complete.
