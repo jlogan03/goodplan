@@ -31,8 +31,8 @@ When the confirmation round is approved, construct all CLI state directly from v
 
 ### Tasks
 
-- [ ] Extract `buildMigrationState(validatedData): ProjectState` as a named export from `src/core/rpc/migrate.ts` with `@internal` JSDoc annotation. It remains internal to the `rpc/` module but tests can import it directly (Phase 6 includes unit tests for `buildMigrationState()`). This matches existing patterns (e.g., `rpcInit` exports from `src/core/rpc/init.ts`).
-- [ ] Implement direct `ProjectState` construction in `buildMigrationState()`:
+- [x] Extract `buildMigrationState(validatedData): ProjectState` as a named export from `src/core/rpc/migrate.ts` with `@internal` JSDoc annotation. It remains internal to the `rpc/` module but tests can import it directly (Phase 6 includes unit tests for `buildMigrationState()`). This matches existing patterns (e.g., `rpcInit` exports from `src/core/rpc/init.ts`).
+- [x] Implement direct `ProjectState` construction in `buildMigrationState()`:
   - Build `ProjectState` directly from validated migration answers — no `MIGRATE_PROJECT` event, no `reduce()` call. Migration is a data import, not a state transition.
   - Construct the full state tree:
     - `project.json` with version, name, timestamps, null active pointers (or inferred from state)
@@ -52,12 +52,12 @@ When the confirmation round is approved, construct all CLI state directly from v
   - All `Record<string, T>` lookups return `T | undefined` under `noUncheckedIndexedAccess` — add explicit narrowing checks.
   - Call `commitState(projectDir, ZERO_STATE, newState)` — pass `ZERO_STATE` (from `src/core/tree.ts`) as `oldState`. This mirrors the `init` flow where `.project/` doesn't exist yet: the diff treats everything as new writes and skips concurrent modification checks. Do NOT call `loadState()` on the renamed directory or pass an incorrect old state.
   - Guard: `project.json` must not exist (zero state).
-- [ ] Implement `.project/` → `.project-old/` rename in `rpcMigrate()`:
+- [x] Implement `.project/` → `.project-old/` rename in `rpcMigrate()`:
   - After confirmation is approved, before state construction
   - Use `fs.renameSync` — fast, atomic on same filesystem
   - Wrap in try/catch: on `EXDEV` error (cross-filesystem rename, e.g., symlinked `.project/`), either fall back to recursive copy + remove, or throw a clear error explaining the symlink/mount issue
   - If `.project-old/` already exists → error: `DATA_MIGRATION_BACKUP_EXISTS` (previous migration attempt left debris)
-- [ ] Implement markdown artifact copy as a post-`commitState()` step (separate from state construction):
+- [x] Implement markdown artifact copy as a post-`commitState()` step (separate from state construction):
   - This logic belongs in the RPC layer or a dedicated migration module, not the state machine
   - **Project-level:** Copy `idea.md`, `conventions.md`, `learnings.md`, `project-health.md` (if exists), `architecture/` (recursive), `research/` (recursive), `brainstorm/` (recursive), `prototypes/` (recursive), `decisions/` (all `.md` files, skip `.jsonl`)
   - **Per-epic:** For each epic, copy from `.project-old/<sourcePath>/` to `.project/epics/<cleanName>/`: `architecture/`, `research/`, `brainstorm/`, `prototypes/`, any `goal.md` or other markdown
@@ -65,11 +65,11 @@ When the confirmation round is approved, construct all CLI state directly from v
   - **Per-quest:** For each quest, copy from `.project-old/side-quests/<sourcePath>/` to `.project/quests/<cleanName>/`: `goal.md`, `plan.md`, `completion/` (if exists), any markdown
   - Use an allowlist of known markdown artifact patterns rather than "copy everything except JSON/JSONL": `*.md` files plus specific directories (`architecture/`, `research/`, `brainstorm/`, `prototypes/`, `decisions/`, `completion/`). This prevents accidentally copying unknown non-markdown files that could cause issues.
   - Do NOT attempt to preserve file timestamps — `fs.copyFileSync()` does not preserve mtime/atime, and git tracks content not filesystem timestamps. Drop this requirement.
-- [ ] **Failure handling:** If `commitState()` fails after `.project/` has been renamed to `.project-old/`, preserve `.migration-in-progress.json` so user can retry. The error message must instruct the user to rename `.project-old/` back to `.project/` manually. Do NOT attempt automatic rollback.
-- [ ] Clean up `<cwd>/.migration-in-progress.json` after successful state construction only
-- [ ] Return `MigrationResult` with `status: 'complete'` and summary (entity counts, path to `.project-old/`)
-- [ ] **Add known exception to INV-001 in `.project/architecture/invariants.md`:** Direct state construction in migration bypasses the state machine (`reduce()`). Document this as a formal exception alongside the existing version stamp exception. Justification: migration is a data import, not a state transition.
-- [ ] Update architecture docs: add `migrate` command to `.project/architecture/commands-api.md`. Update `.project/architecture/data-layer-api.md` if migration touches data layer conventions.
+- [x] **Failure handling:** If `commitState()` fails after `.project/` has been renamed to `.project-old/`, preserve `.migration-in-progress.json` so user can retry. The error message must instruct the user to rename `.project-old/` back to `.project/` manually. Do NOT attempt automatic rollback.
+- [x] Clean up `<cwd>/.migration-in-progress.json` after successful state construction only
+- [x] Return `MigrationResult` with `status: 'complete'` and summary (entity counts, path to `.project-old/`)
+- [x] **Add known exception to INV-001 in `.project/architecture/invariants.md`:** Direct state construction in migration bypasses the state machine (`reduce()`). Document this as a formal exception alongside the existing version stamp exception. Justification: migration is a data import, not a state transition.
+- [x] Update architecture docs: add `migrate` command to `.project/architecture/commands-api.md`. Update `.project/architecture/data-layer-api.md` if migration touches data layer conventions.
 
 ### Verification
 

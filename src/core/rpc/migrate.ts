@@ -30,8 +30,18 @@ import {
 	validateAnswer,
 } from "../../commands/global/migrate/schemas.js";
 import { validateSourcePath } from "../../commands/global/migrate/validate-source-path.js";
+import type { ActivityEntry } from "../../schemas/records/activity-log.js";
 import { GoodplanError } from "../../util/errors.js";
 import { deterministicStringify } from "../../util/json.js";
+import { VERSION } from "../../version.js";
+import { commitState } from "../data/commit.js";
+import type {
+	DirectoryEntry,
+	JsonEntry,
+	JsonlEntry,
+	ProjectState,
+} from "../tree.js";
+import { ZERO_STATE } from "../tree.js";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -52,6 +62,599 @@ function questionsResult(round: MigrationRound): MigrationResult {
 				hint: q.hint,
 				responseSchema: q.responseSchema as Record<string, unknown>,
 			})),
+		},
+	};
+}
+
+// ---------------------------------------------------------------------------
+// State Construction (INV-001 exception: bypasses state machine)
+// ---------------------------------------------------------------------------
+
+/** Inventory-level epic as extracted from validated answers */
+interface MigrationEpic {
+	readonly name: string;
+	readonly goal: string;
+	readonly status: string;
+	readonly sourcePath: string;
+}
+
+/** Inventory-level quest as extracted from validated answers */
+interface MigrationQuest {
+	readonly name: string;
+	readonly goal: string;
+	readonly status: string;
+	readonly sourcePath: string;
+}
+
+/** Slice detail as extracted from epic detail answers */
+interface MigrationSlice {
+	readonly name: string;
+	readonly goal: string;
+	readonly status: string;
+	readonly sourcePath: string;
+}
+
+/**
+ * Build a complete ProjectState tree from validated migration answers.
+ *
+ * @internal Exported for unit testing only (Phase 6). Not part of public API.
+ * Constructs state directly — no state machine event, no reduce() call.
+ * Uses ZERO_STATE as oldState when calling commitState().
+ */
+export function buildMigrationState(
+	validatedAnswers: Record<string, unknown>,
+): ProjectState {
+	const ts = new Date().toISOString();
+
+	const project = validatedAnswers[QUESTION_IDS.PROJECT_INFO] as
+		| { name: string; goal: string }
+		| undefined;
+	if (project === undefined) {
+		throw new GoodplanError(
+			"INTERNAL_ERROR",
+			"Missing project-info in validated migration answers",
+		);
+	}
+
+	const epicInventory =
+		(validatedAnswers[QUESTION_IDS.EPIC_INVENTORY] as MigrationEpic[] | undefined) ?? [];
+	const questInventory =
+		(validatedAnswers[QUESTION_IDS.QUEST_INVENTORY] as MigrationQuest[] | undefined) ?? [];
+
+	// Determine active pointers — find entities with "active" statuses
+	const activeEpicStatuses = new Set([
+		"activated",
+		"exploring",
+		"explored",
+		"defining-architecture",
+		"architecture-defined",
+		"refining-architecture",
+		"architecture-refined",
+		"defining-slices",
+		"slices-defined",
+		"refining-slices",
+		"slices-refined",
+	]);
+	const activeSliceStatuses = new Set([
+		"planning",
+		"plan-created",
+		"refining",
+		"plan-refined",
+		"implementing",
+		"implementation-complete",
+	]);
+	const activeQuestStatuses = new Set([
+		"planning",
+		"plan-created",
+		"refining",
+		"plan-refined",
+		"implementing",
+		"implementation-complete",
+	]);
+
+	const activeEpic = epicInventory.find((e) => activeEpicStatuses.has(e.status))?.name ?? null;
+	const activeQuest = questInventory.find((q) => activeQuestStatuses.has(q.status))?.name ?? null;
+
+	// Find active slice across all epics
+	let activeSlice: string | null = null;
+	for (const epic of epicInventory) {
+		const detailKey = epicDetailQuestionId(epic.name);
+		const detail = validatedAnswers[detailKey] as EpicDetailResponse | undefined;
+		if (detail !== undefined) {
+			const found = detail.slices.find((s) => activeSliceStatuses.has(s.status));
+			if (found !== undefined) {
+				activeSlice = found.name;
+				break;
+			}
+		}
+	}
+
+	// ── Build the state tree ────────────────────────────────────
+
+	// Project JSON
+	const projectJson: JsonEntry<unknown> = {
+		type: "json",
+		content: {
+			version: VERSION,
+			name: project.name,
+			activeEpic,
+			activeSlice,
+			activeQuest,
+			created: ts,
+			updated: ts,
+		},
+	};
+
+	// Activity log
+	const activityEntry: ActivityEntry = {
+		ts,
+		phase: "migration",
+		scope: "project",
+		status: "complete",
+		summary: "Migrated from pre-CLI .project/ format",
+		...(epicInventory.length > 0 || questInventory.length > 0
+			? {
+					detail: `${String(epicInventory.length)} epics, ${String(countAllSlices(validatedAnswers, epicInventory))} slices, ${String(questInventory.length)} quests`,
+				}
+			: {}),
+	};
+
+	const activityLog: JsonlEntry<unknown> = {
+		type: "jsonl",
+		content: [activityEntry],
+	};
+
+	// Empty JSONL files
+	const decisionsJsonl: JsonlEntry<unknown> = { type: "jsonl", content: [] };
+	const learningsJsonl: JsonlEntry<unknown> = { type: "jsonl", content: [] };
+
+	// ── Epics ───────────────────────────────────────────────────
+
+	const epicsContents: Record<string, DirectoryEntry | JsonEntry<unknown>> = {};
+
+	const epicOverviewItems: Array<{
+		name: string;
+		status: string;
+		created: string;
+		completed: string | null;
+	}> = [];
+
+	for (const epic of epicInventory) {
+		const detailKey = epicDetailQuestionId(epic.name);
+		const detail = validatedAnswers[detailKey] as EpicDetailResponse | undefined;
+
+		const isTerminal = epic.status === "completed" || epic.status === "abandoned";
+
+		epicOverviewItems.push({
+			name: epic.name,
+			status: epic.status,
+			created: ts,
+			completed: isTerminal ? ts : null,
+		});
+
+		const epicJsonContent: Record<string, unknown> = {
+			name: epic.name,
+			status: epic.status,
+			goal: epic.goal,
+			verifications: [],
+			refinement: null,
+			sliceSequence: detail?.sliceSequence ?? [],
+			created: ts,
+			activated: detail?.activatedDate ?? (isTerminal ? ts : null),
+			updated: ts,
+		};
+
+		const epicDirContents: Record<string, DirectoryEntry | JsonEntry<unknown>> = {
+			"epic.json": { type: "json", content: epicJsonContent },
+			architecture: { type: "directory", contents: {} },
+			research: { type: "directory", contents: {} },
+			brainstorm: { type: "directory", contents: {} },
+			prototypes: { type: "directory", contents: {} },
+		};
+
+		epicsContents[epic.name] = { type: "directory", contents: epicDirContents };
+	}
+
+	const epicsOverview: JsonEntry<unknown> = {
+		type: "json",
+		content: { items: epicOverviewItems },
+	};
+	epicsContents["overview.json"] = epicsOverview;
+
+	// ── Slices ──────────────────────────────────────────────────
+
+	const slicesContents: Record<
+		string,
+		DirectoryEntry | JsonEntry<unknown> | JsonlEntry<unknown>
+	> = {};
+
+	const sliceOverviewItems: Array<{
+		name: string;
+		status: string;
+		epic: string;
+		created: string;
+		completed: string | null;
+	}> = [];
+
+	for (const epic of epicInventory) {
+		const detailKey = epicDetailQuestionId(epic.name);
+		const detail = validatedAnswers[detailKey] as EpicDetailResponse | undefined;
+		if (detail === undefined) continue;
+
+		for (const slice of detail.slices) {
+			const isTerminal = slice.status === "completed" || slice.status === "abandoned";
+
+			sliceOverviewItems.push({
+				name: slice.name,
+				status: slice.status,
+				epic: epic.name,
+				created: ts,
+				completed: isTerminal ? ts : null,
+			});
+
+			const sliceJsonContent = {
+				name: slice.name,
+				epic: epic.name,
+				status: slice.status,
+				goal: slice.goal,
+				deferred: [],
+				refinement: null,
+				created: ts,
+				updated: ts,
+			};
+
+			const sliceDirContents: Record<
+				string,
+				JsonEntry<unknown> | JsonlEntry<unknown>
+			> = {
+				"slice.json": { type: "json", content: sliceJsonContent },
+				"learnings.jsonl": { type: "jsonl", content: [] },
+				"architecture-deltas.jsonl": { type: "jsonl", content: [] },
+			};
+
+			slicesContents[slice.name] = { type: "directory", contents: sliceDirContents };
+		}
+	}
+
+	const slicesOverview: JsonEntry<unknown> = {
+		type: "json",
+		content: { items: sliceOverviewItems },
+	};
+	slicesContents["overview.json"] = slicesOverview;
+
+	// ── Quests ──────────────────────────────────────────────────
+
+	const questsContents: Record<
+		string,
+		DirectoryEntry | JsonEntry<unknown> | JsonlEntry<unknown>
+	> = {};
+
+	const questOverviewItems: Array<{
+		name: string;
+		status: string;
+		created: string;
+		completed: string | null;
+	}> = [];
+
+	for (const quest of questInventory) {
+		const isTerminal = quest.status === "completed" || quest.status === "abandoned";
+
+		questOverviewItems.push({
+			name: quest.name,
+			status: quest.status,
+			created: ts,
+			completed: isTerminal ? ts : null,
+		});
+
+		const questJsonContent = {
+			name: quest.name,
+			status: quest.status,
+			goal: quest.goal,
+			refinement: null,
+			created: ts,
+			updated: ts,
+		};
+
+		const questDirContents: Record<
+			string,
+			JsonEntry<unknown> | JsonlEntry<unknown>
+		> = {
+			"quest.json": { type: "json", content: questJsonContent },
+			"learnings.jsonl": { type: "jsonl", content: [] },
+			"architecture-deltas.jsonl": { type: "jsonl", content: [] },
+		};
+
+		questsContents[quest.name] = { type: "directory", contents: questDirContents };
+	}
+
+	const questsOverview: JsonEntry<unknown> = {
+		type: "json",
+		content: { items: questOverviewItems },
+	};
+	questsContents["overview.json"] = questsOverview;
+
+	// ── Root tree ───────────────────────────────────────────────
+
+	const state: ProjectState = {
+		type: "directory",
+		contents: {
+			"project.json": projectJson,
+			"activity-log.jsonl": activityLog,
+			"decisions.jsonl": decisionsJsonl,
+			"learnings.jsonl": learningsJsonl,
+			epics: { type: "directory", contents: epicsContents },
+			slices: { type: "directory", contents: slicesContents },
+			quests: { type: "directory", contents: questsContents },
+			architecture: { type: "directory", contents: {} },
+			research: { type: "directory", contents: {} },
+			brainstorm: { type: "directory", contents: {} },
+			prototypes: { type: "directory", contents: {} },
+		},
+	};
+
+	return state;
+}
+
+/** Count total slices across all epics */
+function countAllSlices(
+	answers: Record<string, unknown>,
+	epics: readonly MigrationEpic[],
+): number {
+	let total = 0;
+	for (const epic of epics) {
+		const detail = answers[epicDetailQuestionId(epic.name)] as
+			| EpicDetailResponse
+			| undefined;
+		if (detail !== undefined) {
+			total += detail.slices.length;
+		}
+	}
+	return total;
+}
+
+// ---------------------------------------------------------------------------
+// .project/ → .project-old/ Rename
+// ---------------------------------------------------------------------------
+
+function renameProjectDir(projectDir: string): string {
+	const projectOldDir = `${projectDir}-old`;
+
+	if (fs.existsSync(projectOldDir)) {
+		throw new GoodplanError(
+			"DATA_MIGRATION_BACKUP_EXISTS",
+			`${projectOldDir} already exists — a previous migration attempt may have left debris. Remove or rename it before retrying.`,
+		);
+	}
+
+	try {
+		fs.renameSync(projectDir, projectOldDir);
+	} catch (err: unknown) {
+		const errCode = (err as NodeJS.ErrnoException).code;
+		if (errCode === "EXDEV") {
+			throw new GoodplanError(
+				"DATA_WRITE_ERROR",
+				`Cannot rename ${projectDir} to ${projectOldDir}: cross-filesystem rename (EXDEV). This happens when .project/ is a symlink or on a different mount. Move it manually and retry.`,
+				{ projectDir, projectOldDir },
+				err,
+			);
+		}
+		throw new GoodplanError(
+			"DATA_WRITE_ERROR",
+			`Failed to rename ${projectDir} to ${projectOldDir}`,
+			{ projectDir, projectOldDir },
+			err,
+		);
+	}
+
+	return projectOldDir;
+}
+
+// ---------------------------------------------------------------------------
+// Markdown Artifact Copy
+// ---------------------------------------------------------------------------
+
+/** Allowlisted directories for recursive copy */
+const ARTIFACT_DIRS = new Set([
+	"architecture",
+	"research",
+	"brainstorm",
+	"prototypes",
+	"decisions",
+	"completion",
+]);
+
+/** Allowlisted project-level markdown files */
+const PROJECT_MARKDOWN_FILES = [
+	"idea.md",
+	"conventions.md",
+	"learnings.md",
+	"project-health.md",
+];
+
+/**
+ * Copy markdown artifacts from .project-old/ to the new .project/ directory.
+ * Uses an allowlist approach: only copies *.md files and specific directories.
+ */
+function copyMigrationArtifacts(
+	projectDir: string,
+	projectOldDir: string,
+	validatedAnswers: Record<string, unknown>,
+): void {
+	// Project-level markdown files
+	for (const file of PROJECT_MARKDOWN_FILES) {
+		const src = path.join(projectOldDir, file);
+		if (fs.existsSync(src)) {
+			fs.copyFileSync(src, path.join(projectDir, file));
+		}
+	}
+
+	// Project-level directories
+	for (const dir of ARTIFACT_DIRS) {
+		const src = path.join(projectOldDir, dir);
+		if (fs.existsSync(src) && fs.statSync(src).isDirectory()) {
+			copyDirRecursive(src, path.join(projectDir, dir));
+		}
+	}
+
+	// Per-epic artifacts
+	const epicInventory =
+		(validatedAnswers[QUESTION_IDS.EPIC_INVENTORY] as MigrationEpic[] | undefined) ?? [];
+
+	for (const epic of epicInventory) {
+		const epicSrcDir = path.join(projectOldDir, epic.sourcePath);
+		const epicDestDir = path.join(projectDir, "epics", epic.name);
+
+		if (!fs.existsSync(epicSrcDir)) continue;
+
+		// Copy allowlisted directories
+		for (const dir of ARTIFACT_DIRS) {
+			const src = path.join(epicSrcDir, dir);
+			if (fs.existsSync(src) && fs.statSync(src).isDirectory()) {
+				copyDirRecursive(src, path.join(epicDestDir, dir));
+			}
+		}
+
+		// Copy any root-level .md files from the epic source
+		copyMarkdownFiles(epicSrcDir, epicDestDir);
+
+		// Per-slice artifacts
+		const detailKey = epicDetailQuestionId(epic.name);
+		const detail = validatedAnswers[detailKey] as EpicDetailResponse | undefined;
+		if (detail === undefined) continue;
+
+		for (const slice of detail.slices) {
+			const sliceSrcDir = path.join(projectOldDir, slice.sourcePath);
+			const sliceDestDir = path.join(projectDir, "slices", slice.name);
+
+			if (!fs.existsSync(sliceSrcDir)) continue;
+
+			// Copy allowlisted directories
+			for (const dir of ARTIFACT_DIRS) {
+				const src = path.join(sliceSrcDir, dir);
+				if (fs.existsSync(src) && fs.statSync(src).isDirectory()) {
+					copyDirRecursive(src, path.join(sliceDestDir, dir));
+				}
+			}
+
+			// Copy any root-level .md files from the slice source
+			copyMarkdownFiles(sliceSrcDir, sliceDestDir);
+		}
+	}
+
+	// Per-quest artifacts
+	const questInventory =
+		(validatedAnswers[QUESTION_IDS.QUEST_INVENTORY] as MigrationQuest[] | undefined) ?? [];
+
+	for (const quest of questInventory) {
+		const questSrcDir = path.join(projectOldDir, quest.sourcePath);
+		const questDestDir = path.join(projectDir, "quests", quest.name);
+
+		if (!fs.existsSync(questSrcDir)) continue;
+
+		// Copy allowlisted directories
+		for (const dir of ARTIFACT_DIRS) {
+			const src = path.join(questSrcDir, dir);
+			if (fs.existsSync(src) && fs.statSync(src).isDirectory()) {
+				copyDirRecursive(src, path.join(questDestDir, dir));
+			}
+		}
+
+		// Copy any root-level .md files from the quest source
+		copyMarkdownFiles(questSrcDir, questDestDir);
+	}
+}
+
+/** Recursively copy a directory, only copying .md files (skip JSON/JSONL) */
+function copyDirRecursive(src: string, dest: string): void {
+	fs.mkdirSync(dest, { recursive: true });
+
+	const entries = fs.readdirSync(src, { withFileTypes: true });
+	for (const entry of entries) {
+		const srcPath = path.join(src, entry.name);
+		const destPath = path.join(dest, entry.name);
+
+		if (entry.isDirectory()) {
+			copyDirRecursive(srcPath, destPath);
+		} else if (entry.isFile() && entry.name.endsWith(".md")) {
+			fs.copyFileSync(srcPath, destPath);
+		}
+	}
+}
+
+/** Copy .md files from the root of src to dest (non-recursive) */
+function copyMarkdownFiles(src: string, dest: string): void {
+	const entries = fs.readdirSync(src, { withFileTypes: true });
+	for (const entry of entries) {
+		if (entry.isFile() && entry.name.endsWith(".md")) {
+			fs.mkdirSync(dest, { recursive: true });
+			fs.copyFileSync(path.join(src, entry.name), path.join(dest, entry.name));
+		}
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Execute Migration (state construction + artifact copy)
+// ---------------------------------------------------------------------------
+
+function executeMigration(
+	projectDir: string,
+	cwd: string,
+	validatedAnswers: Record<string, unknown>,
+): MigrationResult {
+	// Step 1: Rename .project/ → .project-old/
+	const projectOldDir = renameProjectDir(projectDir);
+
+	// Step 2: Build state tree
+	const newState = buildMigrationState(validatedAnswers);
+
+	// Step 3: Guard — project.json must not exist (zero state)
+	// After rename, projectDir should not exist. commitState will create it.
+
+	// Step 4: Commit state (creates .project/ from scratch)
+	try {
+		commitState(projectDir, ZERO_STATE, newState);
+	} catch (err) {
+		// Preserve .migration-in-progress.json so user can retry
+		// Error message instructs manual recovery
+		throw new GoodplanError(
+			"DATA_WRITE_ERROR",
+			`Migration state construction failed after renaming .project/ to .project-old/. ` +
+				`To recover: rename ${projectOldDir} back to ${projectDir} and retry. ` +
+				`The .migration-in-progress.json file has been preserved for retry.`,
+			{ projectDir, projectOldDir },
+			err,
+		);
+	}
+
+	// Step 5: Copy markdown artifacts from old to new
+	try {
+		copyMigrationArtifacts(projectDir, projectOldDir, validatedAnswers);
+	} catch (err) {
+		// Non-fatal for the migration itself — state is committed
+		// Log but don't fail the migration
+		process.stderr.write(
+			`[goodplan] Warning: some markdown artifacts may not have been copied: ${String(err)}\n`,
+		);
+	}
+
+	// Step 6: Clean up migration state file
+	const migrationFile = migrationStatePath(cwd);
+	try {
+		fs.unlinkSync(migrationFile);
+	} catch {
+		// Ignore — file may not exist or may have been cleaned up
+	}
+
+	// Step 7: Build summary
+	const summary = buildStateSummary(validatedAnswers);
+
+	return {
+		status: "complete",
+		summary: {
+			projectName: summary.projectName,
+			epicCount: summary.totalEpics,
+			questCount: summary.totalQuests,
+			sliceCount: summary.totalSlices,
 		},
 	};
 }
@@ -586,7 +1189,7 @@ function handleConfirmationOrCorrection(
 
 	if (confirmationAnswer !== undefined) {
 		// This is a confirmation round response
-		return handleConfirmation(confirmationAnswer, existingState, cwd);
+		return handleConfirmation(confirmationAnswer, existingState, projectDir, cwd);
 	}
 
 	// This is a correction re-answer — validate and merge back
@@ -596,6 +1199,7 @@ function handleConfirmationOrCorrection(
 function handleConfirmation(
 	answer: MigrationAnswer,
 	existingState: MigrationState,
+	projectDir: string,
 	cwd: string,
 ): MigrationResult {
 	// Validate against confirmation schema
@@ -603,25 +1207,8 @@ function handleConfirmation(
 	const data = result.data as ConfirmationResponse;
 
 	if (data.approved) {
-		// Migration approved — return complete
-		const summary = buildStateSummary(existingState.answers);
-		const completeState: MigrationState = {
-			status: "complete",
-			round: existingState.round,
-			answers: existingState.answers,
-			correctionRound: existingState.correctionRound,
-		};
-		writeMigrationState(cwd, completeState);
-
-		return {
-			status: "complete",
-			summary: {
-				projectName: summary.projectName,
-				epicCount: summary.totalEpics,
-				questCount: summary.totalQuests,
-				sliceCount: summary.totalSlices,
-			},
-		};
+		// Migration approved — construct state, rename .project/, copy artifacts
+		return executeMigration(projectDir, cwd, existingState.answers);
 	}
 
 	// Rejected — check circuit breaker

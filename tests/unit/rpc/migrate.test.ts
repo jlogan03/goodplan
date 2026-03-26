@@ -170,11 +170,11 @@ describe("rpcMigrate — Confirmation round", () => {
 		expect(hint).toContain("slice-one");
 	});
 
-	it("persists complete status in migration state", async () => {
+	it("executes migration on approval: creates state, renames .project/, cleans up", async () => {
 		setupOldProject();
 		await rpcMigrate(projectDir, round1Answers(), tmpDir);
 		await rpcMigrate(projectDir, round2Answers(), tmpDir);
-		await rpcMigrate(
+		const result = await rpcMigrate(
 			projectDir,
 			{
 				round: 3,
@@ -183,8 +183,44 @@ describe("rpcMigrate — Confirmation round", () => {
 			tmpDir,
 		);
 
-		const state = readMigrationState();
-		expect(state.status).toBe("complete");
+		// Result should be complete with summary
+		expect(result.status).toBe("complete");
+		if (result.status === "complete") {
+			expect(result.summary.projectName).toBe("test-project");
+			expect(result.summary.epicCount).toBe(1);
+			expect(result.summary.sliceCount).toBe(1);
+			expect(result.summary.questCount).toBe(1);
+		}
+
+		// .project/project.json should exist (state committed)
+		expect(fs.existsSync(path.join(projectDir, "project.json"))).toBe(true);
+
+		// .project-old/ should exist (renamed)
+		expect(fs.existsSync(path.join(tmpDir, ".project-old"))).toBe(true);
+
+		// .migration-in-progress.json should be cleaned up
+		expect(fs.existsSync(path.join(tmpDir, ".migration-in-progress.json"))).toBe(false);
+
+		// Verify state structure
+		const projectJson = JSON.parse(
+			fs.readFileSync(path.join(projectDir, "project.json"), "utf-8"),
+		) as Record<string, unknown>;
+		expect(projectJson.name).toBe("test-project");
+		expect(projectJson.activeEpic).toBe("my-epic");
+		expect(projectJson.activeQuest).toBe("my-quest");
+
+		// Verify overview files
+		expect(fs.existsSync(path.join(projectDir, "epics", "overview.json"))).toBe(true);
+		expect(fs.existsSync(path.join(projectDir, "slices", "overview.json"))).toBe(true);
+		expect(fs.existsSync(path.join(projectDir, "quests", "overview.json"))).toBe(true);
+
+		// Verify entity directories
+		expect(fs.existsSync(path.join(projectDir, "epics", "my-epic", "epic.json"))).toBe(true);
+		expect(fs.existsSync(path.join(projectDir, "slices", "slice-one", "slice.json"))).toBe(true);
+		expect(fs.existsSync(path.join(projectDir, "quests", "my-quest", "quest.json"))).toBe(true);
+
+		// Verify activity log
+		expect(fs.existsSync(path.join(projectDir, "activity-log.jsonl"))).toBe(true);
 	});
 });
 

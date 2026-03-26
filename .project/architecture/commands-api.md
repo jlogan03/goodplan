@@ -223,8 +223,11 @@ goodplan submit-refine-slices --epic <name>
 goodplan status [--json] [--query <jq>]
 goodplan state [--json] [--query <jq>] [--inline] [--offset <n>] [--limit <n>]
 goodplan init [--name <name>]
+goodplan migrate [--json]
 goodplan schema [--command <command-path>] [--json] [--query <jq>]
 ```
+
+`migrate` converts a pre-CLI `.project/` directory into CLI-managed state via a multi-round Q&A protocol. Reads answers from stdin JSON (`{ round, answers }`), validates against Zod schemas, and advances through rounds: inventory → per-epic details → confirmation. On confirmation approval, renames `.project/` to `.project-old/`, constructs `ProjectState` directly (INV-001 exception — bypasses state machine), calls `commitState()`, and copies markdown artifacts from the old directory. Intermediate state is persisted to `<cwd>/.migration-in-progress.json`. Designed for LLM orchestration via the `/migrate` skill.
 
 `state` exposes the full `.project/` state tree as JSON. Always outputs JSON regardless of `--json` flag (this is an explicit exception to the "no `--json` = human-readable" convention). The `--json` flag is accepted but has no effect. `--query` applies a jq expression to filter the tree. `--inline` includes markdown file content as strings instead of `true` markers. `--offset` and `--limit` paginate array results from `--query` (silently ignored without `--query`). Read-only — routes directly to the Data Layer, bypassing RPC and State Machine.
 
