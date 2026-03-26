@@ -1,0 +1,33 @@
+# TypeScript and JavaScript Review (Round 3)
+
+## Issues
+
+**[IMPORTANT] Confirmation schema uses `z.discriminatedUnion("approved", ...)` with boolean literals -- verify Zod v4 supports boolean discriminators in `toJSONSchema()`**
+Phase 1 specifies `z.discriminatedUnion("approved", [z.object({ approved: z.literal(true), ... }), z.object({ approved: z.literal(false), ... })])`. Zod v4's `z.discriminatedUnion` works at the runtime validation level with boolean literals, but `z.toJSONSchema()` may not emit a clean discriminated representation for boolean `const` values -- JSON Schema draft-2020-12 would need `oneOf` with `const: true` / `const: false` properties, which is valid but some LLM structured-output parsers handle `oneOf` poorly. The research file (`zod-v4-json-schema.md`) does not cover `discriminatedUnion` output at all. Before implementation, verify that `z.toJSONSchema()` on this discriminated union produces a JSON Schema that LLMs can reliably follow. If `oneOf` with boolean `const` proves unreliable, a simpler alternative is a single object with `approved: z.boolean()` and `reAnswerIds: z.array(z.string()).optional()` plus a `.refine()` to enforce "reAnswerIds required when not approved" -- the `.refine()` won't appear in JSON Schema but the structural schema will be simpler for LLMs to parse.
+Resolution: RESEARCH_NEEDED
+Research: Test `z.toJSONSchema(z.discriminatedUnion("approved", [z.object({approved: z.literal(true), notes: z.string()}), z.object({approved: z.literal(false), reAnswerIds: z.array(z.string()).min(1), notes: z.string()})]))` output in Zod v4. Confirm the JSON Schema is well-formed and that common LLM structured-output implementations handle it correctly. Source: run the code locally with the project's zod@4 dependency.
+
+**[IMPORTANT] `stdinSchemaRegistry` expects a single `z.ZodType` per command but migrate has multi-round schemas -- the discriminated union approach needs the discriminator field specified**
+Phase 2 says to "Register a discriminated union of all round response types (keyed by `round` field)." This means a `z.discriminatedUnion("round", [...])` where each variant has a different `round` literal value (1, 2, 3, etc.). However, `z.discriminatedUnion` requires the discriminator values to be literals. The plan defines round numbers as plain `number` fields in `MigrationResponse` (`{ round: number, answers: MigrationAnswer[] }`). For the registry union to work, each round variant needs `round: z.literal(1)`, `round: z.literal(2)`, etc. -- but the number of rounds is dynamic (depends on how many epics exist). The plan should clarify: either (a) register a non-discriminated `z.union` of the known round shapes (inventory, epic-details, confirmation), using the round-type rather than round-number as discriminator, or (b) register the base `migrationResponseSchema` (with `round: z.number()`) as a single entry, accepting that `goodplan schema --command migrate` will show the general shape rather than per-round detail. Option (b) is simpler and sufficient since the CLI itself enforces per-round validation internally.
+Resolution: DIRECTLY_ACTIONABLE
+
+**[MINOR] `MigrationAnswer<T>` generic with `validateAnswer<T>()` helper -- return type should narrow `data` field, not the whole answer**
+Phase 1 defines `MigrationAnswer<T = unknown>: { id: string, data: T }` with a `validateAnswer<T>(answer: MigrationAnswer, schema: z.ZodType<T>): MigrationAnswer<T>` helper. This is clean, but the implementation should use `z.ZodType<T>` carefully -- in Zod v4, the generic parameter to `z.ZodType` may behave differently than v3. The existing codebase uses `z.ZodType` without generics (see `stdinSchemaRegistry: Record<string, z.ZodType>`). The helper should accept `z.ZodType` (unparameterized) and use the schema's `.parse()` return type via `z.infer` rather than relying on a caller-provided `T`. This avoids `as` casts and keeps inference flowing from the schema. Pattern: `function validateAnswer<S extends z.ZodType>(answer: MigrationAnswer, schema: S): MigrationAnswer<z.infer<S>>`.
+Resolution: DIRECTLY_ACTIONABLE
+
+**[MINOR] `MigrationResult` is a plain union type but could benefit from being a Zod schema for consistency with the output contract**
+`MigrationResult` is defined as `{ status: 'questions', round: MigrationRound } | { status: 'complete', summary: MigrationSummary }`. The command wrapper will serialize this to JSON for `--json` output. Other commands in the codebase return plain objects that get serialized, so this is consistent. However, since the plan already defines `MigrationState` as a Zod schema (for serialization to `.migration-in-progress.json`), it would be consistent to also define `MigrationResult` as a Zod schema -- this enables `goodplan schema --command migrate` to show the output shape and enables future output validation. This is a minor consistency improvement, not blocking.
+Resolution: DIRECTLY_ACTIONABLE
+
+**[MINOR] Phase 4 artifact copy skips JSON/JSONL but plan doesn't mention `.migration-in-progress.json` in the copy exclusion**
+Phase 4 says "skip JSON/JSONL files (CLI owns those now)" during artifact copy. The `.migration-in-progress.json` file lives at `<cwd>/` not inside `.project/`, so it won't be encountered during the `.project-old/` copy. This is fine, but the plan should note that old-format files like `state.md` (mentioned in Phase 6 fixture) should also be excluded -- or more precisely, the copy logic should use an allowlist of known markdown artifact patterns rather than a blocklist of extensions. An allowlist (`*.md` files + specific directories like `architecture/`, `research/`, `brainstorm/`, `prototypes/`, `decisions/`) is safer than "copy everything except JSON/JSONL" since unknown file types won't accidentally be included.
+Resolution: DIRECTLY_ACTIONABLE
+
+## Score: 9/10
+
+All Round 2 issues have been properly addressed: `ZERO_STATE` as oldState is specified, `readStdin()` flow is clarified with `migrationResponseSchema.safeParse()`, project goal correctly routes to `idea.md` not `project.json`, `import type` compliance is documented, `MigrationState` is now a Zod schema, `z.infer` is used for test types, and timestamp preservation is dropped. The remaining issues are minor refinements. The one IMPORTANT item about the `stdinSchemaRegistry` discriminated union is a real implementation concern but has a straightforward fix (option b). The research item about boolean discriminators in `toJSONSchema()` should be validated but is unlikely to be blocking. The plan is solid and implementation-ready.
+
+## Summary
+- Critical: 0
+- Important: 2
+- Minor: 3
