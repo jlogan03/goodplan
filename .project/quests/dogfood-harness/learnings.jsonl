@@ -1,0 +1,1 @@
+{"category":"worked","detail":"The harness found 7 bugs invisible to static analysis across 12 runs. Should be standard for release validation.","rollup":false,"rollupTo":[],"source":"quests/dogfood-harness","summary":"Agent SDK dogfood harness catches integration bugs that unit tests miss","tags":["testing","agent-sdk"]}
