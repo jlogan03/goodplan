@@ -35,3 +35,11 @@ When running in dangerously-skip-permissions mode, Claude Code still asks the us
 During slice/quest completion, the skill presents the learnings it gathered during implementation and asks the user whether they're correct. The user doesn't have enough context to judge — these are the agent's own observations from implementation. If the agent thinks the learnings are useful enough to propose, it should just save them.
 
 **Expected**: Present the learnings for visibility (showing what was learned is good), but don't ask for confirmation — just write them. The agent is the authority on what it learned during implementation.
+
+### 5. Migration doesn't detect missed LLM-generated files
+
+**Skill**: `/migrate` (and `goodplan migrate` CLI command)
+
+When the LLM provides `sourcePath` entries during migration, the CLI validates those paths exist but doesn't check for sibling files/directories the LLM didn't mention. If the LLM misses a research file or brainstorm directory, it gets silently dropped from the migration. The CLI should scan for siblings at each sourcePath and ask the LLM about any it didn't include.
+
+**Expected**: After the LLM provides entity answers with sourcePaths, the CLI scans each source directory for files/subdirectories not covered by the answers and emits a follow-up question asking if they should be included.
