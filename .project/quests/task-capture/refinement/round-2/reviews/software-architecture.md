@@ -1,0 +1,37 @@
+## Issues
+
+**[IMPORTANT]** `addEpicToOverview` helper does not exist — CONVERT_TASK handler spec references a non-existent function
+Phase 1 task-lifecycle.ts spec (CONVERT_TASK step 6) says to use `addQuestToOverview`/`addEpicToOverview` for adding the new entity to its overview. `addQuestToOverview` exists in `src/core/state/transitions/helpers.ts`, but `addEpicToOverview` does not exist anywhere in the codebase. The epic-create handler (`src/core/state/transitions/epic-create.ts`) inlines the overview update logic directly. The plan must either: (a) specify that the CONVERT_TASK handler should inline epic overview updates the same way `handleCreateEpic` does, or (b) add an `addEpicToOverview` helper to `helpers.ts` as a prerequisite task (mirroring the existing `addQuestToOverview`). Option (b) is cleaner and deepens the helpers module. The plan should specify which approach and, if (b), add the helper creation as an explicit task item.
+Resolution: DIRECTLY_ACTIONABLE
+
+**[IMPORTANT]** BeginPhase names `"drop"` and `"convert"` are overly generic — future entity types will collide
+The plan adds `"drop"` and `"convert"` to `BeginPhase`. These names are not scoped to tasks. If any future entity ever needs a "drop" or "convert" operation, the phase name is already taken. Every other entity-specific phase either uses a target-type dispatch within a shared name (like `"create"` and `"abandon"` which dispatch on `target.type`) or uses entity-prefixed names (like `"create-decision"`). The plan should use `"drop"` and `"convert"` as generic phases that dispatch on `target.type` (consistent with `"abandon"`), and document that today only `target.type === "task"` is supported. This is actually already the natural pattern — `buildAbandonEvent` dispatches on `target.type`. The plan's `buildBeginEvent` additions for `"drop"` and `"convert"` should follow the same pattern with a `target.type === "task"` guard and a `default` that throws. This isn't a naming change — the plan's naming is correct — but the plan should explicitly state this dispatch pattern to ensure the implementer doesn't hardcode `target.type === "task"` assumptions into `buildBeginEvent` without the exhaustive `default` case. Currently the plan says "Add cases to `buildBeginEvent()`" but doesn't specify the dispatch-on-target-type pattern.
+Resolution: DIRECTLY_ACTIONABLE
+
+**[IMPORTANT]** CONVERT_TASK handler creates quest/epic in `created` status but does not create required subdirectories
+Phase 1 step 5 says CONVERT_TASK creates quest/epic JSON via `setEntry()` with `created` status. Looking at `handleCreateEpic` (the template), epic creation also creates 4 subdirectories (architecture/, research/, brainstorm/, prototypes/) and `handleCreateQuest` is simpler (no subdirs). The plan's CONVERT_TASK handler spec creates the entity JSON and updates the overview but does not mention creating the epic subdirectories. If `task:convert --to epic` produces an epic without these directories, subsequent workflow steps (explore, architecture) will fail because the state machine expects these directories to exist (they are created by `commitState` from the tree). The plan should specify: for `to === "epic"`, also create the 4 subdirectories via `setEntry()` (mirroring `handleCreateEpic`). For `to === "quest"`, no subdirs needed (matching `handleCreateQuest`). Additionally, the quest entity created by CONVERT_TASK should include `refinement: null` to match the `questSchema` (the plan's step 5 shows `{ name, goal, status, created }` but omits `refinement` and `updated`).
+Resolution: DIRECTLY_ACTIONABLE
+
+**[IMPORTANT]** Task schema mismatch with overview schema — `title` field addition needs schema registry awareness
+The plan adds `title: z.string().optional()` to `overviewItemSchema` in Phase 1. This is a cross-cutting schema change affecting ALL entity overview files (epics, slices, quests, tasks share one schema). The schema registry uses a single `overviewSchema` for all `*/overview.json` patterns. This is backward-compatible (additive optional field), but the plan does not address: (a) whether existing overview creation code (in `addQuestToOverview`, `handleCreateEpic`, etc.) should start passing `title` for their entities too, or leave it undefined; (b) with `exactOptionalPropertyTypes`, the conditional spread pattern may be needed when constructing overview items that sometimes have `title` and sometimes don't. The plan should clarify that existing entity overview items continue to omit `title` (the field is optional, so omission is valid), and that the CONVERT_TASK handler and `task-create.ts` handler should include `title` in their overview entries. Also confirm the conditional spread approach for `title` given `exactOptionalPropertyTypes`.
+Resolution: DIRECTLY_ACTIONABLE
+
+**[MINOR]** CONVERT_TASK duplicate name guard needs to check both quest and epic namespaces
+Phase 1 step 2 says "Guard no duplicate quest/epic name" but the actual check needs to verify against the correct namespace depending on `to`. If `to === "quest"`, check `hasChild(state, "quests", convertedName)`. If `to === "epic"`, check `hasChild(state, "epics", convertedName)`. The plan should be explicit about which tree path to check rather than saying "duplicate quest/epic name" generically, to prevent an implementer from checking both namespaces unnecessarily or checking the wrong one.
+Resolution: DIRECTLY_ACTIONABLE
+
+**[MINOR]** `task:convert` Expected Behavior in Phase 2 says it returns `BeginResult` for the task transition, but the created quest is a side effect not visible in the response
+The Phase 2 Expected Behavior says `task:convert` returns "standard `BeginResult` for the task transition (open -> converted). Created quest verifiable via `quest:show`." This is architecturally sound — keeping `BeginResult` simple. However, the human output spec says to print `"Created quest: <quest-name>"`, which means the command layer needs to know the quest/epic name. The `BeginResult` type does not carry this. The command should either: derive the name from the input payload (it already has it), or the plan should document that the command layer uses the input `name` (or auto-derived name) directly for the human output line, not from `BeginResult`. This is a minor clarity issue since the command already has the name in scope.
+Resolution: DIRECTLY_ACTIONABLE
+
+**[MINOR]** Phase 2 test description says "integration tests" but the task description says unit tests using `reduce()` directly
+The Phase 2 Verification section says "all tests pass including new integration tests" but the Tasks section correctly says "Tests use `reduce()` directly (unit tests, not integration — no integration test pattern exists yet)." The Verification bullet should say "unit tests" to avoid confusion.
+Resolution: DIRECTLY_ACTIONABLE
+
+## Score: 8/10
+The plan is well-structured and demonstrates strong understanding of the codebase patterns. Round 1 fixes successfully addressed the core architectural concerns (inlined CONVERT_TASK, no recursive reduce, explicit exhaustive switches). The remaining issues are: one functional gap (missing epic subdirectories in CONVERT_TASK), one non-existent helper reference (`addEpicToOverview`), and clarity items around the dispatch pattern and schema handling. Fixing the 4 IMPORTANT issues would bring this to 9+.
+
+## Summary
+- Critical: 0
+- Important: 4
+- Minor: 3

@@ -2,6 +2,21 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Cross-entity handlers need shared builder helpers from the start
+_Source: task-capture_
+
+CONVERT_TASK's inlined entity creation duplicated quest/epic shapes until review extracted shared builders. Plans for cross-entity operations should include builder extraction as an explicit task upfront.
+
+## Additive shared schema changes need a producer audit task in plans
+_Source: task-capture_
+
+Adding optional `title` to `overviewItemSchema` required conditional spread in every overview producer — missed initially, caught in review round 2. Any additive optional field on a shared schema needs an explicit "audit all producers" plan task.
+
+## CLI input pattern decisions must be explicit in plans, not deferred
+_Source: task-capture_
+
+Leaving `task:drop` as "reads stdin" cost a refinement iteration when reviewers flagged it as inconsistent with `quest:abandon`'s flag pattern. Plans should explicitly name which existing command's pattern to follow.
+
 ## Verify bug reports via codebase exploration before planning fixes
 _Source: skill-workflow-bugs_
 

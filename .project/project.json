@@ -1,9 +1,9 @@
 {
 	"activeEpic": null,
-	"activeQuest": "task-capture",
+	"activeQuest": null,
 	"activeSlice": null,
 	"created": "2026-03-26T05:53:50.853Z",
 	"name": "goodplan",
-	"updated": "2026-03-26T19:17:18.303Z",
+	"updated": "2026-03-26T19:44:57.341Z",
 	"version": "1.0.0"
 }

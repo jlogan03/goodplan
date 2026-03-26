@@ -4,7 +4,7 @@
 
 ### Well-tested areas
 - Skill file structure (SKILL.md frontmatter, step numbering, reference paths): verified across 4 skill files during slice-quality-and-health implementation with 28-point checklist
-- goodplan CLI: 941 tests (unit + integration + fitness). Unit tests cover tree types, schemas, I/O, state machine, RPC (including paths, version-stamp), context, commands (including state, show artifacts, status file arrays). Integration tests spawn compiled binary covering init, epic/slice/quest lifecycle, error transitions, circuit breaker, runner modes, show artifacts, result paths, version compatibility. 9 fitness functions verify all architectural invariants. Type-clean against `tsc --noEmit`.
+- goodplan CLI: 864+ unit tests, integration + fitness tests. Unit tests cover tree types, schemas, I/O, state machine (including task entity: CREATE_TASK, DROP_TASK, CONVERT_TASK with inlined cross-entity creation), RPC (including paths, version-stamp), context, commands (including state, show artifacts, status file arrays, task commands). Integration tests spawn compiled binary covering init, epic/slice/quest lifecycle, error transitions, circuit breaker, runner modes, show artifacts, result paths, version compatibility. Fitness functions verify all architectural invariants including task event completeness. Type-clean against `tsc --noEmit`.
 - goodplan CLI main runner (`src/index.ts`): integration tests cover unknown commands, --help, --version, --json error mode, NO_COLOR, stdin validation, version compatibility checking (4 variants), --quiet suppression of warnings.
 
 ### Undertested areas
@@ -59,7 +59,7 @@
 - `setEpicStatus` helper in `helpers.ts` is defined but unused — handlers use `setEpicJson` directly for more control. Dead code candidate.
 - loadState cache detects new/removed files but not content changes to existing JSON files. Bounded by commitState always writing fresh cache.
 - Quest submit handlers (`handleCompleteQuestPlan`, `handleCompleteQuestRefinementRound`, `handleCompleteQuestImplementation`) remain co-located in `slice-submit.ts` — splitting to `quest-submit.ts` deferred. File is now 304 lines covering two entity types.
-- Overview `completed` timestamp never set by status-changing handlers — permanently `null` for all entities.
+- Overview `completed` timestamp now set for task terminal transitions (dropped/converted) but still not set for other entity types (epic, slice, quest) — partially addressed.
 - Bidirectional `import type` between `context/types.ts` and `rpc/types.ts` — works but violates independent-modules principle.
 - `decision:update` stdin schema accepts optional `id` that is silently ignored (command uses `--id` flag). Vestige of pre-review design.
 - Schema command human-readable mode uses `process.stdout.write` directly, bypassing `output()` — `--quiet` not respected in human mode.
@@ -72,8 +72,8 @@
 
 ## Recent Changes
 
+- **task-capture** (2026-03-26): New task entity (CREATE_TASK, DROP_TASK, CONVERT_TASK with inlined cross-entity creation), 5 CLI commands (task:create/list/show/drop/convert), /capture skill, project-status task count integration. Extracted shared entity builder helpers. 864+ unit tests (+30 new for tasks).
 - **skill-workflow-bugs** (2026-03-26): Fixed 3 skill bugs (redundant goal.md sections, unnecessary confirmation prompts, /complete learnings gate). Created shared Iteration Summary template in output-templates.md. Converted all 7 skills' structured output points from prose to rigid templates. No TS code changes.
 - **05-planning-execution-skills** (2026-03-24): Migrated 6 skills (create-plan, create-slices, refine-plan, implement-plan, refine-slices, migrate) to goodplan CLI. Fixed complete skill's mkdir to use quest:create. All direct state.md/activity-log access eliminated. 941 tests (no new — skill-only changes).
-- **02-show-status-enrichment** (2026-03-24): `artifacts` boolean flags on `show --json`, `status --json` file arrays (`{ count, files }`), `paths?` on RPC result types, semver compatibility checking, version bump to 1.0.0, deleted dead `files.ts`. 941 tests (+91 new).
 
-<!-- Last updated by: complete for skill-workflow-bugs, 2026-03-26 -->
+<!-- Last updated by: complete for task-capture, 2026-03-26 -->

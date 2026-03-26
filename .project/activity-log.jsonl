@@ -15,3 +15,5 @@
 {"phase":"complete-quest-refinement","scope":"quests/task-capture","status":"complete","summary":"Quest \"task-capture\" plan refined","ts":"2026-03-26T19:17:31.748Z"}
 {"phase":"begin-quest-implementation","scope":"quests/task-capture","status":"complete","summary":"Quest \"task-capture\" implementation started","ts":"2026-03-26T19:17:35.641Z"}
 {"phase":"complete-quest-implementation","scope":"quests/task-capture","status":"complete","summary":"Quest \"task-capture\" implementation completed","ts":"2026-03-26T19:17:39.766Z"}
+{"phase":"create-task","scope":"tasks/list-all-convention","status":"complete","summary":"Task \"list-all-convention\" created: Adopt --all convention for quest:list and slice:list","ts":"2026-03-26T19:29:21.354Z"}
+{"phase":"complete-quest","scope":"quests/task-capture","status":"complete","summary":"Quest \"task-capture\" completed","ts":"2026-03-26T19:44:57.341Z"}
