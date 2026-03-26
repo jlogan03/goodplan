@@ -246,36 +246,7 @@ Display these templates exactly as shown (with actual values substituted). These
 
 ### Iteration Summary Template
 
-Display after every iteration, immediately after synthesizing feedback and before applying fixes.
-
-```
----
-
-### Iteration {N} Review
-
-**Reviewers**: {reviewer1} ({score}/10), {reviewer2} ({score}/10), ...
-
-| # | Severity | Issue | Source | Resolution |
-|---|----------|-------|--------|------------|
-| 1 | CRITICAL | {brief issue description} | {Reviewer name(s)} | {DIRECTLY_ACTIONABLE / USER_INPUT / RESEARCH_NEEDED / CODEBASE_EXPLORATION} |
-| 2 | IMPORTANT | {brief issue description} | {Reviewer} | {resolution} |
-| ... | ... | ... | ... | ... |
-
-**Contradictions**: {N resolved, N unresolved — or "None"}
-**USER_INPUT needed**: {brief list — or "None"}
-**RESEARCH_NEEDED**: {brief list of topics to research — or "None"}
-
-**Actions**: {what will be done — e.g., "Researching 2 topics, then applying 4 IMPORTANT and 3 MINOR fixes. Asking user about 1 item."}
-
----
-```
-
-Notes:
-- List ALL issues, not just a summary count. Users want to see what was found.
-- Order by severity (CRITICAL first, then IMPORTANT, then MINOR).
-- Keep issue descriptions to one line — enough to identify the issue, not the full explanation.
-- The "Source" column shows which reviewer(s) flagged the issue. If multiple reviewers flagged the same issue (deduplicated), list all of them (e.g., "Holistic, Backend").
-- The "Actions" line previews what happens next before the orchestrator proceeds.
+Read `../_shared/references/output-templates.md` for the shared Iteration Summary template, substitution rules, and display rules. Use `{scope_prefix}` = empty (omit the Phase prefix). Display after every iteration.
 
 ### Completion Summary Template
 

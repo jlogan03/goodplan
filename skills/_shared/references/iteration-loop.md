@@ -78,6 +78,10 @@ After all foreground reviewer agents return (they were launched in a single mess
 
 4. **Use the summary, not the file**: The synthesis agent returns a compact summary. Use that for loop decisions (scores, severity counts, stall detection). Do NOT read `merged.md` yourself — pass its path to the editor sub-agent.
 
+### Display Iteration Summary
+
+After synthesizing feedback, display the iteration results to the user using the **Iteration Summary Template** from `../_shared/references/output-templates.md`. Read that file for the exact template, substitution rules, and display rules. This must be shown every iteration.
+
 ### Handling USER_INPUT
 
 When the synthesis summary reports USER_INPUT items:

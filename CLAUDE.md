@@ -25,3 +25,7 @@ Also check if relevant to your task:
 - `.project/brainstorm/` — architecture brainstorming output
 - `.project/decisions/` — active architectural decisions
 - `docs/superpowers/specs/2026-03-20-goodplan-cli-and-skill-consolidation-design.md` — original design spec
+
+## Skills
+
+The `skills/` directory in this repo is the **source of truth** for all goodplan skills. These are installed to `~/.claude/skills/` via `bun run install:skills`. When modifying skills, ALWAYS edit files under `skills/` in this repo — NEVER edit the installed copies at `~/.claude/skills/`.
