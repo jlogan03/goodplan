@@ -28,7 +28,7 @@ Workflow orchestration layer. Coordinates the State Machine and Data Layer to ex
 
 ### State Machine
 
-Pure rules engine with no I/O. Implements a reducer pattern over declarative transition tables: `(state, event) → new state | error`. Manages lifecycle for all entity types (project, epic, slice, quest) including guards (activation gate, sequential slice enforcement, circuit breakers) and tracking state (refinement rounds, scores, implementation phases).
+Pure rules engine with no I/O. Implements a reducer pattern over declarative transition tables: `(state, event) → new state | error`. Manages lifecycle for all entity types (project, epic, slice, quest, task) including guards (activation gate, sequential slice enforcement, circuit breakers) and tracking state (refinement rounds, scores, implementation phases). Tasks are a lightweight capture entity with a simple open → converted/dropped lifecycle; `CONVERT_TASK` atomically creates a quest or epic from a task using inlined entity creation (no recursive reduce).
 
 **Dependencies:** Shared Tree Types (`src/core/tree.ts` — pure types and helpers with zero I/O, shared across State Machine and Data Layer)
 

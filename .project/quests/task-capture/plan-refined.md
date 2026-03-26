@@ -152,7 +152,7 @@ Create the `/capture` skill for frictionless task creation and update `/project-
 
 ### Tasks
 
-- [ ] Create `skills/capture/SKILL.md` with:
+- [x] Create `skills/capture/SKILL.md` with:
   - Frontmatter: `name: capture`, `requires: goodplan >= 1.0.0`, `description: Quick capture of a bug, idea, or improvement noticed during current work — creates a lightweight task without breaking flow. For quick lightweight notes only, not for research (/explore) or large-scope work (/create-epic).`
   - Trigger: `/capture`, "capture this", "note this" — avoid overly generic triggers like "todo:" and "remember to" which false-trigger in normal conversation
   - **Step 0**: Version check — run `goodplan --version --json` and verify compatibility
@@ -164,11 +164,11 @@ Create the `/capture` skill for frictionless task creation and update `/project-
     3. Never ask more than 2 questions. If 2 questions haven't produced enough context, create with what you have — something captured is better than nothing.
   - **Output**: One-liner summary, e.g., `Captured: **Fix error handling** (while working on migrate slice, branch: feat/migrate)`. Don't interrupt the user's flow.
   - **CLI interaction**: Use `--json` for all CLI calls.
-- [ ] Update `skills/project-status/SKILL.md`:
+- [x] Update `skills/project-status/SKILL.md`:
   - In both Format A and Format B templates, add a "**Tasks**: N open" line after the existing artifact counts section. Only show if `openTasks > 0` in `status --json` response.
-- [ ] Register the skill in the install script (`scripts/install-skills.sh`) — add `capture` to the skills list
-- [ ] Run `bun run install:skills` to install the new skill
-- [ ] Update architecture docs:
+- [x] Register the skill in the install script (`scripts/install-skills.sh`) — add `capture` to the skills list
+- [x] Run `bun run install:skills` to install the new skill
+- [x] Update architecture docs:
   - `.project/architecture/transition-tables.md`: Add "Task" section with transitions: `(none) → CREATE_TASK → open`, `open → DROP_TASK → dropped`, `open → CONVERT_TASK → converted`. Guards: duplicate name rejection, invalid transitions on terminal states. Add `converted` and `dropped` to Terminal States section.
   - `.project/architecture/data-model.md`: Add task entity description (schema, context snapshot fields, relationship to quests/epics via convert)
   - `.project/architecture/_overview.md`: Update subsystem notes to include task entity

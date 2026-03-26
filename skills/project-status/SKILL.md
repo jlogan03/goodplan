@@ -195,12 +195,14 @@ Use this when there is an active slice or side quest being worked on:
 
 **Expertise**: <brief summary from CLAUDE.md ## Expertise, e.g. "TypeScript: expert, React: proficient, PostgreSQL: intermediate">
 
+**Tasks**: <N open>
+
 **Decisions**: <N active> [, <M revisiting>]
 
 **Next**: `/<skill> <args>`
 ```
 
-Omit the **Expertise** line if no `## Expertise` section exists in `~/.claude/CLAUDE.md`. Omit the **Work stack** block entirely when empty. Omit the **Decisions** line if no decisions exist. If any decisions have `revisiting` status, always show the revisiting count. Show the last 3-5 activity-log entries in Recent activity, most recent first.
+Omit the **Expertise** line if no `## Expertise` section exists in `~/.claude/CLAUDE.md`. Omit the **Work stack** block entirely when empty. Omit the **Tasks** line if `openTasks` is 0 in the `status --json` response. Omit the **Decisions** line if no decisions exist. If any decisions have `revisiting` status, always show the revisiting count. Show the last 3-5 activity-log entries in Recent activity, most recent first.
 
 ### Format B — Between Work Items
 
@@ -238,6 +240,8 @@ Slices: <completed>/<total> complete
 
 ## Archived: <count> epics
 
+**Tasks**: <N open>
+
 **Expertise**: <brief summary from CLAUDE.md ## Expertise>
 
 **Decisions**: <N active> [, <M revisiting>]
@@ -245,7 +249,7 @@ Slices: <completed>/<total> complete
 **Next**: `/<skill> <args>`
 ```
 
-Omit **Other Epics** if none exist. Omit **Side Quests** if none exist. Omit **Archived** if count is 0. Omit **Expertise** if no `## Expertise` section in `~/.claude/CLAUDE.md`. Omit **Decisions** if none exist.
+Omit **Other Epics** if none exist. Omit **Side Quests** if none exist. Omit **Archived** if count is 0. Omit **Tasks** if `openTasks` is 0. Omit **Expertise** if no `## Expertise` section in `~/.claude/CLAUDE.md`. Omit **Decisions** if none exist.
 
 #### Format B without Epics
 
@@ -268,6 +272,8 @@ When no `epics/` directory exists (legacy/pre-epic projects), use the original l
 **Side quests**:
 - `<name>` — <state> → `/<skill> <args>`
 
+**Tasks**: <N open>
+
 **Expertise**: <brief summary from CLAUDE.md ## Expertise>
 
 **Decisions**: <N active> [, <M revisiting>]
@@ -275,7 +281,7 @@ When no `epics/` directory exists (legacy/pre-epic projects), use the original l
 **Next**: `/<skill> <args>`
 ```
 
-Omit the **Expertise** line if no `## Expertise` section exists in `~/.claude/CLAUDE.md`. Omit the **Side quests** block entirely if no side quests exist. Omit the **Decisions** line if no decisions exist.
+Omit the **Expertise** line if no `## Expertise` section exists in `~/.claude/CLAUDE.md`. Omit the **Side quests** block entirely if no side quests exist. Omit the **Tasks** line if `openTasks` is 0. Omit the **Decisions** line if no decisions exist.
 
 For each slice, quest, or epic shown, use the state-to-next-skill mapping from `references/status-logic.md` to suggest the appropriate command. Complete items do not need a suggestion.
 

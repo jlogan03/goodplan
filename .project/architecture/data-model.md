@@ -91,9 +91,32 @@ Per-quest metadata. Located at `.project/quests/<name>/quest.json`. Quests are p
 
 The `refinement` field in `quest.json` has the same structure and semantics as in `slice.json`. It is populated when the quest enters a refining state, tracks round counts and score history for the circuit breaker, and is `null` or absent when refinement has not started.
 
+### task.json
+
+Per-task metadata. Located at `.project/tasks/<name>/task.json`. Tasks are lightweight capture items — a "junk drawer" for thoughts, bugs, and ideas noticed during work. They can be converted to quests or epics via `task:convert`.
+
+```json
+{
+  "name": "fix-error-handling",
+  "title": "Fix error handling in migrate.ts",
+  "status": "open",
+  "created": "2026-03-26T00:00:00Z",
+  "context": {
+    "activeSlice": "01-data-layer",
+    "activeQuest": null,
+    "activeEpic": "goodplan-cli",
+    "gitBranch": "feat/migrate",
+    "capturedDuring": "implementing slice 01-data-layer"
+  },
+  "description": "migrate.ts has wrong error codes for validation failures"
+}
+```
+
+Fields: `name` (kebab-case identifier), `title` (human-readable), `status` (open/converted/dropped), `context` (structured snapshot of what the user was doing when captured), `description` (optional detail), `convertedTo` (set when converted: `{ type: "quest"|"epic", name: string }`), `droppedReason` (set when dropped). Terminal states: `converted` and `dropped`.
+
 ### overview.json
 
-Index file per collection. Located at `.project/epics/overview.json`, `.project/slices/overview.json`, `.project/quests/overview.json`.
+Index file per collection. Located at `.project/epics/overview.json`, `.project/slices/overview.json`, `.project/quests/overview.json`, `.project/tasks/overview.json`.
 
 ```json
 {

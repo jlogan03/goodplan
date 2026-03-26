@@ -33,6 +33,7 @@ mkdir -p "$SKILLS_DST"
 SKILL_DIRS=(
   _shared
   audit-architecture
+  capture
   complete
   create-architecture
   create-epic
