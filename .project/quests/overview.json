@@ -82,7 +82,7 @@
 			"completed": null,
 			"created": "2026-03-26T05:53:50.853Z",
 			"name": "migrate-to-cli",
-			"status": "implementing"
+			"status": "completed"
 		},
 		{
 			"completed": null,
@@ -119,6 +119,18 @@
 			"created": "2026-03-26T05:53:50.853Z",
 			"name": "dogfood-harness",
 			"status": "implementing"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-26T13:57:32.257Z",
+			"name": "consistent-skill-output",
+			"status": "created"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-26T14:12:13.645Z",
+			"name": "migration-sibling-check",
+			"status": "created"
 		}
 	]
 }

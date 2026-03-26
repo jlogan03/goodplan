@@ -2,6 +2,26 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Direct state construction with INV-001 exception is cleaner than backdoor SM events for data imports
+_Source: migrate-to-cli_
+
+Bypassing `reduce()` avoids exhaustiveness ripple, guard bypass docs, and fitness function churn. Document as a formal INV-001 exception. Use this pattern for any future data import that needs to set entities at arbitrary statuses.
+
+## Multi-round Q&A with per-round Zod schemas prevents LLM JSON errors on large payloads
+_Source: migrate-to-cli_
+
+Breaking structured data collection into small rounds with `z.toJSONSchema()`-generated responseSchemas keeps responses focused and schema-validated. One-shot approaches with large payloads risk truncation and malformed output. Add a circuit breaker for correction rounds.
+
+## Rename-then-fresh-construct beats in-place directory normalization
+_Source: migrate-to-cli_
+
+Moving the old directory aside and building fresh state eliminates all naming convention logic. The LLM provides clean names; the CLI never touches old naming schemes. The old directory serves as both backup and artifact source for copy.
+
+## CLI should cross-check LLM-provided paths against siblings for completeness
+_Source: migrate-to-cli_
+
+When the LLM provides paths, the CLI should scan for sibling files the LLM didn't mention and ask about them. Guards against incomplete migration of LLM-generated content. Not yet implemented — future enhancement candidate.
+
 ## Convention-doc-first enables consistent cross-cutting migrations
 _Source: skills-cli-integration (epic)_
 
