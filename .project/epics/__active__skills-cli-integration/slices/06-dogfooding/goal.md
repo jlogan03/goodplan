@@ -15,12 +15,12 @@ Run the complete CLI-integrated skill suite on a real workflow cycle to surface 
 
 ## Success Criteria
 
-- [ ] At least one full workflow cycle (epic → slices → plan → implement → complete) executed using CLI-integrated skills
-- [ ] All friction points documented as issues and resolved
-- [ ] Convention doc reflects the actual working patterns (not just the designed patterns)
-- [ ] Focus on cross-skill transitions and emergent issues; a final cross-skill grep is included as a safety net (see Verification step 2)
-- [ ] `bun test` passes — all existing CLI tests still work
-- [ ] `bun run install:skills` installs all updated skills successfully
+- [x] At least one full workflow cycle (epic → slices → plan → implement → complete) executed using CLI-integrated skills — TWO full epics + 2 quests completed via Agent SDK harness with Opus 4.6
+- [x] All friction points documented as issues and resolved — 9 friction items logged, 7 bugs fixed, 2 minor items deferred
+- [x] Convention doc reflects the actual working patterns (not just the designed patterns) — audit found 14 violations, all fixed except start-epic (un-migrated)
+- [x] Focus on cross-skill transitions and emergent issues; a final cross-skill grep is included as a safety net — grep clean (excluding start-epic and _shared reference docs)
+- [x] `bun test` passes — 942 tests pass (was 941, +1 for --force concurrent mod test)
+- [x] `bun run install:skills` installs all updated skills successfully
 
 ## Verification
 

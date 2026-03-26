@@ -2,6 +2,26 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Directory rename conventions (~~archived~~, __active__) are incompatible with CLI path resolution
+_Source: 06-dogfooding_
+
+The CLI resolves entity paths using bare names (`epics/<name>/epic.json`). Renaming directories with prefixes like `~~archived~~` or `__active__` permanently breaks CLI access. Completed entities should be identified by `status === "completed"` via CLI queries, not filesystem naming. Removed the ~~archived~~ convention; __active__ remains as legacy concern.
+
+## Skills in automated/headless mode need submit-* calls before summary steps, not after
+_Source: 06-dogfooding_
+
+When running skills via Agent SDK (or `claude -p`), the model often drops the final submit-* CLI call because it's the last step after long context. Moving submit before cleanup/summary steps and adding CRITICAL markers improved reliability. The harness also needs fallback transitions for when models skip them regardless.
+
+## Agent SDK env option replaces rather than merges — always spread process.env
+_Source: 06-dogfooding_
+
+Passing `env: { PATH: "..." }` to Agent SDK `query()` strips all inherited environment variables including auth credentials. Always use `env: { ...process.env, PATH: "..." }`. This cost a full wasted run to diagnose.
+
+## Entity creation commands must register each individual entity, not just advance parent state
+_Source: 06-dogfooding_
+
+`/create-slices` called `submit-slices` (epic-level) but not `slice:create` (per-entity). `slice:list` returned empty. Skills that create child entities must call the per-entity creation command for each one in addition to the parent's phase transition.
+
 ## CLI command syntax in skills must be concrete, not abstract — agents copy what they see
 _Source: 05-planning-execution-skills_
 
