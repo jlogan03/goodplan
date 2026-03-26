@@ -17,7 +17,7 @@ Update the `/migrate` SKILL.md stub to a goal-aware Q&A skill that reads old-for
 
 ### Tasks
 
-- [ ] Rewrite `skills/migrate/SKILL.md` with full skill content:
+- [x] Rewrite `skills/migrate/SKILL.md` with full skill content:
   - **Frontmatter:** name, description — front-load natural trigger phrases and plain-language summary (under ~200 chars): "Migrate project, convert to goodplan, import existing .project/ — converts a pre-CLI .project/ directory to CLI-managed state." Move the `DATA_NO_PROJECT` error-condition trigger to the skill body, not the description. `requires: goodplan >= 1.0.0`
   - **Reference:** `../_shared/references/cli-interaction.md` (specifically Section 10: Error Handling) for error handling patterns. Note: Section 12 uses "migration" in a different sense — scope the reference to Section 10 only.
   - **Step 1 — Version check (mandatory per cli-interaction.md):**
@@ -59,7 +59,7 @@ Update the `/migrate` SKILL.md stub to a goal-aware Q&A skill that reads old-for
     - If correction limit reached: explain what happened, suggest manually reviewing `.migration-in-progress.json`
     - If rename fails (`.project-old/` exists): explain and suggest removing the old backup
   - **Intermediate status handling:** Intermediate workflow statuses (e.g., `exploring`, `defining-architecture`) are not expected in pre-CLI projects. If detected, map to nearest stable predecessor (e.g., mid-refinement → `architecture-defined`).
-- [ ] Create `skills/migrate/references/migration-heuristics.md`:
+- [x] Create `skills/migrate/references/migration-heuristics.md`:
   - Move detailed status inference heuristics here (keeps SKILL.md focused on workflow):
     1. `abandoned.md` exists → `abandoned`
     2. `completion/learnings.md` exists → `completed`
@@ -70,8 +70,8 @@ Update the `/migrate` SKILL.md stub to a goal-aware Q&A skill that reads old-for
     7. Only `goal.md` → `created`
   - Include directory scanning conventions (prefix stripping, ignored files)
   - Note: `~~archived~~` and `__active__` prefixes are mutually exclusive — they never co-occur on the same directory
-- [ ] Verify SKILL.md body uses relative path `references/migration-heuristics.md` consistently for heuristic references, matching conventions in other skills.
-- [ ] Verify skill references correct CLI command syntax per `cli-interaction.md` conventions (`stdin:` parameter syntax preferred for answer payloads, `echo` acceptable for simple cases, `--json` flag)
+- [x] Verify SKILL.md body uses relative path `references/migration-heuristics.md` consistently for heuristic references, matching conventions in other skills.
+- [x] Verify skill references correct CLI command syntax per `cli-interaction.md` conventions (`stdin:` parameter syntax preferred for answer payloads, `echo` acceptable for simple cases, `--json` flag)
 
 ### Verification
 
