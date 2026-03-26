@@ -1,0 +1,11 @@
+{
+	"activated": null,
+	"created": "2026-03-26T20:23:37.272Z",
+	"goal": "Restructure slice storage from flat .project/slices/<name>/ to nested .project/epics/<epic>/slices/<name>/. Consolidate slice overview into epics/overview.json (eliminating slices/overview.json and sequencing.md). Fix learnings.md duplication. Update /migrate to handle flat-to-nested restructuring and run it on this repo.",
+	"name": "entity-restructuring",
+	"refinement": null,
+	"sliceSequence": [],
+	"status": "created",
+	"updated": "2026-03-26T20:23:37.272Z",
+	"verifications": []
+}

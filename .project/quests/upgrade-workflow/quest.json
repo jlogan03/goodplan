@@ -3,6 +3,6 @@
 	"goal": "A skill that migrates repos with an old-version .project/ directory to the current workflow version. Detects which conventions/files are missing, presents a gap analysis, and migrates incrementally.",
 	"name": "upgrade-workflow",
 	"refinement": null,
-	"status": "created",
-	"updated": "2026-03-26T05:53:50.853Z"
+	"status": "abandoned",
+	"updated": "2026-03-26T19:57:09.328Z"
 }

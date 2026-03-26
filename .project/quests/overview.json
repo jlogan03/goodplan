@@ -94,7 +94,7 @@
 			"completed": null,
 			"created": "2026-03-26T05:53:50.853Z",
 			"name": "side-quest-interruption-lifecycle",
-			"status": "created"
+			"status": "abandoned"
 		},
 		{
 			"completed": null,
@@ -112,7 +112,7 @@
 			"completed": null,
 			"created": "2026-03-26T05:53:50.853Z",
 			"name": "upgrade-workflow",
-			"status": "created"
+			"status": "abandoned"
 		},
 		{
 			"completed": null,
@@ -130,6 +130,12 @@
 			"completed": null,
 			"created": "2026-03-26T14:12:13.645Z",
 			"name": "migration-sibling-check",
+			"status": "abandoned"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-26T20:09:49.184Z",
+			"name": "entity-path-and-learnings-cleanup",
 			"status": "abandoned"
 		}
 	]
