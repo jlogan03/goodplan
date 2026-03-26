@@ -2,6 +2,16 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Verify bug reports via codebase exploration before planning fixes
+_Source: skill-workflow-bugs_
+
+Two of four original bugs were invalid or mislocated — one targeted the wrong file, one described a problem that didn't exist. Running codebase context discovery during plan refinement caught both before implementation. For "fix bugs" quests, verify each bug still exists and is correctly characterized before creating a plan.
+
+## Only extract templates with structural identity to shared files
+_Source: skill-workflow-bugs_
+
+When consolidating output templates across skills, only extract templates that are structurally identical (differing by at most a conditional prefix). Templates that diverge in structure should stay inline — shared extraction adds indirection without reducing duplication.
+
 ## Direct state construction with INV-001 exception is cleaner than backdoor SM events for data imports
 _Source: migrate-to-cli_
 
@@ -17,10 +27,10 @@ _Source: migrate-to-cli_
 
 Moving the old directory aside and building fresh state eliminates all naming convention logic. The LLM provides clean names; the CLI never touches old naming schemes. The old directory serves as both backup and artifact source for copy.
 
-## CLI should cross-check LLM-provided paths against siblings for completeness
-_Source: migrate-to-cli_
+## CLI sibling detection during migration was a non-issue
+_Source: migrate-to-cli (updated by skill-workflow-bugs)_
 
-When the LLM provides paths, the CLI should scan for sibling files the LLM didn't mention and ask about them. Guards against incomplete migration of LLM-generated content. Not yet implemented — future enhancement candidate.
+Investigation during skill-workflow-bugs quest revealed `copyMarkdownFiles()` already copies ALL .md files from source directories. The original concern about missed siblings was based on a misunderstanding of the migration code. No enhancement needed.
 
 ## Convention-doc-first enables consistent cross-cutting migrations
 _Source: skills-cli-integration (epic)_

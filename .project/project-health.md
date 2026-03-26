@@ -72,8 +72,8 @@
 
 ## Recent Changes
 
+- **skill-workflow-bugs** (2026-03-26): Fixed 3 skill bugs (redundant goal.md sections, unnecessary confirmation prompts, /complete learnings gate). Created shared Iteration Summary template in output-templates.md. Converted all 7 skills' structured output points from prose to rigid templates. No TS code changes.
 - **05-planning-execution-skills** (2026-03-24): Migrated 6 skills (create-plan, create-slices, refine-plan, implement-plan, refine-slices, migrate) to goodplan CLI. Fixed complete skill's mkdir to use quest:create. All direct state.md/activity-log access eliminated. 941 tests (no new — skill-only changes).
 - **02-show-status-enrichment** (2026-03-24): `artifacts` boolean flags on `show --json`, `status --json` file arrays (`{ count, files }`), `paths?` on RPC result types, semver compatibility checking, version bump to 1.0.0, deleted dead `files.ts`. 941 tests (+91 new).
-- **01-state-command-convention-doc-tracer** (2026-03-23): `goodplan state --json --query --offset --limit` command, `--version --json`, `serializeStateTree` with exhaustive type switching, convention doc (`cli-interaction.md` with 12 sections), project-status skill rewrite as CLI tracer bullet. 850 tests.
 
-<!-- Last updated by: complete for 05-planning-execution-skills, 2026-03-24 -->
+<!-- Last updated by: complete for skill-workflow-bugs, 2026-03-26 -->
