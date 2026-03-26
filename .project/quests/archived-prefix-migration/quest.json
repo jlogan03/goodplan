@@ -1,0 +1,8 @@
+{
+	"created": "2026-03-26T05:53:50.853Z",
+	"goal": "Replace the __done__ directory prefix with ~~archived~~ across the entire codebase — skill files, workflow.md references, existing .project/ directories, and any other code that reads or writes these prefixes.",
+	"name": "archived-prefix-migration",
+	"refinement": null,
+	"status": "completed",
+	"updated": "2026-03-26T05:53:50.853Z"
+}

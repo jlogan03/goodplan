@@ -1,0 +1,8 @@
+{
+	"created": "2026-03-26T05:53:50.853Z",
+	"goal": "A goodplan migrate CLI command that drives a question-answer conversation to collect all the information needed to construct valid CLI-managed state from an existing pre-CLI .project/ directory.",
+	"name": "migrate-to-cli",
+	"refinement": null,
+	"status": "implementing",
+	"updated": "2026-03-26T05:53:50.853Z"
+}
