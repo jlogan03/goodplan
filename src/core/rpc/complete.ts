@@ -101,6 +101,7 @@ function buildCompleteEvent(target: Target, input: CompleteInput, ts: string): S
 					`CompleteInput.type '${input.type}' does not match target.type 'slice'`,
 				);
 			}
+			// @ts-expect-error — slice 02: event needs epic from target.epic
 			return {
 				type: "COMPLETE_SLICE",
 				slice: target.name,

@@ -298,6 +298,7 @@ function buildAbandonEvent(
 		case "epic":
 			return { type: "ABANDON_EPIC", epic: target.name, ts, reason: payload.reason };
 		case "slice":
+			// @ts-expect-error — slice 02: event needs epic from target.epic
 			return { type: "ABANDON_SLICE", slice: target.name, ts, reason: payload.reason };
 		case "quest":
 			return { type: "ABANDON_QUEST", quest: target.name, ts, reason: payload.reason };
@@ -309,6 +310,7 @@ function buildAbandonEvent(
 function buildPlanPhaseEvent(target: Target, ts: string): StateEvent {
 	switch (target.type) {
 		case "slice":
+			// @ts-expect-error — slice 02: event needs epic from target.epic
 			return { type: "BEGIN_PLAN", slice: target.name, ts };
 		case "quest":
 			return { type: "BEGIN_QUEST_PLAN", quest: target.name, ts };
@@ -323,6 +325,7 @@ function buildPlanPhaseEvent(target: Target, ts: string): StateEvent {
 function buildRefinePlanEvent(target: Target, ts: string): StateEvent {
 	switch (target.type) {
 		case "slice":
+			// @ts-expect-error — slice 02: event needs epic from target.epic
 			return { type: "BEGIN_REFINEMENT", slice: target.name, ts };
 		case "quest":
 			return { type: "BEGIN_QUEST_REFINEMENT", quest: target.name, ts };
@@ -337,6 +340,7 @@ function buildRefinePlanEvent(target: Target, ts: string): StateEvent {
 function buildImplementEvent(target: Target, ts: string): StateEvent {
 	switch (target.type) {
 		case "slice":
+			// @ts-expect-error — slice 02: event needs epic from target.epic
 			return { type: "BEGIN_IMPLEMENTATION", slice: target.name, ts };
 		case "quest":
 			return { type: "BEGIN_QUEST_IMPLEMENTATION", quest: target.name, ts };

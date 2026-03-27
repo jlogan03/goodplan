@@ -45,10 +45,6 @@ export function handleInitProject(
 		type: "json",
 		content: { items: [] },
 	});
-	tree = setEntry(tree, "slices/overview.json", {
-		type: "json",
-		content: { items: [] },
-	});
 	tree = setEntry(tree, "quests/overview.json", {
 		type: "json",
 		content: { items: [] },

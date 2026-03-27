@@ -47,6 +47,7 @@ export const startImplementationCommand = defineCommand({
 
 		// Safe: the mutual-exclusivity check above guarantees exactly one of
 		// sliceVal/questVal is defined — if sliceVal is undefined, questVal is defined.
+		// @ts-expect-error — slice 02: Target needs epic field for slice variant
 		const target: Target = sliceVal !== undefined
 			? { type: "slice", name: sliceVal }
 			: { type: "quest", name: questVal! };

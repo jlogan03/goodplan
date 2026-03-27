@@ -14,6 +14,7 @@ import type { ContentSource, ResolvedTarget, SubmitPhase, Target } from "./types
 function entityDir(target: Target): string {
 	switch (target.type) {
 		case "slice":
+			// TODO(slice-02): path should be epics/${target.epic}/slices/${target.name}
 			return `slices/${target.name}`;
 		case "quest":
 			return `quests/${target.name}`;

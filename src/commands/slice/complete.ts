@@ -37,6 +37,7 @@ export const sliceCompleteCommand = defineCommand({
 		const projectDir = resolveProjectDir();
 		const result = await complete(
 			projectDir,
+			// @ts-expect-error — slice 02: Target needs epic field
 			{ type: "slice", name: input.slice },
 			{
 				type: "slice",

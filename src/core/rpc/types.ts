@@ -64,7 +64,7 @@ export type SubmitPhase =
 export type Target =
 	| { type: "project" }
 	| { type: "epic"; name: string }
-	| { type: "slice"; name: string }
+	| { type: "slice"; name: string; epic: string }
 	| { type: "quest"; name: string }
 	| { type: "task"; name: string }
 	| { type: "decision"; id: string }
@@ -230,7 +230,7 @@ export function resolveEntityJsonPath(target: Target): string {
 		case "epic":
 			return `epics/${target.name}/epic.json`;
 		case "slice":
-			return `slices/${target.name}/slice.json`;
+			return `epics/${target.epic}/slices/${target.name}/slice.json`;
 		case "quest":
 			return `quests/${target.name}/quest.json`;
 		case "task":

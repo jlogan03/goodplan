@@ -53,20 +53,22 @@ export type StateEvent =
 	  }
 	// Slice lifecycle
 	| { type: "CREATE_SLICE"; name: string; epic: string; goal: string; ts: string }
-	| { type: "BEGIN_PLAN"; slice: string; ts: string }
-	| { type: "COMPLETE_PLAN"; slice: string; ts: string }
-	| { type: "BEGIN_REFINEMENT"; slice: string; ts: string }
+	| { type: "BEGIN_PLAN"; epic: string; slice: string; ts: string }
+	| { type: "COMPLETE_PLAN"; epic: string; slice: string; ts: string }
+	| { type: "BEGIN_REFINEMENT"; epic: string; slice: string; ts: string }
 	| {
 			type: "COMPLETE_REFINEMENT_ROUND";
+			epic: string;
 			slice: string;
 			ts: string;
 			scores: Record<string, number>;
 			override?: boolean;
 	  }
-	| { type: "BEGIN_IMPLEMENTATION"; slice: string; ts: string }
-	| { type: "COMPLETE_IMPLEMENTATION"; slice: string; ts: string }
+	| { type: "BEGIN_IMPLEMENTATION"; epic: string; slice: string; ts: string }
+	| { type: "COMPLETE_IMPLEMENTATION"; epic: string; slice: string; ts: string }
 	| {
 			type: "COMPLETE_SLICE";
+			epic: string;
 			slice: string;
 			ts: string;
 			verificationPassed: boolean;
@@ -74,7 +76,7 @@ export type StateEvent =
 			learnings: LearningInput[];
 			architectureDelta: ArchitectureDeltaInput[];
 	  }
-	| { type: "ABANDON_SLICE"; slice: string; ts: string; reason: string }
+	| { type: "ABANDON_SLICE"; epic: string; slice: string; ts: string; reason: string }
 	// Quest lifecycle
 	| { type: "CREATE_QUEST"; name: string; goal: string; ts: string }
 	| { type: "BEGIN_QUEST_PLAN"; quest: string; ts: string }

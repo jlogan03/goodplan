@@ -138,26 +138,29 @@ describe("StateEvent", () => {
 				goal: "Do something",
 				ts: "2026-03-22T00:00:00.000Z",
 			},
-			{ type: "BEGIN_PLAN", slice: "s", ts: "2026-03-22T00:00:00.000Z" },
-			{ type: "COMPLETE_PLAN", slice: "s", ts: "2026-03-22T00:00:00.000Z" },
-			{ type: "BEGIN_REFINEMENT", slice: "s", ts: "2026-03-22T00:00:00.000Z" },
+			{ type: "BEGIN_PLAN", epic: "e", slice: "s", ts: "2026-03-22T00:00:00.000Z" },
+			{ type: "COMPLETE_PLAN", epic: "e", slice: "s", ts: "2026-03-22T00:00:00.000Z" },
+			{ type: "BEGIN_REFINEMENT", epic: "e", slice: "s", ts: "2026-03-22T00:00:00.000Z" },
 			{
 				type: "COMPLETE_REFINEMENT_ROUND",
+				epic: "e",
 				slice: "s",
 				ts: "2026-03-22T00:00:00.000Z",
 				scores: { quality: 9 },
 			},
 			{
 				type: "COMPLETE_REFINEMENT_ROUND",
+				epic: "e",
 				slice: "s",
 				ts: "2026-03-22T00:00:00.000Z",
 				scores: { quality: 7 },
 				override: true,
 			},
-			{ type: "BEGIN_IMPLEMENTATION", slice: "s", ts: "2026-03-22T00:00:00.000Z" },
-			{ type: "COMPLETE_IMPLEMENTATION", slice: "s", ts: "2026-03-22T00:00:00.000Z" },
+			{ type: "BEGIN_IMPLEMENTATION", epic: "e", slice: "s", ts: "2026-03-22T00:00:00.000Z" },
+			{ type: "COMPLETE_IMPLEMENTATION", epic: "e", slice: "s", ts: "2026-03-22T00:00:00.000Z" },
 			{
 				type: "COMPLETE_SLICE",
+				epic: "e",
 				slice: "s",
 				ts: "2026-03-22T00:00:00.000Z",
 				verificationPassed: true,
@@ -165,7 +168,7 @@ describe("StateEvent", () => {
 				learnings: [{ category: "worked", summary: "s", detail: "d", tags: [], rollupTo: [] }],
 				architectureDelta: [{ subsystem: "core", type: "modify", description: "changed" }],
 			},
-			{ type: "ABANDON_SLICE", slice: "s", ts: "2026-03-22T00:00:00.000Z", reason: "Not needed" },
+			{ type: "ABANDON_SLICE", epic: "e", slice: "s", ts: "2026-03-22T00:00:00.000Z", reason: "Not needed" },
 		];
 		expect(events).toHaveLength(10);
 	});

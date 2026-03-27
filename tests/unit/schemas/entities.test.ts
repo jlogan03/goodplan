@@ -12,7 +12,12 @@ import {
 	questSchema,
 	questStatusSchema,
 } from "../../../src/schemas/entities/quest.js";
-import { overviewSchema } from "../../../src/schemas/entities/overview.js";
+import {
+	epicOverviewItemSchema,
+	epicOverviewSchema,
+	overviewSchema,
+	sliceOverviewItemSchema,
+} from "../../../src/schemas/entities/overview.js";
 
 // --- Epic ---
 
@@ -29,7 +34,6 @@ const validEpic = {
 	goal: "Build a compiled TypeScript CLI",
 	verifications: [validVerification],
 	refinement: null,
-	sliceSequence: ["01-data-layer", "02-state-machine"],
 	created: "2026-03-20T00:00:00Z",
 	activated: "2026-03-20T12:00:00Z",
 	updated: "2026-03-20T12:00:00Z",
@@ -103,12 +107,11 @@ describe("epicSchema", () => {
 		).toBe(true);
 	});
 
-	it("accepts epic with empty verifications and sliceSequence", () => {
+	it("accepts epic with empty verifications", () => {
 		expect(
 			epicSchema.safeParse({
 				...validEpic,
 				verifications: [],
-				sliceSequence: [],
 			}).success,
 		).toBe(true);
 	});
@@ -369,6 +372,141 @@ describe("overviewSchema", () => {
 						name: "test",
 						status: "active",
 						created: "bad-date",
+						completed: null,
+					},
+				],
+			}).success,
+		).toBe(false);
+	});
+});
+
+// --- SliceOverviewItem ---
+
+describe("sliceOverviewItemSchema", () => {
+	it("accepts a valid slice overview item", () => {
+		expect(
+			sliceOverviewItemSchema.safeParse({
+				name: "01-data-layer",
+				status: "implementing",
+				created: "2026-03-20T00:00:00Z",
+				completed: null,
+			}).success,
+		).toBe(true);
+	});
+
+	it("strips epic and title fields (omitted from base)", () => {
+		const result = sliceOverviewItemSchema.safeParse({
+			name: "01-data-layer",
+			status: "implementing",
+			epic: "my-epic",
+			title: "Some Title",
+			created: "2026-03-20T00:00:00Z",
+			completed: null,
+		});
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect("epic" in result.data).toBe(false);
+			expect("title" in result.data).toBe(false);
+		}
+	});
+
+	it("rejects missing name", () => {
+		expect(
+			sliceOverviewItemSchema.safeParse({
+				status: "created",
+				created: "2026-03-20T00:00:00Z",
+				completed: null,
+			}).success,
+		).toBe(false);
+	});
+});
+
+// --- EpicOverviewItem ---
+
+describe("epicOverviewItemSchema", () => {
+	it("accepts epic overview item with slices", () => {
+		expect(
+			epicOverviewItemSchema.safeParse({
+				name: "my-epic",
+				status: "activated",
+				created: "2026-03-20T00:00:00Z",
+				completed: null,
+				slices: [
+					{
+						name: "01-data-layer",
+						status: "completed",
+						created: "2026-03-20T00:00:00Z",
+						completed: "2026-03-21T00:00:00Z",
+					},
+				],
+			}).success,
+		).toBe(true);
+	});
+
+	it("accepts epic overview item with empty slices array", () => {
+		expect(
+			epicOverviewItemSchema.safeParse({
+				name: "my-epic",
+				status: "created",
+				created: "2026-03-20T00:00:00Z",
+				completed: null,
+				slices: [],
+			}).success,
+		).toBe(true);
+	});
+
+	it("rejects epic overview item without slices", () => {
+		expect(
+			epicOverviewItemSchema.safeParse({
+				name: "my-epic",
+				status: "created",
+				created: "2026-03-20T00:00:00Z",
+				completed: null,
+			}).success,
+		).toBe(false);
+	});
+});
+
+// --- EpicOverview ---
+
+describe("epicOverviewSchema", () => {
+	it("accepts a valid epic overview", () => {
+		expect(
+			epicOverviewSchema.safeParse({
+				items: [
+					{
+						name: "my-epic",
+						status: "activated",
+						created: "2026-03-20T00:00:00Z",
+						completed: null,
+						slices: [
+							{
+								name: "01-data-layer",
+								status: "implementing",
+								created: "2026-03-20T00:00:00Z",
+								completed: null,
+							},
+						],
+					},
+				],
+			}).success,
+		).toBe(true);
+	});
+
+	it("accepts empty items array", () => {
+		expect(
+			epicOverviewSchema.safeParse({ items: [] }).success,
+		).toBe(true);
+	});
+
+	it("rejects items without slices field", () => {
+		expect(
+			epicOverviewSchema.safeParse({
+				items: [
+					{
+						name: "my-epic",
+						status: "activated",
+						created: "2026-03-20T00:00:00Z",
 						completed: null,
 					},
 				],

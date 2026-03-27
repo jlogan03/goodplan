@@ -37,6 +37,7 @@ export const sliceAbandonCommand = defineCommand({
 		const result = await begin(
 			projectDir,
 			"abandon",
+			// @ts-expect-error — slice 02: Target needs epic field
 			{ type: "slice", name: args.slice },
 			{
 				reason: args.reason,

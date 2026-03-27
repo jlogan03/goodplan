@@ -1,5 +1,5 @@
-import type { Epic, EpicStatus } from "../../../schemas/entities/epic.js";
-import type { Overview } from "../../../schemas/entities/overview.js";
+import type { Epic, EpicStatus, Verification } from "../../../schemas/entities/epic.js";
+import type { EpicOverview, Overview, SliceOverviewItem } from "../../../schemas/entities/overview.js";
 import type { Project } from "../../../schemas/entities/project.js";
 import type { Quest, QuestStatus } from "../../../schemas/entities/quest.js";
 import type { Slice, SliceStatus } from "../../../schemas/entities/slice.js";
@@ -91,7 +91,7 @@ export function updateOverviewStatus(
 	epicName: string,
 	newStatus: EpicStatus,
 ): ProjectState {
-	const overview = getJson<Overview>(state, "epics/overview.json");
+	const overview = getJson<EpicOverview>(state, "epics/overview.json");
 	if (overview === undefined) return state;
 	return setEntry(state, "epics/overview.json", {
 		type: "json",
@@ -106,8 +106,15 @@ export function updateOverviewStatus(
 
 // ── Slice helpers ────────────────────────────────────────────
 
-export function getSlice(state: ProjectState, name: string): Slice | undefined {
-	return getJson<Slice>(state, `slices/${name}/slice.json`);
+/** @deprecated Use `getSlice(state, epic, name)` — legacy flat path lookup. */
+export function getSlice(state: ProjectState, name: string): Slice | undefined;
+/** Get a slice by epic and name (nested path). */
+export function getSlice(state: ProjectState, epic: string, name: string): Slice | undefined;
+export function getSlice(state: ProjectState, epicOrName: string, name?: string): Slice | undefined {
+	if (name !== undefined) {
+		return getJson<Slice>(state, `epics/${epicOrName}/slices/${name}/slice.json`);
+	}
+	return getJson<Slice>(state, `slices/${epicOrName}/slice.json`);
 }
 
 /**
@@ -120,29 +127,44 @@ export function guardSliceStatus(
 	sliceName: string,
 	expected: SliceStatus | SliceStatus[],
 	eventType: string,
+	epicName?: string,
 ): Slice | StateError {
+	const context = epicName ? `Slice "${sliceName}" not found in epic "${epicName}"` : `Slice "${sliceName}" not found`;
 	if (slice === undefined) {
 		return {
 			code: "STATE_INVALID_TRANSITION",
-			message: `Slice "${sliceName}" not found`,
-			detail: { slice: sliceName, event: eventType },
+			message: context,
+			detail: { slice: sliceName, ...(epicName ? { epic: epicName } : {}), event: eventType },
 		};
 	}
 	const allowed: SliceStatus[] = Array.isArray(expected) ? expected : [expected];
 	if (!allowed.includes(slice.status)) {
+		const epicCtx = epicName ? ` in epic "${epicName}"` : "";
 		return {
 			code: "STATE_INVALID_TRANSITION",
-			message: `Cannot ${eventType} on slice "${sliceName}" in status "${slice.status}" (expected ${allowed.join(" or ")})`,
-			detail: { slice: sliceName, event: eventType, currentStatus: slice.status },
+			message: `Cannot ${eventType} on slice "${sliceName}"${epicCtx} in status "${slice.status}" (expected ${allowed.join(" or ")})`,
+			detail: { slice: sliceName, ...(epicName ? { epic: epicName } : {}), event: eventType, currentStatus: slice.status },
 		};
 	}
 	return slice;
 }
 
-export function setSliceJson(state: ProjectState, name: string, content: Slice): ProjectState {
-	return setEntry(state, `slices/${name}/slice.json`, {
+/** @deprecated Use `setSliceJson(state, epic, name, content)` — legacy flat path. */
+export function setSliceJson(state: ProjectState, name: string, content: Slice): ProjectState;
+/** Set slice JSON by epic and name (nested path). */
+export function setSliceJson(state: ProjectState, epic: string, name: string, content: Slice): ProjectState;
+export function setSliceJson(state: ProjectState, epicOrName: string, nameOrContent: string | Slice, content?: Slice): ProjectState {
+	if (content !== undefined) {
+		// New signature: (state, epic, name, content)
+		return setEntry(state, `epics/${epicOrName}/slices/${nameOrContent as string}/slice.json`, {
+			type: "json",
+			content,
+		});
+	}
+	// Legacy signature: (state, name, content)
+	return setEntry(state, `slices/${epicOrName}/slice.json`, {
 		type: "json",
-		content,
+		content: nameOrContent as Slice,
 	});
 }
 
@@ -150,27 +172,79 @@ export function setSliceJson(state: ProjectState, name: string, content: Slice):
  * Sugar over setSliceJson: sets status, updated timestamp, and syncs overview.
  * Prevents partial updates by bundling all status-change side effects.
  */
+/** @deprecated Use `setSliceStatus(state, epic, name, slice, newStatus, ts)` — legacy flat path. */
+export function setSliceStatus(state: ProjectState, name: string, slice: Slice, newStatus: SliceStatus, ts: string): ProjectState;
+/** Set slice status by epic and name (nested path). */
+export function setSliceStatus(state: ProjectState, epic: string, name: string, slice: Slice, newStatus: SliceStatus, ts: string): ProjectState;
 export function setSliceStatus(
 	state: ProjectState,
-	name: string,
-	slice: Slice,
-	newStatus: SliceStatus,
-	ts: string,
+	epicOrName: string,
+	nameOrSlice: string | Slice,
+	sliceOrNewStatus: Slice | SliceStatus,
+	newStatusOrTs?: SliceStatus | string,
+	ts?: string,
 ): ProjectState {
-	let tree = setSliceJson(state, name, { ...slice, status: newStatus, updated: ts });
+	if (ts !== undefined) {
+		// New signature: (state, epic, name, slice, newStatus, ts)
+		const epic = epicOrName;
+		const name = nameOrSlice as string;
+		const slice = sliceOrNewStatus as Slice;
+		const newStatus = newStatusOrTs as SliceStatus;
+		let tree = setSliceJson(state, epic, name, { ...slice, status: newStatus, updated: ts });
+		tree = updateSliceOverviewStatus(tree, epic, name, newStatus);
+		return tree;
+	}
+	// Legacy signature: (state, name, slice, newStatus, ts)
+	const name = epicOrName;
+	const slice = nameOrSlice as Slice;
+	const newStatus = sliceOrNewStatus as SliceStatus;
+	const legacyTs = newStatusOrTs as string;
+	let tree = setSliceJson(state, name, { ...slice, status: newStatus, updated: legacyTs });
 	tree = updateSliceOverviewStatus(tree, name, newStatus);
 	return tree;
 }
 
 /**
- * Update the slice's status in slices/overview.json.
- * Called on every slice status change to keep overview in sync.
+ * Update the slice's status in the overview.
+ * Legacy: updates slices/overview.json. New: updates embedded slice in epics/overview.json.
  */
+/** @deprecated Use `updateSliceOverviewStatus(state, epicName, sliceName, newStatus)` — legacy flat overview. */
+export function updateSliceOverviewStatus(state: ProjectState, sliceName: string, newStatus: SliceStatus): ProjectState;
+/** Update slice status in epic's embedded slices array in epics/overview.json. */
+export function updateSliceOverviewStatus(state: ProjectState, epicName: string, sliceName: string, newStatus: SliceStatus): ProjectState;
 export function updateSliceOverviewStatus(
 	state: ProjectState,
-	sliceName: string,
-	newStatus: SliceStatus,
+	epicOrSliceName: string,
+	sliceNameOrNewStatus: string | SliceStatus,
+	newStatus?: SliceStatus,
 ): ProjectState {
+	if (newStatus !== undefined) {
+		// New signature: (state, epicName, sliceName, newStatus)
+		const epicName = epicOrSliceName;
+		const sliceName = sliceNameOrNewStatus as string;
+		const overview = getJson<EpicOverview>(state, "epics/overview.json");
+		if (overview === undefined) return state;
+		const completed = isSliceTerminal(newStatus) ? new Date().toISOString() : null;
+		return setEntry(state, "epics/overview.json", {
+			type: "json",
+			content: {
+				...overview,
+				items: overview.items.map((item) =>
+					item.name === epicName
+						? {
+								...item,
+								slices: item.slices.map((s) =>
+									s.name === sliceName ? { ...s, status: newStatus, ...(completed ? { completed } : {}) } : s,
+								),
+							}
+						: item,
+				),
+			},
+		});
+	}
+	// Legacy signature: (state, sliceName, newStatus)
+	const sliceName = epicOrSliceName;
+	const legacyNewStatus = sliceNameOrNewStatus as SliceStatus;
 	const overview = getJson<Overview>(state, "slices/overview.json");
 	if (overview === undefined) return state;
 	return setEntry(state, "slices/overview.json", {
@@ -178,7 +252,7 @@ export function updateSliceOverviewStatus(
 		content: {
 			...overview,
 			items: overview.items.map((item) =>
-				item.name === sliceName ? { ...item, status: newStatus } : item,
+				item.name === sliceName ? { ...item, status: legacyNewStatus } : item,
 			),
 		},
 	});
@@ -407,7 +481,7 @@ export function addEpicToOverview(
 	status: EpicStatus,
 	ts: string,
 ): ProjectState {
-	const overview = getJson<Overview>(state, "epics/overview.json");
+	const overview = getJson<EpicOverview>(state, "epics/overview.json");
 	if (overview === undefined) {
 		throw new Error("epics/overview.json not found — is the project initialized?");
 	}
@@ -415,7 +489,33 @@ export function addEpicToOverview(
 		type: "json",
 		content: {
 			...overview,
-			items: [...overview.items, { name: epicName, status, created: ts, completed: null }],
+			items: [...overview.items, { name: epicName, status, created: ts, completed: null, slices: [] }],
+		},
+	});
+}
+
+/**
+ * Add a new slice entry to its epic's embedded slices array in epics/overview.json.
+ * The epic must already exist in the overview.
+ */
+export function addSliceToOverview(
+	state: ProjectState,
+	epicName: string,
+	sliceItem: SliceOverviewItem,
+): ProjectState {
+	const overview = getJson<EpicOverview>(state, "epics/overview.json");
+	if (overview === undefined) {
+		throw new Error("epics/overview.json not found — is the project initialized?");
+	}
+	return setEntry(state, "epics/overview.json", {
+		type: "json",
+		content: {
+			...overview,
+			items: overview.items.map((item) =>
+				item.name === epicName
+					? { ...item, slices: [...item.slices, sliceItem] }
+					: item,
+			),
 		},
 	});
 }
@@ -446,9 +546,8 @@ export function buildInitialEpicJson(name: string, goal: string, ts: string) {
 		name,
 		goal,
 		status: "created" as const,
-		verifications: [] as string[],
+		verifications: [] as Verification[],
 		refinement: null,
-		sliceSequence: [] as string[],
 		created: ts,
 		activated: null,
 		updated: ts,

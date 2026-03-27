@@ -37,45 +37,45 @@ Establish all type-level changes and foundational helper signatures so the compi
 
 ### Tasks
 
-- [ ] Create `epicOverviewItemSchema` in `src/schemas/entities/overview.ts`:
+- [x] Create `epicOverviewItemSchema` in `src/schemas/entities/overview.ts`:
   - Extends `overviewItemSchema` with `slices: z.array(sliceOverviewItemSchema)`
   - Create `sliceOverviewItemSchema` as `overviewItemSchema.omit({ epic: true, title: true })` — derives `{ name, status, created, completed }` (no `epic` field — path encodes it). Using `.omit()` prevents drift when `overviewItemSchema` evolves.
   - Create `epicOverviewSchema`: `{ items: z.array(epicOverviewItemSchema) }`
   - Export all schemas and `z.infer` types
   - Keep existing `overviewSchema` unchanged (still used by quests/tasks)
-- [ ] Update `Target` slice variant in `src/core/rpc/types.ts`:
+- [x] Update `Target` slice variant in `src/core/rpc/types.ts`:
   - Change from `{ type: "slice"; name: string }` to `{ type: "slice"; name: string; epic: string }`
   - **Cascade:** `resolveEntityJsonPath()` (line 226) in the same file has an exhaustive switch over `Target` — update its slice case to return `epics/${target.epic}/slices/${target.name}/slice.json`. `resolveEntityName()` (line 206) needs no change — it returns `target.name`, which is correct as-is regardless of the new `epic` field.
-  - **Out-of-scope cascade (slice 02):** `resolveEntityDir()` in `src/core/rpc/paths.ts` (line 145) returns `slices/${target.name}` — add `// @ts-expect-error — updated in slice 02` until RPC layer slice. Same for `entityDir()` in `src/core/context/priorities.ts` (line 14).
-- [ ] Add `epic: string` to all 8 slice events missing it in `src/schemas/state-events.ts`:
+  - **Out-of-scope cascade (slice 02):** `resolveEntityDir()` in `src/core/rpc/paths.ts` (line 145) returns `slices/${target.name}` — marked with `// TODO(slice-02)` comment (not `@ts-expect-error` since it compiles fine using `target.name`). Same for `entityDir()` in `src/core/context/priorities.ts` (line 14).
+- [x] Add `epic: string` to all 8 slice events missing it in `src/schemas/state-events.ts`:
   - `BEGIN_PLAN`, `COMPLETE_PLAN`, `BEGIN_REFINEMENT`, `COMPLETE_REFINEMENT_ROUND`, `BEGIN_IMPLEMENTATION`, `COMPLETE_IMPLEMENTATION`, `COMPLETE_SLICE`, `ABANDON_SLICE` (CREATE_SLICE already has `epic`)
-- [ ] Remove `sliceSequence` from `epicSchema` in `src/schemas/entities/epic.ts`:
+- [x] Remove `sliceSequence` from `epicSchema` in `src/schemas/entities/epic.ts`:
   - Delete `sliceSequence: z.array(z.string())`
-- [ ] Add `targetEpic: z.string().min(1).optional()` to `deferredItemSchema` in `src/schemas/entities/slice.ts` (lines 18-22). Optional — defaults to completing slice's epic at runtime. This matches the architecture decision in `data-model-changes.md`.
-- [ ] Update schema registry in `src/core/data/schema-registry.ts` (**must land atomically with helper type changes below**):
+- [x] Add `targetEpic: z.string().min(1).optional()` to `deferredItemSchema` in `src/schemas/entities/slice.ts` (lines 18-22). Optional — defaults to completing slice's epic at runtime. This matches the architecture decision in `data-model-changes.md`.
+- [x] Update schema registry in `src/core/data/schema-registry.ts` (**must land atomically with helper type changes below**):
   - Change `{ pattern: /^epics\/overview\.json$/, schema: overviewSchema }` to `schema: epicOverviewSchema`
   - Change `{ pattern: /^slices\/[^/]+\/slice\.json$/ }` to `{ pattern: /^epics\/[^/]+\/slices\/[^/]+\/slice\.json$/ }`
   - Remove `{ pattern: /^slices\/overview\.json$/, schema: overviewSchema }` (file eliminated)
   - **Ordering note:** Ensure nested slice pattern does not conflict with existing epic pattern due to first-match semantics. The epic pattern matches `epics/<name>/epic.json`; the nested slice pattern matches `epics/<name>/slices/<name>/slice.json` — no overlap. JSONL wildcard patterns already match nested paths, so no new JSONL patterns are needed.
-- [ ] Update `addEpicToOverview` in `src/core/state/transitions/helpers.ts` (**atomic with registry change**):
+- [x] Update `addEpicToOverview` in `src/core/state/transitions/helpers.ts` (**atomic with registry change**):
   - Include `slices: []` in the overview item shape
   - Use `epicOverviewSchema`/`EpicOverview` type for the overview (not shared `Overview`)
   - Change `getJson<Overview>(...)` to `getJson<EpicOverview>(...)` for `epics/overview.json`
-- [ ] Update `updateOverviewStatus` for epics to use `EpicOverview` type (**atomic with registry change**):
+- [x] Update `updateOverviewStatus` for epics to use `EpicOverview` type (**atomic with registry change**):
   - Must preserve `slices` array when spreading/updating an epic overview item
   - Change `getJson<Overview>(...)` to `getJson<EpicOverview>(...)` for `epics/overview.json`
   - **Known gap (pre-existing):** `updateOverviewStatus` never sets `completed` timestamp on terminal transitions — same bug exists on quest/task overviews (task overview already has a fix via `updateTaskOverviewStatus`). The new `updateSliceOverviewStatus` must not propagate this gap. Document as a follow-up task but do not block this slice on fixing it for epics.
-- [ ] Verify `updateSliceOverviewStatus` sets `completed: ts` when `newStatus` is `"completed"` or `"abandoned"` (matching the pattern in `updateTaskOverviewStatus`). Add a verification check in Phase 2 tests that asserts `completed` is non-null after a terminal transition.
-- [ ] Create `addSliceToOverview(state, epicName, sliceItem: SliceOverviewItem)` in helpers.ts:
+- [x] Verify `updateSliceOverviewStatus` sets `completed: ts` when `newStatus` is `"completed"` or `"abandoned"` (matching the pattern in `updateTaskOverviewStatus`). Add a verification check in Phase 2 tests that asserts `completed` is non-null after a terminal transition.
+- [x] Create `addSliceToOverview(state, epicName, sliceItem: SliceOverviewItem)` in helpers.ts:
   - Reads `epics/overview.json` as `EpicOverview`, finds epic by name, appends to its `slices` array
   - Returns updated state
   - `sliceItem` parameter typed as `SliceOverviewItem` (Zod-inferred from `sliceOverviewItemSchema`)
-- [ ] Update `buildInitialEpicJson` in `src/core/state/transitions/helpers.ts` to not include `sliceSequence`. Also fix pre-existing type bug: `verifications: [] as string[]` should be `[] as Verification[]` per `epicSchema`. This requires adding `import type { Verification } from "../../../schemas/entities/epic.js"` to `helpers.ts` (currently not imported).
-- [ ] Update `init.ts` in `src/core/state/transitions/init.ts`:
+- [x] Update `buildInitialEpicJson` in `src/core/state/transitions/helpers.ts` to not include `sliceSequence`. Also fix pre-existing type bug: `verifications: [] as string[]` should be `[] as Verification[]` per `epicSchema`. This requires adding `import type { Verification } from "../../../schemas/entities/epic.js"` to `helpers.ts` (currently not imported).
+- [x] Update `init.ts` in `src/core/state/transitions/init.ts`:
   - Remove `slices/overview.json` creation
   - Ensure `epics/overview.json` creation includes `slices: []` on items (check if `addEpicToOverview` is called during init or if it's a fresh creation — if fresh, the empty overview `{ items: [] }` is fine; slices are added later via `addSliceToOverview`)
-- [ ] Confirm `handleConvertTask` in `src/core/state/transitions/task-lifecycle.ts` (line 74) calls `buildInitialEpicJson` — verify it has no additional `sliceSequence` or `slices/overview.json` references beyond what `buildInitialEpicJson` handles. (Codebase check: it does not — only calls `buildInitialEpicJson` and `addEpicToOverview`, both updated above.)
-- [ ] Update helper *signatures* in `src/core/state/transitions/helpers.ts` using **function overloads** (implementations updated in Phase 2):
+- [x] Confirm `handleConvertTask` in `src/core/state/transitions/task-lifecycle.ts` (line 74) calls `buildInitialEpicJson` — verify it has no additional `sliceSequence` or `slices/overview.json` references beyond what `buildInitialEpicJson` handles. (Codebase check: it does not — only calls `buildInitialEpicJson` and `addEpicToOverview`, both updated above.)
+- [x] Update helper *signatures* in `src/core/state/transitions/helpers.ts` using **function overloads** (implementations updated in Phase 2):
   - `getSlice`: add overload `(state, epic, name)` returning new path. Keep old overload `(state, name)` with `@deprecated` JSDoc. Implementation uses optional parameter pattern: `function getSlice(state: ProjectState, epicOrName: string, name?: string)` — when `name` is defined, `epicOrName` is the epic; when undefined, `epicOrName` is the slice name (legacy path). Do NOT use `arguments.length`.
   - `setSliceJson`: same optional-parameter pattern — `(state, epicOrName, nameOrContent, content?)`.
   - `setSliceStatus`: same pattern — `(state, epicOrName, nameOrSlice, sliceOrNewStatus, newStatusOrTs?, ts?)`.
@@ -83,7 +83,7 @@ Establish all type-level changes and foundational helper signatures so the compi
   - **(Low priority)** Update `guardSliceStatus` to accept `epicName` parameter and include it in error messages (e.g., `Slice "foo" not found in epic "bar"`). After restructuring, `sliceName` alone is ambiguous across epics. Consistent with `getSlice` which already takes `epic` after this update.
   - **Cross-phase dependency:** `getSlice` signature change means `handleBeginPlan` (which calls `getSlice(state, event.slice)`) will need `event.epic` — available because Phase 1 adds `epic` to all slice events. Handler call sites are updated in Phase 2.
   - **Why overloads instead of `@ts-expect-error`:** There are ~18 handler call sites across 5 files. `@ts-expect-error` silently swallows ALL errors on the annotated line (not just arity mismatches), masking real bugs. Overloads let existing call sites compile via the old signature while new call sites use the new signature. Phase 2 removes the deprecated overloads and updates all call sites.
-- [ ] Update unit tests in `tests/unit/schemas/`:
+- [x] Update unit tests in `tests/unit/schemas/`:
   - `entities.test.ts`: test new `epicOverviewItemSchema` and `epicOverviewSchema`
   - `schema-registry.test.ts`: update path assertions (remove `slices/overview.json`, add nested slice pattern, change epic overview schema)
   - `state-events.test.ts`: verify all 9 slice events have `epic` field

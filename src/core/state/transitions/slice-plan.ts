@@ -40,9 +40,11 @@ export function handleBeginPlan(
 		};
 	}
 
+	// @ts-expect-error — Phase 2: sliceSequence removed, sequential enforcement moves to epics/overview.json slices array
 	const seqIndex = epic.sliceSequence.indexOf(event.slice);
 	if (seqIndex > 0) {
 		// Check previous slice status via overview
+		// @ts-expect-error — Phase 2: sliceSequence removed, use embedded slices array
 		const prevSliceName = epic.sliceSequence[seqIndex - 1];
 		if (prevSliceName === undefined) {
 			return {

@@ -37,6 +37,7 @@ export const submitPlanCommand = defineCommand({
 		const stdin = await readStdin();
 		const input = validateInput(submitPlanInputSchema, args, stdin);
 
+		// @ts-expect-error — slice 02: Target needs epic field for slice variant
 		const target: Target = input.slice !== undefined
 			? { type: "slice", name: input.slice }
 			: { type: "quest", name: input.quest! };

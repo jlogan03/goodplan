@@ -28,6 +28,7 @@ export const sliceImplementCommand = defineCommand({
 	setup() {},
 	async run({ args }) {
 		const projectDir = resolveProjectDir();
+		// @ts-expect-error — slice 02: Target needs epic field
 		const result = await begin(projectDir, "implement", { type: "slice", name: args.slice }, {});
 
 		if (args.json || args.query) {

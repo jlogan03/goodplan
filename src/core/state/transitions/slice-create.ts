@@ -73,10 +73,9 @@ export function handleCreateSlice(
 		},
 	});
 
-	// Append to epic sliceSequence
+	// Update epic's updated timestamp (sliceSequence removed — ordering is now in epics/overview.json slices array)
 	tree = setEpicJson(tree, event.epic, {
 		...epic,
-		sliceSequence: [...epic.sliceSequence, event.name],
 		updated: now,
 	});
 
