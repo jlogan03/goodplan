@@ -3,6 +3,6 @@
 	"goal": "Unify learnings storage to follow the decisions pattern: JSONL index + optional per-learning .md files in a learnings/ directory, retiring the monolithic learnings.md. Scope: update CLI (learning commands, state machine, rollup logic to support optional file field in JSONL entries + learnings/ directory), update skills (complete skill learnings synthesis to write detail files instead of appending to monolithic .md), update migration logic to convert existing learnings.md entries to per-file format.",
 	"name": "learnings-directory-pattern",
 	"refinement": null,
-	"status": "plan-refined",
-	"updated": "2026-03-27T20:30:07.318Z"
+	"status": "implementation-complete",
+	"updated": "2026-03-27T23:19:28.792Z"
 }
