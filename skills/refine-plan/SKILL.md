@@ -113,6 +113,8 @@ Read and follow `../_shared/references/codebase-context-discovery.md`. Delegate 
 
 Also load `.project/conventions.md` if it exists — project conventions provide context for reviewers evaluating the plan.
 
+Also load `.project/architecture/_overview.md` and extract the `## Subsystem Maturity` table. If no maturity table exists, set `{maturity_summary}` to empty. Also read `../_shared/references/maturity-legend.md` and store its content as `{maturity_legend}`. If maturity data was found, display: "**Maturity context**: [list of subsystems at Maturing or Foundational, or 'All subsystems at Developing or below']". When filling shared preamble placeholders for reviewer sub-agents, include `{maturity_summary}` and `{maturity_legend}`. When `{maturity_summary}` is empty, omit the `## Subsystem Maturity` section from the shared preamble entirely.
+
 ### Step 3: Refinement Loop
 
 Read `../_shared/references/iteration-loop.md` for the shared orchestration structure. This step fills in the plan-specific parameters.

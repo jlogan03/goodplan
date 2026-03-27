@@ -34,6 +34,12 @@ Read listed files if they would inform your evaluation. Do not read files outsid
 
 {team_defaults}
 
+## Subsystem Maturity
+
+{maturity_summary}
+
+{maturity_legend}
+
 ## Codebase Exploration
 
 Explore the actual codebase before evaluating — plans that look sound in isolation often conflict with existing code, miss reuse opportunities, or propose changes to files that don't exist. Evaluating without exploration leads to false positives and missed issues.
