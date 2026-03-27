@@ -152,7 +152,7 @@
 			"created": "2026-03-26T23:02:10.403Z",
 			"epic": "entity-restructuring",
 			"name": "01-schema-and-state-machine",
-			"status": "created"
+			"status": "implementation-complete"
 		},
 		{
 			"completed": null,
