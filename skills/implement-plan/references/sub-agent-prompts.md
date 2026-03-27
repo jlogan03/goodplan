@@ -58,6 +58,10 @@ Read all `.md` files in `.project/architecture/` (starting with `_overview.md` i
 
 Also check for an active epic by running `goodplan status --json` and checking `.activeEpic`. If an active epic exists, read `.project/epics/<activeEpic.name>/architecture/` as the target architecture. The epic architecture represents where the codebase is headed — use it alongside top-level architecture when evaluating your changes.
 
+Pay attention to the `## Subsystem Maturity` table in `_overview.md`. When implementing changes that touch a subsystem:
+
+{maturity_legend}
+
 ## Step 3: Implement
 
 - If fresh implementation: work through each pending task sequentially.

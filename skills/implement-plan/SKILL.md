@@ -85,6 +85,8 @@ If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill 
 
 Also load `.project/conventions.md` if it exists — project conventions inform implementation decisions.
 
+Also load `.project/architecture/_overview.md` and extract the `## Subsystem Maturity` table. If no maturity table exists, set `{maturity_summary}` to empty and skip maturity-aware behavior. Also read `../_shared/references/maturity-legend.md` and store its content as `{maturity_legend}`. If maturity data was found, display: "**Maturity context**: [list of subsystems at Maturing or Foundational, or 'All subsystems at Developing or below']".
+
 ### Step 2: Pre-Implementation Research
 
 Read and follow `../_shared/references/dependency-research.md` for what to research and how to structure the output. If the plan references no external libraries, frameworks, tools, or APIs, skip to Step 2b.
@@ -139,7 +141,7 @@ Before implementation, execute the red half of the red-green cycle.
 
 #### 3.2: Implementation-Review Cycle (max 12 iterations)
 
-Read the sub-agent prompt templates from `references/sub-agent-prompts.md` and fill in the `{placeholders}` with actual values.
+Read the sub-agent prompt templates from `references/sub-agent-prompts.md` and fill in the `{placeholders}` with actual values. This includes `{maturity_summary}` (the extracted maturity table from Step 1, or empty if none found) and `{maturity_legend}` (the content of `skills/_shared/references/maturity-legend.md`). When `{maturity_summary}` is empty, omit the `## Subsystem Maturity` section from the shared preamble entirely.
 
 **Every sub-agent Task tool call MUST include `model: "opus"`.**
 
