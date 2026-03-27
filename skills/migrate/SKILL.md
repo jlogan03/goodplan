@@ -2,16 +2,18 @@
 name: migrate
 description: >
   Migrate project, convert to goodplan, import existing .project/ — converts
-  a pre-CLI .project/ directory to CLI-managed state. Interactive Q&A guides
-  the CLI through epic/quest/slice inventory, status inference, and artifact copy.
+  a pre-CLI .project/ directory to CLI-managed state, or re-migrates an
+  already-initialized project to restructure state (e.g., flat slices to
+  nested). Interactive Q&A guides the CLI through epic/quest/slice inventory,
+  status inference, and artifact copy.
 requires: goodplan >= 1.0.0
 ---
 
 # Migrate
 
-Converts a pre-CLI `.project/` directory into CLI-managed state. The `goodplan migrate` command drives a multi-round Q&A workflow: it asks questions about the existing project structure, this skill reads the filesystem to answer them, and the CLI builds the new state.
+Converts a pre-CLI `.project/` directory into CLI-managed state, or re-migrates an already-initialized project to restructure state (e.g., moving flat `slices/` under `epics/<epic>/slices/`). The `goodplan migrate` command drives a multi-round Q&A workflow: it asks questions about the existing project structure, this skill reads the filesystem to answer them, and the CLI builds the new state.
 
-**When this skill triggers:** User says "migrate my project", "convert to goodplan", "import .project/", or the CLI returns `DATA_NO_PROJECT` and a `.project/` directory exists in the old format (no `project.json`).
+**When this skill triggers:** User says "migrate my project", "convert to goodplan", "import .project/", "re-migrate", or the CLI returns `DATA_NO_PROJECT` and a `.project/` directory exists in the old format (no `project.json`).
 
 ## References
 
@@ -34,18 +36,30 @@ If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill 
 Check for partial migration from a previous attempt:
 
 ```bash
-ls -d .project-old/ 2>/dev/null
+ls -d .project-old/ .project-old-*/ 2>/dev/null
 ```
 
-**If `.project-old/` exists but `.project/` does not:** A previous migration attempt may have failed mid-run. The CLI renames `.project/` to `.project-old/` during migration. Tell the user:
+**If `.project-old/` (or `.project-old-<timestamp>/`) exists but `.project/` does not:** A previous migration attempt may have failed mid-run. The CLI renames `.project/` to `.project-old-<timestamp>/` during migration. Tell the user:
 
-> "Found `.project-old/` but no `.project/`. A previous migration may have failed. Rename `.project-old/` back to `.project/` and retry."
+> "Found a backup directory but no `.project/`. A previous migration may have failed. Rename the backup back to `.project/` and retry."
 
 Stop.
 
-**If both `.project/` and `.project-old/` exist:** A previous migration's rename step left a backup. Tell the user:
+**If both `.project/` and a backup exist:** This is normal — the backup is from a previous successful migration. Check whether this is a re-migration scenario:
 
-> "Both `.project/` and `.project-old/` exist. If the migration succeeded, remove `.project-old/`. If it failed, remove `.project/` and rename `.project-old/` back to `.project/`, then retry."
+```bash
+ls .project/project.json 2>/dev/null
+```
+
+If `project.json` exists, this project is already CLI-managed. Present:
+
+> "This project is already CLI-managed. Re-migration will rebuild state from the current directory structure. Existing backups from prior migrations will be preserved (timestamped naming). Continue?"
+
+If the user confirms, proceed to Step 3. The CLI now supports re-migration with timestamped backups.
+
+If `project.json` does not exist, this is a first migration with a stale backup. Present:
+
+> "Both `.project/` and a backup directory exist. If the previous migration succeeded, the backup can be removed. If it failed, remove `.project/` and rename the backup back to `.project/`, then retry."
 
 Stop.
 
@@ -61,11 +75,12 @@ Handle error responses:
 
 | Error Code | Action |
 |---|---|
-| `STATE_ALREADY_INITIALIZED` | "This project is already CLI-managed (has `project.json`). No migration needed." Stop. |
 | `DATA_NO_PROJECT` | "No `.project/` directory found. Nothing to migrate." Stop. |
 | Other errors | Present the full error to the user and stop. |
 
-On success, the CLI returns the first round of questions. Proceed to Step 4.
+On success, the CLI returns the first round of questions. If the response includes a `warning` field (re-migration scenario), display the warning to the user but continue — the CLI proceeds to Q&A regardless.
+
+Proceed to Step 4.
 
 ## Step 4 — Answer Inventory Questions
 
@@ -120,9 +135,16 @@ The CLI asks follow-up questions for each epic (slices, architecture, sequencing
 
 ### Slice Discovery
 
+Check both nested and flat locations — during re-migration, slices may still be at the top-level flat path:
+
 ```bash
+# Nested (already under epic)
 ls -d .project/epics/<epicDir>/slices/*/ 2>/dev/null
+# Flat (legacy — needs re-structuring)
+ls -d .project/slices/*/ 2>/dev/null
 ```
+
+If slices are found at the flat path (`.project/slices/`) but not under the epic, these are the slices that need to be migrated into the epic's nested structure. Include them in the answer with `sourcePath` pointing to the flat location (e.g., `slices/01-setup`). The CLI will copy them to the correct nested location.
 
 For each slice subdirectory:
 - Strip any numeric prefix (e.g., `01-setup` → `setup`, or keep as-is if the name is meaningful)
@@ -228,8 +250,8 @@ If the CLI returns `STATE_INVALID_TRANSITION` (exit 3):
 
 ### Rename Failures
 
-If the final rename step fails because `.project-old/` already exists:
-- Tell the user: "Cannot rename `.project/` to `.project-old/` — the backup directory already exists. Remove or rename the existing `.project-old/` and retry."
+The CLI now uses timestamped backup names (`.project-old-YYYYMMDD-HHmmss/`), so collisions with prior backups are extremely unlikely. If a rename failure occurs (sub-second collision):
+- Tell the user: "Backup directory collision — wait a second and retry."
 
 ### Intermediate Status Handling
 
