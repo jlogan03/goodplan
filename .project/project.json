@@ -1,9 +1,9 @@
 {
 	"activeEpic": null,
-	"activeQuest": null,
+	"activeQuest": "learnings-directory-pattern",
 	"activeSlice": null,
 	"created": "2026-03-27T16:40:17.622Z",
 	"name": "goodplan",
-	"updated": "2026-03-27T17:01:23.203Z",
+	"updated": "2026-03-27T19:07:43.489Z",
 	"version": "1.0.0"
 }

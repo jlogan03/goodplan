@@ -64,7 +64,7 @@
 			"completed": null,
 			"created": "2026-03-27T16:40:17.622Z",
 			"name": "maturity-context-loading",
-			"status": "created"
+			"status": "completed"
 		},
 		{
 			"completed": "2026-03-27T16:40:17.622Z",
@@ -143,6 +143,12 @@
 			"created": "2026-03-27T16:40:17.622Z",
 			"name": "workflow-v2",
 			"status": "completed"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-27T17:26:33.004Z",
+			"name": "learnings-directory-pattern",
+			"status": "plan-refined"
 		}
 	]
 }
