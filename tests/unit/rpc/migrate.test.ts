@@ -195,8 +195,9 @@ describe("rpcMigrate — Confirmation round", () => {
 		// .project/project.json should exist (state committed)
 		expect(fs.existsSync(path.join(projectDir, "project.json"))).toBe(true);
 
-		// .project-old/ should exist (renamed)
-		expect(fs.existsSync(path.join(tmpDir, ".project-old"))).toBe(true);
+		// .project-old-<timestamp>/ should exist (renamed)
+		const backupDirs = fs.readdirSync(tmpDir).filter((d) => d.startsWith(".project-old-"));
+		expect(backupDirs).toHaveLength(1);
 
 		// .migration-in-progress.json should be cleaned up
 		expect(fs.existsSync(path.join(tmpDir, ".migration-in-progress.json"))).toBe(false);

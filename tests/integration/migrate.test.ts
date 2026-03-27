@@ -234,10 +234,11 @@ describe("migrate: full flow", () => {
 				fs.existsSync(path.join(projectDir, "epics", "test-epic", "completion", "learnings.md")),
 			).toBe(true);
 
-			// .project-old/ exists (renamed original)
-			const projectOldDir = path.join(tmpDir, ".project-old");
-			expect(fs.existsSync(projectOldDir)).toBe(true);
-			// Old fixture files still in .project-old/
+			// .project-old-<timestamp>/ exists (renamed original)
+			const backupDirs = fs.readdirSync(tmpDir).filter((d) => d.startsWith(".project-old-"));
+			expect(backupDirs).toHaveLength(1);
+			const projectOldDir = path.join(tmpDir, backupDirs[0]!);
+			// Old fixture files still in backup
 			expect(fs.existsSync(path.join(projectOldDir, "idea.md"))).toBe(true);
 			expect(fs.existsSync(path.join(projectOldDir, "state.md"))).toBe(true);
 
@@ -298,20 +299,19 @@ describe("migrate: error cases", () => {
 		}
 	});
 
-	it("throws STATE_ALREADY_INITIALIZED when project.json exists", async () => {
+	it("emits warning when project.json exists (re-migration)", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-migrate-already-init-"));
 		try {
 			const projectDir = path.join(tmpDir, ".project");
 			fs.mkdirSync(projectDir, { recursive: true });
 			fs.writeFileSync(path.join(projectDir, "project.json"), '{"name":"already-init"}');
 
-			await expect(rpcMigrate(projectDir, null, tmpDir)).rejects.toThrow(GoodplanError);
-
-			try {
-				await rpcMigrate(projectDir, null, tmpDir);
-			} catch (err) {
-				expect((err as GoodplanError).code).toBe("STATE_ALREADY_INITIALIZED");
-			}
+			const result = await rpcMigrate(projectDir, null, tmpDir);
+			expect(result.status).toBe("questions");
+			if (result.status !== "questions") throw new Error("expected questions");
+			expect(result.warning).toBe(
+				"Project is already initialized. Re-migration will rebuild state from directory contents.",
+			);
 		} finally {
 			fs.rmSync(tmpDir, { recursive: true, force: true });
 		}
@@ -437,7 +437,6 @@ describe("buildMigrationState", () => {
 		if (epicJson?.type !== "json") throw new Error("expected json");
 		const ej = epicJson.content as Record<string, unknown>;
 		expect(ej.status).toBe("completed");
-		expect(ej.sliceSequence).toEqual(["slice-a"]);
 		expect(ej.activated).toBe("2025-06-01T00:00:00.000Z");
 
 		// Slices nested under epic (no top-level slices/ directory)

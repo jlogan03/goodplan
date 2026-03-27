@@ -30,6 +30,7 @@ import {
 	validateAnswer,
 } from "../../commands/global/migrate/schemas.js";
 import { validateSourcePath } from "../../commands/global/migrate/validate-source-path.js";
+import type { Epic, EpicStatus } from "../../schemas/entities/epic.js";
 import type { ActivityEntry } from "../../schemas/records/activity-log.js";
 import { GoodplanError } from "../../util/errors.js";
 import { deterministicStringify } from "../../util/json.js";
@@ -74,7 +75,7 @@ function questionsResult(round: MigrationRound): MigrationResult {
 interface MigrationEpic {
 	readonly name: string;
 	readonly goal: string;
-	readonly status: string;
+	readonly status: EpicStatus;
 	readonly sourcePath: string;
 }
 
@@ -247,13 +248,12 @@ export function buildMigrationState(
 			slices: epicSliceItems,
 		});
 
-		const epicJsonContent: Record<string, unknown> = {
+		const epicJsonContent: Epic = {
 			name: epic.name,
 			status: epic.status,
 			goal: epic.goal,
 			verifications: [],
 			refinement: null,
-			sliceSequence: detail?.sliceSequence ?? [],
 			created: ts,
 			activated: detail?.activatedDate ?? (isTerminal ? ts : null),
 			updated: ts,
@@ -424,16 +424,19 @@ function countAllSlices(
 }
 
 // ---------------------------------------------------------------------------
-// .project/ → .project-old/ Rename
+// .project/ → .project-old-<YYYYMMDD-HHmmss>/ Rename
 // ---------------------------------------------------------------------------
 
 function renameProjectDir(projectDir: string): string {
-	const projectOldDir = `${projectDir}-old`;
+	const now = new Date();
+	const pad2 = (n: number) => String(n).padStart(2, "0");
+	const timestamp = `${String(now.getUTCFullYear())}${pad2(now.getUTCMonth() + 1)}${pad2(now.getUTCDate())}-${pad2(now.getUTCHours())}${pad2(now.getUTCMinutes())}${pad2(now.getUTCSeconds())}`;
+	const projectOldDir = `${projectDir}-old-${timestamp}`;
 
 	if (fs.existsSync(projectOldDir)) {
 		throw new GoodplanError(
 			"DATA_MIGRATION_BACKUP_EXISTS",
-			`${projectOldDir} already exists — a previous migration attempt may have left debris. Remove or rename it before retrying.`,
+			`${projectOldDir} already exists — sub-second collision. Wait a moment and retry.`,
 		);
 	}
 
@@ -629,7 +632,7 @@ function executeMigration(
 		// Error message instructs manual recovery
 		throw new GoodplanError(
 			"DATA_WRITE_ERROR",
-			`Migration state construction failed after renaming .project/ to .project-old/. ` +
+			`Migration state construction failed after renaming ${projectDir} to ${projectOldDir}. ` +
 				`To recover: rename ${projectOldDir} back to ${projectDir} and retry. ` +
 				`The .migration-in-progress.json file has been preserved for retry.`,
 			{ projectDir, projectOldDir },
@@ -652,8 +655,10 @@ function executeMigration(
 	const migrationFile = migrationStatePath(cwd);
 	try {
 		fs.unlinkSync(migrationFile);
-	} catch {
-		// Ignore — file may not exist or may have been cleaned up
+	} catch (err) {
+		process.stderr.write(
+			`[goodplan] Warning: could not remove ${migrationFile}: ${String(err)}\n`,
+		);
 	}
 
 	// Step 7: Build summary
@@ -996,27 +1001,31 @@ export async function rpcMigrate(
 		);
 	}
 
-	// .project/project.json must NOT exist (already migrated)
-	const projectJsonPath = path.join(projectDir, "project.json");
-	if (fs.existsSync(projectJsonPath)) {
-		throw new GoodplanError(
-			"STATE_ALREADY_INITIALIZED",
-			"Project is already initialized (.project/project.json exists). Migration is only for pre-CLI projects.",
-		);
-	}
-
 	// ── Read existing migration state ───────────────────────────
 	const existingState = readMigrationState(cwd);
 
 	// ── No stdin: emit current round's questions ────────────────
 	if (stdin === null) {
+		// Check if project is already initialized (re-migration scenario)
+		const projectJsonPath = path.join(projectDir, "project.json");
+		const isReMigration = fs.existsSync(projectJsonPath);
+
 		if (existingState !== null) {
 			// Resume: re-emit current round's questions
 			return emitQuestionsForRound(existingState, projectDir);
 		}
 
 		// Fresh start: emit Round 1 inventory questions
-		return questionsResult(generateInventoryQuestions());
+		const result = questionsResult(generateInventoryQuestions());
+		if (isReMigration && result.status === "questions") {
+			return {
+				status: result.status,
+				round: result.round,
+				warning:
+					"Project is already initialized. Re-migration will rebuild state from directory contents.",
+			};
+		}
+		return result;
 	}
 
 	// ── Stdin provided: validate and advance ────────────────────

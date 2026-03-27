@@ -69,12 +69,19 @@ const sliceDetailItemSchema = z.object({
 		.describe("Path to the old-format slice directory relative to .project/"),
 });
 
-/** Per-epic detail response */
+/**
+ * Per-epic detail response.
+ *
+ * Note: sliceSequence is collected here for slice ordering during Q&A — buildMigrationState
+ * uses it to determine slice directory ordering, but it is intentionally excluded from the
+ * output epic.json (epicSchema does not include sliceSequence; ordering is implicit in the
+ * directory structure).
+ */
 export const epicDetailResponseSchema = z.object({
 	slices: z.array(sliceDetailItemSchema).describe("All slices belonging to this epic"),
 	sliceSequence: z
 		.array(z.string().min(1))
-		.describe("Ordered list of slice names defining execution order"),
+		.describe("Ordered list of slice names defining execution order (used for ordering, not persisted in output)"),
 	hasArchitecture: z
 		.boolean()
 		.describe("Whether the old epic directory contains architecture artifacts"),
@@ -203,6 +210,7 @@ export const migrationResultSchema = z.discriminatedUnion("status", [
 				}),
 			),
 		}),
+		warning: z.string().optional(),
 	}),
 	z.object({
 		status: z.literal("complete").describe("Migration finished"),
