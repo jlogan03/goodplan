@@ -1,0 +1,1 @@
+Selective `ts` (only on events that set timestamp fields) creates stale timestamps on most transitions. Universal `ts` (RPC injects on all events) simplifies every handler and eliminates timestamp staleness bugs. All future event types should include `ts: string`.

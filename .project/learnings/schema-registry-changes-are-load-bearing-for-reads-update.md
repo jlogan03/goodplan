@@ -1,0 +1,1 @@
+The schema registry pattern→schema mapping drives `getJson` Zod parsing, which strips unrecognized fields. Updating the registry must happen atomically with (or before) any code writing new fields. Deferring registry updates causes silent data loss on round-trip.

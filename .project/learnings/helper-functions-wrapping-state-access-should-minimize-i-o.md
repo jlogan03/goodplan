@@ -1,0 +1,1 @@
+`requireActiveEpic` initially loaded the full state tree when it only needed `project.json`. Every caller also loaded full state, doubling I/O. Fix: read only the specific file needed. Design state-access helpers to take the narrowest input — single-file read or `ProjectState` param, not `projectDir` with implicit full load.

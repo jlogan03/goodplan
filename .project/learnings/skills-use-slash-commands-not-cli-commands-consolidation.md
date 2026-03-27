@@ -1,0 +1,1 @@
+Command audit found zero `goodplan` CLI invocations in skill files. Skills orchestrate via slash commands (`/create-plan`). The `start-*`/`submit-*` subagent commands are the likely bridge when skills are consolidated to call the CLI.

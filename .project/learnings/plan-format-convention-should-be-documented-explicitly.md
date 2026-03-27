@@ -1,0 +1,1 @@
+Having plan-format.md as a shared reference means the format is explicit. Both the author (create-plan) and consumers (refine-plan, implement-plan) reference the same convention.

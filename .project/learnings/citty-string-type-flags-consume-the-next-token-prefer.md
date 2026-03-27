@@ -1,0 +1,1 @@
+`--inline --query X` causes citty to parse `--query` as inline's string value. Prefer boolean-type flags when the value isn't needed, or document the ordering constraint in convention docs.

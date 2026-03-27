@@ -1,0 +1,1 @@
+When running skills via Agent SDK (or `claude -p`), the model often drops the final submit-* CLI call because it's the last step after long context. Moving submit before cleanup/summary steps and adding CRITICAL markers improved reliability. The harness also needs fallback transitions for when models skip them regardless.

@@ -1,0 +1,1 @@
+`buildSliceCompleteResult` had a path reference 80+ lines away from the others, in a different logical section. Caught as CRITICAL in review. Plans changing path strings in functions >50 lines should grep for ALL string literals containing the old path, not just list the obvious ones.

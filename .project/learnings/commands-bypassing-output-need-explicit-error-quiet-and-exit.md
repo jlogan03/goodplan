@@ -1,0 +1,1 @@
+The always-JSON `state` command bypasses `output()` and initially missed error formatting, `--quiet` suppression, and exit code handling — all three are normally inherited from `output()`. Any future always-JSON command should verify these three concerns explicitly.

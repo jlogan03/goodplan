@@ -1,0 +1,1 @@
+Trend detection language like "trending upward" is ambiguous for agents. Specify exact conditions (e.g., "strictly increasing across all 3 data points: a < b < c") with explicit non-triggers. Without precision, different agent runs will interpret the same instruction differently.

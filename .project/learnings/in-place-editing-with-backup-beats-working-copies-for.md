@@ -1,0 +1,1 @@
+Files referenced by other artifacts (CLAUDE.md, decisions, plans) should be edited in-place with a timestamped backup, not copied to a working directory. Working copies create ambiguity about which version is canonical. Plans are different — nothing references them mid-refinement, so `-refining` copies are safe.

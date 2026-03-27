@@ -1,0 +1,1 @@
+The slice `deferred` field was `string[]` but architecture specified `DeferredItem` objects. Fixing is cheap now, expensive after data is persisted. Match the documented shape even when the current slice doesn't exercise the field.

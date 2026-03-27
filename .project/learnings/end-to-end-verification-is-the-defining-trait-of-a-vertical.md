@@ -1,0 +1,1 @@
+Each slice must deliver a complete flow verifiable by actually running the code. The goal.md template includes a Verification section for live end-to-end testing — what a human would do to convince themselves it works. Slices that can't be verified this way should be merged or redefined.

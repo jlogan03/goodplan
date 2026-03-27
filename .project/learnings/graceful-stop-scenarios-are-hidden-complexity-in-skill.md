@@ -1,0 +1,1 @@
+create-architecture had 6 graceful stop scenarios with ~15 state.md/activity-log references. Plans should inventory every stop scenario and map re-entry detection (CLI status + file existence) for each, not just say "leave artifacts in place."

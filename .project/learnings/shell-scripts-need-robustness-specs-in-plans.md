@@ -1,0 +1,1 @@
+Review caught existence guards, clean-install semantics (rm+rsync vs cp), POSIX newlines, and path resolution that the plan omitted. Future plans with shell scripts should specify error handling, idempotency, and path resolution upfront.

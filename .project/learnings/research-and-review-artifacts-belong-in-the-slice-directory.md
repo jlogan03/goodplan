@@ -1,0 +1,1 @@
+Moving research from /tmp/plan-research/ to the slice's research/ directory and review iterations to refinement/ and implementation/ means artifacts persist across sessions. The check-before-research pattern (project + scope level) prevents duplicate work. Required updating 10 files across refine-plan and implement-plan.

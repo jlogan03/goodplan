@@ -1,0 +1,1 @@
+Simple prefix stripping (`~~archived~~` → name) breaks for archives that embed structured metadata like numbering (`~~archived~~NN_<name>`). When adding counters or other metadata to prefix conventions, document the full stripping algorithm alongside the naming convention.

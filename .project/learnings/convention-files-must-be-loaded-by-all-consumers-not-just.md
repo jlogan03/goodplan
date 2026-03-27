@@ -1,0 +1,1 @@
+Consumers that read artifacts need the convention definitions to correctly interpret format and semantics, even if they don't produce the artifacts. Verify consumer lists end-to-end during planning, not just implementation.

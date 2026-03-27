@@ -1,0 +1,1 @@
+Don't require optional files (like after-implementation-fixes-and-polish.md) in auto-detect logic. Use the minimal definitive set (plan-refined + implementation/ content). Clean implementations won't produce every optional artifact.

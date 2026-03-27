@@ -1,0 +1,1 @@
+When moving duplicated files to a shared location, use "will these stay unified long-term?" as the criterion — not just current similarity. Each shared reference consumed by multiple skills needs an extension policy (additive fields safe, format changes require updating all consumers). This prevents breaking downstream consumers when conventions evolve.

@@ -1,0 +1,1 @@
+Writing the shared reference (`cli-interaction.md`) before migrating any consumers meant 15 skills coded against the same contract. Cross-skill inconsistencies were caught by comparing against it. Use this approach for any epic changing a cross-cutting concern.

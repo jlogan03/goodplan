@@ -1,0 +1,1 @@
+When updating many skills to share a new concept (like initiatives), create the shared convention file first. Every subsequent skill update codes against the same reference, and reviewers catch inconsistencies by comparing against it. Without this, each skill invents its own conventions requiring reconciliation later.

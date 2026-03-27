@@ -1,0 +1,1 @@
+When multiple skills need to load the same data (e.g., decisions/), define the loading algorithm once in the convention file and have each skill reference it. The original plan duplicated the algorithm across 9 skills; reviewers caught this and proposed the Loading Protocol abstraction.

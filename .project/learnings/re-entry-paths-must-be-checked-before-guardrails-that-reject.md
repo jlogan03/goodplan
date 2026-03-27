@@ -1,0 +1,1 @@
+When a condition (e.g., "completion/learnings.md exists") is both a rejection criterion for first-time runs and a resume indicator for re-entry, the resume check must run first. Otherwise, graceful-stop recovery paths are blocked by the very guardrail they need to bypass.

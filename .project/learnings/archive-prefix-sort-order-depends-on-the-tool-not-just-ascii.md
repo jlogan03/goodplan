@@ -1,0 +1,1 @@
+The `~~archived~~` prefix sorts after active items in terminal `ls` (tilde > lowercase in ASCII) but may sort before them in file explorers (VS Code, Finder) that use locale-aware collation. When choosing prefix conventions for filesystem sorting, test in the actual tools users will see — not just the terminal.
