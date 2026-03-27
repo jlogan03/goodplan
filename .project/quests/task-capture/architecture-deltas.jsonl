@@ -1,2 +1,0 @@
-{"description":"Task entity with CREATE_TASK, DROP_TASK, CONVERT_TASK events. CONVERT_TASK inlines cross-entity creation.","subsystem":"state-machine","ts":"2026-03-26T19:44:57.341Z","type":"add"}
-{"description":"5 task:* commands (create, list, show, drop, convert) with flag-based patterns","subsystem":"commands","ts":"2026-03-26T19:44:57.341Z","type":"add"}

@@ -1,8 +1,8 @@
 {
-	"created": "2026-03-26T05:53:50.853Z",
-	"goal": "The mechanics for interrupting a slice with a side quest and resuming afterward. Implements interrupted.md creation, abandoned.md creation, and work stack push/pop.",
+	"created": "2026-03-27T16:40:17.622Z",
+	"goal": "The mechanics for interrupting a slice with a side quest and resuming afterward.",
 	"name": "side-quest-interruption-lifecycle",
 	"refinement": null,
-	"status": "abandoned",
-	"updated": "2026-03-26T19:57:41.624Z"
+	"status": "created",
+	"updated": "2026-03-27T16:40:17.622Z"
 }

@@ -1,0 +1,10 @@
+{
+	"created": "2026-03-27T16:40:17.622Z",
+	"deferred": [],
+	"epic": "initial",
+	"goal": "A skill that reviews all available project context and defines an ordered set of vertical slices.",
+	"name": "define-slices",
+	"refinement": null,
+	"status": "completed",
+	"updated": "2026-03-27T16:40:17.622Z"
+}

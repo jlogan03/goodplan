@@ -1,0 +1,10 @@
+{
+	"created": "2026-03-27T16:40:17.622Z",
+	"deferred": [],
+	"epic": "goodplan-cli",
+	"goal": "Full epic entity lifecycle: create, list, show, activate, complete, abandon, and all intermediate phase transitions.",
+	"name": "epic-lifecycle",
+	"refinement": null,
+	"status": "completed",
+	"updated": "2026-03-27T16:40:17.622Z"
+}

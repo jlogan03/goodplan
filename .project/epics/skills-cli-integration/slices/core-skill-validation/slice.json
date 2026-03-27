@@ -1,0 +1,10 @@
+{
+	"created": "2026-03-27T16:40:17.622Z",
+	"deferred": [],
+	"epic": "skills-cli-integration",
+	"goal": "Migrate create-epic and complete — the two skills exercising the broadest range of CLI interactions.",
+	"name": "core-skill-validation",
+	"refinement": null,
+	"status": "completed",
+	"updated": "2026-03-27T16:40:17.622Z"
+}

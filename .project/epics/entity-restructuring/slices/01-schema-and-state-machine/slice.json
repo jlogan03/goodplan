@@ -1,0 +1,10 @@
+{
+	"created": "2026-03-27T16:40:17.622Z",
+	"deferred": [],
+	"epic": "entity-restructuring",
+	"goal": "The foundation for nested slice paths: new epicOverviewSchema with embedded slices array, Target type with epic field on slices, updated transition handlers.",
+	"name": "01-schema-and-state-machine",
+	"refinement": null,
+	"status": "completed",
+	"updated": "2026-03-27T16:40:17.622Z"
+}

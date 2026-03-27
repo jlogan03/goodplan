@@ -1,8 +1,8 @@
 {
-	"created": "2026-03-26T05:53:50.853Z",
-	"goal": "Two new audit skills that detect drift, gaps, and staleness — one for documentation, one for tests. Both follow the pattern established by /audit-architecture.",
+	"created": "2026-03-27T16:40:17.622Z",
+	"goal": "Two new audit skills that detect drift, gaps, and staleness — one for documentation, one for tests.",
 	"name": "audit-docs-and-tests",
 	"refinement": null,
 	"status": "created",
-	"updated": "2026-03-26T05:53:50.853Z"
+	"updated": "2026-03-27T16:40:17.622Z"
 }

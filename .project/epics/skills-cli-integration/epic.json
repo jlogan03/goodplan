@@ -1,18 +1,10 @@
 {
-	"activated": "2026-03-23T14:00:00Z",
-	"created": "2026-03-26T05:53:50.853Z",
-	"goal": "Update all goodplan workflow skills to use the goodplan CLI binary for .project/ state operations, replacing direct file reads and writes with CLI commands. This enables dogfooding the CLI on real projects and surfaces ergonomic gaps before attempting full skill consolidation.",
+	"activated": "2026-03-27T16:40:17.622Z",
+	"created": "2026-03-27T16:40:17.622Z",
+	"goal": "Update all ~15 goodplan workflow skills to use the goodplan CLI binary for .project/ state operations, replacing direct file reads and writes with CLI commands.",
 	"name": "skills-cli-integration",
 	"refinement": null,
-	"sliceSequence": [
-		"state-command-convention-doc-tracer",
-		"show-status-enrichment",
-		"core-skill-validation",
-		"exploration-architecture-skills",
-		"planning-execution-skills",
-		"dogfooding"
-	],
 	"status": "completed",
-	"updated": "2026-03-26T05:53:50.853Z",
+	"updated": "2026-03-27T16:40:17.622Z",
 	"verifications": []
 }

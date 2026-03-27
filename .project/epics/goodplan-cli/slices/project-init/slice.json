@@ -1,0 +1,10 @@
+{
+	"created": "2026-03-27T16:40:17.622Z",
+	"deferred": [],
+	"epic": "goodplan-cli",
+	"goal": "Refactor goodplan init to go through the complete load-reduce-commit cycle, proving the recursive tree state model works.",
+	"name": "project-init",
+	"refinement": null,
+	"status": "completed",
+	"updated": "2026-03-27T16:40:17.622Z"
+}

@@ -1,0 +1,10 @@
+{
+	"created": "2026-03-27T16:40:17.622Z",
+	"deferred": [],
+	"epic": "goodplan-cli",
+	"goal": "Copy existing workflow skills from ~/.claude/skills/ into the repo's skills/ directory and build the installer.",
+	"name": "skills-migrate",
+	"refinement": null,
+	"status": "completed",
+	"updated": "2026-03-27T16:40:17.622Z"
+}

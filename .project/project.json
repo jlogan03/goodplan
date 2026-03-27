@@ -1,9 +1,9 @@
 {
 	"activeEpic": "entity-restructuring",
 	"activeQuest": null,
-	"activeSlice": "05-tests-and-migration",
-	"created": "2026-03-26T05:53:50.853Z",
+	"activeSlice": null,
+	"created": "2026-03-27T16:40:17.622Z",
 	"name": "goodplan",
-	"updated": "2026-03-27T12:55:08.801Z",
+	"updated": "2026-03-27T17:01:23.203Z",
 	"version": "1.0.0"
 }

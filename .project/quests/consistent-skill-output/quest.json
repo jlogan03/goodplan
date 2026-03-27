@@ -1,8 +1,8 @@
 {
-	"created": "2026-03-26T13:57:32.257Z",
-	"goal": "Standardize output templates across skills for consistent user-facing presentation",
+	"created": "2026-03-27T16:40:17.622Z",
+	"goal": "Rigid, concrete output templates for all skills that present structured information to the user.",
 	"name": "consistent-skill-output",
 	"refinement": null,
-	"status": "abandoned",
-	"updated": "2026-03-26T14:33:55.915Z"
+	"status": "created",
+	"updated": "2026-03-27T16:40:17.622Z"
 }

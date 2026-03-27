@@ -1,148 +1,148 @@
 {
 	"items": [
 		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
+			"completed": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-27T16:40:17.622Z",
 			"name": "architecture-quality",
 			"status": "completed"
 		},
 		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
+			"completed": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-27T16:40:17.622Z",
 			"name": "archived-prefix-migration",
 			"status": "completed"
 		},
 		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "complete-rename",
-			"status": "completed"
-		},
-		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "decisions-and-expertise",
-			"status": "completed"
-		},
-		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "initiatives-infrastructure",
-			"status": "completed"
-		},
-		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "maturity-invariants-fitness",
-			"status": "completed"
-		},
-		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "onboarding-and-refactors",
-			"status": "completed"
-		},
-		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "refactor-intelligence",
-			"status": "completed"
-		},
-		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "refine-plan-shared-loop",
-			"status": "completed"
-		},
-		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "slice-quality-and-health",
-			"status": "completed"
-		},
-		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "workflow-v2",
-			"status": "completed"
-		},
-		{
 			"completed": null,
-			"created": "2026-03-26T05:53:50.853Z",
+			"created": "2026-03-27T16:40:17.622Z",
 			"name": "audit-docs-and-tests",
 			"status": "created"
 		},
 		{
-			"completed": null,
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "maturity-context-loading",
-			"status": "created"
-		},
-		{
-			"completed": null,
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "migrate-to-cli",
+			"completed": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-27T16:40:17.622Z",
+			"name": "complete-rename",
 			"status": "completed"
 		},
 		{
 			"completed": null,
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "onboard-repo",
+			"created": "2026-03-27T16:40:17.622Z",
+			"name": "consistent-skill-output",
 			"status": "created"
 		},
 		{
-			"completed": null,
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "side-quest-interruption-lifecycle",
-			"status": "abandoned"
-		},
-		{
-			"completed": null,
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "skill-workflow-bugs",
-			"status": "created"
-		},
-		{
-			"completed": null,
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "task-capture",
+			"completed": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-27T16:40:17.622Z",
+			"name": "decisions-and-expertise",
 			"status": "completed"
 		},
 		{
-			"completed": null,
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "upgrade-workflow",
-			"status": "abandoned"
-		},
-		{
-			"completed": null,
-			"created": "2026-03-26T05:53:50.853Z",
+			"completed": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-27T16:40:17.622Z",
 			"name": "dogfood-harness",
 			"status": "completed"
 		},
 		{
 			"completed": null,
-			"created": "2026-03-26T13:57:32.257Z",
-			"name": "consistent-skill-output",
-			"status": "abandoned"
-		},
-		{
-			"completed": null,
-			"created": "2026-03-26T14:12:13.645Z",
-			"name": "migration-sibling-check",
-			"status": "abandoned"
-		},
-		{
-			"completed": null,
-			"created": "2026-03-26T20:09:49.184Z",
+			"created": "2026-03-27T16:40:17.622Z",
 			"name": "entity-path-and-learnings-cleanup",
-			"status": "abandoned"
+			"status": "created"
+		},
+		{
+			"completed": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-27T16:40:17.622Z",
+			"name": "initiatives-infrastructure",
+			"status": "completed"
 		},
 		{
 			"completed": null,
-			"created": "2026-03-27T02:57:35.114Z",
+			"created": "2026-03-27T16:40:17.622Z",
 			"name": "list-pagination",
 			"status": "created"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-27T16:40:17.622Z",
+			"name": "maturity-context-loading",
+			"status": "created"
+		},
+		{
+			"completed": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-27T16:40:17.622Z",
+			"name": "maturity-invariants-fitness",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-27T16:40:17.622Z",
+			"name": "migrate-to-cli",
+			"status": "completed"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-27T16:40:17.622Z",
+			"name": "migration-sibling-check",
+			"status": "created"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-27T16:40:17.622Z",
+			"name": "onboard-repo",
+			"status": "created"
+		},
+		{
+			"completed": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-27T16:40:17.622Z",
+			"name": "onboarding-and-refactors",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-27T16:40:17.622Z",
+			"name": "refactor-intelligence",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-27T16:40:17.622Z",
+			"name": "refine-plan-shared-loop",
+			"status": "completed"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-27T16:40:17.622Z",
+			"name": "side-quest-interruption-lifecycle",
+			"status": "created"
+		},
+		{
+			"completed": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-27T16:40:17.622Z",
+			"name": "skill-workflow-bugs",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-27T16:40:17.622Z",
+			"name": "slice-quality-and-health",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-27T16:40:17.622Z",
+			"name": "task-capture",
+			"status": "completed"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-27T16:40:17.622Z",
+			"name": "upgrade-workflow",
+			"status": "created"
+		},
+		{
+			"completed": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-27T16:40:17.622Z",
+			"name": "workflow-v2",
+			"status": "completed"
 		}
 	]
 }

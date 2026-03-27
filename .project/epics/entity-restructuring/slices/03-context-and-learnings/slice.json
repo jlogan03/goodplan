@@ -1,0 +1,10 @@
+{
+	"created": "2026-03-27T16:40:17.622Z",
+	"deferred": [],
+	"epic": "entity-restructuring",
+	"goal": "Update the context bundling layer to use nested slice paths.",
+	"name": "03-context-and-learnings",
+	"refinement": null,
+	"status": "completed",
+	"updated": "2026-03-27T17:01:23.203Z"
+}

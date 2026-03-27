@@ -1,27 +1,191 @@
 {
 	"items": [
 		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
+			"completed": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-27T16:40:17.622Z",
 			"name": "initial",
+			"slices": [
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "start-project",
+					"status": "completed"
+				},
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "project-status",
+					"status": "completed"
+				},
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "explore",
+					"status": "completed"
+				},
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "define-architecture",
+					"status": "completed"
+				},
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "define-slices",
+					"status": "completed"
+				},
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "create-plan",
+					"status": "completed"
+				},
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "complete-slice",
+					"status": "completed"
+				}
+			],
 			"status": "completed"
 		},
 		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
+			"completed": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-27T16:40:17.622Z",
 			"name": "goodplan-cli",
+			"slices": [
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "tracer-bullet",
+					"status": "completed"
+				},
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "project-init",
+					"status": "completed"
+				},
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "epic-lifecycle",
+					"status": "completed"
+				},
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "slice-lifecycle",
+					"status": "completed"
+				},
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "sub-agent-commands",
+					"status": "completed"
+				},
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "decisions-learnings",
+					"status": "completed"
+				},
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "skills-migrate",
+					"status": "completed"
+				},
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "integration-test",
+					"status": "completed"
+				}
+			],
 			"status": "completed"
 		},
 		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
+			"completed": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-27T16:40:17.622Z",
 			"name": "skills-cli-integration",
+			"slices": [
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "state-command-convention-doc-tracer",
+					"status": "completed"
+				},
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "show-status-enrichment",
+					"status": "completed"
+				},
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "core-skill-validation",
+					"status": "completed"
+				},
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "exploration-architecture-skills",
+					"status": "completed"
+				},
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "planning-execution-skills",
+					"status": "completed"
+				},
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "dogfooding",
+					"status": "completed"
+				}
+			],
 			"status": "completed"
 		},
 		{
 			"completed": null,
-			"created": "2026-03-26T20:23:37.272Z",
+			"created": "2026-03-27T16:40:17.622Z",
 			"name": "entity-restructuring",
+			"slices": [
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "01-schema-and-state-machine",
+					"status": "completed"
+				},
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "02-rpc-and-commands",
+					"status": "completed"
+				},
+				{
+					"completed": "2026-03-27T17:01:23.203Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "03-context-and-learnings",
+					"status": "completed"
+				},
+				{
+					"completed": "2026-03-27T16:40:17.622Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "04-skills-update",
+					"status": "completed"
+				},
+				{
+					"completed": "2026-03-27T16:59:43.752Z",
+					"created": "2026-03-27T16:40:17.622Z",
+					"name": "05-tests-and-migration",
+					"status": "completed"
+				}
+			],
 			"status": "activated"
 		}
 	]

@@ -1,8 +1,8 @@
 {
-	"created": "2026-03-26T20:09:49.184Z",
-	"goal": "Fix two structural issues: (1) Move slices under their epic directories (.project/epics/<epic>/slices/<name>/) instead of flat .project/slices/, eliminating cross-epic name collision risk and improving human navigation. (2) Remove direct learnings.md writes from /complete skill — learnings.jsonl via CLI is the single source of truth. After both fixes, /migrate should be able to restructure this repo's own .project/ directory to the new nested layout.",
+	"created": "2026-03-27T16:40:17.622Z",
+	"goal": "Clean up entity path references and learnings after entity restructuring.",
 	"name": "entity-path-and-learnings-cleanup",
 	"refinement": null,
-	"status": "abandoned",
-	"updated": "2026-03-26T20:21:58.781Z"
+	"status": "created",
+	"updated": "2026-03-27T16:40:17.622Z"
 }

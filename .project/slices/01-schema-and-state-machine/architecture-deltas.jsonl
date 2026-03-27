@@ -1,2 +1,0 @@
-{"description":"All transition handlers use nested epics/<epic>/slices/<name> paths. epicOverviewSchema with embedded slices replaces slices/overview.json.","subsystem":"state-machine","ts":"2026-03-27T01:09:08.587Z","type":"modify"}
-{"description":"Schema registry updated for nested path patterns. sliceSequence removed from epicSchema.","subsystem":"data-layer","ts":"2026-03-27T01:09:08.587Z","type":"modify"}

@@ -1,0 +1,10 @@
+{
+	"created": "2026-03-27T16:40:17.622Z",
+	"deferred": [],
+	"epic": "initial",
+	"goal": "A skill that initializes a new project's .project/ filesystem, captures the idea, and writes initial CLAUDE.md.",
+	"name": "start-project",
+	"refinement": null,
+	"status": "completed",
+	"updated": "2026-03-27T16:40:17.622Z"
+}

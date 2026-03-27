@@ -1,0 +1,10 @@
+{
+	"created": "2026-03-27T16:40:17.622Z",
+	"deferred": [],
+	"epic": "entity-restructuring",
+	"goal": "Update test fixtures and assertions, extend goodplan migrate for re-migration, self-migrate this repo.",
+	"name": "05-tests-and-migration",
+	"refinement": null,
+	"status": "completed",
+	"updated": "2026-03-27T16:59:43.752Z"
+}

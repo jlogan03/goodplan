@@ -1,0 +1,10 @@
+{
+	"created": "2026-03-27T16:40:17.622Z",
+	"deferred": [],
+	"epic": "goodplan-cli",
+	"goal": "End-to-end integration tests that spawn the compiled binary and run full workflows, plus fitness functions.",
+	"name": "integration-test",
+	"refinement": null,
+	"status": "completed",
+	"updated": "2026-03-27T16:40:17.622Z"
+}
