@@ -2,6 +2,16 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Optional-parameter overloads enable incremental type migration across slices
+_Source: 01-schema-and-state-machine_
+
+When changing function signatures used across many call sites, TypeScript overloads with optional parameters let the types phase compile while consumers still use the old arity. Safer than `@ts-expect-error` (which swallows all errors). Use this pattern for multi-phase signature migrations in future epics.
+
+## Schema registry changes are load-bearing for reads — update FIRST
+_Source: 01-schema-and-state-machine_
+
+The schema registry pattern→schema mapping drives `getJson` Zod parsing, which strips unrecognized fields. Updating the registry must happen atomically with (or before) any code writing new fields. Deferring registry updates causes silent data loss on round-trip.
+
 ## Cross-entity handlers need shared builder helpers from the start
 _Source: task-capture_
 
