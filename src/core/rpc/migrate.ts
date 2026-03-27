@@ -32,10 +32,13 @@ import {
 import { validateSourcePath } from "../../commands/global/migrate/validate-source-path.js";
 import type { Epic, EpicStatus } from "../../schemas/entities/epic.js";
 import type { ActivityEntry } from "../../schemas/records/activity-log.js";
+import type { LearningEventEntry } from "../../schemas/records/learning.js";
 import { GoodplanError } from "../../util/errors.js";
-import { deterministicStringify } from "../../util/json.js";
+import { deterministicStringify, deterministicStringifyCompact } from "../../util/json.js";
+import { deriveSlug } from "../../util/slug.js";
 import { VERSION } from "../../version.js";
 import { commitState } from "../data/commit.js";
+import { writeMarkdownFiles, type MarkdownFile } from "../data/markdown-files.js";
 import type {
 	DirectoryEntry,
 	JsonEntry,
@@ -475,13 +478,13 @@ const ARTIFACT_DIRS = new Set([
 	"prototypes",
 	"decisions",
 	"completion",
+	"learnings",
 ]);
 
 /** Allowlisted project-level markdown files */
 const PROJECT_MARKDOWN_FILES = [
 	"idea.md",
 	"conventions.md",
-	"learnings.md",
 	"project-health.md",
 ];
 
@@ -607,6 +610,332 @@ function copyMarkdownFiles(src: string, dest: string): void {
 }
 
 // ---------------------------------------------------------------------------
+// Learnings Migration: monolithic learnings.md → per-file learnings/
+// ---------------------------------------------------------------------------
+
+/** Parsed learning entry from the monolithic learnings.md file. */
+interface ParsedLearning {
+	readonly summary: string;
+	readonly source: string;
+	readonly detail: string;
+}
+
+/**
+ * Parse a monolithic learnings.md file into individual learning entries.
+ *
+ * Format:
+ * ```
+ * # Learnings
+ *
+ * <preamble text>
+ *
+ * ## <summary>
+ * _Source: <source>_
+ *
+ * <detail paragraphs>
+ * ```
+ *
+ * Source attribution may include suffixes like `(updated by <slice>)` or `(epic)`.
+ */
+export function parseLearningsMd(content: string): ParsedLearning[] {
+	const entries: ParsedLearning[] = [];
+	const lines = content.split("\n");
+
+	let currentSummary: string | null = null;
+	let currentSource: string | null = null;
+	let detailLines: string[] = [];
+
+	function flushEntry(): void {
+		if (currentSummary !== null && currentSource !== null) {
+			const detail = detailLines.join("\n").trim();
+			if (detail.length > 0) {
+				entries.push({
+					summary: currentSummary,
+					source: currentSource,
+					detail,
+				});
+			}
+		}
+		currentSummary = null;
+		currentSource = null;
+		detailLines = [];
+	}
+
+	for (const line of lines) {
+		// Match ## <summary> headings
+		const headingMatch = line.match(/^## (.+)$/);
+		if (headingMatch !== null) {
+			flushEntry();
+			currentSummary = headingMatch[1]!.trim();
+			continue;
+		}
+
+		// Match _Source: <source>_ lines (only when inside an entry)
+		if (currentSummary !== null && currentSource === null) {
+			const sourceMatch = line.match(/^_Source:\s*(.+?)_\s*$/);
+			if (sourceMatch !== null) {
+				currentSource = sourceMatch[1]!.trim();
+				continue;
+			}
+		}
+
+		// Accumulate detail lines (only when we have both summary and source)
+		if (currentSummary !== null && currentSource !== null) {
+			detailLines.push(line);
+		}
+	}
+
+	// Flush the last entry
+	flushEntry();
+
+	return entries;
+}
+
+/**
+ * Convert a monolithic learnings.md into per-learning .md files + JSONL entries.
+ * Returns the JSONL entries and the markdown files to write.
+ *
+ * @param content - The raw learnings.md content
+ * @param scopePrefix - Path prefix for the scope (e.g., "" for project, "epics/my-epic/slices/my-slice/" for a slice)
+ * @param existingSlugs - Slugs already in use at this scope
+ */
+function convertLearningsMd(
+	content: string,
+	scopePrefix: string,
+	existingSlugs: Set<string>,
+): { entries: LearningEventEntry[]; files: MarkdownFile[] } {
+	const parsed = parseLearningsMd(content);
+	const entries: LearningEventEntry[] = [];
+	const files: MarkdownFile[] = [];
+
+	for (const learning of parsed) {
+		const slug = deriveSlug(learning.summary, existingSlugs);
+		existingSlugs.add(slug);
+
+		const fileRelPath = `learnings/${slug}.md`;
+		const fullPath = scopePrefix.length > 0 ? `${scopePrefix}${fileRelPath}` : fileRelPath;
+
+		entries.push({
+			// learnings.md format lacks category metadata; "domain" is the safest default
+			category: "domain",
+			summary: learning.summary,
+			file: fileRelPath,
+			tags: [],
+			source: learning.source,
+			rollup: false,
+			rollupTo: [],
+		});
+
+		files.push({
+			path: fullPath,
+			content: learning.detail,
+		});
+	}
+
+	return { entries, files };
+}
+
+/**
+ * Convert inline `detail` fields in JSONL entries to file-based `file` fields.
+ * Only converts entries that have `detail` and no `file`.
+ *
+ * @param jsonlEntries - Existing JSONL entries (may be mixed format)
+ * @param scopePrefix - Path prefix for scope-relative file paths
+ * @param existingSlugs - Slugs already in use
+ */
+function convertInlineDetailEntries(
+	jsonlEntries: unknown[],
+	scopePrefix: string,
+	existingSlugs: Set<string>,
+): { entries: unknown[]; files: MarkdownFile[] } {
+	const converted: unknown[] = [];
+	const files: MarkdownFile[] = [];
+
+	for (const entry of jsonlEntries) {
+		if (
+			typeof entry !== "object" ||
+			entry === null ||
+			!("detail" in entry) ||
+			"file" in entry
+		) {
+			// Already new-format or unrecognized — preserve as-is
+			converted.push(entry);
+			continue;
+		}
+
+		const e = entry as Record<string, unknown>;
+		const summary = typeof e.summary === "string" ? e.summary : "learning";
+		const detail = typeof e.detail === "string" ? e.detail : "";
+
+		const slug = deriveSlug(summary, existingSlugs);
+		existingSlugs.add(slug);
+
+		const fileRelPath = `learnings/${slug}.md`;
+		const fullPath = scopePrefix.length > 0 ? `${scopePrefix}${fileRelPath}` : fileRelPath;
+
+		// Build new entry without `detail`, with `file`
+		const { detail: _removed, ...rest } = e;
+		converted.push({ ...rest, file: fileRelPath });
+
+		if (detail.length > 0) {
+			files.push({ path: fullPath, content: detail });
+		}
+	}
+
+	return { entries: converted, files };
+}
+
+/**
+ * Post-migration step: convert monolithic learnings.md files and inline JSONL `detail` fields
+ * to the per-file learnings/ directory pattern.
+ *
+ * Called after copyMigrationArtifacts and commitState.
+ * Reads learnings.md from the OLD directory (since it's no longer copied to new),
+ * reads/writes JSONL from the NEW directory, and writes .md files to the NEW directory.
+ */
+function migrateLearnings(
+	projectDir: string,
+	projectOldDir: string,
+	validatedAnswers: Record<string, unknown>,
+): void {
+	const allFiles: MarkdownFile[] = [];
+
+	// Collect all scopes to process: project root + epics + slices + quests
+	// Each scope maps: newDir (for JSONL + writing), oldDir (for reading learnings.md), prefix (for file paths)
+	const scopes: Array<{ newDir: string; oldDir: string; prefix: string }> = [
+		{ newDir: projectDir, oldDir: projectOldDir, prefix: "" },
+	];
+
+	const epicInventory =
+		(validatedAnswers[QUESTION_IDS.EPIC_INVENTORY] as MigrationEpic[] | undefined) ?? [];
+
+	for (const epic of epicInventory) {
+		const epicRelPath = `epics/${epic.name}/`;
+		scopes.push({
+			newDir: path.join(projectDir, "epics", epic.name),
+			oldDir: path.join(projectOldDir, epic.sourcePath),
+			prefix: epicRelPath,
+		});
+
+		const detailKey = epicDetailQuestionId(epic.name);
+		const detail = validatedAnswers[detailKey] as EpicDetailResponse | undefined;
+		if (detail !== undefined) {
+			for (const slice of detail.slices) {
+				const sliceRelPath = `epics/${epic.name}/slices/${slice.name}/`;
+				scopes.push({
+					newDir: path.join(projectDir, "epics", epic.name, "slices", slice.name),
+					oldDir: path.join(projectOldDir, slice.sourcePath),
+					prefix: sliceRelPath,
+				});
+			}
+		}
+	}
+
+	const questInventory =
+		(validatedAnswers[QUESTION_IDS.QUEST_INVENTORY] as MigrationQuest[] | undefined) ?? [];
+
+	for (const quest of questInventory) {
+		const questRelPath = `quests/${quest.name}/`;
+		scopes.push({
+			newDir: path.join(projectDir, "quests", quest.name),
+			oldDir: path.join(projectOldDir, quest.sourcePath),
+			prefix: questRelPath,
+		});
+	}
+
+	// Process each scope
+	for (const scope of scopes) {
+		const existingSlugs = new Set<string>();
+
+		// If learnings/ directory already exists in the new dir, collect existing slugs
+		const learningsDir = path.join(scope.newDir, "learnings");
+		if (fs.existsSync(learningsDir) && fs.statSync(learningsDir).isDirectory()) {
+			const existing = fs.readdirSync(learningsDir);
+			for (const f of existing) {
+				if (f.endsWith(".md")) {
+					existingSlugs.add(f.slice(0, -3)); // strip .md
+				}
+			}
+		}
+
+		// 1. Convert monolithic learnings.md from OLD directory if present
+		const learningsMdPath = path.join(scope.oldDir, "learnings.md");
+		if (fs.existsSync(learningsMdPath)) {
+			const content = fs.readFileSync(learningsMdPath, "utf-8");
+			const { entries: mdEntries, files: mdFiles } = convertLearningsMd(
+				content,
+				scope.prefix,
+				existingSlugs,
+			);
+
+			// Read existing JSONL — check OLD directory first (has original entries),
+			// then NEW directory (has entries from buildMigrationState, typically empty)
+			const jsonlPath = path.join(scope.newDir, "learnings.jsonl");
+			let existingJsonl: unknown[] = [];
+			const oldJsonlPath = path.join(scope.oldDir, "learnings.jsonl");
+			const jsonlSource = fs.existsSync(oldJsonlPath) ? oldJsonlPath : jsonlPath;
+			if (fs.existsSync(jsonlSource)) {
+				const jsonlContent = fs.readFileSync(jsonlSource, "utf-8").trim();
+				if (jsonlContent.length > 0) {
+					existingJsonl = jsonlContent.split("\n").map((line) => JSON.parse(line) as unknown);
+				}
+			}
+
+			// Convert any existing inline detail entries too
+			const { entries: convertedExisting, files: existingFiles } = convertInlineDetailEntries(
+				existingJsonl,
+				scope.prefix,
+				existingSlugs,
+			);
+
+			// Write updated JSONL: converted monolithic entries + converted existing entries
+			const allEntries = [...mdEntries, ...convertedExisting];
+			const jsonlLines = allEntries.map((e) => deterministicStringifyCompact(e)).join("\n");
+			fs.mkdirSync(path.dirname(jsonlPath), { recursive: true });
+			fs.writeFileSync(jsonlPath, jsonlLines.length > 0 ? `${jsonlLines}\n` : "", "utf-8");
+
+			allFiles.push(...mdFiles, ...existingFiles);
+
+			// Remove learnings.md from NEW dir if it was copied there (e.g., via copyMarkdownFiles)
+			const newLearningsMd = path.join(scope.newDir, "learnings.md");
+			if (fs.existsSync(newLearningsMd)) {
+				fs.unlinkSync(newLearningsMd);
+			}
+		} else {
+			// No monolithic file — just convert inline detail entries in JSONL
+			// Check both OLD and NEW dirs for JSONL content
+			const jsonlPath = path.join(scope.newDir, "learnings.jsonl");
+			const oldJsonlPath = path.join(scope.oldDir, "learnings.jsonl");
+			const jsonlSource = fs.existsSync(oldJsonlPath) ? oldJsonlPath : jsonlPath;
+			if (fs.existsSync(jsonlSource)) {
+				const jsonlContent = fs.readFileSync(jsonlSource, "utf-8").trim();
+				if (jsonlContent.length > 0) {
+					const existingJsonl = jsonlContent
+						.split("\n")
+						.map((line) => JSON.parse(line) as unknown);
+
+					const { entries: convertedEntries, files: convertedFiles } =
+						convertInlineDetailEntries(existingJsonl, scope.prefix, existingSlugs);
+
+					// Only rewrite if there were changes
+					if (convertedFiles.length > 0) {
+						const jsonlLines = convertedEntries.map((e) => deterministicStringifyCompact(e)).join("\n");
+						fs.mkdirSync(path.dirname(jsonlPath), { recursive: true });
+						fs.writeFileSync(jsonlPath, `${jsonlLines}\n`, "utf-8");
+						allFiles.push(...convertedFiles);
+					}
+				}
+			}
+		}
+	}
+
+	// Write all markdown files at once
+	if (allFiles.length > 0) {
+		writeMarkdownFiles(projectDir, allFiles);
+	}
+}
+
+// ---------------------------------------------------------------------------
 // Execute Migration (state construction + artifact copy)
 // ---------------------------------------------------------------------------
 
@@ -648,6 +977,16 @@ function executeMigration(
 		// Log but don't fail the migration
 		process.stderr.write(
 			`[goodplan] Warning: some markdown artifacts may not have been copied: ${String(err)}\n`,
+		);
+	}
+
+	// Step 5b: Convert monolithic learnings.md to per-file learnings/ and inline JSONL detail → file
+	try {
+		migrateLearnings(projectDir, projectOldDir, validatedAnswers);
+	} catch (err) {
+		// Non-fatal — migration state is committed, learnings just won't be per-file yet
+		process.stderr.write(
+			`[goodplan] Warning: learnings migration may be incomplete: ${String(err)}\n`,
 		);
 	}
 

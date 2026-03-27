@@ -18,7 +18,7 @@ function makeLearning(overrides: Partial<LearningEntry> = {}): LearningEntry {
 	return {
 		category: "domain",
 		summary: "Test learning",
-		detail: "Detail text",
+		file: "learnings/test-learning.md",
 		tags: [],
 		source: "slices/s1",
 		rollup: true,

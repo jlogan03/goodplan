@@ -28,16 +28,13 @@ export interface DecisionSummary {
 	summary: string;
 }
 
-/** Projection of stored learning record for context bundles.
- *  The `file` field is present for new-format entries (learnings/ directory pattern)
- *  and absent for legacy entries (inline detail). Consumers should use `"file" in learning`
- *  checks (not `learning.file !== undefined`) to satisfy `exactOptionalPropertyTypes`. */
+/** Projection of stored learning record for context bundles. */
 export interface LearningSummary {
 	category: "domain" | "worked" | "didnt-work" | "do-differently";
 	summary: string;
 	tags: string[];
 	source: string;
-	file?: string;
+	file: string;
 }
 
 // ── Content source definition ───────────────────────────────

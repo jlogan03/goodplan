@@ -10,7 +10,6 @@ import type { Slice } from "../../schemas/entities/slice.js";
 import type { Task } from "../../schemas/entities/task.js";
 import type { DecisionEntry } from "../../schemas/records/decision.js";
 import type { LearningEntry } from "../../schemas/records/learning.js";
-import { isLearningEventEntry } from "./complete.js";
 import type { StateEvent } from "../../schemas/state-events.js";
 import { GoodplanError } from "../../util/errors.js";
 import { VERSION } from "../../version.js";
@@ -463,13 +462,11 @@ function collectRollupMarkdownCopies(
 
 	const copies: MarkdownCopy[] = [];
 	for (const entry of addedEntries) {
-		if (isLearningEventEntry(entry)) {
-			// Source: <from-scope>/<file> (e.g., "epics/e1/slices/s1/learnings/slug.md")
-			const fromPath = `${target.from}/${entry.file}`;
-			// Target: <target-scope>/<file> (e.g., "learnings/slug.md" at project level or "epics/e1/learnings/slug.md")
-			const toPath = targetScopePath ? `${targetScopePath}/${entry.file}` : entry.file;
-			copies.push({ from: fromPath, to: toPath });
-		}
+		// Source: <from-scope>/<file> (e.g., "epics/e1/slices/s1/learnings/slug.md")
+		const fromPath = `${target.from}/${entry.file}`;
+		// Target: <target-scope>/<file> (e.g., "learnings/slug.md" at project level or "epics/e1/learnings/slug.md")
+		const toPath = targetScopePath ? `${targetScopePath}/${entry.file}` : entry.file;
+		copies.push({ from: fromPath, to: toPath });
 	}
 
 	return copies;

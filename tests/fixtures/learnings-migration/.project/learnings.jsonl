@@ -1,0 +1,2 @@
+{"category":"domain","detail":"Re-migration support transforms migrate from a one-time tool.","rollup":true,"rollupTo":["project"],"source":"test-epic/slices/first-slice","summary":"Re-migration is useful","tags":["migration"]}
+{"category":"worked","detail":"Timestamped backup naming prevents re-migration collisions.","rollup":true,"rollupTo":["project"],"source":"test-epic/slices/second-slice","summary":"Timestamped backups work well","tags":["filesystem"]}

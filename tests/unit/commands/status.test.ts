@@ -157,7 +157,7 @@ function createPopulatedProject() {
 		{
 			category: "worked",
 			summary: "Zod is great",
-			detail: "Detail",
+			file: "learnings/zod-is-great.md",
 			tags: ["zod"],
 			source: "slices/01-auth",
 			rollup: true,

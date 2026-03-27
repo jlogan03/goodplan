@@ -22,7 +22,7 @@ const state: ProjectState = {
 		"learnings.jsonl": {
 			type: "jsonl",
 			content: [
-				{ category: "worked", summary: "Vitest is fast", detail: "Parallel tests", tags: ["testing"], source: "project", rollup: false, rollupTo: [] },
+				{ category: "worked", summary: "Vitest is fast", file: "learnings/vitest-is-fast.md", tags: ["testing"], source: "project", rollup: false, rollupTo: [] },
 			],
 		},
 		architecture: {
@@ -74,7 +74,7 @@ const state: ProjectState = {
 										"learnings.jsonl": {
 											type: "jsonl",
 											content: [
-												{ category: "domain", summary: "JSONL is merge-friendly", detail: "One record per line", tags: ["data"], source: "epics/my-epic/slices/01-data-layer", rollup: false, rollupTo: [] },
+												{ category: "domain", summary: "JSONL is merge-friendly", file: "learnings/jsonl-is-merge-friendly.md", tags: ["data"], source: "epics/my-epic/slices/01-data-layer", rollup: false, rollupTo: [] },
 											],
 										},
 									},

@@ -574,7 +574,6 @@ export function processLearnings(
 	let state = tree;
 
 	// Write to source scope learnings.jsonl
-	// Use LearningEntry (union) since files may contain legacy entries during transition
 	const sourceLearnings =
 		getJsonl<LearningEntry>(state, `${source}/learnings.jsonl`) ?? [];
 	state = setEntry(state, `${source}/learnings.jsonl`, {

@@ -9,8 +9,8 @@ describe("collectLearnings", () => {
 			"learnings.jsonl": {
 				type: "jsonl",
 				content: [
-					{ category: "worked", summary: "Vitest is fast", detail: "Ran 100 tests in 2s", tags: ["testing"], source: "project", rollup: false, rollupTo: [] },
-					{ category: "domain", summary: "Users need X", detail: "Discovered during research", tags: ["ux"], source: "project", rollup: false, rollupTo: [] },
+					{ category: "worked", summary: "Vitest is fast", file: "learnings/vitest-is-fast.md", tags: ["testing"], source: "project", rollup: false, rollupTo: [] },
+					{ category: "domain", summary: "Users need X", file: "learnings/users-need-x.md", tags: ["ux"], source: "project", rollup: false, rollupTo: [] },
 				],
 			},
 			slices: {
@@ -22,7 +22,7 @@ describe("collectLearnings", () => {
 							"learnings.jsonl": {
 								type: "jsonl",
 								content: [
-									{ category: "didnt-work", summary: "fs.watch unreliable", detail: "Use chokidar instead", tags: ["fs"], source: "slices/01-data-layer", rollup: true, rollupTo: ["project"] },
+									{ category: "didnt-work", summary: "fs.watch unreliable", file: "learnings/fs-watch-unreliable.md", tags: ["fs"], source: "slices/01-data-layer", rollup: true, rollupTo: ["project"] },
 								],
 							},
 						},
@@ -80,9 +80,9 @@ describe("collectLearnings", () => {
 				"learnings.jsonl": {
 					type: "jsonl",
 					content: [
-						{ category: "worked", summary: "Valid", detail: "d", tags: [], source: "project", rollup: false, rollupTo: [] },
-						{ category: "invalid-category", summary: "Bad", detail: "d", tags: [], source: "project", rollup: false, rollupTo: [] },
-						{ category: "domain", summary: "Also valid", detail: "d", tags: [], source: "project", rollup: false, rollupTo: [] },
+						{ category: "worked", summary: "Valid", file: "learnings/valid.md", tags: [], source: "project", rollup: false, rollupTo: [] },
+						{ category: "invalid-category", summary: "Bad", file: "learnings/bad.md", tags: [], source: "project", rollup: false, rollupTo: [] },
+						{ category: "domain", summary: "Also valid", file: "learnings/also-valid.md", tags: [], source: "project", rollup: false, rollupTo: [] },
 					],
 				},
 			},
@@ -93,62 +93,25 @@ describe("collectLearnings", () => {
 		expect(learnings[1]!.summary).toBe("Also valid");
 	});
 
-	it("projects to LearningSummary correctly (omits detail, rollup, rollupTo)", () => {
+	it("projects to LearningSummary correctly (omits rollup, rollupTo)", () => {
 		const learnings = collectLearnings(stateWithLearnings);
 		const first = learnings[0]!;
 		expect(first).toEqual({
 			category: "worked",
 			summary: "Vitest is fast",
+			file: "learnings/vitest-is-fast.md",
 			tags: ["testing"],
 			source: "project",
 		});
-		// Ensure detail and rollup fields are NOT present
-		expect("detail" in first).toBe(false);
+		// Ensure rollup fields are NOT present
 		expect("rollup" in first).toBe(false);
 		expect("rollupTo" in first).toBe(false);
 	});
 
-	it("includes file field for new-format entries", () => {
-		const stateWithFileEntries: ProjectState = {
-			type: "directory",
-			contents: {
-				"learnings.jsonl": {
-					type: "jsonl",
-					content: [
-						{ category: "worked", summary: "New format entry", file: "learnings/new-format-entry.md", tags: ["test"], source: "project", rollup: false, rollupTo: [] },
-					],
-				},
-			},
-		};
-		const learnings = collectLearnings(stateWithFileEntries);
-		expect(learnings).toHaveLength(1);
-		expect("file" in learnings[0]!).toBe(true);
-		expect(learnings[0]!.file).toBe("learnings/new-format-entry.md");
-	});
-
-	it("omits file field for legacy entries with detail", () => {
+	it("includes file field in all entries", () => {
 		const learnings = collectLearnings(stateWithLearnings);
-		const first = learnings[0]!;
-		expect("file" in first).toBe(false);
-	});
-
-	it("handles mixed legacy and new-format entries", () => {
-		const mixedState: ProjectState = {
-			type: "directory",
-			contents: {
-				"learnings.jsonl": {
-					type: "jsonl",
-					content: [
-						{ category: "worked", summary: "Legacy", detail: "Old format", tags: [], source: "project", rollup: false, rollupTo: [] },
-						{ category: "domain", summary: "New", file: "learnings/new.md", tags: [], source: "project", rollup: false, rollupTo: [] },
-					],
-				},
-			},
-		};
-		const learnings = collectLearnings(mixedState);
 		expect(learnings).toHaveLength(2);
-		expect("file" in learnings[0]!).toBe(false);
-		expect("file" in learnings[1]!).toBe(true);
-		expect(learnings[1]!.file).toBe("learnings/new.md");
+		expect(learnings[0]!.file).toBe("learnings/vitest-is-fast.md");
+		expect(learnings[1]!.file).toBe("learnings/users-need-x.md");
 	});
 });

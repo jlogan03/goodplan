@@ -116,7 +116,7 @@ describe("decisionEntrySchema", () => {
 const validLearning = {
 	category: "domain",
 	summary: "Brief actionable statement",
-	detail: "Longer explanation",
+	file: "learnings/brief-actionable-statement.md",
 	tags: ["auth", "testing"],
 	source: "slices/01-auth",
 	rollup: true,
@@ -168,6 +168,11 @@ describe("learningEntrySchema", () => {
 
 	it("rejects missing fields", () => {
 		expect(learningEntrySchema.safeParse({}).success).toBe(false);
+	});
+
+	it("rejects legacy detail-only entries (no file field)", () => {
+		const { file: _, ...legacy } = validLearning;
+		expect(learningEntrySchema.safeParse({ ...legacy, detail: "some detail" }).success).toBe(false);
 	});
 });
 

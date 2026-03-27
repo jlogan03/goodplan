@@ -96,37 +96,20 @@ export function complete(
 	return completeResult;
 }
 
-// ── Type guard ───────────────────────────────────────────────
-
-/** Type guard: distinguishes new-format entries (with `file`) from legacy entries (with `detail`). */
-export function isLearningEventEntry(entry: LearningEntry): entry is LearningEventEntry {
-	return "file" in entry;
-}
-
 // ── Slug + LearningInput to LearningEventEntry mapping ──────
 
 /**
  * Collect existing slugs from learnings.jsonl entries at the given scope path.
- * New-format entries: extract slug from `file` field (e.g., "learnings/some-slug.md" -> "some-slug").
- * Legacy entries (with `detail` but no `file`): derive slug from `summary` to prevent
- * collisions during the transition period when new entries coexist with legacy ones.
+ * Extracts slug from `file` field (e.g., "learnings/some-slug.md" -> "some-slug").
  */
 function collectExistingSlugs(state: ProjectState, scopePath: string): Set<string> {
 	const slugs = new Set<string>();
 	const entries = getJsonl<LearningEntry>(state, `${scopePath}/learnings.jsonl`);
 	if (entries === undefined) return slugs;
 	for (const entry of entries) {
-		if (isLearningEventEntry(entry)) {
-			// Extract slug from "learnings/<slug>.md"
-			const match = /^learnings\/(.+)\.md$/.exec(entry.file);
-			if (match?.[1] !== undefined) {
-				slugs.add(match[1]);
-			}
-		} else {
-			// Legacy entry: derive what its slug would be from the summary
-			// to prevent new entries from colliding with legacy learning summaries
-			const derivedSlug = deriveSlug(entry.summary, slugs);
-			slugs.add(derivedSlug);
+		const match = /^learnings\/(.+)\.md$/.exec(entry.file);
+		if (match?.[1] !== undefined) {
+			slugs.add(match[1]);
 		}
 	}
 	return slugs;
