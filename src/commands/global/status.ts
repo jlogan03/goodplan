@@ -6,7 +6,7 @@ import { getDir, getJson, getJsonl } from "../../core/data/tree.js";
 import type { DirectoryEntry, ProjectState } from "../../core/tree.js";
 import type { Artifacts, StatusResult } from "../../schemas/commands/status.js";
 import type { Epic } from "../../schemas/entities/epic.js";
-import type { Overview } from "../../schemas/entities/overview.js";
+import type { EpicOverview, Overview } from "../../schemas/entities/overview.js";
 import type { Project } from "../../schemas/entities/project.js";
 import type { Quest } from "../../schemas/entities/quest.js";
 import type { Slice } from "../../schemas/entities/slice.js";
@@ -80,7 +80,8 @@ function resolveActiveEpic(project: Project, state: ProjectState): StatusResult[
 
 function resolveActiveSlice(project: Project, state: ProjectState): StatusResult["activeSlice"] {
 	if (project.activeSlice === null) return null;
-	const slice = getJson<Slice>(state, `slices/${project.activeSlice}/slice.json`);
+	if (project.activeEpic === null) return null;
+	const slice = getJson<Slice>(state, `epics/${project.activeEpic}/slices/${project.activeSlice}/slice.json`);
 	if (slice === undefined) return null;
 	return { name: slice.name, status: slice.status };
 }
@@ -116,15 +117,17 @@ function countArtifacts(project: Project, state: ProjectState): Artifacts {
 	const decisions = getJsonl<DecisionEntry>(state, "decisions.jsonl");
 	const learnings = getJsonl<LearningEntry>(state, "learnings.jsonl");
 
-	// Slice overview for completed/total counts
-	const sliceOverview = getJson<Overview>(state, "slices/overview.json");
+	// Slice overview for completed/total counts — aggregate across all epics
+	const epicOverview = getJson<EpicOverview>(state, "epics/overview.json");
 	let completedSlices = 0;
 	let totalSlices = 0;
-	if (sliceOverview !== undefined) {
-		totalSlices = sliceOverview.items.length;
-		for (const item of sliceOverview.items) {
-			if (item.status === "completed") {
-				completedSlices++;
+	if (epicOverview !== undefined) {
+		for (const epicItem of epicOverview.items) {
+			for (const slice of epicItem.slices) {
+				totalSlices++;
+				if (slice.status === "completed") {
+					completedSlices++;
+				}
 			}
 		}
 	}
@@ -241,10 +244,10 @@ function generateWarnings(project: Project, state: ProjectState, warnings: strin
 	const now = Date.now();
 
 	// Check for stale active entities
-	if (project.activeSlice !== null) {
+	if (project.activeSlice !== null && project.activeEpic !== null) {
 		checkStale(
 			activityLog,
-			`slices/${project.activeSlice}`,
+			`epics/${project.activeEpic}/slices/${project.activeSlice}`,
 			project.activeSlice,
 			"slice",
 			now,

@@ -8,6 +8,7 @@ import { output } from "../../util/output.js";
 import { readStdin } from "../../util/stdin.js";
 import { validateInput } from "../../util/validate.js";
 import { globalArgs } from "../global-args.js";
+import { requireActiveEpic } from "../slice/utils.js";
 
 /**
  * `goodplan submit-implementation --slice <name>|--quest <name>` — complete implementation phase.
@@ -37,12 +38,11 @@ export const submitImplementationCommand = defineCommand({
 		const stdin = await readStdin();
 		const input = validateInput(submitImplementationInputSchema, args, stdin);
 
-		// @ts-expect-error — slice 02: Target needs epic field for slice variant
+		const projectDir = resolveProjectDir();
 		const target: Target = input.slice !== undefined
-			? { type: "slice", name: input.slice }
+			? { type: "slice", name: input.slice, epic: requireActiveEpic(projectDir) }
 			: { type: "quest", name: input.quest! };
 
-		const projectDir = resolveProjectDir();
 		const result = submit(projectDir, "implementation", target, { phase: "implementation" });
 
 		if (args.json || args.query) {

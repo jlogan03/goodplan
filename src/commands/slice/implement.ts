@@ -4,6 +4,7 @@ import { resolveProjectDir } from "../../core/data/project.js";
 import { begin } from "../../core/rpc/begin.js";
 import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
+import { requireActiveEpic } from "./utils.js";
 
 /**
  * `goodplan slice:implement --slice <name>` — begin implementation for a slice.
@@ -28,8 +29,8 @@ export const sliceImplementCommand = defineCommand({
 	setup() {},
 	async run({ args }) {
 		const projectDir = resolveProjectDir();
-		// @ts-expect-error — slice 02: Target needs epic field
-		const result = await begin(projectDir, "implement", { type: "slice", name: args.slice }, {});
+		const epic = requireActiveEpic(projectDir);
+		const result = await begin(projectDir, "implement", { type: "slice", name: args.slice, epic }, {});
 
 		if (args.json || args.query) {
 			output(result, args);

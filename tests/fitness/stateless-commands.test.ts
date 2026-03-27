@@ -81,7 +81,7 @@ describe("INV-004: Stateless commands — entity-identifying flags required", ()
 		}
 
 		if (violations.length > 0) {
-			expect.fail(`Commands missing entity-identifying flags:\n${violations.join("\n")}`);
+			throw new Error(`Commands missing entity-identifying flags:\n${violations.join("\n")}`);
 		}
 	});
 });

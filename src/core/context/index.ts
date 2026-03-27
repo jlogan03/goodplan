@@ -98,7 +98,7 @@ function resolveActiveEpic(state: ProjectState, target: Target): string | undefi
 function resolveScope(target: Target): string | undefined {
 	switch (target.type) {
 		case "slice":
-			return `slices/${target.name}`;
+			return `epics/${target.epic}/slices/${target.name}`;
 		case "quest":
 			return `quests/${target.name}`;
 		default:

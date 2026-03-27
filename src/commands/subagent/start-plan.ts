@@ -6,6 +6,7 @@ import type { Target } from "../../core/rpc/types.js";
 import { GoodplanError } from "../../util/errors.js";
 import { output } from "../../util/output.js";
 import { globalArgs, parseInlineBudget } from "../global-args.js";
+import { requireActiveEpic } from "../slice/utils.js";
 
 /**
  * `goodplan start-plan --slice <name>|--quest <name> [--inline[=<bytes>]]`
@@ -45,14 +46,12 @@ export const startPlanCommand = defineCommand({
 			);
 		}
 
-		// Safe: the mutual-exclusivity check above guarantees exactly one of
-		// sliceVal/questVal is defined — if sliceVal is undefined, questVal is defined.
-		// @ts-expect-error — slice 02: Target needs epic field for slice variant
+		const projectDir = resolveProjectDir();
+
 		const target: Target = sliceVal !== undefined
-			? { type: "slice", name: sliceVal }
+			? { type: "slice", name: sliceVal, epic: requireActiveEpic(projectDir) }
 			: { type: "quest", name: questVal! };
 
-		const projectDir = resolveProjectDir();
 		const state = loadState(projectDir);
 
 		const inlineBudget = parseInlineBudget(args.inline as string | undefined);

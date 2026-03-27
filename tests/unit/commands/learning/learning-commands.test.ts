@@ -39,7 +39,7 @@ function captureStdout(): { chunks: string[]; restore: () => void } {
 
 /** Write content files for slice state machine guards, then invalidate cache. */
 function writeSliceContent(sliceName: string, ...files: string[]) {
-	const dir = path.join(projectDir, "slices", sliceName);
+	const dir = path.join(projectDir, "epics", "e1", "slices", sliceName);
 	fs.mkdirSync(dir, { recursive: true });
 	for (const f of files) {
 		fs.writeFileSync(path.join(dir, f), `# ${f}\nContent.`);
@@ -88,29 +88,29 @@ function setupSliceWithLearnings() {
 	begin(
 		projectDir,
 		"create",
-		{ type: "slice", name: "s1" },
+		{ type: "slice", name: "s1", epic: "e1" },
 		{ name: "s1", epic: "e1", goal: "Slice goal" },
 	);
-	begin(projectDir, "plan", { type: "slice", name: "s1" }, {});
+	begin(projectDir, "plan", { type: "slice", name: "s1", epic: "e1" }, {});
 	writeSliceContent("s1", "plan.md");
-	submit(projectDir, "plan", { type: "slice", name: "s1" }, { phase: "plan" });
+	submit(projectDir, "plan", { type: "slice", name: "s1", epic: "e1" }, { phase: "plan" });
 	submit(
 		projectDir,
 		"refinement",
-		{ type: "slice", name: "s1" },
+		{ type: "slice", name: "s1", epic: "e1" },
 		{ phase: "refinement", scores: {} },
 	);
 	writeSliceContent("s1", "plan-refined.md");
-	begin(projectDir, "implement", { type: "slice", name: "s1" }, {});
+	begin(projectDir, "implement", { type: "slice", name: "s1", epic: "e1" }, {});
 	submit(
 		projectDir,
 		"implementation",
-		{ type: "slice", name: "s1" },
+		{ type: "slice", name: "s1", epic: "e1" },
 		{ phase: "implementation" },
 	);
 
 	// Complete slice with learnings that roll up to project
-	complete(projectDir, { type: "slice", name: "s1" }, {
+	complete(projectDir, { type: "slice", name: "s1", epic: "e1" }, {
 		type: "slice",
 		verificationPassed: true,
 		deferred: [],
@@ -185,7 +185,7 @@ describe("learning:list", () => {
 		setupSliceWithLearnings();
 
 		const { chunks, restore } = captureStdout();
-		await runLearningList({ source: "slices/s1", json: true });
+		await runLearningList({ source: "epics/e1/slices/s1", json: true });
 		restore();
 		const out = JSON.parse(chunks.join(""));
 		// Slice has learnings (those not yet rolled up + the one without rollup)
@@ -197,7 +197,7 @@ describe("learning:list", () => {
 		setupSliceWithLearnings();
 
 		const { chunks, restore } = captureStdout();
-		await runLearningList({ source: "slices/s1" });
+		await runLearningList({ source: "epics/e1/slices/s1" });
 		restore();
 		const text = chunks.join("");
 		expect(text).toContain("worked");
@@ -227,7 +227,7 @@ describe("learning:rollup", () => {
 		// let's test the manual rollup command works by checking it doesn't error.
 		// Remaining learnings at slice level that target "project" have already been rolled up.
 		const { chunks, restore } = captureStdout();
-		await runLearningRollup({ from: "slices/s1", to: "project", json: true });
+		await runLearningRollup({ from: "epics/e1/slices/s1", to: "project", json: true });
 		restore();
 		const out = JSON.parse(chunks.join(""));
 		expect(out.rolledUp).toBeDefined();
@@ -239,11 +239,11 @@ describe("learning:rollup", () => {
 		setupSliceWithLearnings();
 
 		const { chunks, restore } = captureStdout();
-		await runLearningRollup({ from: "slices/s1", to: "project" });
+		await runLearningRollup({ from: "epics/e1/slices/s1", to: "project" });
 		restore();
 		const text = chunks.join("");
 		expect(text).toContain("Rolled up");
-		expect(text).toContain("slices/s1");
+		expect(text).toContain("epics/e1/slices/s1");
 		expect(text).toContain("project");
 	});
 });

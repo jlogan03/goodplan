@@ -14,8 +14,7 @@ import type { ContentSource, ResolvedTarget, SubmitPhase, Target } from "./types
 function entityDir(target: Target): string {
 	switch (target.type) {
 		case "slice":
-			// TODO(slice-02): path should be epics/${target.epic}/slices/${target.name}
-			return `slices/${target.name}`;
+			return `epics/${target.epic}/slices/${target.name}`;
 		case "quest":
 			return `quests/${target.name}`;
 		case "epic":
@@ -64,7 +63,7 @@ const implementationSources: ContentSource[] = [
 /** complete: entity goal, slices overview, current architecture, target architecture */
 const completeSources: ContentSource[] = [
 	{ key: "entity-goal", path: (rt) => resolveEntityJsonPath(rt.target), sourceType: "markdown" },
-	{ key: "slices-overview", path: "slices/overview.json", sourceType: "markdown" },
+	{ key: "slices-overview", path: "epics/overview.json", sourceType: "markdown" },
 	{ key: "current-architecture", path: "architecture", sourceType: "directory" },
 	{ key: "target-architecture", path: (rt) => { const e = epicName(rt); return e ? `epics/${e}/architecture` : undefined; }, sourceType: "directory" },
 ];
@@ -108,7 +107,7 @@ const refineArchitectureSources: ContentSource[] = [
 const refineSlicesSources: ContentSource[] = [
 	{ key: "epic-goal", path: (rt) => { const e = epicName(rt); return e ? `epics/${e}/epic.json` : undefined; }, sourceType: "markdown" },
 	{ key: "architecture", path: (rt) => { const e = epicName(rt); return e ? `epics/${e}/architecture` : undefined; }, sourceType: "directory" },
-	{ key: "slice-definitions", path: "slices", sourceType: "directory" },
+	{ key: "slice-definitions", path: (rt) => { const e = epicName(rt); return e ? `epics/${e}/slices` : undefined; }, sourceType: "directory" },
 	{ key: "conventions", path: "conventions.md", sourceType: "markdown" },
 ];
 

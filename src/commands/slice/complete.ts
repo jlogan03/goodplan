@@ -7,6 +7,7 @@ import { output } from "../../util/output.js";
 import { readStdin } from "../../util/stdin.js";
 import { validateInput } from "../../util/validate.js";
 import { globalArgs } from "../global-args.js";
+import { requireActiveEpic } from "./utils.js";
 
 /**
  * `goodplan slice:complete --slice <name>` — complete a slice.
@@ -35,10 +36,10 @@ export const sliceCompleteCommand = defineCommand({
 		const input = validateInput(completeSliceInputSchema, args, stdin);
 
 		const projectDir = resolveProjectDir();
+		const epic = requireActiveEpic(projectDir);
 		const result = await complete(
 			projectDir,
-			// @ts-expect-error — slice 02: Target needs epic field
-			{ type: "slice", name: input.slice },
+			{ type: "slice", name: input.slice, epic },
 			{
 				type: "slice",
 				verificationPassed: input.verificationPassed,

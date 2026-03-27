@@ -56,7 +56,7 @@ type SubmitPhase =
 
 type Target =
   | { type: 'epic'; name: string }
-  | { type: 'slice'; name: string }
+  | { type: 'slice'; name: string; epic: string }
   | { type: 'quest'; name: string }
   | { type: 'decision'; id: string };
 

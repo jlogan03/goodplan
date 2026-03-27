@@ -149,7 +149,7 @@ describe("start-plan", () => {
 		initProject();
 		advanceEpicTo("activated");
 		// Create a slice
-		begin(projectDir, "create", { type: "slice", name: "s1" }, { name: "s1", goal: "Slice goal", epic: "e1" });
+		begin(projectDir, "create", { type: "slice", name: "s1", epic: "e1" }, { name: "s1", goal: "Slice goal", epic: "e1" });
 
 		const { chunks, restore } = captureStdout();
 		await runStartPlan({ slice: "s1" });
@@ -167,7 +167,7 @@ describe("start-plan", () => {
 	it("returns ContextBundle with inlined content when --inline is set", async () => {
 		initProject();
 		advanceEpicTo("activated");
-		begin(projectDir, "create", { type: "slice", name: "s1" }, { name: "s1", goal: "Slice goal", epic: "e1" });
+		begin(projectDir, "create", { type: "slice", name: "s1", epic: "e1" }, { name: "s1", goal: "Slice goal", epic: "e1" });
 
 		const { chunks, restore } = captureStdout();
 		await runStartPlan({ slice: "s1", inline: "true" });
@@ -175,7 +175,7 @@ describe("start-plan", () => {
 		const parsed = JSON.parse(chunks.join(""));
 		expect(Object.keys(parsed.inline).length).toBeGreaterThan(0);
 		// Entity goal should be inlined first
-		expect(parsed.inline["slices/s1/slice.json"]).toBe("Slice goal");
+		expect(parsed.inline["epics/e1/slices/s1/slice.json"]).toBe("Slice goal");
 
 		restore();
 	});
@@ -183,7 +183,7 @@ describe("start-plan", () => {
 	it("respects custom budget with --inline=500", async () => {
 		initProject();
 		advanceEpicTo("activated");
-		begin(projectDir, "create", { type: "slice", name: "s1" }, { name: "s1", goal: "Slice goal", epic: "e1" });
+		begin(projectDir, "create", { type: "slice", name: "s1", epic: "e1" }, { name: "s1", goal: "Slice goal", epic: "e1" });
 
 		const { chunks, restore } = captureStdout();
 		await runStartPlan({ slice: "s1", inline: "500" });
@@ -208,7 +208,7 @@ describe("start-plan", () => {
 	it("always outputs JSON even without --json flag", async () => {
 		initProject();
 		advanceEpicTo("activated");
-		begin(projectDir, "create", { type: "slice", name: "s1" }, { name: "s1", goal: "Slice goal", epic: "e1" });
+		begin(projectDir, "create", { type: "slice", name: "s1", epic: "e1" }, { name: "s1", goal: "Slice goal", epic: "e1" });
 
 		const { chunks, restore } = captureStdout();
 		// Note: json: false — but output should still be JSON

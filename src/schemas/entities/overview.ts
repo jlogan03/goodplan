@@ -23,7 +23,7 @@ export const sliceOverviewItemSchema = overviewItemSchema.omit({ epic: true, tit
 export type SliceOverviewItem = z.infer<typeof sliceOverviewItemSchema>;
 
 export const epicOverviewItemSchema = overviewItemSchema.extend({
-	slices: z.array(sliceOverviewItemSchema),
+	slices: z.array(sliceOverviewItemSchema).default([]),
 });
 export type EpicOverviewItem = z.infer<typeof epicOverviewItemSchema>;
 

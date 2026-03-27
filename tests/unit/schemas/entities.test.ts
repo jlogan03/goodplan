@@ -455,15 +455,17 @@ describe("epicOverviewItemSchema", () => {
 		).toBe(true);
 	});
 
-	it("rejects epic overview item without slices", () => {
-		expect(
-			epicOverviewItemSchema.safeParse({
-				name: "my-epic",
-				status: "created",
-				created: "2026-03-20T00:00:00Z",
-				completed: null,
-			}).success,
-		).toBe(false);
+	it("defaults slices to empty array when omitted", () => {
+		const result = epicOverviewItemSchema.safeParse({
+			name: "my-epic",
+			status: "created",
+			created: "2026-03-20T00:00:00Z",
+			completed: null,
+		});
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.slices).toEqual([]);
+		}
 	});
 });
 
@@ -499,18 +501,20 @@ describe("epicOverviewSchema", () => {
 		).toBe(true);
 	});
 
-	it("rejects items without slices field", () => {
-		expect(
-			epicOverviewSchema.safeParse({
-				items: [
-					{
-						name: "my-epic",
-						status: "activated",
-						created: "2026-03-20T00:00:00Z",
-						completed: null,
-					},
-				],
-			}).success,
-		).toBe(false);
+	it("defaults slices to empty array when omitted from items", () => {
+		const result = epicOverviewSchema.safeParse({
+			items: [
+				{
+					name: "my-epic",
+					status: "activated",
+					created: "2026-03-20T00:00:00Z",
+					completed: null,
+				},
+			],
+		});
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.items[0]?.slices).toEqual([]);
+		}
 	});
 });

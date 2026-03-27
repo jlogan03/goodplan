@@ -147,8 +147,7 @@ function resolveEntityDir(projectDir: string, target: Target): string | undefine
 		case "epic":
 			return nodePath.join(projectDir, "epics", target.name);
 		case "slice":
-			// TODO(slice-02): path should be epics/${target.epic}/slices/${target.name}
-			return nodePath.join(projectDir, "slices", target.name);
+			return nodePath.join(projectDir, "epics", target.epic, "slices", target.name);
 		case "quest":
 			return nodePath.join(projectDir, "quests", target.name);
 		case "task":

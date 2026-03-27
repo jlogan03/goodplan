@@ -4,7 +4,7 @@
  */
 
 import type { Epic } from "../../schemas/entities/epic.js";
-import type { Overview } from "../../schemas/entities/overview.js";
+import type { EpicOverview } from "../../schemas/entities/overview.js";
 import type { Quest } from "../../schemas/entities/quest.js";
 import type { Slice } from "../../schemas/entities/slice.js";
 import type { LearningEntry } from "../../schemas/records/learning.js";
@@ -101,10 +101,10 @@ function buildCompleteEvent(target: Target, input: CompleteInput, ts: string): S
 					`CompleteInput.type '${input.type}' does not match target.type 'slice'`,
 				);
 			}
-			// @ts-expect-error — slice 02: event needs epic from target.epic
 			return {
 				type: "COMPLETE_SLICE",
 				slice: target.name,
+				epic: target.epic,
 				ts,
 				verificationPassed: input.verificationPassed,
 				deferred: input.deferred ?? [],
@@ -154,7 +154,7 @@ function buildCompleteResult(
 	}
 
 	if (target.type === "slice") {
-		return buildSliceCompleteResult(target.name, entity, oldState, newState);
+		return buildSliceCompleteResult(target.name, target.epic, entity, oldState, newState);
 	}
 
 	if (target.type === "quest") {
@@ -169,12 +169,13 @@ function buildCompleteResult(
 
 function buildSliceCompleteResult(
 	sliceName: string,
+	epicName: string,
 	entity: string,
 	oldState: ProjectState,
 	newState: ProjectState,
 ): CompleteResult {
-	const oldSlice = getJson<Slice>(oldState, `slices/${sliceName}/slice.json`);
-	const newSlice = getJson<Slice>(newState, `slices/${sliceName}/slice.json`);
+	const oldSlice = getJson<Slice>(oldState, `epics/${epicName}/slices/${sliceName}/slice.json`);
+	const newSlice = getJson<Slice>(newState, `epics/${epicName}/slices/${sliceName}/slice.json`);
 
 	const result: CompleteResult = {
 		entity,
@@ -184,11 +185,11 @@ function buildSliceCompleteResult(
 
 	if (newSlice === undefined) return result;
 
-	// Derive epicComplete: check all sibling slices in the epic via overview.json
-	const overview = getJson<Overview>(newState, "slices/overview.json");
-	if (overview !== undefined) {
-		const epicSlices = overview.items.filter((item) => item.epic === newSlice.epic);
-		const allDone = epicSlices.every(
+	// Derive epicComplete: check all sibling slices in the epic via epics/overview.json
+	const epicOverview = getJson<EpicOverview>(newState, "epics/overview.json");
+	const epicEntry = epicOverview?.items.find((e) => e.name === newSlice.epic);
+	if (epicEntry !== undefined) {
+		const allDone = epicEntry.slices.every(
 			(item) => item.status === "completed" || item.status === "abandoned",
 		);
 		result.epicComplete = allDone;
@@ -196,17 +197,27 @@ function buildSliceCompleteResult(
 
 	// Derive deferredRouted / deferredSkipped: count which deferred items target existing slices
 	// oldSlice (already fetched above) is used as existence guard; no need to re-fetch.
-	if (overview !== undefined && oldSlice !== undefined) {
+	if (epicEntry !== undefined && oldSlice !== undefined) {
 		// Collect deferred items that were routed by the state machine
 		// We detect this by checking each target slice's deferred array in newState vs oldState
 		const routedItems: DeferredItem[] = [];
 		let skippedCount = 0;
 
-		// Walk all slices in overview to find newly-added deferred items sourced from this slice
-		for (const item of overview.items) {
-			if (item.name === sliceName) continue;
-			const oldTarget = getJson<Slice>(oldState, `slices/${item.name}/slice.json`);
-			const newTarget = getJson<Slice>(newState, `slices/${item.name}/slice.json`);
+		// Walk all slices across all epics to find newly-added deferred items sourced from this slice
+		// Deferred items may target slices in different epics, so we need to iterate all epics
+		const allSliceTuples: Array<{ itemEpicName: string; name: string }> = [];
+		if (epicOverview !== undefined) {
+			for (const epic of epicOverview.items) {
+				for (const s of epic.slices) {
+					allSliceTuples.push({ itemEpicName: epic.name, name: s.name });
+				}
+			}
+		}
+
+		for (const tuple of allSliceTuples) {
+			if (tuple.name === sliceName && tuple.itemEpicName === epicName) continue;
+			const oldTarget = getJson<Slice>(oldState, `epics/${tuple.itemEpicName}/slices/${tuple.name}/slice.json`);
+			const newTarget = getJson<Slice>(newState, `epics/${tuple.itemEpicName}/slices/${tuple.name}/slice.json`);
 			if (newTarget === undefined) continue;
 			const oldDeferredCount = oldTarget?.deferred.length ?? 0;
 			if (newTarget.deferred.length > oldDeferredCount) {
@@ -256,7 +267,7 @@ function buildSliceCompleteResult(
 	// Architecture paths: return state-tree-relative directories for the LLM to update.
 	// The Commands layer resolves these to absolute filesystem paths.
 	if (newSlice !== undefined) {
-		const archDeltas = getJsonl<unknown>(newState, `slices/${sliceName}/architecture-deltas.jsonl`);
+		const archDeltas = getJsonl<unknown>(newState, `epics/${epicName}/slices/${sliceName}/architecture-deltas.jsonl`);
 		if (archDeltas !== undefined && archDeltas.length > 0) {
 			result.architecturePaths = {
 				currentArchitecture: `epics/${newSlice.epic}/architecture`,

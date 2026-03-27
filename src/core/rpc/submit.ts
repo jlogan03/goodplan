@@ -131,8 +131,7 @@ function buildSubmitEvent(
 function buildPlanEvent(target: Target, ts: string): StateEvent {
 	switch (target.type) {
 		case "slice":
-			// @ts-expect-error — slice 02: event needs epic from target.epic
-			return { type: "COMPLETE_PLAN", slice: target.name, ts };
+			return { type: "COMPLETE_PLAN", slice: target.name, epic: target.epic, ts };
 		case "quest":
 			return { type: "COMPLETE_QUEST_PLAN", quest: target.name, ts };
 		default:
@@ -154,10 +153,10 @@ function buildRefinementEvent(
 	}
 	switch (target.type) {
 		case "slice":
-			// @ts-expect-error — slice 02: event needs epic from target.epic
 			return {
 				type: "COMPLETE_REFINEMENT_ROUND",
 				slice: target.name,
+				epic: target.epic,
 				ts,
 				scores: content.scores,
 				...spreadOverride(options),
@@ -181,8 +180,7 @@ function buildRefinementEvent(
 function buildImplementationEvent(target: Target, ts: string): StateEvent {
 	switch (target.type) {
 		case "slice":
-			// @ts-expect-error — slice 02: event needs epic from target.epic
-			return { type: "COMPLETE_IMPLEMENTATION", slice: target.name, ts };
+			return { type: "COMPLETE_IMPLEMENTATION", slice: target.name, epic: target.epic, ts };
 		case "quest":
 			return { type: "COMPLETE_QUEST_IMPLEMENTATION", quest: target.name, ts };
 		default:

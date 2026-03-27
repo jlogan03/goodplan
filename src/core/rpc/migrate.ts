@@ -217,6 +217,12 @@ export function buildMigrationState(
 		status: string;
 		created: string;
 		completed: string | null;
+		slices: Array<{
+			name: string;
+			status: string;
+			created: string;
+			completed: string | null;
+		}>;
 	}> = [];
 
 	for (const epic of epicInventory) {
@@ -225,11 +231,20 @@ export function buildMigrationState(
 
 		const isTerminal = epic.status === "completed" || epic.status === "abandoned";
 
+		// Build slice overview items for this epic (populated in the slices loop below)
+		const epicSliceItems: Array<{
+			name: string;
+			status: string;
+			created: string;
+			completed: string | null;
+		}> = [];
+
 		epicOverviewItems.push({
 			name: epic.name,
 			status: epic.status,
 			created: ts,
 			completed: isTerminal ? ts : null,
+			slices: epicSliceItems,
 		});
 
 		const epicJsonContent: Record<string, unknown> = {
@@ -261,36 +276,36 @@ export function buildMigrationState(
 	};
 	epicsContents["overview.json"] = epicsOverview;
 
-	// ── Slices ──────────────────────────────────────────────────
-
-	const slicesContents: Record<
-		string,
-		DirectoryEntry | JsonEntry<unknown> | JsonlEntry<unknown>
-	> = {};
-
-	const sliceOverviewItems: Array<{
-		name: string;
-		status: string;
-		epic: string;
-		created: string;
-		completed: string | null;
-	}> = [];
+	// ── Slices (nested under epics) ──────────────────────────────
 
 	for (const epic of epicInventory) {
 		const detailKey = epicDetailQuestionId(epic.name);
 		const detail = validatedAnswers[detailKey] as EpicDetailResponse | undefined;
 		if (detail === undefined) continue;
 
+		// Find the matching epicOverviewItem to populate its slices array
+		const epicOverviewItem = epicOverviewItems.find((e) => e.name === epic.name);
+
+		const epicDir = epicsContents[epic.name] as DirectoryEntry | undefined;
+		if (epicDir === undefined) continue;
+
+		const slicesDirContents: Record<
+			string,
+			DirectoryEntry | JsonEntry<unknown> | JsonlEntry<unknown>
+		> = {};
+
 		for (const slice of detail.slices) {
 			const isTerminal = slice.status === "completed" || slice.status === "abandoned";
 
-			sliceOverviewItems.push({
-				name: slice.name,
-				status: slice.status,
-				epic: epic.name,
-				created: ts,
-				completed: isTerminal ? ts : null,
-			});
+			// Add to epic overview's embedded slices array
+			if (epicOverviewItem !== undefined) {
+				epicOverviewItem.slices.push({
+					name: slice.name,
+					status: slice.status,
+					created: ts,
+					completed: isTerminal ? ts : null,
+				});
+			}
 
 			const sliceJsonContent = {
 				name: slice.name,
@@ -312,15 +327,12 @@ export function buildMigrationState(
 				"architecture-deltas.jsonl": { type: "jsonl", content: [] },
 			};
 
-			slicesContents[slice.name] = { type: "directory", contents: sliceDirContents };
+			slicesDirContents[slice.name] = { type: "directory", contents: sliceDirContents };
 		}
-	}
 
-	const slicesOverview: JsonEntry<unknown> = {
-		type: "json",
-		content: { items: sliceOverviewItems },
-	};
-	slicesContents["overview.json"] = slicesOverview;
+		// Add slices directory to epic
+		epicDir.contents.slices = { type: "directory", contents: slicesDirContents };
+	}
 
 	// ── Quests ──────────────────────────────────────────────────
 
@@ -383,7 +395,6 @@ export function buildMigrationState(
 			"decisions.jsonl": decisionsJsonl,
 			"learnings.jsonl": learningsJsonl,
 			epics: { type: "directory", contents: epicsContents },
-			slices: { type: "directory", contents: slicesContents },
 			quests: { type: "directory", contents: questsContents },
 			architecture: { type: "directory", contents: {} },
 			research: { type: "directory", contents: {} },
@@ -524,7 +535,7 @@ function copyMigrationArtifacts(
 
 		for (const slice of detail.slices) {
 			const sliceSrcDir = path.join(projectOldDir, slice.sourcePath);
-			const sliceDestDir = path.join(projectDir, "slices", slice.name);
+			const sliceDestDir = path.join(projectDir, "epics", epic.name, "slices", slice.name);
 
 			if (!fs.existsSync(sliceSrcDir)) continue;
 

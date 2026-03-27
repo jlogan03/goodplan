@@ -78,9 +78,16 @@ function createPopulatedProject() {
 		activeQuest: null,
 	});
 
-	// Epic
+	// Epic (with embedded slices in overview)
 	writeJson(projectDir, "epics/overview.json", {
-		items: [{ name: "my-epic", status: "activated", created: NOW, completed: null }],
+		items: [{
+			name: "my-epic", status: "activated", created: NOW, completed: null,
+			slices: [
+				{ name: "01-auth", status: "implementing", created: NOW, completed: null },
+				{ name: "02-api", status: "created", created: NOW, completed: null },
+				{ name: "03-ui", status: "completed", created: NOW, completed: NOW },
+			],
+		}],
 	});
 	writeJson(projectDir, "epics/my-epic/epic.json", {
 		name: "my-epic",
@@ -109,15 +116,8 @@ function createPopulatedProject() {
 		],
 	});
 
-	// Slices
-	writeJson(projectDir, "slices/overview.json", {
-		items: [
-			{ name: "01-auth", status: "implementing", epic: "my-epic", created: NOW, completed: null },
-			{ name: "02-api", status: "created", epic: "my-epic", created: NOW, completed: null },
-			{ name: "03-ui", status: "completed", epic: "my-epic", created: NOW, completed: NOW },
-		],
-	});
-	writeJson(projectDir, "slices/01-auth/slice.json", {
+	// Slice data (nested under epic)
+	writeJson(projectDir, "epics/my-epic/slices/01-auth/slice.json", {
 		name: "01-auth",
 		epic: "my-epic",
 		status: "implementing",
@@ -127,8 +127,8 @@ function createPopulatedProject() {
 		created: NOW,
 		updated: NOW,
 	});
-	writeJsonl(projectDir, "slices/01-auth/learnings.jsonl", []);
-	writeJsonl(projectDir, "slices/01-auth/architecture-deltas.jsonl", []);
+	writeJsonl(projectDir, "epics/my-epic/slices/01-auth/learnings.jsonl", []);
+	writeJsonl(projectDir, "epics/my-epic/slices/01-auth/architecture-deltas.jsonl", []);
 
 	// Decisions
 	writeJsonl(projectDir, "decisions.jsonl", [
@@ -170,7 +170,7 @@ function createPopulatedProject() {
 		{
 			ts: NOW,
 			phase: "begin-implementation",
-			scope: "slices/01-auth",
+			scope: "epics/my-epic/slices/01-auth",
 			status: "complete",
 			summary: "Started impl",
 		},
@@ -294,14 +294,23 @@ describe("buildStatusResult", () => {
 
 	it("generates stale warning when entity has no recent activity", () => {
 		const projectDir = createProject("stale-proj", {
+			activeEpic: "my-epic",
 			activeSlice: "01-stale",
 		});
-		writeJson(projectDir, "slices/overview.json", {
-			items: [
-				{ name: "01-stale", status: "implementing", epic: "e", created: NOW, completed: null },
-			],
+		writeJson(projectDir, "epics/overview.json", {
+			items: [{
+				name: "my-epic", status: "activated", created: NOW, completed: null,
+				slices: [
+					{ name: "01-stale", status: "implementing", created: NOW, completed: null },
+				],
+			}],
 		});
-		writeJson(projectDir, "slices/01-stale/slice.json", {
+		writeJson(projectDir, "epics/my-epic/epic.json", {
+			name: "my-epic", status: "activated", goal: "Test stale",
+			verifications: [], refinement: null, sliceSequence: ["01-stale"],
+			created: NOW, activated: NOW, updated: NOW,
+		});
+		writeJson(projectDir, "epics/my-epic/slices/01-stale/slice.json", {
 			name: "01-stale",
 			epic: "my-epic",
 			status: "implementing",
@@ -311,8 +320,8 @@ describe("buildStatusResult", () => {
 			created: NOW,
 			updated: NOW,
 		});
-		writeJsonl(projectDir, "slices/01-stale/learnings.jsonl", []);
-		writeJsonl(projectDir, "slices/01-stale/architecture-deltas.jsonl", []);
+		writeJsonl(projectDir, "epics/my-epic/slices/01-stale/learnings.jsonl", []);
+		writeJsonl(projectDir, "epics/my-epic/slices/01-stale/architecture-deltas.jsonl", []);
 
 		// Activity log with old timestamp (10 days ago)
 		const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
@@ -320,7 +329,7 @@ describe("buildStatusResult", () => {
 			{
 				ts: tenDaysAgo,
 				phase: "begin-plan",
-				scope: "slices/01-stale",
+				scope: "epics/my-epic/slices/01-stale",
 				status: "complete",
 				summary: "Old",
 			},
@@ -362,7 +371,7 @@ describe("buildStatusResult", () => {
 			activeQuest: null,
 		});
 		writeJson(projectDir, "epics/overview.json", {
-			items: [{ name: "my-epic", status: "activated", created: NOW, completed: null }],
+			items: [{ name: "my-epic", status: "activated", created: NOW, completed: null, slices: [] }],
 		});
 		writeJson(projectDir, "epics/my-epic/epic.json", {
 			name: "my-epic",

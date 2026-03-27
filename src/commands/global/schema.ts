@@ -222,10 +222,12 @@ registerCommand("slice:create", "Create a new slice. Stdin: {name, goal}.", {
 registerCommand("slice:list", "List all slices.", {
 	...globalArgDefs,
 	epic: { type: "string", description: "Filter by epic name" },
+	all: { type: "boolean", description: "Show slices from all epics" },
 });
 registerCommand("slice:show", "Show details for a specific slice.", {
 	...globalArgDefs,
 	slice: { type: "string", description: "Slice name", required: true },
+	epic: { type: "string", description: "Epic name (defaults to active epic)" },
 });
 registerCommand("slice:plan", "Begin planning for a slice.", {
 	...globalArgDefs,

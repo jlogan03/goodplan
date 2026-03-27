@@ -7,8 +7,8 @@ const PROJECT_DIR = "/test/.project";
 
 describe("resolvePathReferences", () => {
 	describe("slice targets", () => {
-		const target: Target = { type: "slice", name: "my-slice" };
-		const sliceDir = path.join(PROJECT_DIR, "slices", "my-slice");
+		const target: Target = { type: "slice", name: "my-slice", epic: "my-epic" };
+		const sliceDir = path.join(PROJECT_DIR, "epics", "my-epic", "slices", "my-slice");
 
 		it("plan → { plan }", () => {
 			const result = resolvePathReferences(PROJECT_DIR, target, "plan");
@@ -103,8 +103,8 @@ describe("resolvePathReferences", () => {
 	});
 
 	describe("submit phases map to begin-phase equivalents", () => {
-		const sliceTarget: Target = { type: "slice", name: "s1" };
-		const sliceDir = path.join(PROJECT_DIR, "slices", "s1");
+		const sliceTarget: Target = { type: "slice", name: "s1", epic: "e1" };
+		const sliceDir = path.join(PROJECT_DIR, "epics", "e1", "slices", "s1");
 		const epicTarget: Target = { type: "epic", name: "e1" };
 		const epicDir = path.join(PROJECT_DIR, "epics", "e1");
 
@@ -174,7 +174,7 @@ describe("resolvePathReferences", () => {
 
 	describe("paths are absolute", () => {
 		it("all returned paths are absolute", () => {
-			const result = resolvePathReferences(PROJECT_DIR, { type: "slice", name: "s1" }, "refine-plan");
+			const result = resolvePathReferences(PROJECT_DIR, { type: "slice", name: "s1", epic: "e1" }, "refine-plan");
 			for (const value of Object.values(result)) {
 				expect(path.isAbsolute(value)).toBe(true);
 			}

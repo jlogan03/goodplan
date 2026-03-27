@@ -4,6 +4,7 @@ import { resolveProjectDir } from "../../core/data/project.js";
 import { begin } from "../../core/rpc/begin.js";
 import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
+import { requireActiveEpic } from "./utils.js";
 
 /**
  * `goodplan slice:abandon --slice <name> --reason <text>` — abandon a slice.
@@ -34,11 +35,11 @@ export const sliceAbandonCommand = defineCommand({
 	setup() {},
 	async run({ args }) {
 		const projectDir = resolveProjectDir();
+		const epic = requireActiveEpic(projectDir);
 		const result = await begin(
 			projectDir,
 			"abandon",
-			// @ts-expect-error — slice 02: Target needs epic field
-			{ type: "slice", name: args.slice },
+			{ type: "slice", name: args.slice, epic },
 			{
 				reason: args.reason,
 			},
