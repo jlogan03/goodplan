@@ -185,7 +185,7 @@ Where:
 - `<one-line goal>` is the first line of the slice's Behavior/Goal section
 - `<epic-name>` is from `goodplan status --json` → `.activeEpic.name`
 
-This creates the slice entity at `.project/slices/<name>/slice.json` and registers it in `slices/overview.json`. Without this step, `slice:list` returns empty and per-slice planning/implementation cannot proceed.
+This creates the slice entity (at `.project/epics/<epic>/slices/<name>/slice.json` for epic slices, or `.project/slices/<name>/slice.json` for top-level slices) and registers it in the overview. Without this step, `slice:list` returns empty and per-slice planning/implementation cannot proceed.
 
 **Note:** This step is independent of `submit-slices` (Step 9), which transitions the epic's phase. Both are required: `slice:create` registers individual entities, `submit-slices` advances the epic state machine.
 

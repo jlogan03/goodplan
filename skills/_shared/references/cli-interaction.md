@@ -185,8 +185,8 @@ echo '{"verificationPassed":true,"learnings":[...]}' | goodplan slice:complete -
   "entity": "my-slice",
   "newStatus": "planning",
   "paths": {
-    "plan": "/abs/path/to/.project/slices/my-slice/",
-    "research": "/abs/path/to/.project/slices/my-slice/research/"
+    "plan": "/abs/path/to/.project/epics/my-epic/slices/my-slice/",
+    "research": "/abs/path/to/.project/epics/my-epic/slices/my-slice/research/"
   }
 }
 ```

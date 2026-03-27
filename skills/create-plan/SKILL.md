@@ -41,9 +41,9 @@ Use the Read tool to load (paths relative to this skill's directory):
 
 1. **Argument passed**: if a path, use its parent directory as scope (works for `slices/`, `side-quests/`, and `epics/<name>/slices/`). If a name, resolve via `goodplan status --json` → `.activeEpic` to find the epic name, then check `.project/epics/<name>/slices/`, `.project/slices/`, or `.project/side-quests/`.
 
-2. **No argument**: query `goodplan status --json`. Check `.activeSlice` for the active slice, `.activeQuest` for the active quest. These fields are `{ name: string, status: string } | undefined` — check for presence, not null. If `.activeSlice` is present, use `.project/slices/<activeSlice.name>/` (or `.project/epics/<activeEpic.name>/slices/<activeSlice.name>/` if an active epic exists). If `.activeQuest` is present, use `.project/side-quests/<activeQuest.name>/`.
+2. **No argument**: query `goodplan status --json`. Check `.activeSlice` for the active slice, `.activeQuest` for the active quest. These fields are `{ name: string, status: string } | undefined` — check for presence, not null. If `.activeSlice` is present and `.activeEpic` exists, use `.project/epics/<activeEpic.name>/slices/<activeSlice.name>/`; if `.activeSlice` is present but no `.activeEpic`, use `.project/slices/<activeSlice.name>/`. If `.activeQuest` is present, use `.project/side-quests/<activeQuest.name>/`.
 
-3. **No argument and no active slice/quest**: use `goodplan status --json` → `.activeEpic` to determine the epic name (if any), then scan `.project/slices/` and `.project/epics/<name>/slices/` for the first directory with `goal.md` AND (`explore-complete.md` or `explore-skipped.md`) but no `plan.md`/`plan/`. If none found, fall back to slices with `goal.md` but no explore marker — use AskUserQuestion: "This slice hasn't completed exploration — plan it anyway?" If still ambiguous, use AskUserQuestion to choose.
+3. **No argument and no active slice/quest**: use `goodplan status --json` → `.activeEpic` to determine the epic name (if any). If an active epic exists, scan `.project/epics/<name>/slices/` for the first directory with `goal.md` AND (`explore-complete.md` or `explore-skipped.md`) but no `plan.md`/`plan/`. If no active epic, scan `.project/slices/`. If none found, fall back to slices with `goal.md` but no explore marker — use AskUserQuestion: "This slice hasn't completed exploration — plan it anyway?" If still ambiguous, use AskUserQuestion to choose.
 
 4. Read the scope's `goal.md`. If absent, tell the user and stop.
 
@@ -62,7 +62,7 @@ Read (skip missing):
    - For whichever architecture directory is primary: start with `_overview.md`. If more than 8 files, read `_overview.md` and `conventions.md` in full, first 30 lines of each remaining file.
 4. **Maturity extraction**: Extract the `## Subsystem Maturity` table from the primary architecture's `_overview.md`. If no maturity table exists, skip maturity-aware behavior in Step 4. Also check for a `## Maturity Note` section in the loaded `goal.md` — treat this as an additional maturity signal (written by `/create-slices` for slices touching maturing+ subsystems).
 5. `.project/learnings.md`
-6. **Sequencing**: If the scope is an epic slice, load `.project/epics/<epicName>/slices/sequencing.md` first (where `<epicName>` comes from `goodplan status --json` → `.activeEpic.name`). Fall back to `.project/slices/sequencing.md`.
+6. **Sequencing**: If the scope is an epic slice, load `.project/epics/<epicName>/slices/sequencing.md` (where `<epicName>` comes from `goodplan status --json` → `.activeEpic.name`). If no active epic, load `.project/slices/sequencing.md`.
 7. Other slice `goal.md` files — for dependency and ordering context
 8. Existing research: `.project/research/` (project-level) and scope's `research/`
 9. Scope's `brainstorm/` directories
