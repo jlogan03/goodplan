@@ -182,6 +182,33 @@ After successful migration, tell the user:
 2. `.project-old/` contains the original pre-CLI directory and can be deleted after verification.
 3. Suggest running `goodplan status --json` to verify the new state.
 
+## Step 8 — CLAUDE.md Path Audit
+
+After migration, check whether CLAUDE.md contains `.project/` paths that may have become stale due to the restructuring (e.g., flat `slices/` paths that moved under `epics/<name>/slices/`).
+
+1. **Scan for `.project/` references**:
+
+   ```bash
+   grep -n '\.project/' CLAUDE.md 2>/dev/null
+   ```
+
+   If no matches or no CLAUDE.md, skip this step.
+
+2. **Validate each path**: For each `.project/` reference found, check whether the target still exists at that path. Paths that no longer resolve are stale.
+
+3. **Present findings to the user**: Show a table of stale paths with suggested replacements based on the new structure. Do NOT auto-edit CLAUDE.md — it is user-owned content.
+
+   ```
+   CLAUDE.md has .project/ paths that may need updating after migration:
+
+   | Line | Current Path | Status | Suggested Replacement |
+   |------|-------------|--------|----------------------|
+   | 12   | .project/slices/sequencing.md | Not found | .project/epics/<epic>/slices/sequencing.md |
+   | 15   | .project/architecture/foo.md | OK | (no change needed) |
+   ```
+
+4. **Offer to apply**: Ask the user if they want to apply the suggested replacements. Only update paths the user approves.
+
 ## Error Handling
 
 Follow the fail-fast pattern from `cli-interaction.md` Section 10.
