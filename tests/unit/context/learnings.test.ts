@@ -107,4 +107,48 @@ describe("collectLearnings", () => {
 		expect("rollup" in first).toBe(false);
 		expect("rollupTo" in first).toBe(false);
 	});
+
+	it("includes file field for new-format entries", () => {
+		const stateWithFileEntries: ProjectState = {
+			type: "directory",
+			contents: {
+				"learnings.jsonl": {
+					type: "jsonl",
+					content: [
+						{ category: "worked", summary: "New format entry", file: "learnings/new-format-entry.md", tags: ["test"], source: "project", rollup: false, rollupTo: [] },
+					],
+				},
+			},
+		};
+		const learnings = collectLearnings(stateWithFileEntries);
+		expect(learnings).toHaveLength(1);
+		expect("file" in learnings[0]!).toBe(true);
+		expect(learnings[0]!.file).toBe("learnings/new-format-entry.md");
+	});
+
+	it("omits file field for legacy entries with detail", () => {
+		const learnings = collectLearnings(stateWithLearnings);
+		const first = learnings[0]!;
+		expect("file" in first).toBe(false);
+	});
+
+	it("handles mixed legacy and new-format entries", () => {
+		const mixedState: ProjectState = {
+			type: "directory",
+			contents: {
+				"learnings.jsonl": {
+					type: "jsonl",
+					content: [
+						{ category: "worked", summary: "Legacy", detail: "Old format", tags: [], source: "project", rollup: false, rollupTo: [] },
+						{ category: "domain", summary: "New", file: "learnings/new.md", tags: [], source: "project", rollup: false, rollupTo: [] },
+					],
+				},
+			},
+		};
+		const learnings = collectLearnings(mixedState);
+		expect(learnings).toHaveLength(2);
+		expect("file" in learnings[0]!).toBe(false);
+		expect("file" in learnings[1]!).toBe(true);
+		expect(learnings[1]!.file).toBe("learnings/new.md");
+	});
 });

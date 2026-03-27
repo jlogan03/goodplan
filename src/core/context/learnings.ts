@@ -65,5 +65,6 @@ function projectLearning(entry: LearningEntry): LearningSummary | undefined {
 		summary: entry.summary,
 		tags: entry.tags,
 		source: entry.source,
+		...("file" in entry ? { file: entry.file } : {}),
 	};
 }

@@ -216,6 +216,37 @@ describe("learning:list", () => {
 		expect(out.items.length).toBeGreaterThanOrEqual(1);
 		expect(out.items.some((l: { summary: string }) => l.summary === "Approach X worked")).toBe(true);
 	});
+
+	it("JSON output includes file field for new-format entries", async () => {
+		initProject();
+		setupSliceWithLearnings();
+
+		// Slice-level learnings should have file fields (set by RPC layer in Phase 1)
+		const { chunks, restore } = captureStdout();
+		await runLearningList({ source: "epics/e1/slices/s1", json: true });
+		restore();
+		const out = JSON.parse(chunks.join(""));
+		expect(out.items.length).toBeGreaterThanOrEqual(1);
+		// New-format entries from Phase 1 should have file fields
+		const fileEntries = out.items.filter((l: { file?: string }) => "file" in l);
+		expect(fileEntries.length).toBeGreaterThanOrEqual(1);
+		for (const entry of fileEntries) {
+			expect(entry.file).toMatch(/^learnings\/.+\.md$/);
+		}
+	});
+
+	it("human output does NOT include file paths", async () => {
+		initProject();
+		setupSliceWithLearnings();
+
+		const { chunks, restore } = captureStdout();
+		await runLearningList({ source: "epics/e1/slices/s1" });
+		restore();
+		const text = chunks.join("");
+		// Human output should show category/summary/source but not file paths
+		expect(text).not.toContain("learnings/");
+		expect(text).toContain("worked");
+	});
 });
 
 describe("learning:rollup", () => {
