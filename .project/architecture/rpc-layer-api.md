@@ -55,10 +55,13 @@ type SubmitPhase =
   | 'complete';
 
 type Target =
+  | { type: 'project' }
   | { type: 'epic'; name: string }
   | { type: 'slice'; name: string; epic: string }
   | { type: 'quest'; name: string }
-  | { type: 'decision'; id: string };
+  | { type: 'task'; name: string }
+  | { type: 'decision'; id: string }
+  | { type: 'rollup'; from: string; to: string };
 
 // Explicit mapping: (function, phase, target.type) → StateEvent
 // BeginPhase mappings:

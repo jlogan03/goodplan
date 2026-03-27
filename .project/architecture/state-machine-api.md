@@ -232,12 +232,12 @@ All paths below are `resolve()` paths into the `ProjectState` tree.
 | `BEGIN_ARCHITECTURE` | `epics/<name>/epic.json`, `epics/overview.json` | `epics/<name>/epic.json`, `epics/overview.json`, `activity-log.jsonl` |
 | `COMPLETE_ARCHITECTURE` | `epics/<name>/epic.json`, `epics/<name>/architecture/`, `epics/overview.json` | `epics/<name>/epic.json`, `epics/overview.json`, `activity-log.jsonl` |
 | `ACTIVATE_EPIC` | `project.json`, `epics/<name>/epic.json`, `epics/overview.json` | `project.json`, `epics/<name>/epic.json`, `epics/overview.json`, `activity-log.jsonl` |
-| `CREATE_SLICE` | `epics/<name>/epic.json`, `slices/overview.json` | `slices/<name>/slice.json`, `slices/overview.json`, `epics/<name>/epic.json` |
-| `BEGIN_PLAN` | `project.json`, `slices/<name>/slice.json`, `slices/overview.json` | `project.json`, `slices/<name>/slice.json`, `activity-log.jsonl` |
-| `COMPLETE_PLAN` | `slices/<name>/slice.json`, `slices/<name>/` | `slices/<name>/slice.json`, `activity-log.jsonl` |
-| `COMPLETE_REFINEMENT_ROUND` | `slices/<name>/slice.json` | `slices/<name>/slice.json`, `activity-log.jsonl` |
-| `COMPLETE_SLICE` | `project.json`, `slices/<name>/slice.json`, `slices/overview.json`, `epics/<epic>/epic.json` | `project.json`, `slices/<name>/slice.json`, `slices/overview.json`, `slices/<name>/learnings.jsonl`, `slices/<name>/architecture-deltas.jsonl`, `learnings.jsonl`, `activity-log.jsonl` |
-| `COMPLETE_EPIC` | `epics/<name>/epic.json`, `project.json`, `slices/overview.json` | `epics/<name>/epic.json`, `project.json`, `activity-log.jsonl` |
+| `CREATE_SLICE` | `epics/<epic>/epic.json` | `epics/<epic>/slices/<name>/slice.json`, `epics/<epic>/epic.json` |
+| `BEGIN_PLAN` | `project.json`, `epics/<epic>/slices/<name>/slice.json` | `project.json`, `epics/<epic>/slices/<name>/slice.json`, `activity-log.jsonl` |
+| `COMPLETE_PLAN` | `epics/<epic>/slices/<name>/slice.json`, `epics/<epic>/slices/<name>/` | `epics/<epic>/slices/<name>/slice.json`, `activity-log.jsonl` |
+| `COMPLETE_REFINEMENT_ROUND` | `epics/<epic>/slices/<name>/slice.json` | `epics/<epic>/slices/<name>/slice.json`, `activity-log.jsonl` |
+| `COMPLETE_SLICE` | `project.json`, `epics/<epic>/slices/<name>/slice.json`, `epics/<epic>/epic.json` | `project.json`, `epics/<epic>/slices/<name>/slice.json`, `epics/<epic>/epic.json`, `epics/<epic>/slices/<name>/learnings.jsonl`, `epics/<epic>/slices/<name>/architecture-deltas.jsonl`, `learnings.jsonl`, `activity-log.jsonl` |
+| `COMPLETE_EPIC` | `epics/<name>/epic.json`, `project.json` | `epics/<name>/epic.json`, `project.json`, `activity-log.jsonl` |
 | `CREATE_DECISION` | `decisions.jsonl` | `decisions.jsonl`, `activity-log.jsonl` |
 | `UPDATE_DECISION` | `decisions.jsonl` | `decisions.jsonl`, `activity-log.jsonl` |
 | `ROLLUP_LEARNINGS` | source `learnings.jsonl` | target `learnings.jsonl`, `activity-log.jsonl` |
@@ -259,8 +259,8 @@ Other events follow the same pattern: they read the target entity's JSON plus an
 Content existence checks use `hasChild(state, dirPath, childName)` to navigate the recursive `DirectoryEntry.contents` tree. The state machine reads directory entries to validate content prerequisites — it never modifies them.
 
 Key guards:
-- `hasChild(state, "slices/<name>", "plan.md")` — guards `COMPLETE_PLAN`
-- `hasChild(state, "slices/<name>", "plan-refined.md")` — guards `BEGIN_IMPLEMENTATION`
+- `hasChild(state, "epics/<epic>/slices/<name>", "plan.md")` — guards `COMPLETE_PLAN`
+- `hasChild(state, "epics/<epic>/slices/<name>", "plan-refined.md")` — guards `BEGIN_IMPLEMENTATION`
 
 These guards are defined in transition-tables.md (source of truth). Only guards listed there are implemented.
 

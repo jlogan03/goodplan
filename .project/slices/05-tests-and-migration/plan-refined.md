@@ -133,12 +133,12 @@ Run `goodplan migrate` on this repo's `.project/` to restructure flat slice path
 
 **Architecture doc updates** (reflect completed restructuring):
 
-- [ ] `.project/architecture/data-model.md` — update `slice.json` location examples, directory structure, state tree example, schema registry patterns, `hasChild` guard examples to use nested paths
-- [ ] `.project/architecture/state-machine-api.md` — update all State Key Dependencies table rows for slice events (`CREATE_SLICE`, `BEGIN_PLAN`, `COMPLETE_PLAN`, `COMPLETE_REFINEMENT_ROUND`, `COMPLETE_SLICE`, `COMPLETE_EPIC` — lines 235-240) changing `slices/<name>/` to `epics/<epic>/slices/<name>/`; also update any `slices/overview.json` references in those rows — `CREATE_SLICE`, `COMPLETE_SLICE`, and `COMPLETE_EPIC` rows likely reference this eliminated file and need replacement paths reflecting the embedded-overview approach; update `hasChild` guard examples (lines 262-263) with the same nested path treatment; update Directory-Based Guards section (check for stale flat `slices/<name>/` path references in guard examples and path resolution descriptions). Note: event type definitions may already be correct — verify before changing.
-- [ ] `.project/architecture/rpc-layer-api.md` — update `Target` type definition (epic field on slice variant), `resolveEntityDir` examples
-- [ ] `.project/architecture/flows.md` — update any slice workflow path references
-- [ ] `.project/architecture/commands-api.md` — update slice command path resolution, `--epic`/`--all` flags on `slice:list`
-- [ ] `.project/architecture/_overview.md` — verify maturity levels remain appropriate; no changes expected
+- [x] `.project/architecture/data-model.md` — update `slice.json` location examples, directory structure, state tree example, schema registry patterns, `hasChild` guard examples to use nested paths
+- [x] `.project/architecture/state-machine-api.md` — update all State Key Dependencies table rows for slice events (`CREATE_SLICE`, `BEGIN_PLAN`, `COMPLETE_PLAN`, `COMPLETE_REFINEMENT_ROUND`, `COMPLETE_SLICE`, `COMPLETE_EPIC` — lines 235-240) changing `slices/<name>/` to `epics/<epic>/slices/<name>/`; also update any `slices/overview.json` references in those rows — `CREATE_SLICE`, `COMPLETE_SLICE`, and `COMPLETE_EPIC` rows likely reference this eliminated file and need replacement paths reflecting the embedded-overview approach; update `hasChild` guard examples (lines 262-263) with the same nested path treatment; update Directory-Based Guards section (check for stale flat `slices/<name>/` path references in guard examples and path resolution descriptions). Note: event type definitions may already be correct — verify before changing.
+- [x] `.project/architecture/rpc-layer-api.md` — update `Target` type definition (epic field on slice variant), `resolveEntityDir` examples
+- [x] `.project/architecture/flows.md` — update any slice workflow path references
+- [x] `.project/architecture/commands-api.md` — update slice command path resolution, `--epic`/`--all` flags on `slice:list`
+- [x] `.project/architecture/_overview.md` — verify maturity levels remain appropriate; no changes expected
 
 ### Verification
 

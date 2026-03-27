@@ -79,8 +79,8 @@ goodplan epic:update-verification --epic <name> --index <n>
 **Slice namespace:**
 
 ```
-goodplan slice:list [--epic <name>]
-goodplan slice:show --slice <name>
+goodplan slice:list [--epic <name>] [--all]
+goodplan slice:show --slice <name> [--epic <name>]
 goodplan slice:create --epic <name>
 goodplan slice:plan --slice <name>
 goodplan slice:refine-plan --slice <name>
@@ -213,7 +213,7 @@ goodplan submit-refine-slices --epic <name>
 { "id": "2026-03-20-my-decision", "domain": "architecture", "title": "...", "summary": "..." }
 ```
 
-**`activity:list --scope`** — scope is a path-style entity reference matching the `scope` field in `activity-log.jsonl` entries (e.g., `slices/01-auth`, `epics/goodplan-cli`, `quests/fix-logging`).
+**`activity:list --scope`** — scope is a path-style entity reference matching the `scope` field in `activity-log.jsonl` entries (e.g., `epics/goodplan-cli/slices/01-auth`, `epics/goodplan-cli`, `quests/fix-logging`).
 
 **`verificationPassed` semantics:** The `verificationPassed` boolean on `slice:complete` and `quest:complete` is a human/orchestrator assertion. The orchestrator (or user) reviews implementation results, decides whether verification criteria are met, and asserts the result via the stdin JSON payload. The CLI does not automatically determine verification — it trusts the caller's assertion and enforces it as a state machine guard.
 
@@ -227,7 +227,7 @@ goodplan migrate [--json]
 goodplan schema [--command <command-path>] [--json] [--query <jq>]
 ```
 
-`migrate` converts a pre-CLI `.project/` directory into CLI-managed state via a multi-round Q&A protocol. Reads answers from stdin JSON (`{ round, answers }`), validates against Zod schemas, and advances through rounds: inventory → per-epic details → confirmation. On confirmation approval, renames `.project/` to `.project-old/`, constructs `ProjectState` directly (INV-001 exception — bypasses state machine), calls `commitState()`, and copies markdown artifacts from the old directory. Intermediate state is persisted to `<cwd>/.migration-in-progress.json`. Designed for LLM orchestration via the `/migrate` skill.
+`migrate` converts a pre-CLI `.project/` directory into CLI-managed state, or re-migrates an already-initialized project to restructure state. Uses a multi-round Q&A protocol. Reads answers from stdin JSON (`{ round, answers }`), validates against Zod schemas, and advances through rounds: inventory → per-epic details → confirmation. On confirmation approval, renames `.project/` to `.project-old-<YYYYMMDD-HHmmss>/` (timestamped backup), constructs `ProjectState` directly (INV-001 exception — bypasses state machine), calls `commitState()`, and copies markdown artifacts from the old directory. Intermediate state is persisted to `<cwd>/.migration-in-progress.json`. Designed for LLM orchestration via the `/migrate` skill.
 
 `state` exposes the full `.project/` state tree as JSON. Always outputs JSON regardless of `--json` flag (this is an explicit exception to the "no `--json` = human-readable" convention). The `--json` flag is accepted but has no effect. `--query` applies a jq expression to filter the tree. `--inline` includes markdown file content as strings instead of `true` markers. `--offset` and `--limit` paginate array results from `--query` (silently ignored without `--query`). Read-only — routes directly to the Data Layer, bypassing RPC and State Machine.
 
