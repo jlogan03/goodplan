@@ -32,6 +32,14 @@ const READ_ONLY_COMMANDS = new Set([
  */
 const ENTITY_ARGS = new Set(["epic", "slice", "quest", "task", "id", "from", "to"]);
 
+/**
+ * Commands that operate on the entire project rather than targeting a specific entity.
+ * Note: `init` is also project-scoped but lives in `READ_ONLY_COMMANDS`.
+ */
+const ENTITY_EXEMPT_COMMANDS = new Set([
+	"migrate",
+]);
+
 /** Commands that accept stdin with required entity-identifying fields. */
 const STDIN_ENTITY_COMMANDS = new Set([
 	"epic:create", // stdin has required 'name'
@@ -68,6 +76,9 @@ describe("INV-004: Stateless commands — entity-identifying flags required", ()
 
 			// Skip commands that accept stdin with required entity fields
 			if (STDIN_ENTITY_COMMANDS.has(cmd.name)) continue;
+
+			// Skip commands that operate on the entire project (no entity target)
+			if (ENTITY_EXEMPT_COMMANDS.has(cmd.name)) continue;
 
 			// Check if any non-global arg is entity-identifying
 			const commandArgs = Object.keys(cmd.args).filter((a) => !GLOBAL_ARG_NAMES.has(a));

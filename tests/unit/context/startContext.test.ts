@@ -40,7 +40,7 @@ const state: ProjectState = {
 					contents: {
 						"epic.json": {
 							type: "json",
-							content: { name: "my-epic", status: "activated", goal: "Build a CLI tool", verifications: [], sliceSequence: ["01-data-layer"], created: "2026-03-20T00:00:00Z", activated: "2026-03-20T12:00:00Z", updated: "2026-03-20T12:00:00Z" },
+							content: { name: "my-epic", status: "activated", goal: "Build a CLI tool", verifications: [], created: "2026-03-20T00:00:00Z", activated: "2026-03-20T12:00:00Z", updated: "2026-03-20T12:00:00Z" },
 						},
 						architecture: {
 							type: "directory",

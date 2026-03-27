@@ -182,14 +182,15 @@ describe("migrate: full flow", () => {
 			expect(epicOverview.items[0]?.name).toBe("test-epic");
 			expect(epicOverview.items[0]?.status).toBe("completed");
 
-			// Slice overview
-			const sliceOverviewPath = path.join(projectDir, "slices", "overview.json");
-			expect(fs.existsSync(sliceOverviewPath)).toBe(true);
-			const sliceOverview = JSON.parse(fs.readFileSync(sliceOverviewPath, "utf-8")) as {
-				items: Array<{ name: string; epic: string }>;
-			};
-			expect(sliceOverview.items).toHaveLength(2);
-			const sliceNames = sliceOverview.items.map((s) => s.name);
+			// Slices nested under epic (no top-level slices/ directory)
+			const epicSlicesDir = path.join(projectDir, "epics", "test-epic", "slices");
+			expect(fs.existsSync(epicSlicesDir)).toBe(true);
+			expect(fs.existsSync(path.join(epicSlicesDir, "first-slice", "slice.json"))).toBe(true);
+			expect(fs.existsSync(path.join(epicSlicesDir, "second-slice", "slice.json"))).toBe(true);
+			// Slice info embedded in epic overview
+			const epicOverviewSlices = epicOverview.items[0] as { slices?: Array<{ name: string }> };
+			expect(epicOverviewSlices.slices).toHaveLength(2);
+			const sliceNames = (epicOverviewSlices.slices ?? []).map((s) => s.name);
 			expect(sliceNames).toContain("first-slice");
 			expect(sliceNames).toContain("second-slice");
 
@@ -209,10 +210,10 @@ describe("migrate: full flow", () => {
 				fs.readFileSync(path.join(projectDir, "epics", "test-epic", "epic.json"), "utf-8"),
 			) as Record<string, unknown>;
 			expect(epicJson.status).toBe("completed");
-			expect(epicJson.sliceSequence).toEqual(["first-slice", "second-slice"]);
+			// sliceSequence removed from epicSchema — no longer in on-disk output
 
 			const sliceJson = JSON.parse(
-				fs.readFileSync(path.join(projectDir, "slices", "first-slice", "slice.json"), "utf-8"),
+				fs.readFileSync(path.join(projectDir, "epics", "test-epic", "slices", "first-slice", "slice.json"), "utf-8"),
 			) as Record<string, unknown>;
 			expect(sliceJson.status).toBe("completed");
 			expect(sliceJson.epic).toBe("test-epic");
@@ -439,16 +440,12 @@ describe("buildMigrationState", () => {
 		expect(ej.sliceSequence).toEqual(["slice-a"]);
 		expect(ej.activated).toBe("2025-06-01T00:00:00.000Z");
 
-		// Slices overview
-		const slicesDir = state.contents.slices;
-		if (slicesDir?.type !== "directory") throw new Error("expected dir");
-		const sliceOverview = slicesDir.contents["overview.json"];
-		if (sliceOverview?.type !== "json") throw new Error("expected json");
-		const sliceItems = (sliceOverview.content as { items: unknown[] }).items;
-		expect(sliceItems).toHaveLength(1);
+		// Slices nested under epic (no top-level slices/ directory)
+		const epicSlicesDir = epicDir.contents.slices;
+		if (epicSlicesDir?.type !== "directory") throw new Error("expected dir");
 
 		// Slice entity
-		const sliceDir = slicesDir.contents["slice-a"];
+		const sliceDir = epicSlicesDir.contents["slice-a"];
 		if (sliceDir?.type !== "directory") throw new Error("expected dir");
 		const sliceJson = sliceDir.contents["slice.json"];
 		if (sliceJson?.type !== "json") throw new Error("expected json");
@@ -527,13 +524,15 @@ describe("buildMigrationState", () => {
 		};
 
 		const state = buildMigrationState(answers);
-		const slicesDir = state.contents.slices;
+		// Slices nested under epic — empty epic should have an empty slices directory
+		const epicsDir = state.contents.epics;
+		if (epicsDir?.type !== "directory") throw new Error("expected dir");
+		const emptyEpicDir = epicsDir.contents["empty-epic"];
+		if (emptyEpicDir?.type !== "directory") throw new Error("expected dir");
+		const slicesDir = emptyEpicDir.contents.slices;
 		if (slicesDir?.type !== "directory") throw new Error("expected dir");
-		// Only overview.json, no slice entities
-		expect(Object.keys(slicesDir.contents)).toEqual(["overview.json"]);
-		const overview = slicesDir.contents["overview.json"];
-		if (overview?.type !== "json") throw new Error("expected json");
-		expect((overview.content as { items: unknown[] }).items).toHaveLength(0);
+		// No slice entities
+		expect(Object.keys(slicesDir.contents)).toEqual([]);
 	});
 
 	it("handles quest-only project (no epics)", () => {
