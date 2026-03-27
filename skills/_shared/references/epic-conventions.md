@@ -57,13 +57,17 @@ Created by `/create-epic` as `__active__initial/` — starts active, no approval
     │       ├── styles.css
     │       ├── script.js
     │       └── summary.md
+    ├── learnings/                   # per-learning .md files (CLI-managed)
+    │   └── <slug>.md
     ├── slices/
     │   ├── sequencing.md
     │   └── <NN-slice-name>/         # per-slice state machine applies here
     │       ├── goal.md
+    │       ├── learnings/           # per-learning .md files (CLI-managed)
+    │       │   └── <slug>.md
     │       └── ...                  # same structure as side quests
     └── completion/
-        ├── learnings.md
+        ├── learnings.md             # re-entry detection artifact (LLM-owned)
         └── architecture-updates.md
 ```
 
@@ -89,12 +93,16 @@ Created by `/create-epic`. Starts without `__active__` prefix. Renamed to `__act
     ├── approved.md                  # trigger pulled — proposal accepted
     ├── architecture/                # target architecture (created by /start-epic from proposal upon approval)
     │   └── ...                      # same structure as first epic
+    ├── learnings/                   # per-learning .md files (CLI-managed)
+    │   └── <slug>.md
     ├── slices/
     │   ├── sequencing.md
     │   └── <NN-slice-name>/
+    │       ├── learnings/           # per-learning .md files (CLI-managed)
+    │       │   └── <slug>.md
     │       └── ...
     └── completion/
-        ├── learnings.md
+        ├── learnings.md             # re-entry detection artifact (LLM-owned)
         └── architecture-updates.md
 ```
 

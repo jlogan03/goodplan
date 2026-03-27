@@ -69,7 +69,7 @@ Also load `../_shared/references/decisions-format.md` for the decisions format a
 
 5. Extract the `## Subsystem Maturity` table from the primary architecture's `_overview.md`. If present, note which subsystems are at Maturing or Foundational maturity — these inform slice flagging in Step 6. If no maturity table exists, skip maturity-aware behavior in Step 6.
 
-6. Read `.project/learnings.md` if it exists.
+6. Load learnings via CLI: `goodplan learning:list --json`. Present summaries for context.
 
 7. Load `.project/decisions/` following the Loading Protocol in `decisions-format.md`: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions inform slice boundaries and ordering.
 

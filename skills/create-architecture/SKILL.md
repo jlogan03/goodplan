@@ -299,7 +299,7 @@ Use the Read tool to re-load `references/guidance.md` (relative to this skill's 
 
 Using the Project Context section format from `references/guidance.md` (the HTML comments in the format are instructions, not content to write into CLAUDE.md):
 
-1. Check which optional files actually exist by running: `ls .project/brainstorm/ .project/research/ .project/prototypes/ .project/learnings.md .project/sequencing.md 2>/dev/null`. Also check epic-level files if applicable: `ls $EPIC_DIR/research/ $EPIC_DIR/brainstorm/ 2>/dev/null`. Note: `sequencing.md` and `learnings.md` are written by later skills -- only reference them if they already exist. For first epic, add references to the epic architecture directory. For subsequent epics, note that the architecture is a proposal pending approval.
+1. Check which optional files actually exist by running: `ls .project/brainstorm/ .project/research/ .project/prototypes/ .project/learnings/ .project/sequencing.md 2>/dev/null`. Also check epic-level files if applicable: `ls $EPIC_DIR/research/ $EPIC_DIR/brainstorm/ 2>/dev/null`. Note: `sequencing.md` is written by later skills -- only reference it if it already exists. The `learnings/` directory is written by the CLI during slice/quest completion -- only reference it if it already exists and contains files. For first epic, add references to the epic architecture directory. For subsequent epics, note that the architecture is a proposal pending approval.
 
 2. For "Also check" entries, only include directories that exist AND contain files (not empty directories).
 

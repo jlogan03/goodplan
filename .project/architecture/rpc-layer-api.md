@@ -233,10 +233,13 @@ type CompleteInput =
 // (deferred, learnings, architectureDelta) and their coercion logic are deferred
 // to slice 04 (slice lifecycle) where COMPLETE_SLICE is first exercised end-to-end.
 
-// Canonical Learning type — used in CompleteInput and sub-agent submit commands.
-// The `rollupTo` array specifies which scopes this learning should be rolled up to.
-// The Data Layer transforms this to stored form: `source` is populated from the
-// current entity scope, and `rollup: true` is set when rollupTo is non-empty.
+// Canonical Learning input type — used in CompleteInput payloads from skills.
+// Skills pass `detail` (full learning text). The RPC layer maps this to a
+// `LearningEventEntry` (with `file` instead of `detail`) before building the
+// state event: it derives a slug from `summary`, sets `file` to `learnings/<slug>.md`,
+// and after reduce() succeeds, writes the `.md` file via Data Layer's writeMarkdownFiles().
+// During rollup, the RPC layer copies `.md` files from source to target scope
+// via Data Layer's copyMarkdownFiles().
 interface Learning {
   category: 'domain' | 'worked' | 'didnt-work' | 'do-differently';
   summary: string;
@@ -292,11 +295,14 @@ interface DecisionSummary {
 }
 
 // Projection of stored learning record for context bundles.
+// `file` is present for new-format learnings (scope-relative path to .md file).
+// Consumers that need inline detail read the .md files themselves using the `file` path.
 interface LearningSummary {
   category: 'domain' | 'worked' | 'didnt-work' | 'do-differently';
   summary: string;
   tags: string[];
   source: string;
+  file?: string;  // e.g., "learnings/schema-first-caught-3-bugs.md"
 }
 
 // Options for the status() function. Empty for now — reserved for future

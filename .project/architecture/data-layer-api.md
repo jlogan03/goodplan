@@ -55,6 +55,20 @@ Performs a recursive tree diff between `oldState` and `newState`. For each diffe
 
 Updates the state cache after all writes succeed. Write ordering: entity JSON files first, JSONL appends second, state cache last. If the process crashes mid-write, the state cache (written last) is stale, triggering a full `assembleState()` on next invocation which reconciles from the source-of-truth individual files.
 
+### Markdown File I/O Helpers
+
+```typescript
+// Write markdown files to disk. Used by the RPC layer to write per-learning .md files
+// after reduce() succeeds but before commitState(). Creates directories on-demand.
+function writeMarkdownFiles(projectDir: string, files: Array<{path: string, content: string}>): void;
+
+// Copy markdown files from one scope to another. Used by the RPC layer during
+// learnings rollup to copy .md files from source to target scope.
+function copyMarkdownFiles(projectDir: string, copies: Array<{from: string, to: string}>): void;
+```
+
+These helpers preserve the architectural boundary where all filesystem I/O flows through the Data Layer, even for CLI-managed markdown files like `learnings/*.md`.
+
 ### Tree Navigation Helpers
 
 These operate on the in-memory `ProjectState` tree — no filesystem access.

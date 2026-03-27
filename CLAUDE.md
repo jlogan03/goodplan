@@ -6,7 +6,7 @@ Read these before doing any significant work in this repo:
 
 - `.project/idea.md` — project goal, scope, constraints
 - `.project/conventions.md` — tech stack, repo structure, coding style
-- `.project/learnings.md` — accumulated learnings across completed slices
+- `.project/learnings/` — per-learning `.md` files (CLI-managed; query via `goodplan learning:list --json`)
 - `.project/architecture/_overview.md` — system architecture (4-layer stack, subsystem maturity)
 - `.project/architecture/conventions.md` — architectural patterns
 - `.project/architecture/data-model.md` — entities, JSON/JSONL, unified state object

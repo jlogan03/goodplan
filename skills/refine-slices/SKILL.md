@@ -78,7 +78,7 @@ Read all relevant project state:
 - For epic-scoped: the epic's `goal.md` and `architecture/` (target architecture)
 - `.project/conventions.md`
 - `.project/decisions/` (following Loading Protocol)
-- `.project/learnings.md`
+- Learnings via `goodplan learning:list --json`
 - `$SLICES_ROOT/sequencing.md`
 - All `$SLICES_ROOT/*/goal.md` files (excluding side quests)
 

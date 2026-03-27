@@ -153,10 +153,20 @@ Project-level decisions. One JSON object per line.
 Exists at project level (`.project/learnings.jsonl`) and per-slice (`.project/epics/<epic>/slices/<name>/learnings.jsonl`).
 
 ```json
-{"category": "domain", "summary": "Brief actionable statement", "detail": "Longer explanation", "tags": ["auth", "testing"], "source": "epics/goodplan-cli/slices/01-auth", "rollup": true, "rollupTo": ["epic", "project"]}
+{"category": "domain", "summary": "Brief actionable statement", "file": "learnings/brief-actionable-statement.md", "tags": ["auth", "testing"], "source": "epics/goodplan-cli/slices/01-auth", "rollup": true, "rollupTo": ["epic", "project"]}
 ```
 
-Stored fields: `source` is populated by the RPC layer from the current entity scope when persisting. `rollup: true` is set when `rollupTo` is non-empty (backward-compatible boolean for simple filtering). `rollupTo` preserves the specific targets. The canonical input type (see rpc-layer-api.md `Learning`) omits `source` — it's added during persistence.
+Stored fields: `file` is a scope-relative path to the `.md` file containing the learning detail (e.g., `learnings/<slug>.md`). The slug is derived from `summary` by the RPC layer (kebab-case, truncated at 60 chars on word boundaries, with collision detection via `Set<string>` from the state tree). `source` is populated by the RPC layer from the current entity scope when persisting. `rollup: true` is set when `rollupTo` is non-empty (backward-compatible boolean for simple filtering). `rollupTo` preserves the specific targets. The canonical input type (see rpc-layer-api.md `Learning`) uses `detail` (full text) — the RPC layer maps this to `file` by deriving a slug, writing the `.md` file, and storing the path.
+
+### learnings/ directory
+
+Per-learning `.md` files at every scope that has learnings. The CLI writes these — skills never write to `learnings/` directly. During rollup, the CLI copies `.md` files from the source scope to the target scope (e.g., `<slice>/learnings/<slug>.md` → `<project>/learnings/<slug>.md`).
+
+```
+.project/learnings/
+├── schema-first-caught-3-bugs.md
+└── api-rate-limits-at-100-rps.md
+```
 
 ### architecture-deltas.jsonl
 
@@ -426,6 +436,8 @@ The cache is valid because the CLI is the only writer of JSON/JSONL state. The o
 ├── project.json
 ├── decisions.jsonl
 ├── learnings.jsonl
+├── learnings/                 # per-learning .md files (CLI-managed)
+│   └── <slug>.md
 ├── activity-log.jsonl
 ├── idea.md
 ├── conventions.md
@@ -438,10 +450,15 @@ The cache is valid because the CLI is the only writer of JSON/JSONL state. The o
 │       ├── research/          # LLM-managed, CLI-owned root path
 │       ├── brainstorm/        # LLM-managed, CLI-owned root path
 │       ├── prototypes/        # LLM-managed, CLI-owned root path
+│       ├── learnings.jsonl
+│       ├── learnings/         # per-learning .md files (CLI-managed)
+│       │   └── <slug>.md
 │       └── slices/
 │           └── <name>/
 │               ├── slice.json
 │               ├── learnings.jsonl
+│               ├── learnings/         # per-learning .md files (CLI-managed)
+│               │   └── <slug>.md
 │               ├── architecture-deltas.jsonl
 │               ├── plan.md            # LLM-managed, CLI-owned path — written by sub-agent during planning
 │               ├── plan-refining.md   # LLM-managed — working draft updated during each refinement round. The sub-agent creates plan-refining.md during refinement rounds. When scores pass threshold, the sub-agent writes plan-refined.md directly; the CLI does not rename files.
@@ -451,6 +468,8 @@ The cache is valid because the CLI is the only writer of JSON/JSONL state. The o
 │   └── <name>/
 │       ├── quest.json
 │       ├── learnings.jsonl
+│       ├── learnings/         # per-learning .md files (CLI-managed)
+│       │   └── <slug>.md
 │       ├── architecture-deltas.jsonl
 │       ├── plan.md
 │       ├── plan-refining.md

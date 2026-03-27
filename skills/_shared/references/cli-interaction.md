@@ -75,6 +75,7 @@ Two categories of files in `.project/`:
 | Category | Owned by | Skills may |
 |----------|----------|------------|
 | **JSON/JSONL** (entity state, activity log, decisions, learnings, overviews) | CLI | Read via `--json` commands only. Never read or write directly. |
+| **Learnings `.md` files** (`learnings/*.md` at any scope) | CLI | Written by CLI during completion (derived from `detail` in payload). Skills pass `detail` in the payload; the CLI derives slugs, writes `.md` files, and creates JSONL entries. Skills never write to `learnings/` directly. |
 | **Free-form markdown** (architecture, research, brainstorm, plans, goals) | LLM | Write into directories provided by CLI command responses. Read directly with the Read tool. |
 
 ## 3. What Skills Must NOT Do
@@ -303,6 +304,23 @@ Skills previously read `state.md` for several purposes. CLI equivalents:
 
 > **Deprecation:** The `state.md` format documented in `skills/_shared/references/state-and-activity-formats.md` is now obsolete. Skills should use the CLI commands above instead.
 
+### Querying Learnings
+
+To access accumulated learnings (across all completed slices and quests):
+
+```bash
+goodplan learning:list --json
+```
+
+Returns `{ "items": [...] }` where each item has `category`, `summary`, `tags`, `source`, `rollup`, `rollupTo`, and either `detail` (legacy) or `file` (new format, scope-relative path to `.md` file in `learnings/` directory). Skills should use this command instead of reading `.project/learnings.md` or `.project/learnings/` directly.
+
+Filter by source scope:
+```bash
+goodplan learning:list --json --source <scope-path>
+```
+
+Human-readable output (no `--json`): displays `{category} {summary} ({source})` per entry — file paths are omitted from human output.
+
 ## 7. Deriving Workflow Phase
 
 Instead of file-existence checks, use the enriched `show --json` response:
@@ -422,6 +440,8 @@ Optional fields:
 - `learnings` (array) — `[{ "category": "worked"|"didnt-work"|"domain"|"do-differently", "summary": "...", "detail": "...", "tags": [...], "rollupTo": [...] }]`
 - `architectureDelta` (array) — `[{ "subsystem": "...", "type": "add"|"modify"|"remove", "description": "..." }]`
 
+**Learnings `detail` → `.md` file mapping**: Skills pass `detail` (full learning text) in the payload. The CLI derives a slug from `summary`, writes `learnings/<slug>.md` with the `detail` content, and stores a `file` field (not `detail`) in the JSONL entry. During rollup, the CLI copies `.md` files to target scopes automatically. Skills never write to `learnings/` directly.
+
 Example:
 
 ```bash
@@ -440,7 +460,7 @@ Required fields:
 - `verificationPassed` (boolean)
 
 Optional fields:
-- `learnings` (array) — same shape as slice:complete
+- `learnings` (array) — same shape as slice:complete (skills pass `detail`; CLI maps to `.md` files)
 - `architectureDelta` (array) — same shape as slice:complete
 
 ### `verificationPassed` Semantics

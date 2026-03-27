@@ -14,7 +14,7 @@ Read these before doing any significant work in this repo:
 - `.project/architecture/_overview.md` — system architecture
 - `.project/architecture/conventions.md` — architectural patterns
 <!-- Add a line for each architecture file actually written (e.g. data-model.md, flows.md, ui-ux.md, invariants.md) -->
-<!-- Add learnings.md line only if that file exists -->
+<!-- Add learnings/ directory line only if that directory exists and contains files (written by CLI during slice/quest completion) -->
 <!-- Add sequencing.md line only if that file exists (written by /create-slices, not this skill) -->
 
 Also check if relevant to your task:

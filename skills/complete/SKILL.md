@@ -181,7 +181,7 @@ Present the learnings for visibility, then write `completion/learnings.md`.
 
 Re-load `references/guidance.md` (relative to this skill's directory) for the learnings entry format.
 
-**JSONL learnings rollup**: Do NOT call `learning:rollup` separately. The accumulated learnings from `completion/learnings.md` will be read back and included in the `slice:complete` payload (Step 10) as the `learnings` array. Learnings with `rollupTo` tags are processed atomically by the CLI reducer — no separate rollup invocation needed.
+**JSONL learnings rollup**: Do NOT call `learning:rollup` separately. The accumulated learnings from `completion/learnings.md` will be read back and included in the `slice:complete` payload (Step 10) as the `learnings` array. Each learning entry's `detail` field contains the full text that the CLI will write to a per-learning `.md` file in the `learnings/` directory — the CLI handles file creation, slug derivation, and JSONL persistence. Learnings with `rollupTo` tags are processed atomically by the CLI reducer — no separate rollup invocation needed.
 
 **Cross-project tool learnings**: If any learnings are about general-purpose tools, libraries, or frameworks (not project-specific), save them to the user's auto memory system as well. These learnings are likely useful across projects — for example, "pnpm 10 replaces corepack" or "oxfmt beta has stability issues with certain config patterns." Use the memory Write tool to save these as project-type memories with the tool name in the filename.
 

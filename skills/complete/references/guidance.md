@@ -35,7 +35,9 @@ Newest first, below header.
 
 ## JSONL Learnings Rollup
 
-Do NOT call `learning:rollup` separately. Accumulated learnings from `completion/learnings.md` are included in the `slice:complete` (or `quest:complete`) payload as the `learnings` array. Learnings with `rollupTo` tags are processed atomically by the CLI reducer.
+Do NOT call `learning:rollup` separately. Accumulated learnings from `completion/learnings.md` are included in the `slice:complete` (or `quest:complete`) payload as the `learnings` array. Each learning's `detail` field contains the full text — the CLI derives a slug, writes a per-learning `.md` file to the scope's `learnings/` directory, and creates the JSONL entry with a `file` field pointing to it. Learnings with `rollupTo` tags are processed atomically by the CLI reducer — the CLI copies `.md` files to rollup target scopes automatically.
+
+Note: `completion/learnings.md` continues to be written as a working artifact for re-entry detection. This is distinct from the per-learning `.md` files the CLI writes to `learnings/`.
 
 ## Architecture Update Protocol
 

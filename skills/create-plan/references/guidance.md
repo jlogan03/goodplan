@@ -10,7 +10,7 @@
 
 ## Context Loading
 
-Read (skip missing): `.project/idea.md`, `conventions.md`, `architecture/` (`_overview.md` first; if >8 files, full read only `_overview.md` + `conventions.md`, 30 lines of rest), `learnings.md`, `.project/decisions/` (follow Loading Protocol from `decisions-format.md`: glob `*.md`, skip superseded, flag `revisiting` to user), sequencing.md (for epic slices, load from `.project/epics/<epicName>/slices/sequencing.md` where `<epicName>` comes from `goodplan status --json` → `.activeEpic.name`; if no active epic, load `.project/slices/sequencing.md`), other slice `goal.md` files, `.project/research/` + scope's `research/`, scope's `brainstorm/`.
+Read (skip missing): `.project/idea.md`, `conventions.md`, `architecture/` (`_overview.md` first; if >8 files, full read only `_overview.md` + `conventions.md`, 30 lines of rest), learnings via `goodplan learning:list --json`, `.project/decisions/` (follow Loading Protocol from `decisions-format.md`: glob `*.md`, skip superseded, flag `revisiting` to user), sequencing.md (for epic slices, load from `.project/epics/<epicName>/slices/sequencing.md` where `<epicName>` comes from `goodplan status --json` → `.activeEpic.name`; if no active epic, load `.project/slices/sequencing.md`), other slice `goal.md` files, `.project/research/` + scope's `research/`, scope's `brainstorm/`.
 
 Follow SKILL.md Step 3 sub-step 4 for maturity table extraction and Maturity Note loading.
 

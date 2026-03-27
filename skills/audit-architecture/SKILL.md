@@ -66,7 +66,7 @@ If the marker is present, warn the user: "Top-level architecture is a scaffold p
 
 3. **Load maturity conventions**: Read `../_shared/references/maturity-conventions.md` for maturity level definitions, promotion criteria, invariant format, and fitness function format. This is the authoritative source — audit-architecture's `references/guidance.md` provides audit-specific strategies that build on these conventions.
 
-4. **Load learnings and conventions**: Read `.project/learnings.md` and `.project/conventions.md` (if they exist).
+4. **Load learnings and conventions**: Load learnings via `goodplan learning:list --json`. Read `.project/conventions.md` (if it exists).
 
 5. **Load recent activity-log**: Query recent activity filtered to the scope being audited:
 
@@ -113,7 +113,7 @@ Present the reconciled findings to the user before proceeding.
 
 ## Step 3 — Architecture Reassessment
 
-Based on reconciled gap findings + `learnings.md` + decisions + the conversation, evaluate:
+Based on reconciled gap findings + learnings (from `goodplan learning:list --json`) + decisions + the conversation, evaluate:
 
 - **Boundary placement**: Are any architectural boundaries in the wrong place? (evidence: high cross-boundary coupling, frequent violations in the same direction)
 - **Missing abstractions**: Are there abstractions that implementation revealed? (evidence: duplicated patterns across modules that should be centralized)

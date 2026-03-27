@@ -61,7 +61,7 @@ Read (skip missing):
    - **No active epic**: Load `.project/architecture/` only.
    - For whichever architecture directory is primary: start with `_overview.md`. If more than 8 files, read `_overview.md` and `conventions.md` in full, first 30 lines of each remaining file.
 4. **Maturity extraction**: Extract the `## Subsystem Maturity` table from the primary architecture's `_overview.md`. If no maturity table exists, skip maturity-aware behavior in Step 4. Also check for a `## Maturity Note` section in the loaded `goal.md` — treat this as an additional maturity signal (written by `/create-slices` for slices touching maturing+ subsystems).
-5. `.project/learnings.md`
+5. Load learnings via CLI: `goodplan learning:list --json`
 6. **Sequencing**: If the scope is an epic slice, load `.project/epics/<epicName>/slices/sequencing.md` (where `<epicName>` comes from `goodplan status --json` → `.activeEpic.name`). If no active epic, load `.project/slices/sequencing.md`.
 7. Other slice `goal.md` files — for dependency and ordering context
 8. Existing research: `.project/research/` (project-level) and scope's `research/`
