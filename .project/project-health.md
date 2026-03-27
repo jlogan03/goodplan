@@ -4,7 +4,7 @@
 
 ### Well-tested areas
 - Skill file structure (SKILL.md frontmatter, step numbering, reference paths): verified across 4 skill files during slice-quality-and-health implementation with 28-point checklist
-- goodplan CLI: 864+ unit tests, integration + fitness tests. Unit tests cover tree types, schemas, I/O, state machine (including task entity: CREATE_TASK, DROP_TASK, CONVERT_TASK with inlined cross-entity creation), RPC (including paths, version-stamp), context, commands (including state, show artifacts, status file arrays, task commands). Integration tests spawn compiled binary covering init, epic/slice/quest lifecycle, error transitions, circuit breaker, runner modes, show artifacts, result paths, version compatibility. Fitness functions verify all architectural invariants including task event completeness. Type-clean against `tsc --noEmit`.
+- goodplan CLI: 874 unit tests, integration + fitness tests. Unit tests cover tree types, schemas, I/O, state machine (including task entity and nested epic paths), RPC (including paths, version-stamp, deferred routing with cross-epic support), context (resolveScope, entityDir with epic paths), commands (including status with embedded overview, slice:list with --all, slice:show with --epic). Integration tests spawn compiled binary. Fitness functions verify all architectural invariants. Type-clean against `tsc --noEmit`.
 - goodplan CLI main runner (`src/index.ts`): integration tests cover unknown commands, --help, --version, --json error mode, NO_COLOR, stdin validation, version compatibility checking (4 variants), --quiet suppression of warnings.
 
 ### Undertested areas
@@ -22,7 +22,7 @@
 - epic-conventions.md is consumed by 12+ skills: changes require updating all consumers
 - citty + `exactOptionalPropertyTypes`: requires `as unknown as CommandDef` casts in `src/index.ts`. May break on citty upgrade.
 
-<!-- Last updated by: complete for 05-planning-execution-skills, 2026-03-24 -->
+<!-- Last updated by: complete for 02-rpc-and-commands, 2026-03-27 -->
 
 ## Performance Characteristics
 
@@ -72,8 +72,8 @@
 
 ## Recent Changes
 
+- **04-skills-update** (2026-03-27): Updated 8 skill/reference files to support nested epic paths alongside flat paths. Dual-path globs for completion scanning, conditional logic in explore skill, Epic Slice row in scope mapping. Removed 7 .project/learnings.md references from /complete (learnings rollup now via CLI payload only). Added CLAUDE.md path audit step to /migrate skill. No TS code changes.
+- **02-rpc-and-commands** (2026-03-27): Wired RPC + commands for nested epic paths. Cleared 22 @ts-expect-error/TODO annotations. Added requireActiveEpic helper, --all on slice:list, --epic on slice:show. Fixed migrate.ts destination path. epicOverviewItemSchema.slices defaults to []. 874 tests, 41 files changed.
 - **task-capture** (2026-03-26): New task entity (CREATE_TASK, DROP_TASK, CONVERT_TASK with inlined cross-entity creation), 5 CLI commands (task:create/list/show/drop/convert), /capture skill, project-status task count integration. Extracted shared entity builder helpers. 864+ unit tests (+30 new for tasks).
-- **skill-workflow-bugs** (2026-03-26): Fixed 3 skill bugs (redundant goal.md sections, unnecessary confirmation prompts, /complete learnings gate). Created shared Iteration Summary template in output-templates.md. Converted all 7 skills' structured output points from prose to rigid templates. No TS code changes.
-- **05-planning-execution-skills** (2026-03-24): Migrated 6 skills (create-plan, create-slices, refine-plan, implement-plan, refine-slices, migrate) to goodplan CLI. Fixed complete skill's mkdir to use quest:create. All direct state.md/activity-log access eliminated. 941 tests (no new — skill-only changes).
 
-<!-- Last updated by: complete for task-capture, 2026-03-26 -->
+<!-- Last updated by: complete for 04-skills-update, 2026-03-27 -->

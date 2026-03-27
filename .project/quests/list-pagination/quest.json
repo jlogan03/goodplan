@@ -1,0 +1,8 @@
+{
+	"created": "2026-03-27T02:57:35.114Z",
+	"goal": "Add --limit and --offset flags to all CLI commands that return JSON arrays (slice:list, epic:list, quest:list, task:list) so skills can retrieve portions without loading entire contents into context",
+	"name": "list-pagination",
+	"refinement": null,
+	"status": "created",
+	"updated": "2026-03-27T02:57:35.114Z"
+}

@@ -2,6 +2,26 @@
 
 Accumulated across all completed slices. Each entry traces back to the slice that surfaced it.
 
+## Skill path migrations need per-file change-type classification, not blanket replacement
+_Source: 04-skills-update_
+
+Three change types emerged: simple replacement, dual-path expansion, and conditional logic insertion. The Agent Skill reviewer scored 5/10 initially because the plan treated all changes as find-and-replace. Classify each file's change type upfront during planning. Also verify condensed reference files (guidance.md) stay in sync with their source SKILL.md after updates.
+
+## State cache bypasses schema defaults — plan for cache invalidation after schema changes
+_Source: 02-rpc-and-commands_
+
+Zod `.default()` only applies when `loadState` runs `safeParse().data`. The state cache stores raw `ProjectState` from before schema changes, so cached data lacks new defaults. After adding defaulted fields, document that `.state-cache.json` must be deleted or bump `CACHE_VERSION` (but test for side effects first).
+
+## Scattered path references in large functions need exhaustive grep-based enumeration in plans
+_Source: 02-rpc-and-commands_
+
+`buildSliceCompleteResult` had a path reference 80+ lines away from the others, in a different logical section. Caught as CRITICAL in review. Plans changing path strings in functions >50 lines should grep for ALL string literals containing the old path, not just list the obvious ones.
+
+## Helper functions wrapping state access should minimize I/O scope
+_Source: 02-rpc-and-commands_
+
+`requireActiveEpic` initially loaded the full state tree when it only needed `project.json`. Every caller also loaded full state, doubling I/O. Fix: read only the specific file needed. Design state-access helpers to take the narrowest input — single-file read or `ProjectState` param, not `projectDir` with implicit full load.
+
 ## Optional-parameter overloads enable incremental type migration across slices
 _Source: 01-schema-and-state-machine_
 
@@ -122,10 +142,10 @@ _Source: 03-core-skill-validation_
 
 The CLI creates entity directories at `epics/<name>/` without any prefix. The `__active__` convention was managed by old skills manually. Migrated skills must use unprefixed paths. Reviewers flagged this as CRITICAL when the actual filesystem (old-style) didn't match CLI behavior — significant confusion source.
 
-## Entity paths are flat, not nested under parent entities
-_Source: 03-core-skill-validation_
+## Entity paths are now nested under parent entities (changed in entity-restructuring epic)
+_Source: 03-core-skill-validation (updated by 02-rpc-and-commands)_
 
-`resolveEntityDir` places slices at `.project/slices/<name>/`, not `.project/epics/<epic>/slices/<name>/`. Quests similarly at `.project/quests/<name>/`. This flat structure is non-obvious when epics "own" slices conceptually. Would have caused runtime bugs writing to non-existent nested paths.
+`resolveEntityDir` now places slices at `.project/epics/<epic>/slices/<name>/` (nested under parent epic). This was changed by the entity-restructuring epic. Quests remain flat at `.project/quests/<name>/`. The nested structure matches conceptual hierarchy and eliminates cross-epic name collisions.
 
 ## Migrated skills need a project migration path for pre-CLI adoption
 _Source: 03-core-skill-validation_

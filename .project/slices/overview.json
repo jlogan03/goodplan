@@ -159,28 +159,28 @@
 			"created": "2026-03-26T23:02:18.619Z",
 			"epic": "entity-restructuring",
 			"name": "02-rpc-and-commands",
-			"status": "created"
+			"status": "completed"
 		},
 		{
 			"completed": null,
 			"created": "2026-03-26T23:02:18.681Z",
 			"epic": "entity-restructuring",
 			"name": "03-context-and-learnings",
-			"status": "created"
+			"status": "completed"
 		},
 		{
 			"completed": null,
 			"created": "2026-03-26T23:02:18.743Z",
 			"epic": "entity-restructuring",
 			"name": "04-skills-update",
-			"status": "created"
+			"status": "completed"
 		},
 		{
 			"completed": null,
 			"created": "2026-03-26T23:02:18.808Z",
 			"epic": "entity-restructuring",
 			"name": "05-tests-and-migration",
-			"status": "created"
+			"status": "plan-refined"
 		}
 	]
 }
