@@ -29,3 +29,13 @@ Also check if relevant to your task:
 ## Skills
 
 The `skills/` directory in this repo is the **source of truth** for all goodplan skills. These are installed to `~/.claude/skills/` via `bun run install:skills`. When modifying skills, ALWAYS edit files under `skills/` in this repo — NEVER edit the installed copies at `~/.claude/skills/`.
+
+## Installed vs Repo: Two Separate Worlds
+
+The **installed** CLI (`goodplan` on PATH) and skills (`~/.claude/skills/`) are a different version than what's in this repo. The `.project/` directory is managed by the installed CLI and must stay compatible with it.
+
+**Rules:**
+- **Always use the installed CLI** (`goodplan` on PATH) to interact with `.project/` state — never the locally-built `./goodplan` binary
+- **Never manually edit** `.project/` state files (slice.json, overview.json, project.json, activity-log.jsonl) — always go through the installed CLI
+- The locally-built `./goodplan` binary is for **testing on fixture repos only** (unit tests, integration tests, copies of this repo) — never run it against this repo's `.project/`
+- Upgrading the installed CLI/skills and migrating this repo's `.project/` is a separate user-initiated process, not part of development work
