@@ -1,5 +1,4 @@
 import type { EpicStatus } from "../../../schemas/entities/epic.js";
-import type { Overview } from "../../../schemas/entities/overview.js";
 /**
  * CREATE_EPIC transition handler.
  * Guard: epic name must not already exist in tree.
@@ -8,7 +7,7 @@ import type { Overview } from "../../../schemas/entities/overview.js";
 import type { ProjectState } from "../../tree.js";
 import { getJson, hasChild, setEntry } from "../../tree.js";
 import type { StateError, StateEvent } from "../types.js";
-import { appendActivityLog, buildInitialEpicJson, createEpicSubdirectories } from "./helpers.js";
+import { addEpicToOverview, appendActivityLog, buildInitialEpicJson, createEpicSubdirectories } from "./helpers.js";
 
 type CreateEpicEvent = Extract<StateEvent, { type: "CREATE_EPIC" }>;
 
@@ -37,23 +36,16 @@ export function handleCreateEpic(
 	// Create subdirectories
 	tree = createEpicSubdirectories(tree, event.name);
 
-	// Update overview
-	const overview = getJson<Overview>(tree, "epics/overview.json");
-	if (overview === undefined) {
+	// Guard: overview must exist
+	if (getJson(tree, "epics/overview.json") === undefined) {
 		return {
 			code: "STATE_INVALID_TRANSITION",
 			message: "epics/overview.json not found — is the project initialized?",
 		};
 	}
-	tree = setEntry(tree, "epics/overview.json", {
-		type: "json",
-		content: {
-			items: [
-				...overview.items,
-				{ name: event.name, status: "created", created: now, completed: null },
-			],
-		},
-	});
+
+	// Update overview (includes slices: [] for epic overview item)
+	tree = addEpicToOverview(tree, event.name, "created", now);
 
 	// Append activity log
 	tree = appendActivityLog(

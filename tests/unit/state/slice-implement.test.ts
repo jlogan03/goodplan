@@ -15,35 +15,35 @@ function stateWithSliceInPlanCreated(): ProjectState {
 	let s = reduce(ZERO_STATE, { type: "INIT_PROJECT", name: "test", ts: TS }) as ProjectState;
 	s = reduce(s, { type: "CREATE_EPIC", name: "e1", goal: "Build stuff", ts: TS }) as ProjectState;
 	s = reduce(s, { type: "CREATE_SLICE", name: "s1", epic: "e1", goal: "Test slice", ts: TS }) as ProjectState;
-	s = reduce(s, { type: "BEGIN_PLAN", slice: "s1", ts: TS }) as ProjectState;
-	s = setEntry(s, "slices/s1/plan.md", { type: "markdown", content: "# Plan" });
-	s = reduce(s, { type: "COMPLETE_PLAN", slice: "s1", ts: TS }) as ProjectState;
+	s = reduce(s, { type: "BEGIN_PLAN", epic: "e1", slice: "s1", ts: TS }) as ProjectState;
+	s = setEntry(s, "epics/e1/slices/s1/plan.md", { type: "markdown", content: "# Plan" });
+	s = reduce(s, { type: "COMPLETE_PLAN", epic: "e1", slice: "s1", ts: TS }) as ProjectState;
 	return s;
 }
 
 function stateWithSliceInPlanRefined(): ProjectState {
 	let s = stateWithSliceInPlanCreated();
-	s = reduce(s, { type: "COMPLETE_REFINEMENT_ROUND", slice: "s1", ts: TS, scores: { q: 10 } }) as ProjectState;
+	s = reduce(s, { type: "COMPLETE_REFINEMENT_ROUND", epic: "e1", slice: "s1", ts: TS, scores: { q: 10 } }) as ProjectState;
 	return s;
 }
 
 describe("reduce — BEGIN_REFINEMENT", () => {
 	it("transitions plan-created to refining", () => {
 		const state = stateWithSliceInPlanCreated();
-		const result = reduce(state, { type: "BEGIN_REFINEMENT", slice: "s1", ts: TS2 });
+		const result = reduce(state, { type: "BEGIN_REFINEMENT", epic: "e1", slice: "s1", ts: TS2 });
 
 		expect(isStateError(result)).toBe(false);
 		const newState = result as ProjectState;
-		const slice = getJson<Slice>(newState, "slices/s1/slice.json");
+		const slice = getJson<Slice>(newState, "epics/e1/slices/s1/slice.json");
 		expect(slice!.status).toBe("refining");
 		expect(slice!.updated).toBe(TS2);
 	});
 
 	it("initializes refinement field", () => {
 		const state = stateWithSliceInPlanCreated();
-		const result = reduce(state, { type: "BEGIN_REFINEMENT", slice: "s1", ts: TS2 }) as ProjectState;
+		const result = reduce(state, { type: "BEGIN_REFINEMENT", epic: "e1", slice: "s1", ts: TS2 }) as ProjectState;
 
-		const slice = getJson<Slice>(result, "slices/s1/slice.json");
+		const slice = getJson<Slice>(result, "epics/e1/slices/s1/slice.json");
 		expect(slice!.refinement).toEqual({
 			round: 1,
 			maxRounds: 10,
@@ -53,7 +53,7 @@ describe("reduce — BEGIN_REFINEMENT", () => {
 
 	it("sets activeSlice in project.json", () => {
 		const state = stateWithSliceInPlanCreated();
-		const result = reduce(state, { type: "BEGIN_REFINEMENT", slice: "s1", ts: TS2 }) as ProjectState;
+		const result = reduce(state, { type: "BEGIN_REFINEMENT", epic: "e1", slice: "s1", ts: TS2 }) as ProjectState;
 
 		const project = getJson<Project>(result, "project.json");
 		expect(project!.activeSlice).toBe("s1");
@@ -61,7 +61,7 @@ describe("reduce — BEGIN_REFINEMENT", () => {
 
 	it("rejects wrong status", () => {
 		const state = stateWithSliceInPlanRefined();
-		const result = reduce(state, { type: "BEGIN_REFINEMENT", slice: "s1", ts: TS2 });
+		const result = reduce(state, { type: "BEGIN_REFINEMENT", epic: "e1", slice: "s1", ts: TS2 });
 		expect(isStateError(result)).toBe(true);
 		expect((result as StateError).code).toBe("STATE_INVALID_TRANSITION");
 	});
@@ -70,11 +70,11 @@ describe("reduce — BEGIN_REFINEMENT", () => {
 describe("reduce — BEGIN_IMPLEMENTATION", () => {
 	it("transitions plan-refined to implementing when plan-refined.md exists", () => {
 		let s = stateWithSliceInPlanRefined();
-		s = setEntry(s, "slices/s1/plan-refined.md", { type: "markdown", content: "# Refined Plan" });
+		s = setEntry(s, "epics/e1/slices/s1/plan-refined.md", { type: "markdown", content: "# Refined Plan" });
 
-		const result = reduce(s, { type: "BEGIN_IMPLEMENTATION", slice: "s1", ts: TS2 });
+		const result = reduce(s, { type: "BEGIN_IMPLEMENTATION", epic: "e1", slice: "s1", ts: TS2 });
 		expect(isStateError(result)).toBe(false);
-		const slice = getJson<Slice>(result as ProjectState, "slices/s1/slice.json");
+		const slice = getJson<Slice>(result as ProjectState, "epics/e1/slices/s1/slice.json");
 		expect(slice!.status).toBe("implementing");
 		expect(slice!.updated).toBe(TS2);
 	});
@@ -82,23 +82,23 @@ describe("reduce — BEGIN_IMPLEMENTATION", () => {
 	it("guards plan-refined.md existence", () => {
 		const state = stateWithSliceInPlanRefined();
 		// No plan-refined.md exists
-		const result = reduce(state, { type: "BEGIN_IMPLEMENTATION", slice: "s1", ts: TS2 });
+		const result = reduce(state, { type: "BEGIN_IMPLEMENTATION", epic: "e1", slice: "s1", ts: TS2 });
 		expect(isStateError(result)).toBe(true);
 		expect((result as StateError).code).toBe("STATE_CONTENT_MISSING");
 	});
 
 	it("sets activeSlice in project.json", () => {
 		let s = stateWithSliceInPlanRefined();
-		s = setEntry(s, "slices/s1/plan-refined.md", { type: "markdown", content: "# Refined" });
+		s = setEntry(s, "epics/e1/slices/s1/plan-refined.md", { type: "markdown", content: "# Refined" });
 
-		const result = reduce(s, { type: "BEGIN_IMPLEMENTATION", slice: "s1", ts: TS2 }) as ProjectState;
+		const result = reduce(s, { type: "BEGIN_IMPLEMENTATION", epic: "e1", slice: "s1", ts: TS2 }) as ProjectState;
 		const project = getJson<Project>(result, "project.json");
 		expect(project!.activeSlice).toBe("s1");
 	});
 
 	it("rejects wrong status", () => {
 		const state = stateWithSliceInPlanCreated();
-		const result = reduce(state, { type: "BEGIN_IMPLEMENTATION", slice: "s1", ts: TS2 });
+		const result = reduce(state, { type: "BEGIN_IMPLEMENTATION", epic: "e1", slice: "s1", ts: TS2 });
 		expect(isStateError(result)).toBe(true);
 		expect((result as StateError).code).toBe("STATE_INVALID_TRANSITION");
 	});

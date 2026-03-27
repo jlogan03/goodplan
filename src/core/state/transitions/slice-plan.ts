@@ -1,5 +1,4 @@
-import type { Epic } from "../../../schemas/entities/epic.js";
-import type { Overview } from "../../../schemas/entities/overview.js";
+import type { EpicOverview } from "../../../schemas/entities/overview.js";
 import type { SliceStatus } from "../../../schemas/entities/slice.js";
 /**
  * BEGIN_PLAN transition handler.
@@ -26,43 +25,39 @@ export function handleBeginPlan(
 	state: ProjectState,
 	event: BeginPlanEvent,
 ): ProjectState | StateError {
-	const slice = getSlice(state, event.slice);
-	const sliceOrErr = guardSliceStatus(slice, event.slice, "created", "BEGIN_PLAN");
+	const slice = getSlice(state, event.epic, event.slice);
+	const sliceOrErr = guardSliceStatus(slice, event.slice, "created", "BEGIN_PLAN", event.epic);
 	if (isStateError(sliceOrErr)) return sliceOrErr;
 
-	// Sequential enforcement: find this slice's position in its epic's sliceSequence
-	const epic = getJson<Epic>(state, `epics/${sliceOrErr.epic}/epic.json`);
-	if (epic === undefined) {
+	// Sequential enforcement: find this slice's position in the epic's embedded slices array
+	const epicOverview = getJson<EpicOverview>(state, "epics/overview.json");
+	const epicItem = epicOverview?.items.find((e) => e.name === event.epic);
+	if (epicItem === undefined) {
 		return {
 			code: "STATE_INVALID_TRANSITION",
-			message: `Epic "${sliceOrErr.epic}" not found`,
-			detail: { epic: sliceOrErr.epic, slice: event.slice },
+			message: `Epic "${event.epic}" not found in overview`,
+			detail: { epic: event.epic, slice: event.slice },
 		};
 	}
 
-	// @ts-expect-error — Phase 2: sliceSequence removed, sequential enforcement moves to epics/overview.json slices array
-	const seqIndex = epic.sliceSequence.indexOf(event.slice);
+	const seqIndex = epicItem.slices.findIndex((s) => s.name === event.slice);
 	if (seqIndex > 0) {
-		// Check previous slice status via overview
-		// @ts-expect-error — Phase 2: sliceSequence removed, use embedded slices array
-		const prevSliceName = epic.sliceSequence[seqIndex - 1];
-		if (prevSliceName === undefined) {
+		const prevSlice = epicItem.slices[seqIndex - 1];
+		if (prevSlice === undefined) {
 			return {
 				code: "STATE_INVALID_TRANSITION",
 				message: `Slice sequence inconsistency — previous slice at index ${seqIndex - 1} not found`,
 				detail: { slice: event.slice, seqIndex },
 			};
 		}
-		const overview = getJson<Overview>(state, "slices/overview.json");
-		const prevItem = overview?.items.find((i) => i.name === prevSliceName);
-		if (prevItem === undefined || !isSliceTerminal(prevItem.status as SliceStatus)) {
+		if (!isSliceTerminal(prevSlice.status as SliceStatus)) {
 			return {
 				code: "STATE_SLICE_NOT_READY",
-				message: `Cannot begin planning slice "${event.slice}" — previous slice "${prevSliceName}" is not yet completed or abandoned`,
+				message: `Cannot begin planning slice "${event.slice}" — previous slice "${prevSlice.name}" is not yet completed or abandoned`,
 				detail: {
 					slice: event.slice,
-					blockingSlice: prevSliceName,
-					blockingStatus: prevItem?.status ?? "unknown",
+					blockingSlice: prevSlice.name,
+					blockingStatus: prevSlice.status,
 				},
 			};
 		}
@@ -80,14 +75,14 @@ export function handleBeginPlan(
 	}
 
 	// Set status to planning + sync overview
-	tree = setSliceStatus(tree, event.slice, sliceOrErr, "planning", event.ts);
+	tree = setSliceStatus(tree, event.epic, event.slice, sliceOrErr, "planning", event.ts);
 
 	// Append activity log
 	tree = appendActivityLog(
 		tree,
 		event.ts,
 		"begin-plan",
-		`slices/${event.slice}`,
+		`epics/${event.epic}/slices/${event.slice}`,
 		`Slice "${event.slice}" planning started`,
 	);
 

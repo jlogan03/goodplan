@@ -116,52 +116,52 @@ Update all transition handler implementations to use nested paths, wire helper c
 
 **Out of scope (slice 02 — RPC & Commands):** `src/core/rpc/begin.ts` (7 event builder functions needing `epic` from `Target`), `src/core/rpc/complete.ts` (`buildSliceCompleteResult` with 6 flat path refs, `buildCompleteEvent`), `src/core/rpc/paths.ts` (`resolveEntityDir`), `src/core/context/priorities.ts` (`entityDir`, `slices/overview.json` ref). These consume types changed here but their `@ts-expect-error` annotations remain until slice 02.
 
-- [ ] Update helper implementations in `src/core/state/transitions/helpers.ts`:
+- [x] Update helper implementations in `src/core/state/transitions/helpers.ts`:
   - `getSlice(state, epic, name)` — implementation: path `epics/${epic}/slices/${name}/slice.json`
   - `setSliceJson(state, epic, name, content)` — same path change
   - `setSliceStatus(state, epic, name, slice, newStatus, ts)` — passes epicName to `updateSliceOverviewStatus`
   - `updateSliceOverviewStatus(state, epicName, sliceName, newStatus)` — finds epic in `epics/overview.json` as `EpicOverview`, updates slice in its `slices` array
-- [ ] Update `src/core/state/transitions/slice-create.ts`:
+- [x] Update `src/core/state/transitions/slice-create.ts`:
   - Use `epics/${event.epic}/slices/${event.name}` paths
   - Call `addSliceToOverview` instead of adding to `slices/overview.json`
   - Activity log scope: `epics/${event.epic}/slices/${event.name}`
-- [ ] Update `src/core/state/transitions/slice-plan.ts`:
+- [x] Update `src/core/state/transitions/slice-plan.ts`:
   - All path references use `epics/${event.epic}/slices/${event.slice}`
   - Sequential enforcement: read from epic's embedded `slices` array in `epics/overview.json` instead of `epic.sliceSequence`
   - Activity log scope strings use nested format
-- [ ] Update `src/core/state/transitions/slice-implement.ts`:
+- [x] Update `src/core/state/transitions/slice-implement.ts`:
   - All path references use nested format
   - Activity log scope strings
-- [ ] Update `src/core/state/transitions/slice-submit.ts` (5 flat path refs):
+- [x] Update `src/core/state/transitions/slice-submit.ts` (5 flat path refs):
   - All path references use nested format
   - Refinement score paths, plan submission paths
   - Activity log scope strings
-- [ ] Update `src/core/state/transitions/slice-complete.ts` (~10 flat path refs):
+- [x] Update `src/core/state/transitions/slice-complete.ts` (~10 flat path refs):
   - `learnings.jsonl` read/write paths
   - `architecture-deltas.jsonl` read/write paths
   - Deferred routing: `getSlice`/`setSliceJson` with epic param
   - Sibling slice detection via `epics/overview.json` embedded `slices` array
   - Activity log scope strings
   - `DeferredItem` creation: populate `targetEpic` from `event.epic` when routing cross-epic; omit for same-epic (optional field defaults to completing slice's epic)
-- [ ] Update `src/core/state/transitions/slice-abandon.ts`:
+- [x] Update `src/core/state/transitions/slice-abandon.ts`:
   - Path references use nested format
   - Activity log scope strings
-- [ ] Update `src/core/state/transitions/epic-lifecycle.ts` — `handleCompleteEpic`:
+- [x] Update `src/core/state/transitions/epic-lifecycle.ts` — `handleCompleteEpic`:
   - `COMPLETE_EPIC` reads embedded slices from `epics/overview.json` (as `EpicOverview`) instead of filtering `slices/overview.json`. The current handler (line 78) doesn't reference `slices/overview.json` directly, but verify no sibling-slice logic was added that assumes the flat overview. If none, this task is a no-op verification.
-- [ ] Update `src/core/state/transitions/epic-create.ts`:
+- [x] Update `src/core/state/transitions/epic-create.ts`:
   - Verify `addEpicToOverview` includes `slices: []` (already updated in Phase 1 — confirm it works end-to-end)
-- [ ] Verify `src/core/state/transitions/rollup-learnings.ts` needs no code changes (verification-only):
+- [x] Verify `src/core/state/transitions/rollup-learnings.ts` needs no code changes (verification-only):
   - The handler uses `event.from` as a caller-supplied scope string (e.g., `"slices/01-auth"`) — this value is constructed in the RPC layer (`src/core/rpc/complete.ts`), which is slice 02. The handler itself does not hardcode flat paths; it builds `${event.from}/learnings.jsonl` dynamically. Once the RPC layer passes nested paths like `"epics/my-epic/slices/01-auth"`, the handler works unchanged.
   - **Verify:** grep `rollup-learnings.ts` for any hardcoded `slices/` path references. If none found, mark complete with no changes.
-- [ ] Update test fixtures in `tests/fixtures/`:
+- [x] Update test fixtures in `tests/fixtures/`:
   - Remove `sliceSequence` from 4 `epic.json` fixtures: `slice-refining-max-rounds`, `slice-in-progress`, `epic-activated`, `epic-created`
   - Move slice entries from `slices/` to `epics/<epic>/slices/` in fixture state trees (affects same 4 fixture directories plus any integration test fixtures)
   - Update `slices/overview.json` references to embedded slices in `epics/overview.json`
-- [ ] Update fitness tests in `tests/fitness/`:
+- [x] Update fitness tests in `tests/fitness/`:
   - `transition-completeness.test.ts`: update minimal events with `epic` field on all slice events
   - `schema-validation.test.ts`: update path assertions for nested patterns
   - `state-machine-purity.test.ts`: update any fixture data
-- [ ] Update unit tests in `tests/unit/state/`:
+- [x] Update unit tests in `tests/unit/state/`:
   - All `slice-*.test.ts` files: update state tree construction to use nested paths, add `epic` to events
   - `epic-create.test.ts`: verify `slices: []` in overview, no `sliceSequence` in epic JSON
   - `reduce.test.ts`: update any slice-related test data

@@ -106,15 +106,9 @@ export function updateOverviewStatus(
 
 // ── Slice helpers ────────────────────────────────────────────
 
-/** @deprecated Use `getSlice(state, epic, name)` — legacy flat path lookup. */
-export function getSlice(state: ProjectState, name: string): Slice | undefined;
 /** Get a slice by epic and name (nested path). */
-export function getSlice(state: ProjectState, epic: string, name: string): Slice | undefined;
-export function getSlice(state: ProjectState, epicOrName: string, name?: string): Slice | undefined {
-	if (name !== undefined) {
-		return getJson<Slice>(state, `epics/${epicOrName}/slices/${name}/slice.json`);
-	}
-	return getJson<Slice>(state, `slices/${epicOrName}/slice.json`);
+export function getSlice(state: ProjectState, epic: string, name: string): Slice | undefined {
+	return getJson<Slice>(state, `epics/${epic}/slices/${name}/slice.json`);
 }
 
 /**
@@ -149,22 +143,11 @@ export function guardSliceStatus(
 	return slice;
 }
 
-/** @deprecated Use `setSliceJson(state, epic, name, content)` — legacy flat path. */
-export function setSliceJson(state: ProjectState, name: string, content: Slice): ProjectState;
 /** Set slice JSON by epic and name (nested path). */
-export function setSliceJson(state: ProjectState, epic: string, name: string, content: Slice): ProjectState;
-export function setSliceJson(state: ProjectState, epicOrName: string, nameOrContent: string | Slice, content?: Slice): ProjectState {
-	if (content !== undefined) {
-		// New signature: (state, epic, name, content)
-		return setEntry(state, `epics/${epicOrName}/slices/${nameOrContent as string}/slice.json`, {
-			type: "json",
-			content,
-		});
-	}
-	// Legacy signature: (state, name, content)
-	return setEntry(state, `slices/${epicOrName}/slice.json`, {
+export function setSliceJson(state: ProjectState, epic: string, name: string, content: Slice): ProjectState {
+	return setEntry(state, `epics/${epic}/slices/${name}/slice.json`, {
 		type: "json",
-		content: nameOrContent as Slice,
+		content,
 	});
 }
 
@@ -172,87 +155,44 @@ export function setSliceJson(state: ProjectState, epicOrName: string, nameOrCont
  * Sugar over setSliceJson: sets status, updated timestamp, and syncs overview.
  * Prevents partial updates by bundling all status-change side effects.
  */
-/** @deprecated Use `setSliceStatus(state, epic, name, slice, newStatus, ts)` — legacy flat path. */
-export function setSliceStatus(state: ProjectState, name: string, slice: Slice, newStatus: SliceStatus, ts: string): ProjectState;
-/** Set slice status by epic and name (nested path). */
-export function setSliceStatus(state: ProjectState, epic: string, name: string, slice: Slice, newStatus: SliceStatus, ts: string): ProjectState;
 export function setSliceStatus(
 	state: ProjectState,
-	epicOrName: string,
-	nameOrSlice: string | Slice,
-	sliceOrNewStatus: Slice | SliceStatus,
-	newStatusOrTs?: SliceStatus | string,
-	ts?: string,
+	epic: string,
+	name: string,
+	slice: Slice,
+	newStatus: SliceStatus,
+	ts: string,
 ): ProjectState {
-	if (ts !== undefined) {
-		// New signature: (state, epic, name, slice, newStatus, ts)
-		const epic = epicOrName;
-		const name = nameOrSlice as string;
-		const slice = sliceOrNewStatus as Slice;
-		const newStatus = newStatusOrTs as SliceStatus;
-		let tree = setSliceJson(state, epic, name, { ...slice, status: newStatus, updated: ts });
-		tree = updateSliceOverviewStatus(tree, epic, name, newStatus);
-		return tree;
-	}
-	// Legacy signature: (state, name, slice, newStatus, ts)
-	const name = epicOrName;
-	const slice = nameOrSlice as Slice;
-	const newStatus = sliceOrNewStatus as SliceStatus;
-	const legacyTs = newStatusOrTs as string;
-	let tree = setSliceJson(state, name, { ...slice, status: newStatus, updated: legacyTs });
-	tree = updateSliceOverviewStatus(tree, name, newStatus);
+	let tree = setSliceJson(state, epic, name, { ...slice, status: newStatus, updated: ts });
+	tree = updateSliceOverviewStatus(tree, epic, name, newStatus);
 	return tree;
 }
 
 /**
- * Update the slice's status in the overview.
- * Legacy: updates slices/overview.json. New: updates embedded slice in epics/overview.json.
+ * Update the slice's status in the epic's embedded slices array in epics/overview.json.
  */
-/** @deprecated Use `updateSliceOverviewStatus(state, epicName, sliceName, newStatus)` — legacy flat overview. */
-export function updateSliceOverviewStatus(state: ProjectState, sliceName: string, newStatus: SliceStatus): ProjectState;
-/** Update slice status in epic's embedded slices array in epics/overview.json. */
-export function updateSliceOverviewStatus(state: ProjectState, epicName: string, sliceName: string, newStatus: SliceStatus): ProjectState;
 export function updateSliceOverviewStatus(
 	state: ProjectState,
-	epicOrSliceName: string,
-	sliceNameOrNewStatus: string | SliceStatus,
-	newStatus?: SliceStatus,
+	epicName: string,
+	sliceName: string,
+	newStatus: SliceStatus,
 ): ProjectState {
-	if (newStatus !== undefined) {
-		// New signature: (state, epicName, sliceName, newStatus)
-		const epicName = epicOrSliceName;
-		const sliceName = sliceNameOrNewStatus as string;
-		const overview = getJson<EpicOverview>(state, "epics/overview.json");
-		if (overview === undefined) return state;
-		const completed = isSliceTerminal(newStatus) ? new Date().toISOString() : null;
-		return setEntry(state, "epics/overview.json", {
-			type: "json",
-			content: {
-				...overview,
-				items: overview.items.map((item) =>
-					item.name === epicName
-						? {
-								...item,
-								slices: item.slices.map((s) =>
-									s.name === sliceName ? { ...s, status: newStatus, ...(completed ? { completed } : {}) } : s,
-								),
-							}
-						: item,
-				),
-			},
-		});
-	}
-	// Legacy signature: (state, sliceName, newStatus)
-	const sliceName = epicOrSliceName;
-	const legacyNewStatus = sliceNameOrNewStatus as SliceStatus;
-	const overview = getJson<Overview>(state, "slices/overview.json");
+	const overview = getJson<EpicOverview>(state, "epics/overview.json");
 	if (overview === undefined) return state;
-	return setEntry(state, "slices/overview.json", {
+	const completed = isSliceTerminal(newStatus) ? new Date().toISOString() : null;
+	return setEntry(state, "epics/overview.json", {
 		type: "json",
 		content: {
 			...overview,
 			items: overview.items.map((item) =>
-				item.name === sliceName ? { ...item, status: legacyNewStatus } : item,
+				item.name === epicName
+					? {
+							...item,
+							slices: item.slices.map((s) =>
+								s.name === sliceName ? { ...s, status: newStatus, ...(completed ? { completed } : {}) } : s,
+							),
+						}
+					: item,
 			),
 		},
 	});

@@ -459,7 +459,6 @@ describe("reduce — CONVERT_TASK to epic", () => {
 		expect(epic?.goal).toBe("Build auth system");
 		expect(epic?.verifications).toEqual([]);
 		expect(epic?.refinement).toBeNull();
-		expect(epic?.sliceSequence).toEqual([]);
 		expect(epic?.created).toBe(TS2);
 		expect(epic?.activated).toBeNull();
 		expect(epic?.updated).toBe(TS2);

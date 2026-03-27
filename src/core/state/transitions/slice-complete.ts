@@ -27,12 +27,13 @@ export function handleCompleteSlice(
 	state: ProjectState,
 	event: CompleteSliceEvent,
 ): ProjectState | StateError {
-	const slice = getSlice(state, event.slice);
+	const slice = getSlice(state, event.epic, event.slice);
 	const sliceOrErr = guardSliceStatus(
 		slice,
 		event.slice,
 		"implementation-complete",
 		"COMPLETE_SLICE",
+		event.epic,
 	);
 	if (isStateError(sliceOrErr)) return sliceOrErr;
 
@@ -49,19 +50,20 @@ export function handleCompleteSlice(
 
 	// 1. Deferred routing: append each deferred item to the target slice's deferred array
 	for (const item of event.deferred) {
-		const targetSlice = getSlice(tree, item.targetSlice);
+		const targetEpic = item.targetEpic ?? event.epic;
+		const targetSlice = getSlice(tree, targetEpic, item.targetSlice);
 		if (targetSlice === undefined) {
 			// Target doesn't exist — skip but log warning in activity log (INV-007)
 			tree = appendActivityLog(
 				tree,
 				event.ts,
 				ACTIVITY_PHASE_DEFERRED_SKIP,
-				`slices/${event.slice}`,
+				`epics/${event.epic}/slices/${event.slice}`,
 				`Deferred item skipped — target slice "${item.targetSlice}" not found: ${item.description}`,
 			);
 			continue;
 		}
-		tree = setSliceJson(tree, item.targetSlice, {
+		tree = setSliceJson(tree, targetEpic, item.targetSlice, {
 			...targetSlice,
 			deferred: [...targetSlice.deferred, item],
 			updated: event.ts,
@@ -70,7 +72,7 @@ export function handleCompleteSlice(
 
 	// 2. Learnings: transform LearningInput to LearningEntry, write per-slice and rollup
 	if (event.learnings.length > 0) {
-		const source = `slices/${event.slice}`;
+		const source = `epics/${event.epic}/slices/${event.slice}`;
 		const learningEntries: LearningEntry[] = event.learnings.map((l) => ({
 			...l,
 			source,
@@ -79,8 +81,8 @@ export function handleCompleteSlice(
 
 		// Write to per-slice learnings.jsonl
 		const sliceLearnings =
-			getJsonl<LearningEntry>(tree, `slices/${event.slice}/learnings.jsonl`) ?? [];
-		tree = setEntry(tree, `slices/${event.slice}/learnings.jsonl`, {
+			getJsonl<LearningEntry>(tree, `epics/${event.epic}/slices/${event.slice}/learnings.jsonl`) ?? [];
+		tree = setEntry(tree, `epics/${event.epic}/slices/${event.slice}/learnings.jsonl`, {
 			type: "jsonl",
 			content: [...sliceLearnings, ...learningEntries],
 		});
@@ -122,15 +124,15 @@ export function handleCompleteSlice(
 			ts: event.ts,
 		}));
 		const existingDeltas =
-			getJsonl<ArchitectureDelta>(tree, `slices/${event.slice}/architecture-deltas.jsonl`) ?? [];
-		tree = setEntry(tree, `slices/${event.slice}/architecture-deltas.jsonl`, {
+			getJsonl<ArchitectureDelta>(tree, `epics/${event.epic}/slices/${event.slice}/architecture-deltas.jsonl`) ?? [];
+		tree = setEntry(tree, `epics/${event.epic}/slices/${event.slice}/architecture-deltas.jsonl`, {
 			type: "jsonl",
 			content: [...existingDeltas, ...deltas],
 		});
 	}
 
 	// 4. Set status to completed + sync overview
-	tree = setSliceStatus(tree, event.slice, sliceOrErr, "completed", event.ts);
+	tree = setSliceStatus(tree, event.epic, event.slice, sliceOrErr, "completed", event.ts);
 
 	// 5. Clear activeSlice in project.json
 	const project = getProject(tree);
@@ -146,7 +148,7 @@ export function handleCompleteSlice(
 		tree,
 		event.ts,
 		"complete-slice",
-		`slices/${event.slice}`,
+		`epics/${event.epic}/slices/${event.slice}`,
 		`Slice "${event.slice}" completed`,
 	);
 

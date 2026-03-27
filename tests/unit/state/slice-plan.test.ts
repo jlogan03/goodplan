@@ -23,19 +23,19 @@ function initWithSlices(): ProjectState {
 describe("reduce — BEGIN_PLAN", () => {
 	it("first slice succeeds — no sequential enforcement needed", () => {
 		const state = initWithSlices();
-		const result = reduce(state, { type: "BEGIN_PLAN", slice: "s1", ts: TS2 });
+		const result = reduce(state, { type: "BEGIN_PLAN", epic: "e1", slice: "s1", ts: TS2 });
 
 		expect(isStateError(result)).toBe(false);
 		const newState = result as ProjectState;
 
-		const slice = getJson<Slice>(newState, "slices/s1/slice.json");
+		const slice = getJson<Slice>(newState, "epics/e1/slices/s1/slice.json");
 		expect(slice!.status).toBe("planning");
 		expect(slice!.updated).toBe(TS2);
 	});
 
 	it("sets project.json activeSlice", () => {
 		const state = initWithSlices();
-		const result = reduce(state, { type: "BEGIN_PLAN", slice: "s1", ts: TS2 }) as ProjectState;
+		const result = reduce(state, { type: "BEGIN_PLAN", epic: "e1", slice: "s1", ts: TS2 }) as ProjectState;
 
 		const project = getJson<Project>(result, "project.json");
 		expect(project!.activeSlice).toBe("s1");
@@ -43,17 +43,17 @@ describe("reduce — BEGIN_PLAN", () => {
 
 	it("appends activity log entry", () => {
 		const state = initWithSlices();
-		const result = reduce(state, { type: "BEGIN_PLAN", slice: "s1", ts: TS2 }) as ProjectState;
+		const result = reduce(state, { type: "BEGIN_PLAN", epic: "e1", slice: "s1", ts: TS2 }) as ProjectState;
 
 		const log = getJsonl<Record<string, unknown>>(result, "activity-log.jsonl");
 		const entry = log![log!.length - 1]!;
 		expect(entry.phase).toBe("begin-plan");
-		expect(entry.scope).toBe("slices/s1");
+		expect(entry.scope).toBe("epics/e1/slices/s1");
 	});
 
 	it("second slice blocked by incomplete first", () => {
 		const state = initWithSlices();
-		const result = reduce(state, { type: "BEGIN_PLAN", slice: "s2", ts: TS2 });
+		const result = reduce(state, { type: "BEGIN_PLAN", epic: "e1", slice: "s2", ts: TS2 });
 
 		expect(isStateError(result)).toBe(true);
 		expect((result as StateError).code).toBe("STATE_SLICE_NOT_READY");
@@ -63,16 +63,17 @@ describe("reduce — BEGIN_PLAN", () => {
 	it("second slice succeeds after first completed", () => {
 		let s = initWithSlices();
 		// Run first slice through to completed
-		s = reduce(s, { type: "BEGIN_PLAN", slice: "s1", ts: TS }) as ProjectState;
+		s = reduce(s, { type: "BEGIN_PLAN", epic: "e1", slice: "s1", ts: TS }) as ProjectState;
 		// Move through plan/refine/implement lifecycle
-		s = setEntry(s, "slices/s1/plan.md", { type: "markdown", content: "# Plan" });
-		s = reduce(s, { type: "COMPLETE_PLAN", slice: "s1", ts: TS }) as ProjectState;
-		s = setEntry(s, "slices/s1/plan-refined.md", { type: "markdown", content: "# Refined" });
-		s = reduce(s, { type: "COMPLETE_REFINEMENT_ROUND", slice: "s1", ts: TS, scores: { q: 10 } }) as ProjectState;
-		s = reduce(s, { type: "BEGIN_IMPLEMENTATION", slice: "s1", ts: TS }) as ProjectState;
-		s = reduce(s, { type: "COMPLETE_IMPLEMENTATION", slice: "s1", ts: TS }) as ProjectState;
+		s = setEntry(s, "epics/e1/slices/s1/plan.md", { type: "markdown", content: "# Plan" });
+		s = reduce(s, { type: "COMPLETE_PLAN", epic: "e1", slice: "s1", ts: TS }) as ProjectState;
+		s = setEntry(s, "epics/e1/slices/s1/plan-refined.md", { type: "markdown", content: "# Refined" });
+		s = reduce(s, { type: "COMPLETE_REFINEMENT_ROUND", epic: "e1", slice: "s1", ts: TS, scores: { q: 10 } }) as ProjectState;
+		s = reduce(s, { type: "BEGIN_IMPLEMENTATION", epic: "e1", slice: "s1", ts: TS }) as ProjectState;
+		s = reduce(s, { type: "COMPLETE_IMPLEMENTATION", epic: "e1", slice: "s1", ts: TS }) as ProjectState;
 		s = reduce(s, {
 			type: "COMPLETE_SLICE",
+			epic: "e1",
 			slice: "s1",
 			ts: TS2,
 			verificationPassed: true,
@@ -82,25 +83,25 @@ describe("reduce — BEGIN_PLAN", () => {
 		}) as ProjectState;
 
 		// Now s2 should be allowed
-		const result = reduce(s, { type: "BEGIN_PLAN", slice: "s2", ts: TS3 });
+		const result = reduce(s, { type: "BEGIN_PLAN", epic: "e1", slice: "s2", ts: TS3 });
 		expect(isStateError(result)).toBe(false);
-		expect(getJson<Slice>(result as ProjectState, "slices/s2/slice.json")!.status).toBe("planning");
+		expect(getJson<Slice>(result as ProjectState, "epics/e1/slices/s2/slice.json")!.status).toBe("planning");
 	});
 
 	it("second slice succeeds after first abandoned", () => {
 		let s = initWithSlices();
-		s = reduce(s, { type: "ABANDON_SLICE", slice: "s1", ts: TS2, reason: "Not needed" }) as ProjectState;
+		s = reduce(s, { type: "ABANDON_SLICE", epic: "e1", slice: "s1", ts: TS2, reason: "Not needed" }) as ProjectState;
 
-		const result = reduce(s, { type: "BEGIN_PLAN", slice: "s2", ts: TS3 });
+		const result = reduce(s, { type: "BEGIN_PLAN", epic: "e1", slice: "s2", ts: TS3 });
 		expect(isStateError(result)).toBe(false);
-		expect(getJson<Slice>(result as ProjectState, "slices/s2/slice.json")!.status).toBe("planning");
+		expect(getJson<Slice>(result as ProjectState, "epics/e1/slices/s2/slice.json")!.status).toBe("planning");
 	});
 
 	it("rejects wrong status (not created)", () => {
 		let s = initWithSlices();
-		s = reduce(s, { type: "BEGIN_PLAN", slice: "s1", ts: TS }) as ProjectState;
+		s = reduce(s, { type: "BEGIN_PLAN", epic: "e1", slice: "s1", ts: TS }) as ProjectState;
 		// Now s1 is in "planning" — trying BEGIN_PLAN again should fail
-		const result = reduce(s, { type: "BEGIN_PLAN", slice: "s1", ts: TS2 });
+		const result = reduce(s, { type: "BEGIN_PLAN", epic: "e1", slice: "s1", ts: TS2 });
 		expect(isStateError(result)).toBe(true);
 		expect((result as StateError).code).toBe("STATE_INVALID_TRANSITION");
 	});

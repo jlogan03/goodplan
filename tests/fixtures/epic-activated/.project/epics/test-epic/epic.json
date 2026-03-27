@@ -4,9 +4,6 @@
 	"goal": "Test epic goal",
 	"name": "test-epic",
 	"refinement": null,
-	"sliceSequence": [
-		"test-slice"
-	],
 	"status": "activated",
 	"updated": "2026-01-01T00:00:00.000Z",
 	"verifications": [
