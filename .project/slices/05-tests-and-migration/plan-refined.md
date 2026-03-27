@@ -95,8 +95,8 @@ The installed CLI still has the old `STATE_ALREADY_INITIALIZED` guard. Phase 3 r
 
 ### Tasks
 
-- [ ] `bun run build` — build the updated CLI with Phase 2 changes
-- [ ] `bun run install:cli` — install the updated CLI so `goodplan` on PATH has the re-migration support
+- [x] `bun run build` — build the updated CLI with Phase 2 changes
+- [x] `bun run install:cli` — install the updated CLI so `goodplan` on PATH has the re-migration support (actual: `cp goodplan ~/.local/bin/goodplan`)
 - (no skill changes in this slice — `bun run install:skills` not needed)
 
 ### Verification
