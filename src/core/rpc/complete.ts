@@ -1,19 +1,22 @@
 /**
  * RPC complete — runs entity completion via the state machine.
- * Pattern: loadState → build StateEvent → reduce → commitState → return CompleteResult.
+ * Pattern: loadState → map inputs → build StateEvent → reduce → write .md files → commitState → return CompleteResult.
  */
 
 import type { Epic } from "../../schemas/entities/epic.js";
 import type { EpicOverview } from "../../schemas/entities/overview.js";
 import type { Quest } from "../../schemas/entities/quest.js";
 import type { Slice } from "../../schemas/entities/slice.js";
-import type { LearningEntry } from "../../schemas/records/learning.js";
+import type { LearningEntry, LearningEventEntry, LearningInput } from "../../schemas/records/learning.js";
 import type { StateEvent } from "../../schemas/state-events.js";
 import { GoodplanError } from "../../util/errors.js";
+import { deriveSlug } from "../../util/slug.js";
 import { VERSION } from "../../version.js";
 import { DEFAULT_INLINE_BUDGET, startContext } from "../context/index.js";
 import { commitState } from "../data/commit.js";
 import { loadState } from "../data/load.js";
+import type { MarkdownFile } from "../data/markdown-files.js";
+import { writeMarkdownFiles } from "../data/markdown-files.js";
 import { reduce } from "../state/reduce.js";
 import { ACTIVITY_PHASE_DEFERRED_SKIP } from "../state/transitions/helpers.js";
 import { isStateError } from "../state/types.js";
@@ -33,6 +36,13 @@ import { bumpDataVersionIfNeeded } from "./version-stamp.js";
 /**
  * Complete an entity. Maps (target, input) to the appropriate COMPLETE_* event,
  * runs it through the state machine, and commits the result.
+ *
+ * For slice/quest completion with learnings:
+ * 1. Map LearningInput[] to LearningEventEntry[] (derive slugs, set file paths)
+ * 2. Build StateEvent with LearningEventEntry[]
+ * 3. reduce() - state machine stores file references in JSONL (pure, no I/O)
+ * 4. Write .md files to disk (after reduce succeeds, before commitState)
+ * 5. commitState() - persists JSONL and other state changes
  */
 export function complete(
 	projectDir: string,
@@ -42,7 +52,9 @@ export function complete(
 ): CompleteResult {
 	const oldState = loadState(projectDir);
 	const ts = new Date().toISOString();
-	const event = buildCompleteEvent(target, input, ts);
+
+	// Map LearningInput to LearningEventEntry and collect markdown files to write
+	const { event, markdownFiles } = buildCompleteEventWithLearnings(target, input, ts, oldState);
 
 	const result = reduce(oldState, event);
 
@@ -50,8 +62,16 @@ export function complete(
 		throw new GoodplanError(result.code, result.message, result.detail);
 	}
 
-	// Version stamp: bump project.json.version if CLI version > data version (INV-001 exception — see version-stamp.ts)
+	// Version stamp: bump project.json.version if CLI version > data version (INV-001 exception)
 	const stampedResult = bumpDataVersionIfNeeded(result, VERSION);
+
+	// Write .md files AFTER reduce succeeds (avoids orphans if reduce fails)
+	// but BEFORE commitState (so filesystem has files before JSONL references them).
+	// Trade-off: if commitState fails, orphan .md files remain — these are inert since
+	// all learning reads go through JSONL. The reverse (commit first) risks dangling refs.
+	if (markdownFiles.length > 0) {
+		writeMarkdownFiles(projectDir, markdownFiles);
+	}
 
 	commitState(projectDir, oldState, stampedResult, options?.force === true ? { force: true } : undefined);
 
@@ -76,9 +96,98 @@ export function complete(
 	return completeResult;
 }
 
+// ── Type guard ───────────────────────────────────────────────
+
+/** Type guard: distinguishes new-format entries (with `file`) from legacy entries (with `detail`). */
+export function isLearningEventEntry(entry: LearningEntry): entry is LearningEventEntry {
+	return "file" in entry;
+}
+
+// ── Slug + LearningInput to LearningEventEntry mapping ──────
+
+/**
+ * Collect existing slugs from learnings.jsonl entries at the given scope path.
+ * New-format entries: extract slug from `file` field (e.g., "learnings/some-slug.md" -> "some-slug").
+ * Legacy entries (with `detail` but no `file`): derive slug from `summary` to prevent
+ * collisions during the transition period when new entries coexist with legacy ones.
+ */
+function collectExistingSlugs(state: ProjectState, scopePath: string): Set<string> {
+	const slugs = new Set<string>();
+	const entries = getJsonl<LearningEntry>(state, `${scopePath}/learnings.jsonl`);
+	if (entries === undefined) return slugs;
+	for (const entry of entries) {
+		if (isLearningEventEntry(entry)) {
+			// Extract slug from "learnings/<slug>.md"
+			const match = /^learnings\/(.+)\.md$/.exec(entry.file);
+			if (match?.[1] !== undefined) {
+				slugs.add(match[1]);
+			}
+		} else {
+			// Legacy entry: derive what its slug would be from the summary
+			// to prevent new entries from colliding with legacy learning summaries
+			const derivedSlug = deriveSlug(entry.summary, slugs);
+			slugs.add(derivedSlug);
+		}
+	}
+	return slugs;
+}
+
+/**
+ * Map LearningInput[] to LearningEventEntry[] by deriving slugs and setting file paths.
+ * Also returns the markdown files to write after reduce succeeds.
+ */
+function mapLearningInputs(
+	inputs: LearningInput[],
+	source: string,
+	state: ProjectState,
+	scopePath: string,
+): { entries: LearningEventEntry[]; markdownFiles: MarkdownFile[] } {
+	if (inputs.length === 0) {
+		return { entries: [], markdownFiles: [] };
+	}
+
+	const existingSlugs = collectExistingSlugs(state, scopePath);
+	const entries: LearningEventEntry[] = [];
+	const markdownFiles: MarkdownFile[] = [];
+
+	for (const input of inputs) {
+		const slug = deriveSlug(input.summary, existingSlugs);
+		existingSlugs.add(slug);
+
+		const file = `learnings/${slug}.md`;
+		entries.push({
+			category: input.category,
+			summary: input.summary,
+			file,
+			tags: input.tags,
+			source,
+			rollup: input.rollupTo.length > 0,
+			rollupTo: input.rollupTo,
+		});
+
+		// Scope-relative file path resolved to .project/ path
+		markdownFiles.push({
+			path: `${scopePath}/${file}`,
+			content: input.detail,
+		});
+	}
+
+	return { entries, markdownFiles };
+}
+
 // ── Event building ───────────────────────────────────────────
 
-function buildCompleteEvent(target: Target, input: CompleteInput, ts: string): StateEvent {
+interface EventWithMarkdown {
+	event: StateEvent;
+	markdownFiles: MarkdownFile[];
+}
+
+function buildCompleteEventWithLearnings(
+	target: Target,
+	input: CompleteInput,
+	ts: string,
+	state: ProjectState,
+): EventWithMarkdown {
 	switch (target.type) {
 		case "epic": {
 			if (input.type !== "epic") {
@@ -88,10 +197,13 @@ function buildCompleteEvent(target: Target, input: CompleteInput, ts: string): S
 				);
 			}
 			return {
-				type: "COMPLETE_EPIC",
-				epic: target.name,
-				ts,
-				verificationResults: input.verificationResults,
+				event: {
+					type: "COMPLETE_EPIC",
+					epic: target.name,
+					ts,
+					verificationResults: input.verificationResults,
+				},
+				markdownFiles: [],
 			};
 		}
 		case "slice": {
@@ -101,15 +213,26 @@ function buildCompleteEvent(target: Target, input: CompleteInput, ts: string): S
 					`CompleteInput.type '${input.type}' does not match target.type 'slice'`,
 				);
 			}
+			const scopePath = `epics/${target.epic}/slices/${target.name}`;
+			const source = scopePath;
+			const { entries, markdownFiles } = mapLearningInputs(
+				input.learnings ?? [],
+				source,
+				state,
+				scopePath,
+			);
 			return {
-				type: "COMPLETE_SLICE",
-				slice: target.name,
-				epic: target.epic,
-				ts,
-				verificationPassed: input.verificationPassed,
-				deferred: input.deferred ?? [],
-				learnings: input.learnings ?? [],
-				architectureDelta: input.architectureDelta ?? [],
+				event: {
+					type: "COMPLETE_SLICE",
+					slice: target.name,
+					epic: target.epic,
+					ts,
+					verificationPassed: input.verificationPassed,
+					deferred: input.deferred ?? [],
+					learnings: entries,
+					architectureDelta: input.architectureDelta ?? [],
+				},
+				markdownFiles,
 			};
 		}
 		case "quest": {
@@ -119,13 +242,24 @@ function buildCompleteEvent(target: Target, input: CompleteInput, ts: string): S
 					`CompleteInput.type '${input.type}' does not match target.type 'quest'`,
 				);
 			}
+			const questScopePath = `quests/${target.name}`;
+			const questSource = questScopePath;
+			const { entries: questEntries, markdownFiles: questMdFiles } = mapLearningInputs(
+				input.learnings ?? [],
+				questSource,
+				state,
+				questScopePath,
+			);
 			return {
-				type: "COMPLETE_QUEST",
-				quest: target.name,
-				ts,
-				verificationPassed: input.verificationPassed,
-				learnings: input.learnings ?? [],
-				architectureDelta: input.architectureDelta ?? [],
+				event: {
+					type: "COMPLETE_QUEST",
+					quest: target.name,
+					ts,
+					verificationPassed: input.verificationPassed,
+					learnings: questEntries,
+					architectureDelta: input.architectureDelta ?? [],
+				},
+				markdownFiles: questMdFiles,
 			};
 		}
 		default:
@@ -195,16 +329,11 @@ function buildSliceCompleteResult(
 		result.epicComplete = allDone;
 	}
 
-	// Derive deferredRouted / deferredSkipped: count which deferred items target existing slices
-	// oldSlice (already fetched above) is used as existence guard; no need to re-fetch.
+	// Derive deferredRouted / deferredSkipped
 	if (epicEntry !== undefined && oldSlice !== undefined) {
-		// Collect deferred items that were routed by the state machine
-		// We detect this by checking each target slice's deferred array in newState vs oldState
 		const routedItems: DeferredItem[] = [];
 		let skippedCount = 0;
 
-		// Walk all slices across all epics to find newly-added deferred items sourced from this slice
-		// Deferred items may target slices in different epics, so we need to iterate all epics
 		const allSliceTuples: Array<{ itemEpicName: string; name: string }> = [];
 		if (epicOverview !== undefined) {
 			for (const epic of epicOverview.items) {
@@ -230,10 +359,6 @@ function buildSliceCompleteResult(
 			}
 		}
 
-		// Count skipped by checking activity log for deferred-skip entries
-		// The state machine logs skipped items. We can count by analyzing:
-		// total deferred items that target non-existent slices
-		// Alternative approach: look at activity log diff
 		const oldLog = getJsonl<Record<string, unknown>>(oldState, "activity-log.jsonl") ?? [];
 		const newLog = getJsonl<Record<string, unknown>>(newState, "activity-log.jsonl") ?? [];
 		const newEntries = newLog.slice(oldLog.length);
@@ -249,7 +374,7 @@ function buildSliceCompleteResult(
 		}
 	}
 
-	// Derive learningsRolledUp: compare old vs new learnings.jsonl at epic/project levels
+	// Derive learningsRolledUp
 	const epicLearningsOld =
 		getJsonl<LearningEntry>(oldState, `epics/${newSlice.epic}/learnings.jsonl`) ?? [];
 	const epicLearningsNew =
@@ -264,8 +389,7 @@ function buildSliceCompleteResult(
 		result.learningsRolledUp = { epic: epicDelta, project: projectDelta };
 	}
 
-	// Architecture paths: return state-tree-relative directories for the LLM to update.
-	// The Commands layer resolves these to absolute filesystem paths.
+	// Architecture paths
 	if (newSlice !== undefined) {
 		const archDeltas = getJsonl<unknown>(newState, `epics/${epicName}/slices/${sliceName}/architecture-deltas.jsonl`);
 		if (archDeltas !== undefined && archDeltas.length > 0) {
@@ -295,8 +419,7 @@ function buildQuestCompleteResult(
 
 	if (newQuest === undefined) return result;
 
-	// Derive learningsRolledUp: compare old vs new learnings.jsonl at project level
-	// (quests are project-scoped — no epic-level rollup)
+	// Derive learningsRolledUp (quests are project-scoped, no epic rollup)
 	const projectLearningsOld = getJsonl<LearningEntry>(oldState, "learnings.jsonl") ?? [];
 	const projectLearningsNew = getJsonl<LearningEntry>(newState, "learnings.jsonl") ?? [];
 	const projectDelta = projectLearningsNew.length - projectLearningsOld.length;
@@ -305,7 +428,7 @@ function buildQuestCompleteResult(
 		result.learningsRolledUp = { epic: 0, project: projectDelta };
 	}
 
-	// Architecture paths: quests use project-level architecture
+	// Architecture paths
 	const archDeltas = getJsonl<unknown>(newState, `quests/${questName}/architecture-deltas.jsonl`);
 	if (archDeltas !== undefined && archDeltas.length > 0) {
 		result.architecturePaths = {

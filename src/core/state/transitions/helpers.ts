@@ -4,6 +4,7 @@ import type { Project } from "../../../schemas/entities/project.js";
 import type { Quest, QuestStatus } from "../../../schemas/entities/quest.js";
 import type { Slice, SliceStatus } from "../../../schemas/entities/slice.js";
 import type { Task, TaskStatus } from "../../../schemas/entities/task.js";
+import type { LearningEntry, LearningEventEntry } from "../../../schemas/records/learning.js";
 import type { Refinement } from "../../../schemas/shared.js";
 /**
  * Shared helpers for transition handlers.
@@ -545,4 +546,72 @@ export function updateTaskOverviewStatus(
 			),
 		},
 	});
+}
+
+// ── Learnings processing ────────────────────────────────────
+
+/**
+ * Shared learnings processing for COMPLETE_SLICE and COMPLETE_QUEST.
+ * Writes LearningEventEntry records to the source scope's learnings.jsonl
+ * and rolls up to available targets (epic, project).
+ *
+ * @param tree - Current state tree
+ * @param learnings - LearningEventEntry[] with `file` fields already set by RPC layer
+ * @param source - Scope path (e.g., "epics/e1/slices/s1" or "quests/q1")
+ * @param availableTargets - Set of valid rollup targets ("epic", "project").
+ *   Slices pass both; quests pass only "project" (no parent epic).
+ * @param epicName - Epic name for resolving epic learnings path (only needed when "epic" is in availableTargets)
+ */
+export function processLearnings(
+	tree: ProjectState,
+	learnings: LearningEventEntry[],
+	source: string,
+	availableTargets: Set<string>,
+	epicName?: string,
+): ProjectState {
+	if (learnings.length === 0) return tree;
+
+	let state = tree;
+
+	// Write to source scope learnings.jsonl
+	// Use LearningEntry (union) since files may contain legacy entries during transition
+	const sourceLearnings =
+		getJsonl<LearningEntry>(state, `${source}/learnings.jsonl`) ?? [];
+	state = setEntry(state, `${source}/learnings.jsonl`, {
+		type: "jsonl",
+		content: [...sourceLearnings, ...learnings],
+	});
+
+	// Rollup: batch collect entries per target scope, then single setEntry per scope
+	const epicRollups: LearningEventEntry[] = [];
+	const projectRollups: LearningEventEntry[] = [];
+	for (const entry of learnings) {
+		for (const target of entry.rollupTo) {
+			if (target === "epic" && availableTargets.has("epic")) {
+				epicRollups.push(entry);
+			} else if (target === "project" && availableTargets.has("project")) {
+				projectRollups.push(entry);
+			}
+		}
+	}
+
+	if (epicRollups.length > 0 && epicName !== undefined) {
+		const epicLearnings =
+			getJsonl<LearningEntry>(state, `epics/${epicName}/learnings.jsonl`) ?? [];
+		state = setEntry(state, `epics/${epicName}/learnings.jsonl`, {
+			type: "jsonl",
+			content: [...epicLearnings, ...epicRollups],
+		});
+	}
+
+	if (projectRollups.length > 0) {
+		const projectLearnings =
+			getJsonl<LearningEntry>(state, "learnings.jsonl") ?? [];
+		state = setEntry(state, "learnings.jsonl", {
+			type: "jsonl",
+			content: [...projectLearnings, ...projectRollups],
+		});
+	}
+
+	return state;
 }

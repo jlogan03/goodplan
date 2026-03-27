@@ -1,6 +1,6 @@
 import type { QuestStatus } from "../../../schemas/entities/quest.js";
 import type { ArchitectureDelta } from "../../../schemas/records/architecture-delta.js";
-import type { LearningEntry } from "../../../schemas/records/learning.js";
+import type { LearningEventEntry } from "../../../schemas/records/learning.js";
 /**
  * COMPLETE_QUEST transition handler.
  * Learnings rollup, architecture delta recording, status completion, activeQuest clearing.
@@ -15,6 +15,7 @@ import {
 	getProject,
 	getQuest,
 	guardQuestStatus,
+	processLearnings,
 	setQuestStatus,
 } from "./helpers.js";
 
@@ -44,42 +45,16 @@ export function handleCompleteQuest(
 
 	let tree = state;
 
-	// 1. Learnings: transform LearningInput to LearningEntry, write per-quest and rollup
-	if (event.learnings.length > 0) {
-		const source = `quests/${event.quest}`;
-		const learningEntries: LearningEntry[] = event.learnings.map((l) => ({
-			...l,
-			source,
-			rollup: l.rollupTo.length > 0,
-		}));
-
-		// Write to per-quest learnings.jsonl
-		const questLearnings =
-			getJsonl<LearningEntry>(tree, `quests/${event.quest}/learnings.jsonl`) ?? [];
-		tree = setEntry(tree, `quests/${event.quest}/learnings.jsonl`, {
-			type: "jsonl",
-			content: [...questLearnings, ...learningEntries],
-		});
-
-		// Rollup: batch collect entries per target scope, then single setEntry per scope
-		const projectRollups: LearningEntry[] = [];
-		for (const entry of learningEntries) {
-			for (const target of entry.rollupTo) {
-				if (target === "project") {
-					projectRollups.push(entry);
-				}
-				// Quests are project-scoped — rollupTo "epic" is silently skipped
-				// because there is no parent epic to roll up to.
-			}
-		}
-		if (projectRollups.length > 0) {
-			const projectLearnings = getJsonl<LearningEntry>(tree, "learnings.jsonl") ?? [];
-			tree = setEntry(tree, "learnings.jsonl", {
-				type: "jsonl",
-				content: [...projectLearnings, ...projectRollups],
-			});
-		}
-	}
+	// 1. Learnings: LearningEventEntry[] with `file` already set by RPC layer.
+	//    Quests are project-scoped — only roll up to "project" (skip "epic").
+	const learningEntries: LearningEventEntry[] = event.learnings;
+	const source = `quests/${event.quest}`;
+	tree = processLearnings(
+		tree,
+		learningEntries,
+		source,
+		new Set(["project"]),
+	);
 
 	// 2. Architecture deltas: write to per-quest architecture-deltas.jsonl
 	if (event.architectureDelta.length > 0) {

@@ -46,8 +46,10 @@ describe("reduce — COMPLETE_SLICE", () => {
 				{
 					category: "domain",
 					summary: "Data layer needs caching",
-					detail: "Disk I/O is too slow without caching",
+					file: "learnings/data-layer-needs-caching.md",
 					tags: ["perf"],
+					source: "epics/e1/slices/s1",
+					rollup: true,
 					rollupTo: ["epic", "project"],
 				},
 			],
@@ -159,8 +161,10 @@ describe("reduce — COMPLETE_SLICE", () => {
 			learnings: [{
 				category: "worked",
 				summary: "Test",
-				detail: "Detail",
+				file: "learnings/test.md",
 				tags: [],
+				source: "epics/e1/slices/s1",
+				rollup: true,
 				rollupTo: ["epic"],
 			}],
 			architectureDelta: [],
@@ -187,8 +191,10 @@ describe("reduce — COMPLETE_SLICE", () => {
 			learnings: [{
 				category: "domain",
 				summary: "Local only",
-				detail: "Detail",
+				file: "learnings/local-only.md",
 				tags: [],
+				source: "epics/e1/slices/s1",
+				rollup: false,
 				rollupTo: [],
 			}],
 			architectureDelta: [],
@@ -282,6 +288,7 @@ describe("reduce — COMPLETE_SLICE", () => {
 
 	it("O(n^2) fix: multiple learnings with rollupTo project produce correct learnings.jsonl", () => {
 		const s = stateWithSliceInImplementationComplete();
+		const src = "epics/e1/slices/s1";
 		const result = reduce(s, {
 			type: "COMPLETE_SLICE",
 			epic: "e1",
@@ -290,9 +297,9 @@ describe("reduce — COMPLETE_SLICE", () => {
 			verificationPassed: true,
 			deferred: [],
 			learnings: [
-				{ category: "domain", summary: "L1", detail: "D1", tags: [], rollupTo: ["project"] },
-				{ category: "worked", summary: "L2", detail: "D2", tags: [], rollupTo: ["project"] },
-				{ category: "didnt-work", summary: "L3", detail: "D3", tags: [], rollupTo: ["project"] },
+				{ category: "domain", summary: "L1", file: "learnings/l1.md", tags: [], source: src, rollup: true, rollupTo: ["project"] },
+				{ category: "worked", summary: "L2", file: "learnings/l2.md", tags: [], source: src, rollup: true, rollupTo: ["project"] },
+				{ category: "didnt-work", summary: "L3", file: "learnings/l3.md", tags: [], source: src, rollup: true, rollupTo: ["project"] },
 			],
 			architectureDelta: [],
 		}) as ProjectState;
@@ -307,6 +314,7 @@ describe("reduce — COMPLETE_SLICE", () => {
 
 	it("O(n^2) fix: multiple learnings with rollupTo epic produce correct epic learnings", () => {
 		const s = stateWithSliceInImplementationComplete();
+		const src = "epics/e1/slices/s1";
 		const result = reduce(s, {
 			type: "COMPLETE_SLICE",
 			epic: "e1",
@@ -315,8 +323,8 @@ describe("reduce — COMPLETE_SLICE", () => {
 			verificationPassed: true,
 			deferred: [],
 			learnings: [
-				{ category: "domain", summary: "E1", detail: "D1", tags: [], rollupTo: ["epic"] },
-				{ category: "worked", summary: "E2", detail: "D2", tags: [], rollupTo: ["epic"] },
+				{ category: "domain", summary: "E1", file: "learnings/e1.md", tags: [], source: src, rollup: true, rollupTo: ["epic"] },
+				{ category: "worked", summary: "E2", file: "learnings/e2.md", tags: [], source: src, rollup: true, rollupTo: ["epic"] },
 			],
 			architectureDelta: [],
 		}) as ProjectState;
@@ -328,6 +336,7 @@ describe("reduce — COMPLETE_SLICE", () => {
 
 	it("O(n^2) fix: mixed rollupTo targets batch correctly", () => {
 		const s = stateWithSliceInImplementationComplete();
+		const src = "epics/e1/slices/s1";
 		const result = reduce(s, {
 			type: "COMPLETE_SLICE",
 			epic: "e1",
@@ -336,10 +345,10 @@ describe("reduce — COMPLETE_SLICE", () => {
 			verificationPassed: true,
 			deferred: [],
 			learnings: [
-				{ category: "domain", summary: "Both", detail: "D", tags: [], rollupTo: ["epic", "project"] },
-				{ category: "worked", summary: "EpicOnly", detail: "D", tags: [], rollupTo: ["epic"] },
-				{ category: "didnt-work", summary: "ProjectOnly", detail: "D", tags: [], rollupTo: ["project"] },
-				{ category: "do-differently", summary: "LocalOnly", detail: "D", tags: [], rollupTo: [] },
+				{ category: "domain", summary: "Both", file: "learnings/both.md", tags: [], source: src, rollup: true, rollupTo: ["epic", "project"] },
+				{ category: "worked", summary: "EpicOnly", file: "learnings/epic-only.md", tags: [], source: src, rollup: true, rollupTo: ["epic"] },
+				{ category: "didnt-work", summary: "ProjectOnly", file: "learnings/project-only.md", tags: [], source: src, rollup: true, rollupTo: ["project"] },
+				{ category: "do-differently", summary: "LocalOnly", file: "learnings/local-only.md", tags: [], source: src, rollup: false, rollupTo: [] },
 			],
 			architectureDelta: [],
 		}) as ProjectState;

@@ -10,11 +10,14 @@ import type { Slice } from "../../schemas/entities/slice.js";
 import type { Task } from "../../schemas/entities/task.js";
 import type { DecisionEntry } from "../../schemas/records/decision.js";
 import type { LearningEntry } from "../../schemas/records/learning.js";
+import { isLearningEventEntry } from "./complete.js";
 import type { StateEvent } from "../../schemas/state-events.js";
 import { GoodplanError } from "../../util/errors.js";
 import { VERSION } from "../../version.js";
 import { commitState } from "../data/commit.js";
 import { loadState } from "../data/load.js";
+import type { MarkdownCopy } from "../data/markdown-files.js";
+import { copyMarkdownFiles } from "../data/markdown-files.js";
 import { reduce } from "../state/reduce.js";
 import { isStateError } from "../state/types.js";
 import { getJson, getJsonl } from "../tree.js";
@@ -54,6 +57,14 @@ export function begin<P extends BeginPhase>(
 
 	// Version stamp: bump project.json.version if CLI version > data version (INV-001 exception — see version-stamp.ts)
 	const stampedResult = bumpDataVersionIfNeeded(result, VERSION);
+
+	// For rollup: copy .md files from source to target scope before commitState
+	if (phase === "rollup" && target.type === "rollup") {
+		const copies = collectRollupMarkdownCopies(target, oldState, stampedResult);
+		if (copies.length > 0) {
+			copyMarkdownFiles(projectDir, copies);
+		}
+	}
 
 	commitState(
 		projectDir,
@@ -416,6 +427,52 @@ function buildRollupResult(
 		to: target.to,
 		rolledUp,
 	};
+}
+
+/**
+ * Collect markdown file copies needed for ROLLUP_LEARNINGS.
+ * New-format entries (with `file` field) need their .md files copied
+ * from <source-scope>/learnings/<slug>.md to <target-scope>/learnings/<slug>.md.
+ * The target scope path is resolved from the target label ("project" or "epic").
+ */
+function collectRollupMarkdownCopies(
+	target: Extract<Target, { type: "rollup" }>,
+	oldState: ProjectState,
+	newState: ProjectState,
+): MarkdownCopy[] {
+	// Resolve target scope path (mirrors resolveTargetPath in rollup-learnings.ts)
+	let targetScopePath: string;
+	if (target.to === "project") {
+		targetScopePath = "";
+	} else if (target.to === "epic") {
+		const project = getJson<Project>(newState, "project.json");
+		if (project === undefined || project.activeEpic === null) return [];
+		targetScopePath = `epics/${project.activeEpic}`;
+	} else {
+		return [];
+	}
+
+	// Find newly added entries at target that have a `file` field
+	const targetJsonlPath = targetScopePath
+		? `${targetScopePath}/learnings.jsonl`
+		: "learnings.jsonl";
+	const oldEntries = getJsonl<LearningEntry>(oldState, targetJsonlPath) ?? [];
+	const newEntries = getJsonl<LearningEntry>(newState, targetJsonlPath) ?? [];
+	// Relies on JSONL being append-only — new entries are at the end after oldEntries.length
+	const addedEntries = newEntries.slice(oldEntries.length);
+
+	const copies: MarkdownCopy[] = [];
+	for (const entry of addedEntries) {
+		if (isLearningEventEntry(entry)) {
+			// Source: <from-scope>/<file> (e.g., "epics/e1/slices/s1/learnings/slug.md")
+			const fromPath = `${target.from}/${entry.file}`;
+			// Target: <target-scope>/<file> (e.g., "learnings/slug.md" at project level or "epics/e1/learnings/slug.md")
+			const toPath = targetScopePath ? `${targetScopePath}/${entry.file}` : entry.file;
+			copies.push({ from: fromPath, to: toPath });
+		}
+	}
+
+	return copies;
 }
 
 // ── Helpers ──────────────────────────────────────────────────

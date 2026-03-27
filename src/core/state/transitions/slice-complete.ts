@@ -1,6 +1,6 @@
 import type { SliceStatus } from "../../../schemas/entities/slice.js";
 import type { ArchitectureDelta } from "../../../schemas/records/architecture-delta.js";
-import type { LearningEntry } from "../../../schemas/records/learning.js";
+import type { LearningEventEntry } from "../../../schemas/records/learning.js";
 /**
  * COMPLETE_SLICE transition handler — the most complex handler in the system.
  * Deferred routing, learnings rollup, architecture delta recording,
@@ -17,6 +17,7 @@ import {
 	getProject,
 	getSlice,
 	guardSliceStatus,
+	processLearnings,
 	setSliceJson,
 	setSliceStatus,
 } from "./helpers.js";
@@ -70,51 +71,17 @@ export function handleCompleteSlice(
 		});
 	}
 
-	// 2. Learnings: transform LearningInput to LearningEntry, write per-slice and rollup
-	if (event.learnings.length > 0) {
-		const source = `epics/${event.epic}/slices/${event.slice}`;
-		const learningEntries: LearningEntry[] = event.learnings.map((l) => ({
-			...l,
-			source,
-			rollup: l.rollupTo.length > 0,
-		}));
-
-		// Write to per-slice learnings.jsonl
-		const sliceLearnings =
-			getJsonl<LearningEntry>(tree, `epics/${event.epic}/slices/${event.slice}/learnings.jsonl`) ?? [];
-		tree = setEntry(tree, `epics/${event.epic}/slices/${event.slice}/learnings.jsonl`, {
-			type: "jsonl",
-			content: [...sliceLearnings, ...learningEntries],
-		});
-
-		// Rollup: batch collect entries per target scope, then single setEntry per scope
-		const epicRollups: LearningEntry[] = [];
-		const projectRollups: LearningEntry[] = [];
-		for (const entry of learningEntries) {
-			for (const target of entry.rollupTo) {
-				if (target === "epic") {
-					epicRollups.push(entry);
-				} else if (target === "project") {
-					projectRollups.push(entry);
-				}
-			}
-		}
-		if (epicRollups.length > 0) {
-			const epicLearnings =
-				getJsonl<LearningEntry>(tree, `epics/${sliceOrErr.epic}/learnings.jsonl`) ?? [];
-			tree = setEntry(tree, `epics/${sliceOrErr.epic}/learnings.jsonl`, {
-				type: "jsonl",
-				content: [...epicLearnings, ...epicRollups],
-			});
-		}
-		if (projectRollups.length > 0) {
-			const projectLearnings = getJsonl<LearningEntry>(tree, "learnings.jsonl") ?? [];
-			tree = setEntry(tree, "learnings.jsonl", {
-				type: "jsonl",
-				content: [...projectLearnings, ...projectRollups],
-			});
-		}
-	}
+	// 2. Learnings: LearningEventEntry[] with `file` already set by RPC layer.
+	//    Slices roll up to both "epic" and "project".
+	const learningEntries: LearningEventEntry[] = event.learnings;
+	const source = `epics/${event.epic}/slices/${event.slice}`;
+	tree = processLearnings(
+		tree,
+		learningEntries,
+		source,
+		new Set(["epic", "project"]),
+		sliceOrErr.epic,
+	);
 
 	// 3. Architecture deltas: write to per-slice architecture-deltas.jsonl
 	if (event.architectureDelta.length > 0) {
