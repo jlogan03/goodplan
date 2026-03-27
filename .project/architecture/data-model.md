@@ -115,7 +115,7 @@ Fields: `name` (kebab-case identifier), `title` (human-readable), `status` (open
 
 ### overview.json
 
-Index file per collection. Located at `.project/epics/overview.json`, `.project/quests/overview.json`, `.project/tasks/overview.json`. Slice overviews are embedded within `epic.json` (no separate `slices/overview.json` file) — each epic's `epic.json` contains the slice listing for that epic.
+Index file per collection. Located at `.project/epics/overview.json`, `.project/quests/overview.json`, `.project/tasks/overview.json`. Slice overviews are embedded within `epics/overview.json` (no separate `slices/overview.json` file) — each epic's entry in `epics/overview.json` contains its `slices` array. Array order defines slice sequencing.
 
 ```json
 {

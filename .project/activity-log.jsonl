@@ -5,3 +5,5 @@
 {"phase":"complete-implementation","scope":"epics/entity-restructuring/slices/03-context-and-learnings","status":"complete","summary":"Slice \"03-context-and-learnings\" implementation completed","ts":"2026-03-27T16:55:59.409Z"}
 {"phase":"complete-slice","scope":"epics/entity-restructuring/slices/05-tests-and-migration","status":"complete","summary":"Slice \"05-tests-and-migration\" completed","ts":"2026-03-27T16:59:43.752Z"}
 {"phase":"complete-slice","scope":"epics/entity-restructuring/slices/03-context-and-learnings","status":"complete","summary":"Slice \"03-context-and-learnings\" completed","ts":"2026-03-27T17:01:23.203Z"}
+{"phase":"create-task","scope":"tasks/learnings-directory-pattern","status":"complete","summary":"Task \"learnings-directory-pattern\" created: Unify learnings storage: JSONL index + per-learning .md files in learnings/ directory","ts":"2026-03-27T17:05:27.813Z"}
+{"phase":"complete-epic","scope":"epics/entity-restructuring","status":"complete","summary":"Epic \"entity-restructuring\" completed","ts":"2026-03-27T17:08:51.129Z"}

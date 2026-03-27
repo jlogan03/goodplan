@@ -1,0 +1,11 @@
+{
+	"items": [
+		{
+			"completed": null,
+			"created": "2026-03-27T17:05:27.813Z",
+			"name": "learnings-directory-pattern",
+			"status": "open",
+			"title": "Unify learnings storage: JSONL index + per-learning .md files in learnings/ directory"
+		}
+	]
+}

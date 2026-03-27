@@ -49,16 +49,16 @@ type StateEvent =
   | { type: 'ACTIVATE_EPIC'; epic: string; ts: string }
   | { type: 'ABANDON_EPIC'; epic: string; ts: string; reason: string }
   | { type: 'COMPLETE_EPIC'; epic: string; ts: string; verificationResults: VerificationResult[] }
-  // Slice lifecycle
+  // Slice lifecycle — all slice events carry `epic: string` for nested path construction
   | { type: 'CREATE_SLICE'; name: string; epic: string; goal: string; ts: string }
-  | { type: 'BEGIN_PLAN'; slice: string; ts: string }
-  | { type: 'COMPLETE_PLAN'; slice: string; ts: string }
-  | { type: 'BEGIN_REFINEMENT'; slice: string; ts: string }
-  | { type: 'COMPLETE_REFINEMENT_ROUND'; slice: string; ts: string; scores: Record<string, number>; override?: boolean }
-  | { type: 'BEGIN_IMPLEMENTATION'; slice: string; ts: string }
-  | { type: 'COMPLETE_IMPLEMENTATION'; slice: string; ts: string }
-  | { type: 'COMPLETE_SLICE'; slice: string; ts: string; verificationPassed: boolean; deferred: DeferredItem[]; learnings: LearningInput[]; architectureDelta: ArchitectureDeltaInput[] }
-  | { type: 'ABANDON_SLICE'; slice: string; ts: string; reason: string }
+  | { type: 'BEGIN_PLAN'; epic: string; slice: string; ts: string }
+  | { type: 'COMPLETE_PLAN'; epic: string; slice: string; ts: string }
+  | { type: 'BEGIN_REFINEMENT'; epic: string; slice: string; ts: string }
+  | { type: 'COMPLETE_REFINEMENT_ROUND'; epic: string; slice: string; ts: string; scores: Record<string, number>; override?: boolean }
+  | { type: 'BEGIN_IMPLEMENTATION'; epic: string; slice: string; ts: string }
+  | { type: 'COMPLETE_IMPLEMENTATION'; epic: string; slice: string; ts: string }
+  | { type: 'COMPLETE_SLICE'; epic: string; slice: string; ts: string; verificationPassed: boolean; deferred: DeferredItem[]; learnings: LearningInput[]; architectureDelta: ArchitectureDeltaInput[] }
+  | { type: 'ABANDON_SLICE'; epic: string; slice: string; ts: string; reason: string }
   // Quest lifecycle
   | { type: 'CREATE_QUEST'; name: string; ts: string }
   | { type: 'BEGIN_QUEST_PLAN'; quest: string; ts: string }
@@ -87,6 +87,7 @@ These types are used in `StateEvent` payloads, `CompleteInput`, and JSONL record
 interface DeferredItem {
   description: string;        // what was deferred
   targetSlice: string;        // name of the slice this should be routed to
+  targetEpic?: string;        // optional — defaults to completing slice's epic for same-epic routing
 }
 
 interface Verification {
