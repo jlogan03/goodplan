@@ -82,6 +82,8 @@ Read all relevant project state:
 - `$SLICES_ROOT/sequencing.md`
 - All `$SLICES_ROOT/*/goal.md` files (excluding side quests)
 
+Also load `.project/architecture/_overview.md` and extract the `## Subsystem Maturity` table. If no maturity table exists, set `{maturity_summary}` to empty. Also read `../_shared/references/maturity-legend.md` and store its content as `{maturity_legend}`. If maturity data was found, display which slices have `## Maturity Note` sections in their goal.md and which may be missing them — this gives the user early visibility before the review loop starts. When filling shared preamble placeholders for reviewer sub-agents (Step 3), include `{maturity_summary}` and `{maturity_legend}`. When `{maturity_summary}` is empty, omit the `## Subsystem Maturity` section from the shared preamble entirely.
+
 ### Step 1: Verify Goal Clarity
 
 1. Read the slice definitions and sequencing

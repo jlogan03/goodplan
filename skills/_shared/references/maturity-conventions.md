@@ -199,7 +199,7 @@ Which skills read and write each artifact:
 
 | Artifact | Created by | Loaded by | Enforced by | Evaluated by | Promotion suggested by | Audited by | Checked by reviewers |
 |---|---|---|---|---|---|---|---|
-| Maturity table (`architecture/_overview.md`) | `/create-architecture` | `/create-plan`, `/create-slices`, `/complete`, `/implement-plan`, `/refine-plan` | — | `/refine-architecture` | `/complete`, `/audit-architecture` | `/audit-architecture` | SW Architecture reviewer |
+| Maturity table (`architecture/_overview.md`) | `/create-architecture` | `/create-plan`, `/create-slices`, `/complete`, `/implement-plan`, `/refine-plan`, `/refine-slices` | — | `/refine-architecture` | `/complete`, `/audit-architecture` | `/audit-architecture` | SW Architecture reviewer |
 | `architecture/invariants.md` | `/create-architecture` | — | — | `/refine-architecture` | — | `/audit-architecture` | Holistic reviewer |
 | Fitness functions (`<subsystem>-api.md`) | `/create-architecture` (candidates) | — | `/create-plan` | `/complete`, `/refine-architecture` | — | `/audit-architecture` | SW Architecture reviewer, Holistic reviewer |
 | `maturity-conventions.md` | `/create-architecture` | `/complete` | — | `/refine-architecture` | — | `/audit-architecture` | — |
