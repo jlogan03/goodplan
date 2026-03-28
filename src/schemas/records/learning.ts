@@ -29,6 +29,6 @@ export const learningInputSchema = z.object({
 	summary: z.string().min(1),
 	detail: z.string().min(1),
 	tags: z.array(z.string()),
-	rollupTo: z.array(z.string()),
+	rollupTo: z.array(z.enum(["epic", "project"])),
 });
 export type LearningInput = z.infer<typeof learningInputSchema>;
