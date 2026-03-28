@@ -1,0 +1,1 @@
+When a fitness function verifies every X has property Y, the enumeration array must be exhaustive. A manually maintained test-local array silently goes stale. Fix: export the array from the source file with a satisfies type assertion plus a count constant. The test imports both and asserts count equality.
