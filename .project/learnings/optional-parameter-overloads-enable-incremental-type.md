@@ -1,1 +1,0 @@
-When changing function signatures used across many call sites, TypeScript overloads with optional parameters let the types phase compile while consumers still use the old arity. Safer than `@ts-expect-error` (which swallows all errors). Use this pattern for multi-phase signature migrations in future epics.

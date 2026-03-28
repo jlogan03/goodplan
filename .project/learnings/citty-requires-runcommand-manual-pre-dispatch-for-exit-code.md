@@ -1,1 +1,0 @@
-`runMain` forces exit 1 for all errors. `runCommand` allows custom exit codes but doesn't throw `E_UNKNOWN_COMMAND` when `subCommands` is `{}` — requires manual pre-dispatch detection. Future commands must stay in sync with the pre-dispatch check.

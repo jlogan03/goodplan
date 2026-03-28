@@ -1,1 +1,0 @@
-The harness ($52/run with Opus) found 7 bugs invisible to static analysis: hardcoded paths, missing entity registration, incompatible naming conventions, env inheritance. These only surface when skills actually call CLI commands end-to-end. Should be standard for release validation.

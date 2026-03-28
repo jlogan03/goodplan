@@ -1,1 +1,0 @@
-With `noUncheckedIndexedAccess`, `Map.get()` loses compile-time coverage. The `satisfies` pattern on the plain handler object catches missing handlers at compile time before converting to Map. Standard pattern for typed handler maps.

@@ -1,1 +1,0 @@
-Passing `env: { PATH: "..." }` to Agent SDK `query()` strips all inherited environment variables including auth credentials. Always use `env: { ...process.env, PATH: "..." }`. This cost a full wasted run to diagnose.

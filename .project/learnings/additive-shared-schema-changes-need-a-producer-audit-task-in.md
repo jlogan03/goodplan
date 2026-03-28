@@ -1,1 +1,0 @@
-Adding optional `title` to `overviewItemSchema` required conditional spread in every overview producer — missed initially, caught in review round 2. Any additive optional field on a shared schema needs an explicit "audit all producers" plan task.

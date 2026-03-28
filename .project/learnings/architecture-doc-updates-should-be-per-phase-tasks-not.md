@@ -1,1 +1,0 @@
-Both `rpc-layer-api.md` and `state-machine-api.md` drifted because doc updates were deferred to a later phase. Include doc updates as tasks within each phase that changes behavior.

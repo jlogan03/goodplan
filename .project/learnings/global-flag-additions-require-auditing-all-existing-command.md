@@ -1,1 +1,0 @@
-Adding `--query` to shared `output()` left ~40 commands broken because they gated on `args.json` only. Plans adding global behaviors must include an explicit grep-and-update task for every command file.

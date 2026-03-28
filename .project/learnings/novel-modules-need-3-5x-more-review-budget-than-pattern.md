@@ -1,1 +1,0 @@
-Context bundling (no precedent) had 8 review issues; quest state machine (following slice patterns) had 0. Budget extra iterations for phases introducing new subsystems. Pattern-following code often passes on the first iteration.

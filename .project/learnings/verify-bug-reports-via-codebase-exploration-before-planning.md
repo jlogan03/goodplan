@@ -1,1 +1,0 @@
-Two of four original bugs were invalid or mislocated — one targeted the wrong file, one described a problem that didn't exist. Running codebase context discovery during plan refinement caught both before implementation. For "fix bugs" quests, verify each bug still exists and is correctly characterized before creating a plan.
