@@ -72,8 +72,8 @@
 
 ## Recent Changes
 
+- **consistent-skill-output** (2026-03-28): Consolidated 3 duplicated output template groups into shared output-templates.md. Updated 10 consuming skills to reference shared templates. 11 files changed (net -8 lines from deduplication).
 - **rpc-api-doc-drift** (2026-03-28): Fixed 10 doc-code divergences in rpc-layer-api.md (signatures, types, module locations). Tightened LearningInput.rollupTo schema from open string[] to z.enum(["epic", "project"]). 2 files changed.
 - **test-infrastructure-polish** (2026-03-28): Replaced manual EXPECTED_ERROR_CODE_COUNT with regex-based set-equality verification against source type definitions. Moved collectFiles() from data-determinism.test.ts to shared fitness helpers. Removed dead export from errors.ts. 3 files changed.
-- **improve-test-coverage-and-quality** (2026-03-28): Fixed 53 integration test failures (global-setup.ts --define quoting). Added unit tests for helpers.ts, serialize.ts, markdown-files.ts. Fixed stale event count and fixture data. Added INV-007 and INV-001 fitness functions. 1378 tests (+303 new), 98 files.
 
-<!-- Last updated by: complete for rpc-api-doc-drift, 2026-03-28 -->
+<!-- Last updated by: complete for consistent-skill-output, 2026-03-28 -->

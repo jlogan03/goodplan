@@ -3,6 +3,6 @@
 	"goal": "Rigid, concrete output templates for all skills.",
 	"name": "consistent-skill-output",
 	"refinement": null,
-	"status": "implementation-complete",
-	"updated": "2026-03-28T23:47:49.510Z"
+	"status": "completed",
+	"updated": "2026-03-28T23:52:02.189Z"
 }
