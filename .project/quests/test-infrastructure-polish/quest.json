@@ -1,0 +1,8 @@
+{
+	"created": "2026-03-28T15:05:29.784Z",
+	"goal": "Two quick fitness test improvements from the test-coverage quest: (1) Make ALL_ERROR_CODES self-verifying by extracting GoodplanErrorCode union members from source via regex, eliminating manual EXPECTED_ERROR_CODE_COUNT maintenance. (2) Deduplicate collectTsFiles() across fitness tests — update data-determinism, schema-validation, and tree-accuracy to import from tests/fitness/helpers.ts. Done when: structured-errors.test.ts has no hardcoded count constant and all fitness tests share the helper.",
+	"name": "test-infrastructure-polish",
+	"refinement": null,
+	"status": "plan-refined",
+	"updated": "2026-03-28T15:59:47.175Z"
+}

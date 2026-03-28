@@ -167,6 +167,12 @@
 			"created": "2026-03-28T03:10:18.906Z",
 			"name": "improve-test-coverage-and-quality",
 			"status": "completed"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-28T15:05:29.784Z",
+			"name": "test-infrastructure-polish",
+			"status": "plan-refined"
 		}
 	]
 }

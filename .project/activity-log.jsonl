@@ -24,3 +24,7 @@
 {"phase":"create-task","scope":"tasks/self-verifying-error-codes","status":"complete","summary":"Task \"self-verifying-error-codes\" created: Make ALL_ERROR_CODES self-verifying via source extraction","ts":"2026-03-28T14:46:18.389Z"}
 {"phase":"create-task","scope":"tasks/dedup-fitness-collect-ts","status":"complete","summary":"Task \"dedup-fitness-collect-ts\" created: Deduplicate collectTsFiles() across fitness tests","ts":"2026-03-28T14:46:19.474Z"}
 {"phase":"complete-quest","scope":"quests/improve-test-coverage-and-quality","status":"complete","summary":"Quest \"improve-test-coverage-and-quality\" completed","ts":"2026-03-28T14:53:05.279Z"}
+{"phase":"create-quest","scope":"quests/test-infrastructure-polish","status":"complete","summary":"Quest \"test-infrastructure-polish\" created","ts":"2026-03-28T15:05:29.784Z"}
+{"phase":"begin-quest-plan","scope":"quests/test-infrastructure-polish","status":"complete","summary":"Quest \"test-infrastructure-polish\" planning started","ts":"2026-03-28T15:53:35.670Z"}
+{"phase":"complete-quest-plan","scope":"quests/test-infrastructure-polish","status":"complete","summary":"Quest \"test-infrastructure-polish\" plan completed","ts":"2026-03-28T15:54:23.800Z"}
+{"phase":"complete-quest-refinement","scope":"quests/test-infrastructure-polish","status":"complete","summary":"Quest \"test-infrastructure-polish\" plan refined","ts":"2026-03-28T15:59:47.175Z"}
