@@ -106,28 +106,54 @@ And at any point, when something unexpected comes up: capture it as a task, spin
 
 ```
 .project/
-├── project.json              # active pointers, health metrics
+├── project.json              # active pointers, version, timestamps
 ├── conventions.md            # tech stack, code style, repo structure
-├── learnings.md              # accumulated wisdom across all completed work
-├── architecture/             # living architecture docs
+├── idea.md                   # project goal and scope
+├── decisions.jsonl           # architectural decisions (append-only)
+├── learnings.jsonl           # accumulated wisdom across all completed work
+├── learnings/                # per-learning .md files (CLI-managed)
+│   └── <slug>.md
+├── activity-log.jsonl        # audit trail of all state transitions
+├── architecture/             # current-reality architecture docs (LLM-managed)
 ├── epics/
-│   └── my-epic/
-│       ├── epic.json         # lifecycle state, verification criteria
+│   ├── overview.json         # index of all epics (includes slice arrays)
+│   └── <epic>/
+│       ├── epic.json         # lifecycle state, goal, verification criteria
 │       ├── architecture/     # epic-specific target architecture
 │       ├── research/         # exploration output
-│       └── brainstorm/       # brainstorming output
-├── slices/
-│   └── 01-auth/
-│       ├── slice.json        # lifecycle state
-│       ├── goal.md           # what "done" looks like
-│       ├── plan.md           # refined implementation plan
-│       └── learnings.jsonl   # what this slice taught us
+│       ├── brainstorm/       # brainstorming output
+│       ├── prototypes/       # prototype experiments
+│       ├── learnings.jsonl
+│       ├── learnings/
+│       │   └── <slug>.md
+│       └── slices/
+│           └── <name>/
+│               ├── slice.json        # lifecycle state, goal, refinement tracking
+│               ├── learnings.jsonl
+│               ├── learnings/
+│               │   └── <slug>.md
+│               ├── architecture-deltas.jsonl
+│               ├── plan.md           # implementation plan
+│               ├── plan-refining.md  # working draft during refinement
+│               └── plan-refined.md   # final refined plan
 ├── quests/
-│   └── fix-perf-regression/
-│       ├── quest.json
-│       └── goal.md
-└── tasks/
-    └── task.jsonl            # lightweight captures — bugs, ideas, improvements
+│   ├── overview.json
+│   └── <name>/
+│       ├── quest.json        # lifecycle state, goal, refinement tracking
+│       ├── learnings.jsonl
+│       ├── learnings/
+│       │   └── <slug>.md
+│       ├── architecture-deltas.jsonl
+│       ├── plan.md
+│       ├── plan-refining.md
+│       └── plan-refined.md
+├── tasks/
+│   ├── overview.json
+│   └── <name>/
+│       └── task.json         # lightweight capture — title, context, status
+├── research/                 # project-level (curated from epics)
+├── brainstorm/
+└── prototypes/
 ```
 
 Every file is designed for both human readability and machine consumption. JSON for state, Markdown for content, JSONL for append-only logs.

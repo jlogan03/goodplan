@@ -31,8 +31,6 @@ Project initialization goes through the state machine like any other transition.
 6. Data Layer: `commitState(zeroState, newState)` — for each new key, creates parent directories and writes files. This creates `.project/`, `.project/epics/`, `.project/quests/`, `.project/tasks/`, and all initial JSON/JSONL files.
 7. Commands outputs result
 
-**Note**: The tracer bullet's `init` implementation writes `project.json` directly (bypassing state machine and RPC). This is refactored in slice 03/04 when the state machine is available. The data layer (slice 02) prepares for this by implementing `assembleState()` zero-state behavior and `commitState()` directory creation.
-
 ## `goodplan slice:plan --slice 01-auth --json`
 
 1. Commands parses flags: `--slice 01-auth`, `--json`

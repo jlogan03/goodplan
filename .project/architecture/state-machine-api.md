@@ -57,18 +57,22 @@ type StateEvent =
   | { type: 'COMPLETE_REFINEMENT_ROUND'; epic: string; slice: string; ts: string; scores: Record<string, number>; override?: boolean }
   | { type: 'BEGIN_IMPLEMENTATION'; epic: string; slice: string; ts: string }
   | { type: 'COMPLETE_IMPLEMENTATION'; epic: string; slice: string; ts: string }
-  | { type: 'COMPLETE_SLICE'; epic: string; slice: string; ts: string; verificationPassed: boolean; deferred: DeferredItem[]; learnings: LearningInput[]; architectureDelta: ArchitectureDeltaInput[] }
+  | { type: 'COMPLETE_SLICE'; epic: string; slice: string; ts: string; verificationPassed: boolean; deferred: DeferredItem[]; learnings: LearningEventEntry[]; architectureDelta: ArchitectureDeltaInput[] }
   | { type: 'ABANDON_SLICE'; epic: string; slice: string; ts: string; reason: string }
   // Quest lifecycle
-  | { type: 'CREATE_QUEST'; name: string; ts: string }
+  | { type: 'CREATE_QUEST'; name: string; goal: string; ts: string }
   | { type: 'BEGIN_QUEST_PLAN'; quest: string; ts: string }
   | { type: 'COMPLETE_QUEST_PLAN'; quest: string; ts: string }
   | { type: 'BEGIN_QUEST_REFINEMENT'; quest: string; ts: string }
   | { type: 'COMPLETE_QUEST_REFINEMENT_ROUND'; quest: string; ts: string; scores: Record<string, number>; override?: boolean }
   | { type: 'BEGIN_QUEST_IMPLEMENTATION'; quest: string; ts: string }
   | { type: 'COMPLETE_QUEST_IMPLEMENTATION'; quest: string; ts: string }
-  | { type: 'COMPLETE_QUEST'; quest: string; ts: string; verificationPassed: boolean; learnings: Learning[]; architectureDelta: ArchitectureDelta[] }
+  | { type: 'COMPLETE_QUEST'; quest: string; ts: string; verificationPassed: boolean; learnings: LearningEventEntry[]; architectureDelta: ArchitectureDeltaInput[] }
   | { type: 'ABANDON_QUEST'; quest: string; ts: string; reason: string }
+  // Task lifecycle
+  | { type: 'CREATE_TASK'; name: string; title: string; description?: string; context?: TaskContext; ts: string }
+  | { type: 'DROP_TASK'; name: string; reason: string; ts: string }
+  | { type: 'CONVERT_TASK'; name: string; to: 'quest' | 'epic'; convertedName: string; convertedGoal?: string; ts: string }
   // Cross-cutting
   | { type: 'ROLLUP_LEARNINGS'; from: string; to: string; ts: string }
   | { type: 'CREATE_DECISION'; id: string; domain: string; title: string; summary: string; ts: string }
@@ -294,15 +298,15 @@ Priority: 1 (implement first — per _overview.md subsystem maturity)
 
 ### State machine has no I/O imports
 
-- **Test file:** candidate — not yet written
+- **Test file:** `tests/fitness/state-machine-purity.test.ts`
 - **Verifies:** AST or import scan of all files in `src/core/state/` confirming no `fs`, `path` (for file ops), or network imports
 
 ### Every (status, event) pair is handled
 
-- **Test file:** candidate — not yet written
+- **Test file:** `tests/fitness/transition-completeness.test.ts`
 - **Verifies:** For each entity type, enumerates all status × event combinations and confirms the reducer either returns a valid new state or a `STATE_INVALID_TRANSITION` error — no unhandled cases
 
 ### Reducer is pure — same inputs produce same outputs
 
-- **Test file:** candidate — not yet written
+- **Test file:** `tests/fitness/state-machine-purity.test.ts`
 - **Verifies:** Property-based test: for random valid (state, event) pairs, calling reduce twice with identical inputs produces identical outputs

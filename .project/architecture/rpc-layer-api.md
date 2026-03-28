@@ -25,6 +25,9 @@ function status(options: StatusOptions): StatusResult;
 type BeginPhase =
   | 'create'
   | 'create-decision'
+  | 'create-task'
+  | 'drop-task'
+  | 'convert-task'
   | 'explore'
   | 'define-architecture'
   | 'refine-architecture'
@@ -85,6 +88,9 @@ type Target =
 //   begin('abandon', {type:'quest'})      → ABANDON_QUEST
 //   begin('add-verification', {type:'epic'}) → ADD_VERIFICATION
 //   begin('update-verification', {type:'epic'}) → UPDATE_VERIFICATION
+//   begin('create-task', {type:'task'})         → CREATE_TASK
+//   begin('drop-task', {type:'task'})           → DROP_TASK
+//   begin('convert-task', {type:'task'})        → CONVERT_TASK
 //   begin('create-decision', {type:'decision'}) → CREATE_DECISION
 //   begin('update-decision', {type:'decision'}) → UPDATE_DECISION
 //   begin('rollup', {type:'rollup'})      → ROLLUP_LEARNINGS
@@ -107,6 +113,9 @@ type Target =
 | Command pattern | RPC function | Description |
 |---|---|---|
 | `epic:create`, `slice:create`, `quest:create` | `begin('create', ...)` | Entity creation |
+| `task:create` | `begin('create-task', {type:'task', name})` | Task creation |
+| `task:drop` | `begin('drop-task', {type:'task', name})` | Task drop |
+| `task:convert` | `begin('convert-task', {type:'task', name})` | Task conversion to quest/epic |
 | `decision:create` | `begin('create-decision', {type:'decision', id})` | Decision creation |
 | `epic:explore`, `epic:define-architecture`, `epic:refine-architecture`, `epic:define-slices`, `epic:refine-slices`, `epic:activate`, `slice:plan`, `slice:refine-plan`, `slice:implement`, `quest:plan`, `quest:refine-plan`, `quest:implement` | `begin(phase, ...)` | Phase initiation — transitions entity into a new phase |
 | `epic:complete`, `slice:complete`, `quest:complete` | `complete(target, ...)` | Entity completion — requires verification input |

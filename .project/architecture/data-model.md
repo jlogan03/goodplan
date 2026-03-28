@@ -355,11 +355,13 @@ epic?.status === "activated"
 ```typescript
 const schemaRegistry: Array<{ pattern: RegExp; schema: ZodSchema }> = [
   { pattern: /^project\.json$/, schema: projectSchema },
-  { pattern: /^epics\/overview\.json$/, schema: overviewSchema },
+  { pattern: /^epics\/overview\.json$/, schema: epicOverviewSchema },
   { pattern: /^epics\/[^/]+\/epic\.json$/, schema: epicSchema },
   { pattern: /^epics\/[^/]+\/slices\/[^/]+\/slice\.json$/, schema: sliceSchema },
   { pattern: /^quests\/overview\.json$/, schema: overviewSchema },
   { pattern: /^quests\/[^/]+\/quest\.json$/, schema: questSchema },
+  { pattern: /^tasks\/overview\.json$/, schema: overviewSchema },
+  { pattern: /^tasks\/[^/]+\/task\.json$/, schema: taskSchema },
   { pattern: /^activity-log\.jsonl$/, schema: activityEntrySchema },
   { pattern: /^decisions\.jsonl$/, schema: decisionEntrySchema },
   { pattern: /^learnings\.jsonl$/, schema: learningEntrySchema },
@@ -474,6 +476,10 @@ The cache is valid because the CLI is the only writer of JSON/JSONL state. The o
 │       ├── plan.md
 │       ├── plan-refining.md
 │       └── plan-refined.md
+├── tasks/
+│   ├── overview.json
+│   └── <name>/
+│       └── task.json
 ├── research/                  # project-level (curated from epics)
 ├── brainstorm/
 └── prototypes/

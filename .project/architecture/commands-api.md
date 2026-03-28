@@ -44,6 +44,9 @@ The RPC layer maps each mutation command to a `StateEvent`. Mapping:
 | `quest:implement` | `BEGIN_QUEST_IMPLEMENTATION` |
 | `quest:complete` | `COMPLETE_QUEST` |
 | `quest:abandon` | `ABANDON_QUEST` |
+| `task:create` | `CREATE_TASK` |
+| `task:drop` | `DROP_TASK` |
+| `task:convert` | `CONVERT_TASK` |
 | `learning:rollup` | `ROLLUP_LEARNINGS` |
 | `decision:create` | `CREATE_DECISION` |
 | `decision:update` | `UPDATE_DECISION` |
@@ -101,6 +104,18 @@ goodplan quest:implement --quest <name>
 goodplan quest:complete --quest <name>
 goodplan quest:abandon --quest <name> --reason <text>
 ```
+
+**Task namespace:**
+
+```
+goodplan task:list [--all]
+goodplan task:show --task <name>
+goodplan task:create
+goodplan task:drop --task <name> --reason <text>
+goodplan task:convert --task <name> --to quest|epic [--name <override>] [--goal <override>]
+```
+
+`task:create` accepts stdin JSON: `{ "name": "<slug>", "title": "<title>", "description?": "<text>", "context?": {...} }`. `task:list` defaults to open tasks only; `--all` includes converted/dropped. `task:drop` and `task:convert` use flags only (all fields are simple scalars). `task:convert` auto-derives the quest/epic name from the task slug and goal from the task title + description if not overridden.
 
 **Decision namespace:**
 
@@ -357,7 +372,7 @@ Priority: 3 (implement after State Machine and Data Layer)
 
 ### Read-only commands are read-only
 
-- **Test file:** candidate — not yet written
+- **Test file:** `tests/fitness/stateless-commands.test.ts`
 - **Verifies:** All `list` and `show` commands only call Data Layer read functions — no `commitState` or RPC mutations
 
 ### Every error produces structured JSON and correct exit code
