@@ -3,6 +3,6 @@
 	"goal": "Two new audit skills that detect drift, gaps, and staleness.",
 	"name": "audit-docs-and-tests",
 	"refinement": null,
-	"status": "created",
-	"updated": "2026-03-28T00:06:46.961Z"
+	"status": "plan-refined",
+	"updated": "2026-03-28T01:25:57.541Z"
 }

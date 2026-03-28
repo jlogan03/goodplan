@@ -1,9 +1,9 @@
 {
 	"activeEpic": null,
-	"activeQuest": null,
+	"activeQuest": "audit-docs-and-tests",
 	"activeSlice": null,
 	"created": "2026-03-28T00:06:46.961Z",
 	"name": "goodplan",
-	"updated": "2026-03-28T00:17:58.776Z",
+	"updated": "2026-03-28T00:54:42.054Z",
 	"version": "1.0.0"
 }

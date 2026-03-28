@@ -16,7 +16,7 @@
 			"completed": null,
 			"created": "2026-03-28T00:06:46.961Z",
 			"name": "audit-docs-and-tests",
-			"status": "created"
+			"status": "plan-refined"
 		},
 		{
 			"completed": "2026-03-28T00:06:46.961Z",
@@ -46,7 +46,7 @@
 			"completed": null,
 			"created": "2026-03-28T00:06:46.961Z",
 			"name": "entity-path-and-learnings-cleanup",
-			"status": "created"
+			"status": "abandoned"
 		},
 		{
 			"completed": "2026-03-28T00:06:46.961Z",

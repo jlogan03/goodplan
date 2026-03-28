@@ -1,2 +1,6 @@
 {"detail":"4 epics, 26 slices, 25 quests","phase":"migration","scope":"project","status":"complete","summary":"Migrated from pre-CLI .project/ format","ts":"2026-03-28T00:06:46.961Z"}
 {"phase":"complete-quest","scope":"quests/learnings-directory-pattern","status":"complete","summary":"Quest \"learnings-directory-pattern\" completed","ts":"2026-03-28T00:17:58.776Z"}
+{"phase":"abandon-quest","scope":"quests/entity-path-and-learnings-cleanup","status":"complete","summary":"Quest \"entity-path-and-learnings-cleanup\" abandoned: Superseded: entity paths cleaned up by entity-restructuring epic, learnings cleanup done by learnings-directory-pattern quest","ts":"2026-03-28T00:45:57.494Z"}
+{"phase":"begin-quest-plan","scope":"quests/audit-docs-and-tests","status":"complete","summary":"Quest \"audit-docs-and-tests\" planning started","ts":"2026-03-28T00:54:42.054Z"}
+{"phase":"complete-quest-plan","scope":"quests/audit-docs-and-tests","status":"complete","summary":"Quest \"audit-docs-and-tests\" plan completed","ts":"2026-03-28T00:54:46.354Z"}
+{"phase":"complete-quest-refinement","scope":"quests/audit-docs-and-tests","status":"complete","summary":"Quest \"audit-docs-and-tests\" plan refined","ts":"2026-03-28T01:25:57.541Z"}
