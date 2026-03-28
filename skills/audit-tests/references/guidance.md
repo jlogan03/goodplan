@@ -2,6 +2,8 @@
 
 Severity definitions, reviewer output format, side quest template, and test-specific finding categories for the audit-tests skill.
 
+> **Shared conventions**: `../../_shared/references/audit-conventions.md` defines the shared severity levels, reviewer output format, side quest template, and audit report format used across all audit skills. This file adds test-specific definitions.
+
 ## Finding Severity Levels
 
 | Severity | Definition | Examples |

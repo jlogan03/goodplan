@@ -1,0 +1,8 @@
+{
+	"created": "2026-03-28T02:47:45.332Z",
+	"goal": "Update /audit-architecture to use goodplan quest:create --json instead of direct filesystem writes (mkdir -p .project/side-quests/<name> + write goal.md) for side quest creation. This aligns it with /audit-docs and /audit-tests which already use the CLI-native mechanism. Scope: skills/audit-architecture/SKILL.md and skills/audit-architecture/references/guidance.md. Done when: all side quest creation in audit-architecture uses quest:create, and the old filesystem approach is removed.",
+	"name": "audit-arch-quest-create",
+	"refinement": null,
+	"status": "created",
+	"updated": "2026-03-28T02:47:45.332Z"
+}
