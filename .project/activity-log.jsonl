@@ -7,3 +7,5 @@
 {"phase":"begin-quest-implementation","scope":"quests/audit-docs-and-tests","status":"complete","summary":"Quest \"audit-docs-and-tests\" implementation started","ts":"2026-03-28T02:19:59.778Z"}
 {"phase":"complete-quest-implementation","scope":"quests/audit-docs-and-tests","status":"complete","summary":"Quest \"audit-docs-and-tests\" implementation completed","ts":"2026-03-28T02:40:34.399Z"}
 {"phase":"create-quest","scope":"quests/audit-arch-quest-create","status":"complete","summary":"Quest \"audit-arch-quest-create\" created","ts":"2026-03-28T02:47:45.332Z"}
+{"phase":"create-quest","scope":"quests/update-architecture-docs-for-tasks-and-paths","status":"complete","summary":"Quest \"update-architecture-docs-for-tasks-and-paths\" created","ts":"2026-03-28T03:00:55.637Z"}
+{"phase":"create-quest","scope":"quests/improve-test-coverage-and-quality","status":"complete","summary":"Quest \"improve-test-coverage-and-quality\" created","ts":"2026-03-28T03:10:18.906Z"}
