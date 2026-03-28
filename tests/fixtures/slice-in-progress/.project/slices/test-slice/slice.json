@@ -1,0 +1,22 @@
+{
+	"created": "2026-01-01T00:00:00.000Z",
+	"deferred": [],
+	"epic": "test-epic",
+	"goal": "Test slice goal",
+	"name": "test-slice",
+	"refinement": {
+		"maxRounds": 10,
+		"round": 2,
+		"scoreHistory": [
+			{
+				"round": 1,
+				"scores": {
+					"completeness": 8,
+					"correctness": 8
+				}
+			}
+		]
+	},
+	"status": "plan-refined",
+	"updated": "2026-01-01T00:00:00.000Z"
+}

@@ -13,16 +13,16 @@ Diagnose and fix why 53 integration/fitness tests fail with exit code 2 on the `
 ### Expected Behavior
 
 **Before implementation** (should fail / show absence):
-- [ ] `bun run test -- --run 2>&1 | tail -5` shows failures — some integration/fitness tests fail with exit code 2
+- [x] `bun run test -- --run 2>&1 | tail -5` shows failures — some integration/fitness tests fail with exit code 2
 
 **After implementation** (should pass / show presence):
-- [ ] `bun run test -- --run 2>&1 | tail -5` shows all tests passing (or only pre-existing failures unrelated to this branch)
+- [x] `bun run test -- --run 2>&1 | tail -5` shows all tests passing (or only pre-existing failures unrelated to this branch)
 
 ### Tasks
 
-- [ ] **Reproduce and diagnose**: Run `bun run test -- --run` to see the current failure state. Note: `global-setup.ts` already compiles the binary before tests run. If failures persist after a clean build, investigate fixture schema drift (e.g., missing `tasks/` directory) as root cause — Phase 3 also addresses this. Examine the exit code 2 errors (VALIDATION_ errors) to identify the pattern. Common causes: fixture schema drift, changed stdin parsing, schema validation changes. **Cross-phase note**: If fixture drift (e.g., missing `tasks/overview.json`) is confirmed as the root cause, fix minimally in Phase 1 (enough to pass tests) and defer comprehensive fixture updates to Phase 3 — do not duplicate the work.
-- [ ] **Fix root cause**: Apply the fix. If the issue is a stale binary (tests compile on setup but the branch's code changes aren't reflected), fix the global-setup or build sequence. If the issue is fixture drift (fixtures don't match current schema), update fixtures. If the issue is a validation change in the CLI, update tests to match new behavior.
-- [ ] **Verify full test suite passes**: Run `bun run test -- --run` and confirm 0 failures.
+- [x] **Reproduce and diagnose**: Run `bun run test -- --run` to see the current failure state. Note: `global-setup.ts` already compiles the binary before tests run. If failures persist after a clean build, investigate fixture schema drift (e.g., missing `tasks/` directory) as root cause — Phase 3 also addresses this. Examine the exit code 2 errors (VALIDATION_ errors) to identify the pattern. Common causes: fixture schema drift, changed stdin parsing, schema validation changes. **Cross-phase note**: If fixture drift (e.g., missing `tasks/overview.json`) is confirmed as the root cause, fix minimally in Phase 1 (enough to pass tests) and defer comprehensive fixture updates to Phase 3 — do not duplicate the work.
+- [x] **Fix root cause**: Apply the fix. If the issue is a stale binary (tests compile on setup but the branch's code changes aren't reflected), fix the global-setup or build sequence. If the issue is fixture drift (fixtures don't match current schema), update fixtures. If the issue is a validation change in the CLI, update tests to match new behavior.
+- [x] **Verify full test suite passes**: Run `bun run test -- --run` and confirm 0 failures.
 
 ### Verification
 

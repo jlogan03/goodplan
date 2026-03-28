@@ -1,0 +1,10 @@
+{
+	"created": "2026-01-01T00:00:00.000Z",
+	"deferred": [],
+	"epic": "test-epic",
+	"goal": "Test slice goal",
+	"name": "test-slice",
+	"refinement": null,
+	"status": "created",
+	"updated": "2026-01-01T00:00:00.000Z"
+}

@@ -24,7 +24,7 @@ export function setup(): void {
 			"--outfile",
 			outfile,
 			"--define",
-			`__GOODPLAN_VERSION__='"${pkg.version}"'`,
+			`__GOODPLAN_VERSION__="${pkg.version}"`,
 		],
 		{
 			cwd: projectRoot,
