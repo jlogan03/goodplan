@@ -91,7 +91,7 @@ Create the test audit skill with sub-agent reviewers, static analysis, and side 
 
 ### Tasks
 
-- [ ] **Create `skills/audit-tests/SKILL.md`**: The main skill file with frontmatter including `name: audit-tests` and `description` field (~270 chars with embedded trigger phrases). Draft description: `"Audit test quality and coverage using static analysis. Spawns parallel reviewers to find coverage gaps, stale tests, fragile patterns, and strategy misalignment. Proposes side quests for improvements. Common triggers: 'audit tests', 'check test coverage', 'are the tests good', 'test quality', 'audit testing', 'review test strategy'."` Structure:
+- [x] **Create `skills/audit-tests/SKILL.md`**: The main skill file with frontmatter including `name: audit-tests` and `description` field (~270 chars with embedded trigger phrases). Draft description: `"Audit test quality and coverage using static analysis. Spawns parallel reviewers to find coverage gaps, stale tests, fragile patterns, and strategy misalignment. Proposes side quests for improvements. Common triggers: 'audit tests', 'check test coverage', 'are the tests good', 'test quality', 'audit testing', 'review test strategy'."` Structure:
   - **Step 0 — Version Check**: Read `../_shared/references/cli-interaction.md`. Run `goodplan --version --json`, validate against `requires: goodplan >= 1.0.0`.
   - **Step 1 — Load Context**: Following audit-architecture Step 1 pattern:
     1. Load learnings via `goodplan learning:list --json`
@@ -122,10 +122,10 @@ Create the test audit skill with sub-agent reviewers, static analysis, and side 
       - **During Step 8 (Refresh Health)**: `<!-- partial — interrupted during project-health refresh. Audit report complete. Project-health.md not updated. -->` Audit report is already written.
       - On resume (detected in Step 1), read the partial report and continue from where it left off.
   - **Step 10 — Expertise Check**: Reflect on conversation. If new expertise info observed, read `../_shared/references/expertise-tracking.md` and update `~/.claude/CLAUDE.md`. Otherwise skip silently.
-- [ ] **Create `skills/audit-tests/references/` directory**: Add reference files:
+- [x] **Create `skills/audit-tests/references/` directory**: Add reference files:
   - `guidance.md` — contents: (1) severity level definitions (Critical, Important, Minor — matching audit-architecture convention), (2) shared reviewer output format (findings table with columns: Severity, Description, Evidence, Suggested Action), (3) side quest proposal template (name, goal, scope, verification criteria), (4) test-specific finding categories (coverage gap, stale test, quality issue, strategy misalignment). Does NOT include fitness functions, invariants, or maturity criteria (those are architecture-specific).
   - `sub-agent-prompts.md` — fully self-contained templates for the 4 reviewer sub-agents (coverage gap, stale test, quality, strategy). Each template must include `{placeholders}`, explicit "do NOT read parent skill files" instructions, and defined output format matching the findings table schema from `guidance.md` (Severity, Description, Evidence, Suggested Action).
-- [ ] **Register in `scripts/install-skills.sh`**: Add `"audit-tests"` to the `SKILL_DIRS` array (alphabetical order, after `audit-docs`).
+- [x] **Register in `scripts/install-skills.sh`**: Add `"audit-tests"` to the `SKILL_DIRS` array (alphabetical order, after `audit-docs`).
 - [ ] **Test on this repo**: Invoke `/audit-tests` end-to-end on the goodplan repo (1075 tests across 93 files). Verify it correctly maps source files to test files, spawns reviewers, identifies any coverage gaps, evaluates strategy against conventions, writes audit report to `.project/audits/`, and produces a well-formed side quest proposal.
 
 ### Post-Completion

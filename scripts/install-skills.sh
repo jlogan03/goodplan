@@ -34,6 +34,7 @@ SKILL_DIRS=(
   _shared
   audit-architecture
   audit-docs
+  audit-tests
   capture
   complete
   create-architecture
