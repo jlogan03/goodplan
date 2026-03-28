@@ -1,9 +1,9 @@
 {
 	"activeEpic": null,
-	"activeQuest": null,
+	"activeQuest": "consistent-skill-output",
 	"activeSlice": null,
 	"created": "2026-03-28T00:06:46.961Z",
 	"name": "goodplan",
-	"updated": "2026-03-28T22:55:19.949Z",
+	"updated": "2026-03-28T23:03:31.887Z",
 	"version": "1.0.0"
 }
