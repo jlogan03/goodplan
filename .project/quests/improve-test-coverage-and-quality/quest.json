@@ -3,6 +3,6 @@
 	"goal": "Address test audit findings across three themes: (1) Add unit tests for untested critical files: src/core/state/transitions/helpers.ts (refinement circuit breaker, status guards, learnings rollup), src/core/data/serialize.ts (public API contract), src/core/data/markdown-files.ts (filesystem I/O). (2) Fix stale test data: update hardcoded event count from 38 to 41 in state-events.test.ts, add tasks/overview.json to all test fixtures. (3) Add fitness functions for INV-007 (structured error responses) and INV-001 (mutations through state machine). Also investigate 53 integration test failures on quest-completions branch. Done when: helpers.ts, serialize.ts, markdown-files.ts have unit tests; event count and fixtures are current; INV-001 and INV-007 fitness functions exist and pass.",
 	"name": "improve-test-coverage-and-quality",
 	"refinement": null,
-	"status": "created",
-	"updated": "2026-03-28T03:10:18.906Z"
+	"status": "plan-created",
+	"updated": "2026-03-28T04:48:15.392Z"
 }
