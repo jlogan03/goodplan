@@ -36,28 +36,28 @@ Add direct unit tests for the 3 highest-risk untested files identified by the au
 ### Expected Behavior
 
 **Before implementation** (should fail / show absence):
-- [ ] `ls tests/unit/state/helpers.test.ts 2>&1` fails — file doesn't exist
-- [ ] `ls tests/unit/data/serialize.test.ts 2>&1` fails — file doesn't exist
-- [ ] `ls tests/unit/data/markdown-files.test.ts 2>&1` fails — file doesn't exist
+- [x] `ls tests/unit/state/helpers.test.ts 2>&1` fails — file doesn't exist
+- [x] `ls tests/unit/data/serialize.test.ts 2>&1` fails — file doesn't exist
+- [x] `ls tests/unit/data/markdown-files.test.ts 2>&1` fails — file doesn't exist
 
 **After implementation** (should pass / show presence):
-- [ ] `ls tests/unit/state/helpers.test.ts` succeeds
-- [ ] `ls tests/unit/data/serialize.test.ts` succeeds
-- [ ] `ls tests/unit/data/markdown-files.test.ts` succeeds
-- [ ] `bun run test -- --run tests/unit/state/helpers.test.ts` passes
-- [ ] `bun run test -- --run tests/unit/data/serialize.test.ts` passes
-- [ ] `bun run test -- --run tests/unit/data/markdown-files.test.ts` passes
+- [x] `ls tests/unit/state/helpers.test.ts` succeeds
+- [x] `ls tests/unit/data/serialize.test.ts` succeeds
+- [x] `ls tests/unit/data/markdown-files.test.ts` succeeds
+- [x] `bun run test -- --run tests/unit/state/helpers.test.ts` passes
+- [x] `bun run test -- --run tests/unit/data/serialize.test.ts` passes
+- [x] `bun run test -- --run tests/unit/data/markdown-files.test.ts` passes
 
 ### Tasks
 
-- [ ] **Create `tests/unit/state/helpers.test.ts`**: Read `src/core/state/transitions/helpers.ts` to understand the functions. Covers highest-risk logic (~10 functions). Simple getters, builders, terminal checks, and overview-add functions are covered transitively by transition handler integration tests. Test:
+- [x] **Create `tests/unit/state/helpers.test.ts`**: Read `src/core/state/transitions/helpers.ts` to understand the functions. Covers highest-risk logic (~10 functions). Simple getters, builders, terminal checks, and overview-add functions are covered transitively by transition handler integration tests. Test:
   - `evaluateRefinement()` — all branches: scores pass, override, null refinement skip-path, max rounds error, stay with round increment
   - `guardEpicStatus()` / `guardSliceStatus()` / `guardQuestStatus()` — not found, wrong status, correct status, array of expected statuses
   - `processLearnings()` — empty array, rollup to epic+project, rollup to project only, missing epicName when "epic" target requested
   - `appendActivityLog()` — appends to existing log
   - Status setters (`setSliceStatus`, `setQuestStatus`) — verify status updated AND overview.json synced
   - `setEpicStatus` — verify status and timestamp updated in epic.json (no overview sync — that's `updateOverviewStatus`)
-- [ ] **Create `tests/unit/data/serialize.test.ts`**: Read `src/core/data/serialize.ts`. Test:
+- [x] **Create `tests/unit/data/serialize.test.ts`**: Read `src/core/data/serialize.ts`. Test:
   - Flat tree with json/jsonl entries — unwraps correctly
   - Nested directories — recursive serialization
   - Markdown with `inline: false` returns `true`
@@ -65,7 +65,7 @@ Add direct unit tests for the 3 highest-risk untested files identified by the au
   - Mixed entry types in one tree
   - Exhaustive switch coverage (all StateEntry types)
   - Include a test that passes an invalid entry type (via `as any` type assertion — intentional anti-pattern override for testing runtime guards against values the type system rejects; add inline comment `// Intentional: testing runtime guard against invalid input`) to verify the `default: never` exhaustive switch guard throws at runtime
-- [ ] **Create `tests/unit/data/markdown-files.test.ts`**: Read `src/core/data/markdown-files.ts`. Test with temp directory fixtures:
+- [x] **Create `tests/unit/data/markdown-files.test.ts`**: Read `src/core/data/markdown-files.ts`. Test with temp directory fixtures:
   - `writeMarkdownFiles()` — creates dirs, writes content, files exist after
   - `copyMarkdownFiles()` — copies existing file, skips missing source gracefully
   - Error path — write to read-only dir throws GoodplanError with correct code
