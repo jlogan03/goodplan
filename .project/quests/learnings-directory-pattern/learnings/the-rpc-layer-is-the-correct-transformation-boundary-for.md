@@ -1,0 +1,1 @@
+Mapping LearningInput (with detail) to LearningEventEntry (with file) in the RPC layer preserves state machine purity (INV-003) and the load-reduce-commit pattern. Slug derivation happens before reduce(), file writes happen after reduce() succeeds. This pattern generalizes to any input-to-storage transformation involving I/O.

@@ -121,8 +121,9 @@ Each mutating operation follows the same pattern:
 1. Load state via Data Layer (`loadState()`)
 2. Build the appropriate `StateEvent` from the command parameters
 3. Call `reduce(state, event)`
-4. Commit new state via Data Layer (`commitState()`)
-5. Assemble and return the response
+4. Write supplementary files if needed (e.g., `complete()` calls `writeMarkdownFiles()` to write per-learning `.md` files after reduce succeeds — see Complete section)
+5. Commit new state via Data Layer (`commitState()`)
+6. Assemble and return the response
 
 `context` and `status` are read-only — they load state but don't call the reducer or commit.
 
@@ -238,8 +239,8 @@ type CompleteInput =
 // `LearningEventEntry` (with `file` instead of `detail`) before building the
 // state event: it derives a slug from `summary`, sets `file` to `learnings/<slug>.md`,
 // and after reduce() succeeds, writes the `.md` file via Data Layer's writeMarkdownFiles().
-// During rollup, the RPC layer copies `.md` files from source to target scope
-// via Data Layer's copyMarkdownFiles().
+// During rollup, `begin('rollup', ...)` copies `.md` files from source to target
+// scope via Data Layer's copyMarkdownFiles() after reduce succeeds.
 interface Learning {
   category: 'domain' | 'worked' | 'didnt-work' | 'do-differently';
   summary: string;

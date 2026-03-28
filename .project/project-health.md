@@ -4,7 +4,7 @@
 
 ### Well-tested areas
 - Skill file structure (SKILL.md frontmatter, step numbering, reference paths): verified across 4 skill files during slice-quality-and-health implementation with 28-point checklist
-- goodplan CLI: 1040 tests across 90 files, integration + fitness tests. Unit tests cover tree types, schemas, I/O, state machine (including task entity and nested epic paths), RPC (including paths, version-stamp, deferred routing with cross-epic support, migration re-run), context (resolveScope, entityDir with epic paths), commands (including status with embedded overview, slice:list with --all, slice:show with --epic). Integration tests spawn compiled binary and cover migration with nested paths. Fitness functions verify all architectural invariants including ENTITY_EXEMPT_COMMANDS. Type-clean against `tsc --noEmit`.
+- goodplan CLI: 1075 tests across 93 files, integration + fitness tests. Unit tests cover tree types, schemas, I/O, state machine (including task entity and nested epic paths), RPC (including paths, version-stamp, deferred routing with cross-epic support, migration re-run), context (resolveScope, entityDir with epic paths), commands (including status with embedded overview, slice:list with --all, slice:show with --epic). Integration tests spawn compiled binary and cover migration with nested paths. Fitness functions verify all architectural invariants including ENTITY_EXEMPT_COMMANDS. Type-clean against `tsc --noEmit`.
 - goodplan CLI main runner (`src/index.ts`): integration tests cover unknown commands, --help, --version, --json error mode, NO_COLOR, stdin validation, version compatibility checking (4 variants), --quiet suppression of warnings.
 
 ### Undertested areas
@@ -22,11 +22,11 @@
 - epic-conventions.md is consumed by 12+ skills: changes require updating all consumers
 - citty + `exactOptionalPropertyTypes`: requires `as unknown as CommandDef` casts in `src/index.ts`. May break on citty upgrade.
 
-<!-- Last updated by: complete for 05-tests-and-migration, 2026-03-27 -->
+<!-- Last updated by: complete for learnings-directory-pattern, 2026-03-27 -->
 
 ## Performance Characteristics
 
-- Full test suite (1040 tests, 90 files): ~5.9s total including binary compilation (~1s)
+- Full test suite (1075 tests, 93 files): ~6.1s total including binary compilation (~1s)
 - Integration tests (~50 tests): ~10s (dominated by binary spawning)
 - Fitness tests (92 tests): ~3s (mix of source parsing and module imports)
 
@@ -73,8 +73,8 @@
 ## Recent Changes
 
 - **05-tests-and-migration** (2026-03-27): Fixed 3 failing integration tests and 2 fixture files for nested paths. Added ENTITY_EXEMPT_COMMANDS fitness test category. Removed STATE_ALREADY_INITIALIZED guard (re-migration support), sliceSequence from buildMigrationState output, typed epicJsonContent with Epic schema, timestamped backup naming, warning field for re-migration. Built+installed updated CLI. Self-migrated .project/ to nested epic paths. Updated 5 architecture docs. 1040 tests, 13 files changed.
+- **learnings-directory-pattern** (2026-03-27): Per-learning .md files replacing monolithic learnings.md. Zod union schema for non-breaking transition, LearningEventEntry type, slug derivation utility, Data Layer markdown helpers (writeMarkdownFiles/copyMarkdownFiles), shared processLearnings helper, RPC layer input mapping with post-reduce file writing, migration logic for converting .md + inline JSONL detail to per-file format, schema tightening. Updated 16 skill files. 1075 tests (+35 new), 40 files changed.
+- **05-tests-and-migration** (2026-03-27): Fixed 3 failing integration tests and 2 fixture files for nested paths. Added ENTITY_EXEMPT_COMMANDS fitness test category. Removed STATE_ALREADY_INITIALIZED guard (re-migration support), sliceSequence from buildMigrationState output, typed epicJsonContent with Epic schema, timestamped backup naming, warning field for re-migration. Built+installed updated CLI. Self-migrated .project/ to nested epic paths. Updated 5 architecture docs. 1040 tests, 13 files changed.
 - **04-skills-update** (2026-03-27): Updated 8 skill/reference files to support nested epic paths alongside flat paths. Dual-path globs for completion scanning, conditional logic in explore skill, Epic Slice row in scope mapping. Removed 7 .project/learnings.md references from /complete (learnings rollup now via CLI payload only). Added CLAUDE.md path audit step to /migrate skill. No TS code changes.
-- **02-rpc-and-commands** (2026-03-27): Wired RPC + commands for nested epic paths. Cleared 22 @ts-expect-error/TODO annotations. Added requireActiveEpic helper, --all on slice:list, --epic on slice:show. Fixed migrate.ts destination path. epicOverviewItemSchema.slices defaults to []. 874 tests, 41 files changed.
-- **task-capture** (2026-03-26): New task entity (CREATE_TASK, DROP_TASK, CONVERT_TASK with inlined cross-entity creation), 5 CLI commands (task:create/list/show/drop/convert), /capture skill, project-status task count integration. Extracted shared entity builder helpers. 864+ unit tests (+30 new for tasks).
 
-<!-- Last updated by: complete for 05-tests-and-migration, 2026-03-27 -->
+<!-- Last updated by: complete for learnings-directory-pattern, 2026-03-27 -->

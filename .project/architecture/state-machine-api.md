@@ -265,6 +265,25 @@ Key guards:
 
 These guards are defined in transition-tables.md (source of truth). Only guards listed there are implemented.
 
+### Shared Transition Helpers
+
+```typescript
+// Learnings processing — shared between COMPLETE_SLICE and COMPLETE_QUEST handlers.
+// Writes learnings to the source scope's JSONL and rolls up to target scopes.
+// `availableTargets` makes the slice/quest distinction explicit:
+// - Slices pass Set(["epic", "project"]) — roll up to both
+// - Quests pass Set(["project"]) — skip epic, roll up to project only
+function processLearnings(
+  tree: ProjectTree,
+  learnings: LearningEventEntry[],
+  source: string,
+  availableTargets: Set<string>,
+  epicName?: string
+): ProjectState;
+```
+
+Follows the same pattern as `appendActivityLog` — a shared helper called by multiple transition handlers to avoid duplication.
+
 ## Dependencies
 
 None. The state machine imports only its own types and shared schema types from `src/schemas/`.

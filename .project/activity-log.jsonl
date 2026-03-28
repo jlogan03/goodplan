@@ -1,1 +1,2 @@
 {"detail":"4 epics, 26 slices, 25 quests","phase":"migration","scope":"project","status":"complete","summary":"Migrated from pre-CLI .project/ format","ts":"2026-03-28T00:06:46.961Z"}
+{"phase":"complete-quest","scope":"quests/learnings-directory-pattern","status":"complete","summary":"Quest \"learnings-directory-pattern\" completed","ts":"2026-03-28T00:17:58.776Z"}

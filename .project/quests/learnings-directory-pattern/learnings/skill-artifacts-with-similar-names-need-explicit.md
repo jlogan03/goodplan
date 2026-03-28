@@ -1,0 +1,1 @@
+completion/learnings.md (re-entry detection artifact) and .project/learnings.md (monolithic project learnings) are completely different things. Plan refinement caught this as a CRITICAL issue. Any plan touching a file that shares a name with another artifact at a different scope must explicitly distinguish them in the Overview and every phase.
