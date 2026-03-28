@@ -75,13 +75,7 @@ Also load `../_shared/references/decisions-format.md` for the decisions format a
 
 8. Check for existing slices by running: `ls $SLICES_DIR/sequencing.md $SLICES_DIR/*/goal.md 2>/dev/null` (using the resolved `$SLICES_DIR` from Step 0).
 
-Present using this Context Load Summary template:
-
-```
-**Loaded**: {list of files loaded}
-**Context**: {brief summary — epic/project scope, architecture state}
-**Missing**: {list of expected but missing files, or "None"}
-```
+Display using the Context Load Summary Template from `../_shared/references/output-templates.md`. For the `**Context**` line: summarize epic/project scope and architecture state (e.g., "Epic initial: 4 subsystems defined, 2 active decisions").
 
 ## Step 3 — Re-entry Check
 
@@ -238,20 +232,11 @@ For non-epic scopes, no CLI mutation is needed — the written artifacts serve a
 
 ## Step 10 — Done Summary
 
-Display using this template:
+Display using the Done Summary Template (Variant A — Strict Fenced) from `../_shared/references/output-templates.md` with these skill-specific values:
 
-```
----
-
-## Slices Defined
-
-**Total**: {N} slices
-**Output**: {path to slices directory}
-**Slices**: {numbered list of slice names}
-**Recommended next step**: `/create-plan` for {first unplanned slice name}
-
----
-```
+- `{done_heading}`: `Slices Defined`
+- `{done_fields}`: `**Total**: {N} slices`, `**Output**: {path to slices directory}`, `**Slices**: {numbered list of slice names}`
+- `{next_step}`: `/create-plan` for {first unplanned slice name}
 
 ## Error Handling
 

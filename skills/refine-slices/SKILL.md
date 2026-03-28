@@ -156,35 +156,13 @@ Use the shared Iteration Summary from `../_shared/references/output-templates.md
 
 ### Completion Summary Template
 
-Display at the end of Step 5 when the refinement loop exits.
+Display at the end of Step 5 when the refinement loop exits. Use the Completion Summary Template from `../_shared/references/output-templates.md` with these skill-specific values:
 
-```
----
-
-## Refinement Complete
-
-**Final score**: {min score}/10
-**Iterations**: {N}
-
-### Score Progression
-
-| Iteration | {Reviewer1} | {Reviewer2} | ... |
-|-----------|-------------|-------------|-----|
-| 1         | {score}     | {score}     |     |
-| ...       |             |             |     |
-
-### Issues Resolved
-
-**Total**: {N} issues ({breakdown by severity})
-
-### Slices Modified
-
-| Slice | Change |
-|-------|--------|
-| {name} | {what changed} |
-
----
-```
+- `{completion_heading}`: `Refinement Complete`
+- `{score_label}`: `score`
+- `{skill_specific_header_fields}`: none
+- `{issues_resolved_variant}`: omit variant label — use total count: `**Total**: {N} issues ({breakdown by severity})`
+- `{skill_specific_extension_sections}`: `### Slices Modified` table (`Slice | Change`)
 
 ## References
 

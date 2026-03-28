@@ -269,39 +269,13 @@ Use the shared Iteration Summary from `../_shared/references/output-templates.md
 
 ### Completion Summary Template
 
-Display at the end of Step 4.
+Display at the end of Step 4. Use the Completion Summary Template from `../_shared/references/output-templates.md` with these skill-specific values:
 
-```
----
-
-## Architecture Refinement Complete
-
-**Final score**: {min score across all reviewers}/10
-**Iterations**: {N}
-**Architecture files**: $ARCH_DIR/
-
-### Score Progression
-
-| Iteration | {Reviewer1} | {Reviewer2} | ... |
-|-----------|-------------|-------------|-----|
-| 1         | {score}     | {score}     |     |
-| ...       |             |             |     |
-
-### Changes Summary
-
-{List of substantive changes: added/removed/modified subsystems, boundary shifts, new patterns}
-
-### Issues Resolved Per Iteration
-
-**Iteration 1** ({N} issues: {breakdown by severity})
-...
-
-### Remaining Issues
-
-{List any unresolved MINOR issues, or "None — all issues resolved."}
-
----
-```
+- `{completion_heading}`: `Architecture Refinement Complete`
+- `{score_label}`: `score`
+- `{skill_specific_header_fields}`: `**Architecture files**: $ARCH_DIR/`
+- `{issues_resolved_variant}`: `Per Iteration` — use per-iteration tables
+- `{skill_specific_extension_sections}`: `### Changes Summary` — list substantive changes (added/removed/modified subsystems, boundary shifts, new patterns)
 
 ## References
 

@@ -395,43 +395,17 @@ Use the shared Iteration Summary from `../_shared/references/output-templates.md
 
 ### Completion Summary Template
 
-Display at the end of Step 4 when all phases are complete.
+Display at the end of Step 4 when all phases are complete. Use the Completion Summary Template from `../_shared/references/output-templates.md` with these skill-specific values:
 
-```
----
-
-## Implementation Complete
-
-**Plan**: {plan name}
-**Phases completed**: {N}
-**Total iterations**: {sum across all phases}
-
-### Phase Summary
-
-| Phase | Name | Iterations | Final Score | Commit |
-|-------|------|------------|-------------|--------|
-| 1 | {name} | {N} | {min score}/10 | {short hash} |
-| 2 | {name} | {N} | {min score}/10 | {short hash} |
-| ... | | | | |
-
-### Verification Evidence
-
-All phases completed RED-GREEN verification cycle. Phases requiring extra iterations:
-- {Phase N: name — brief note on what failed and how it was resolved, if any}
-
-**User-verified checks** (if any):
-- Phase {N}, check "{description}": User confirmed {result} on {date}
-
-### Key Decisions
-
-- {Any deviations from the plan, significant choices made, or plan modifications}
-
-### Follow-up Recommendations
-
-- Non-verification concerns only — remaining MINOR code quality issues, areas flagged during early exit, suggestions for future work. Verification is complete, not recommended.
-
----
-```
+- `{completion_heading}`: `Implementation Complete`
+- `{score_label}`: omit (replaced by Phase Summary table)
+- `{skill_specific_header_fields}`: `**Plan**: {plan name}`, `**Phases completed**: {N}`, `**Total iterations**: {sum across all phases}`
+- `{issues_resolved_variant}`: omit (covered by Phase Summary)
+- `{skill_specific_extension_sections}`:
+  - `### Phase Summary` — table: `Phase | Name | Iterations | Final Score | Commit`
+  - `### Verification Evidence` — RED-GREEN cycle summary, user-verified checks
+  - `### Key Decisions` — deviations from plan, significant choices
+  - `### Follow-up Recommendations` — remaining MINOR issues, early exit flags, future work suggestions (not verification items)
 
 ## References
 

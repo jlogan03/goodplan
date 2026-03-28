@@ -339,7 +339,7 @@ When no active epic exists (project-level architecture), there is no CLI phase t
 
 ## Step 11 — Done Summary
 
-Present a closing summary listing:
+Display using the Done Summary Template (Variant B — Loose Checklist) from `../_shared/references/output-templates.md`. Include:
 
 - All files written (conventions.md and each architecture file)
 - All decisions written during this run (if any) — list each decision file path and title

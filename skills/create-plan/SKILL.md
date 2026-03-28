@@ -74,13 +74,7 @@ Follow the Stale Assumption Detection Algorithm in `../_shared/references/epic-c
 
 When staleness is detected: present the specific architecture changes (use `git diff` or `git log` to show what changed) and ask the user to confirm the goal still applies or update it before proceeding with planning.
 
-Present using this Context Load Summary template:
-
-```
-**Loaded**: {list of files loaded}
-**Context**: {brief summary — slice goal, architecture, conventions}
-**Missing**: {list of expected but missing files, or "None"}
-```
+Display using the Context Load Summary Template from `../_shared/references/output-templates.md`. For the `**Context**` line: summarize slice goal, architecture, and conventions (e.g., "Slice 02-data-layer: schema + seed data, 3 architecture files loaded").
 
 ## Step 4 — Interactive Planning
 
@@ -189,20 +183,11 @@ If the plan is standalone (not under `.project/`), skip CLI mutation.
 
 ## Step 8 — Done Summary
 
-Display using this template:
+Display using the Done Summary Template (Variant A — Strict Fenced) from `../_shared/references/output-templates.md` with these skill-specific values:
 
-```
----
-
-## Plan Created
-
-**Plan**: {path to plan file}
-**Phases**: {N}
-**Research files written**: {list or "None"}
-**Recommended next step**: `/refine-plan {path}`
-
----
-```
+- `{done_heading}`: `Plan Created`
+- `{done_fields}`: `**Plan**: {path to plan file}`, `**Phases**: {N}`, `**Research files written**: {list or "None"}`
+- `{next_step}`: `/refine-plan {path}`
 
 ## Error Handling
 

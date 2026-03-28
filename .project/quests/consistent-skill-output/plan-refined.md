@@ -18,15 +18,15 @@ Extract 3 duplicated template groups into `output-templates.md` and update consu
 ### Expected Behavior
 
 **Before implementation** (should fail / show absence):
-- [ ] `grep -c 'Context Load Summary' skills/_shared/references/output-templates.md` returns 0 — template not yet shared
-- [ ] `grep -c 'Done Summary' skills/_shared/references/output-templates.md` returns 0 — template not yet shared
-- [ ] `grep -c 'Completion Summary Template' skills/_shared/references/output-templates.md` returns 0 — no Completion Summary Template yet
+- [x] `grep -c 'Context Load Summary' skills/_shared/references/output-templates.md` returns 0 — template not yet shared
+- [x] `grep -c 'Done Summary' skills/_shared/references/output-templates.md` returns 0 — template not yet shared
+- [x] `grep -c 'Completion Summary Template' skills/_shared/references/output-templates.md` returns 0 — no Completion Summary Template yet
 
 **After implementation** (should pass / show presence):
-- [ ] `grep -c 'Context Load Summary' skills/_shared/references/output-templates.md` returns at least 1 — shared template exists
-- [ ] `grep -c 'Done Summary' skills/_shared/references/output-templates.md` returns at least 1 — shared template exists
-- [ ] `grep -c 'Completion Summary Template' skills/_shared/references/output-templates.md` returns at least 1 — shared base template added
-- [ ] Consuming skills removed inline copies and reference the shared template:
+- [x] `grep -c 'Context Load Summary' skills/_shared/references/output-templates.md` returns at least 1 — shared template exists
+- [x] `grep -c 'Done Summary' skills/_shared/references/output-templates.md` returns at least 1 — shared template exists
+- [x] `grep -c 'Completion Summary Template' skills/_shared/references/output-templates.md` returns at least 1 — shared base template added
+- [x] Consuming skills removed inline copies and reference the shared template:
   - `grep -c 'output-templates.md' skills/create-slices/SKILL.md` returns at least 2 (Context Load + Done)
   - `grep -c 'output-templates.md' skills/create-plan/SKILL.md` returns at least 2 (Context Load + Done)
   - `grep -c 'output-templates.md' skills/complete/SKILL.md` returns at least 2 (Context Load + Done)
@@ -36,7 +36,7 @@ Extract 3 duplicated template groups into `output-templates.md` and update consu
   - `grep -c 'output-templates.md' skills/implement-plan/SKILL.md` returns at least 1 (Completion Summary)
   - `grep -c 'output-templates.md' skills/create-architecture/SKILL.md` returns at least 1 (Done Summary)
   - `grep -c 'output-templates.md' skills/explore/SKILL.md` returns at least 1 (Done Summary)
-- [ ] Inline template markers are ABSENT from consuming skills (negative checks):
+- [x] Inline template markers are ABSENT from consuming skills (negative checks):
   - `grep -c '^\*\*Loaded\*\*:' skills/create-slices/SKILL.md` returns 0
   - `grep -c '^\*\*Loaded\*\*:' skills/create-plan/SKILL.md` returns 0
   - `grep -c '^\*\*Loaded\*\*:' skills/complete/SKILL.md` returns 0
@@ -50,21 +50,21 @@ Extract 3 duplicated template groups into `output-templates.md` and update consu
 
 ### Tasks
 
-- [ ] **Extract Context Load Summary template**: Read the 3 inline copies (create-slices, create-plan, complete), identify the common structure (`**Loaded** / **Context** / **Missing**`), write the shared template to output-templates.md with substitution rules. Add display rules noting that the `**Context**` line has skill-specific content guidance (e.g., complete lists artifact counts, create-plan lists slice goal summary). Note: complete's Context line has scope-specific format strings (epic vs. slice/quest) that are richer than the other two — the shared template should accommodate this variance.
+- [x] **Extract Context Load Summary template**: Read the 3 inline copies (create-slices, create-plan, complete), identify the common structure (`**Loaded** / **Context** / **Missing**`), write the shared template to output-templates.md with substitution rules. Add display rules noting that the `**Context**` line has skill-specific content guidance (e.g., complete lists artifact counts, create-plan lists slice goal summary). Note: complete's Context line has scope-specific format strings (epic vs. slice/quest) that are richer than the other two — the shared template should accommodate this variance.
 
-- [ ] **Extract Completion Summary Template base**: Read the 4 inline copies (refine-plan, refine-architecture, refine-slices, implement-plan), identify the shared base as the intersection: Score Progression table + Issues Resolved + Remaining Issues. Everything else is an extension point. Skill-specific extensions: refine-plan adds `**Path**`; refine-architecture adds `**Architecture files**` and "Changes Summary"; refine-slices adds "Slices Modified" with compressed issues; implement-plan adds Phase Summary, Verification Evidence, Key Decisions, Follow-up Recommendations. Use heading "Completion Summary Template" in output-templates.md (matches existing skill headings). Write with substitution rules. Note: `complete/SKILL.md` also has a `## Completion Summary` section, but it is structurally a Done Summary (scope identifier, artifacts written, recommended next step) — it is NOT a consumer of this template group and should not be listed as one.
+- [x] **Extract Completion Summary Template base**: Read the 4 inline copies (refine-plan, refine-architecture, refine-slices, implement-plan), identify the shared base as the intersection: Score Progression table + Issues Resolved + Remaining Issues. Everything else is an extension point. Skill-specific extensions: refine-plan adds `**Path**`; refine-architecture adds `**Architecture files**` and "Changes Summary"; refine-slices adds "Slices Modified" with compressed issues; implement-plan adds Phase Summary, Verification Evidence, Key Decisions, Follow-up Recommendations. Use heading "Completion Summary Template" in output-templates.md (matches existing skill headings). Write with substitution rules. Note: `complete/SKILL.md` also has a `## Completion Summary` section, but it is structurally a Done Summary (scope identifier, artifacts written, recommended next step) — it is NOT a consumer of this template group and should not be listed as one.
 
-- [ ] **Extract Done Summary skeleton**: Read the 5 inline copies (create-slices, create-plan, complete, create-architecture, explore), identify the common pattern (scope identifier, artifacts written, recommended next step). Write two variants to output-templates.md: (1) a strict fenced template for create-slices, create-plan, and complete; (2) a loose checklist (fields to include, no fenced block) for explore and create-architecture, whose output is prose-oriented. Each skill's SKILL.md will reference the appropriate variant and list its specific fields.
+- [x] **Extract Done Summary skeleton**: Read the 5 inline copies (create-slices, create-plan, complete, create-architecture, explore), identify the common pattern (scope identifier, artifacts written, recommended next step). Write two variants to output-templates.md: (1) a strict fenced template for create-slices, create-plan, and complete; (2) a loose checklist (fields to include, no fenced block) for explore and create-architecture, whose output is prose-oriented. Each skill's SKILL.md will reference the appropriate variant and list its specific fields.
 
-- [ ] **Update consuming skills — Context Load Summary**: Replace inline templates in create-slices/SKILL.md, create-plan/SKILL.md, and complete/SKILL.md with references to the shared template. Each skill should say: "Display using the Context Load Summary Template from `../_shared/references/output-templates.md`" followed by skill-specific `**Context**` line guidance.
+- [x] **Update consuming skills — Context Load Summary**: Replace inline templates in create-slices/SKILL.md, create-plan/SKILL.md, and complete/SKILL.md with references to the shared template. Each skill should say: "Display using the Context Load Summary Template from `../_shared/references/output-templates.md`" followed by skill-specific `**Context**` line guidance.
 
-- [ ] **Update consuming skills — Completion Summary Template**: Replace inline templates in refine-plan/SKILL.md, refine-architecture/SKILL.md, refine-slices/SKILL.md, and implement-plan/SKILL.md with references to the shared base template. Each skill specifies its extension sections.
+- [x] **Update consuming skills — Completion Summary Template**: Replace inline templates in refine-plan/SKILL.md, refine-architecture/SKILL.md, refine-slices/SKILL.md, and implement-plan/SKILL.md with references to the shared base template. Each skill specifies its extension sections.
 
-- [ ] **Update consuming skills — Done Summary**: Replace inline templates in create-slices/SKILL.md, create-plan/SKILL.md, complete/SKILL.md, create-architecture/SKILL.md, and explore/SKILL.md with references to the shared skeleton. create-slices, create-plan, and complete reference the strict fenced variant; create-architecture and explore reference the loose checklist variant. Each skill specifies its unique fields.
+- [x] **Update consuming skills — Done Summary**: Replace inline templates in create-slices/SKILL.md, create-plan/SKILL.md, complete/SKILL.md, create-architecture/SKILL.md, and explore/SKILL.md with references to the shared skeleton. create-slices, create-plan, and complete reference the strict fenced variant; create-architecture and explore reference the loose checklist variant. Each skill specifies its unique fields.
 
-- [ ] **Update _shared/references/README.md**: Update the description to reflect the 3 new template groups (Context Load Summary, Completion Summary Template, Done Summary) alongside the existing Iteration Summary.
+- [x] **Update _shared/references/README.md**: Update the description to reflect the 3 new template groups (Context Load Summary, Completion Summary Template, Done Summary) alongside the existing Iteration Summary.
 
-- [ ] **Verify no broken references**: Run the full set of positive and negative `grep -c` checks listed in the Expected Behavior section above. All positive checks must return ≥ 1; all negative checks must return 0.
+- [x] **Verify no broken references**: Run the full set of positive and negative `grep -c` checks listed in the Expected Behavior section above. All positive checks must return ≥ 1; all negative checks must return 0.
 
 ### Verification
 

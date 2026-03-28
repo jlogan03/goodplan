@@ -132,15 +132,7 @@ Note: `slice:show` artifacts are boolean flags (`{ goal, exploreComplete, plan, 
 - `.project/architecture/` (current reality — top-level)
 - `$EPIC_DIR/research/`, `brainstorm/`, `prototypes/` (for promotion step)
 
-Present using this Context Load Summary template:
-
-```
-**Loaded**: {list of files loaded}
-**Context**: {brief summary of what was found}
-**Missing**: {list of expected but missing files, or "None"}
-```
-
-For epic scope, the Context line should read: "Epic [name]: {N} slices completed, {M} research files, {K} brainstorm files, {J} prototypes." For slices/quests: "Plan ({N} phases), {M} implementation reviews, {K} research files, architecture ({N} files)."
+Display using the Context Load Summary Template from `../_shared/references/output-templates.md`. For the `**Context**` line, use scope-dependent format: epic scope: "Epic [name]: {N} slices completed, {M} research files, {K} brainstorm files, {J} prototypes." Slice/quest scope: "Plan ({N} phases), {M} implementation reviews, {K} research files, architecture ({N} files)."
 
 Follow calibration depth guidance in `../_shared/references/expertise-tracking.md`.
 
@@ -409,21 +401,11 @@ Completed entities are identified by their `status === "completed"` field in the
 
 ## Step 11 — Done Summary
 
-Display using this template:
+Display using the Done Summary Template (Variant A — Strict Fenced) from `../_shared/references/output-templates.md` with these skill-specific values:
 
-```
----
-
-## Completion Summary
-
-**Scope**: {slice/quest/epic name}
-**Artifacts written**: {list of files written during completion}
-**Architecture updates**: {count} proposed
-**Learnings**: {count} recorded
-**Recommended next step**: {what to do next}
-
----
-```
+- `{done_heading}`: `Completion Summary`
+- `{done_fields}`: `**Scope**: {slice/quest/epic name}`, `**Artifacts written**: {list of files written during completion}`, `**Architecture updates**: {count} proposed`, `**Learnings**: {count} recorded`
+- `{next_step}`: context-dependent (next slice, next epic phase, etc.)
 
 ## Graceful Stop (Steps 4-9)
 

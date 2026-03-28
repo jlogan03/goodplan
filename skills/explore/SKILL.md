@@ -230,10 +230,15 @@ This transitions the epic to `explored` and records the activity. If this step i
 
 The CLI only supports epic-scoped exploration state transitions. For project, slice, and quest scopes, the `explore-complete.md` artifact serves as the completion record. No CLI mutation is needed.
 
-### After completion
+### After completion — Done Summary
 
-Summarize all decisions written during this run (if any). List each decision title and recommend next steps:
-- Epic: `/create-architecture`
-- Project-level (no epic): `/create-architecture`
-- Slice: `/create-plan`
-- Side quest: `/create-plan`
+Display using the Done Summary Template (Variant B — Loose Checklist) from `../_shared/references/output-templates.md`. Include:
+
+- All artifacts written during this run (file paths)
+- All decisions written during this run (if any) — list each decision title
+- CLAUDE.md update confirmation (if applicable)
+- Recommend next step based on scope:
+  - Epic: `/create-architecture`
+  - Project-level (no epic): `/create-architecture`
+  - Slice: `/create-plan`
+  - Side quest: `/create-plan`

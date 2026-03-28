@@ -16,7 +16,7 @@ Consolidation criterion: only move a file here if it is expected to stay unified
 | `epic-conventions.md` | Epic directory structure, state machine, transitions, two-layer architecture model, consumer guide |
 | `expertise-tracking.md` | Two-layer system for tracking user domain expertise and calibrating explanation depth |
 | `iteration-loop.md` | Shared orchestration skeleton for iterative review-and-edit skills (refine-plan, refine-architecture, etc.) |
-| `output-templates.md` | Rigid templates for structured user-facing output (Iteration Summary) shared across review/implementation skills |
+| `output-templates.md` | Rigid templates for structured user-facing output: iteration summaries, context load, completion, and done summaries |
 | `maturity-conventions.md` | Conventions for maturity levels, invariants, and fitness functions in architecture files |
 | `project-health-format.md` | Canonical structure for `.project/project-health.md`, a living document of system-level observations |
 | `reviewers-cross-cutting.md` | Cross-cutting reviewer prompts spanning multiple domains, with fillable placeholders |

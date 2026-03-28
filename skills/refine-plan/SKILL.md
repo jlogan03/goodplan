@@ -252,49 +252,13 @@ Read `../_shared/references/output-templates.md` for the shared Iteration Summar
 
 ### Completion Summary Template
 
-Display at the end of Step 5, after renaming to `-refined`.
+Display at the end of Step 5, after renaming to `-refined`. Use the Completion Summary Template from `../_shared/references/output-templates.md` with these skill-specific values:
 
-```
----
-
-## Refinement Complete
-
-**Final plan score**: {min score across all reviewers in final iteration}/10
-**Path**: {path to -refined file or directory}
-**Iterations**: {N}
-
-### Score Progression
-
-| Iteration | {Reviewer1} | {Reviewer2} | {Reviewer3} | ... |
-|-----------|-------------|-------------|-------------|-----|
-| 1         | {score}     | {score}     | {score}     |     |
-| 2         | —           | {score}     | {score}     |     |
-| ...       |             |             |             |     |
-
-(Use — for reviewers not active in that iteration)
-
-### Issues Resolved Per Iteration
-
-**Iteration 1** ({N} issues: {breakdown by severity})
-
-| # | Severity | Issue | Source | Status |
-|---|----------|-------|--------|--------|
-| 1 | IMPORTANT | {brief description} | {Reviewer} | Fixed |
-| 2 | MINOR | {brief description} | {Reviewer} | Fixed |
-| 3 | MINOR | {brief description} | {Reviewer} | Skipped — stylistic |
-
-**Iteration 2** ({N} issues: ...)
-
-| # | Severity | Issue | Source | Status |
-|---|----------|-------|--------|--------|
-| ... | ... | ... | ... | ... |
-
-### Remaining Issues
-
-{List any unresolved MINOR issues, or "None — all issues resolved."}
-
----
-```
+- `{completion_heading}`: `Refinement Complete`
+- `{score_label}`: `plan score`
+- `{skill_specific_header_fields}`: `**Path**: {path to -refined file or directory}`
+- `{issues_resolved_variant}`: `Per Iteration` — use per-iteration tables with `# | Severity | Issue | Source | Status` columns
+- `{skill_specific_extension_sections}`: none
 
 ## Converting to Directory-Based Format
 
