@@ -22,15 +22,15 @@ Replace the manually-maintained `EXPECTED_ERROR_CODE_COUNT = 27` in `src/util/er
 
 ### Tasks
 
-- [ ] **Add source-derived set verification to `structured-errors.test.ts`**: Read **both** source files at test time using `import { readFileSync } from "node:fs"`:
+- [x] **Add source-derived set verification to `structured-errors.test.ts`**: Read **both** source files at test time using `import { readFileSync } from "node:fs"`:
   - `src/util/errors.ts` — defines `DataErrorCode` (8 members), `ValidationErrorCode` (8 members), and `InternalErrorCode` (1 member, uses `= "..."` syntax not `| "..."`)
   - `src/schemas/state-events.ts` — defines `StateErrorCode` (10 members)
 
   For each file, regex-extract all string literals from the relevant union types. Use an indentation-agnostic pattern like `/"([A-Z]+_[A-Z_]+)"/g` scoped between each `type XxxErrorCode =` declaration and its terminating semicolon. This handles both multi-member (`| "..."`) and single-member (`= "..."`) formats regardless of whitespace style.
 
   Assert **bidirectional set equality**: the set of regex-extracted codes must exactly equal the set of `ALL_ERROR_CODES` entries. This catches both missing entries (code in source but not in array) and stale entries (code in array but removed from source).
-- [ ] **Remove `EXPECTED_ERROR_CODE_COUNT` from `src/util/errors.ts`**: Delete the export and its JSDoc comment. Update `ALL_ERROR_CODES` JSDoc to reference the regex-based set-equality check instead of the manual count.
-- [ ] **Verify**: Run full test suite. Sanity check both directions: (1) temporarily comment out one entry in `ALL_ERROR_CODES` to confirm the assertion catches a missing entry, then revert; (2) temporarily add a fake entry like `"FAKE_CODE"` to `ALL_ERROR_CODES` to confirm the assertion catches a stale entry, then revert.
+- [x] **Remove `EXPECTED_ERROR_CODE_COUNT` from `src/util/errors.ts`**: Delete the export and its JSDoc comment. Update `ALL_ERROR_CODES` JSDoc to reference the regex-based set-equality check instead of the manual count.
+- [x] **Verify**: Run full test suite. Sanity check both directions: (1) temporarily comment out one entry in `ALL_ERROR_CODES` to confirm the assertion catches a missing entry, then revert; (2) temporarily add a fake entry like `"FAKE_CODE"` to `ALL_ERROR_CODES` to confirm the assertion catches a stale entry, then revert.
 
 ### Verification
 

@@ -35,8 +35,8 @@ export type GoodplanErrorCode =
 /**
  * Canonical list of all error codes. Exported for fitness testing.
  * Every element is type-checked via `satisfies`. When adding a new code to any
- * error-code union, also add it here — the count assertion in the fitness test
- * will fail if the array length doesn't match EXPECTED_ERROR_CODE_COUNT.
+ * error-code union, also add it here — the fitness test derives expected codes
+ * from source type definitions and asserts bidirectional set equality.
  */
 export const ALL_ERROR_CODES = [
 	// DATA_*
@@ -71,9 +71,6 @@ export const ALL_ERROR_CODES = [
 	// INTERNAL_*
 	"INTERNAL_ERROR",
 ] as const satisfies readonly GoodplanErrorCode[];
-
-/** Expected count — update when adding/removing error codes. */
-export const EXPECTED_ERROR_CODE_COUNT = 27;
 
 export class GoodplanError extends Error {
 	readonly code: GoodplanErrorCode;

@@ -4,19 +4,60 @@
  * and that the binary produces structured JSON errors with the correct exit codes.
  */
 
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import {
-	ALL_ERROR_CODES,
-	EXPECTED_ERROR_CODE_COUNT,
-	GoodplanError,
-} from "../../src/util/errors.js";
+import { ALL_ERROR_CODES, GoodplanError } from "../../src/util/errors.js";
 import { exitCodeForError } from "../../src/util/output.js";
 import { buildBinary, runCommand } from "../integration/helpers.js";
 
+/**
+ * Extract string literals from a TypeScript union type definition.
+ * Reads the source file, finds `type <typeName> =` block ending at `;`,
+ * and extracts all `"UPPER_SNAKE_CASE"` literals.
+ */
+function extractErrorCodesFromSource(filePath: string, typeName: string): Set<string> {
+	const src = readFileSync(filePath, "utf-8");
+	const typePattern = new RegExp(`type\\s+${typeName}\\s*=[\\s\\S]*?;`);
+	const match = typePattern.exec(src);
+	if (!match) {
+		throw new Error(`Could not find type ${typeName} in ${filePath}`);
+	}
+	const codes = new Set<string>();
+	for (const m of match[0].matchAll(/"([A-Z]+_[A-Z_]+)"/g)) {
+		if (m[1] !== undefined) {
+			codes.add(m[1]);
+		}
+	}
+	return codes;
+}
+
+/** Derive the full set of expected error codes from source type definitions. */
+function deriveExpectedErrorCodes(): Set<string> {
+	const errorsFile = resolve(__dirname, "../../src/util/errors.ts");
+	const stateEventsFile = resolve(__dirname, "../../src/schemas/state-events.ts");
+
+	const dataCodes = extractErrorCodesFromSource(errorsFile, "DataErrorCode");
+	const validationCodes = extractErrorCodesFromSource(errorsFile, "ValidationErrorCode");
+	const internalCodes = extractErrorCodesFromSource(errorsFile, "InternalErrorCode");
+	const stateCodes = extractErrorCodesFromSource(stateEventsFile, "StateErrorCode");
+
+	return new Set([...dataCodes, ...validationCodes, ...internalCodes, ...stateCodes]);
+}
+
 describe("INV-007: Structured error output", () => {
 	describe("Static: every error code maps to exit code 1, 2, or 3", () => {
-		it("ALL_ERROR_CODES covers every GoodplanErrorCode (count check)", () => {
-			expect(ALL_ERROR_CODES.length).toBe(EXPECTED_ERROR_CODE_COUNT);
+		it("ALL_ERROR_CODES matches source type definitions (set equality)", () => {
+			const expected = deriveExpectedErrorCodes();
+			const actual = new Set(ALL_ERROR_CODES);
+
+			const missingFromArray = [...expected].filter((c) => !actual.has(c));
+			const extraInArray = [...actual].filter((c) => !expected.has(c));
+
+			expect(missingFromArray, "codes in source types but missing from ALL_ERROR_CODES").toEqual(
+				[],
+			);
+			expect(extraInArray, "codes in ALL_ERROR_CODES but missing from source types").toEqual([]);
 		});
 
 		for (const code of ALL_ERROR_CODES) {
