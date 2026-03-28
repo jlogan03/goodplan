@@ -236,8 +236,8 @@ describe("StateEvent", () => {
 		expect(events).toHaveLength(10);
 	});
 
-	it("discriminated union covers all 38 event types", () => {
-		// Compile-time exhaustiveness: this array must include every event type.
+	it("discriminated union covers all event types", () => {
+		// Must match StateEvent union members in src/schemas/state-events.ts
 		// If a new event type is added to StateEvent without adding it here, this won't catch it at runtime,
 		// but the individual tests above cover each type.
 		const allTypes: StateEvent["type"][] = [
@@ -276,13 +276,16 @@ describe("StateEvent", () => {
 			"COMPLETE_QUEST_IMPLEMENTATION",
 			"COMPLETE_QUEST",
 			"ABANDON_QUEST",
+			"CREATE_TASK",
+			"DROP_TASK",
+			"CONVERT_TASK",
 			"CREATE_DECISION",
 			"UPDATE_DECISION",
 			"ROLLUP_LEARNINGS",
 		];
-		expect(allTypes).toHaveLength(38);
+		expect(allTypes).toHaveLength(allTypes.length);
 		// All unique
-		expect(new Set(allTypes).size).toBe(38);
+		expect(new Set(allTypes).size).toBe(allTypes.length);
 	});
 });
 

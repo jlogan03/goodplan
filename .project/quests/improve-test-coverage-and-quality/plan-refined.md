@@ -83,20 +83,20 @@ Update hardcoded values and fixtures that have drifted from current codebase.
 ### Expected Behavior
 
 **Before implementation** (should fail / show absence):
-- [ ] `grep -c 'toHaveLength(38)' tests/unit/schemas/state-events.test.ts` returns 1 — stale count
-- [ ] `ls tests/fixtures/fresh-init/.project/tasks/overview.json 2>&1` fails — missing tasks dir
+- [x] `grep -c 'toHaveLength(38)' tests/unit/schemas/state-events.test.ts` returns 1 — stale count
+- [x] `ls tests/fixtures/fresh-init/.project/tasks/overview.json 2>&1` fails — missing tasks dir
 
 **After implementation** (should pass / show presence):
-- [ ] Event count test uses a dynamic assertion (e.g., `allTypes.length`) or documents derivation — no hardcoded magic number
-- [ ] `ls tests/fixtures/fresh-init/.project/tasks/overview.json` succeeds
-- [ ] `bun run test -- --run tests/unit/schemas/state-events.test.ts` passes
-- [ ] `bun run test -- --run` full suite still passes
+- [x] Event count test uses a dynamic assertion (e.g., `allTypes.length`) or documents derivation — no hardcoded magic number
+- [x] `ls tests/fixtures/fresh-init/.project/tasks/overview.json` succeeds
+- [x] `bun run test -- --run tests/unit/schemas/state-events.test.ts` passes
+- [x] `bun run test -- --run` full suite still passes
 
 ### Tasks
 
-- [ ] **Update event count in `state-events.test.ts`**: Rather than hardcoding a count (currently `toHaveLength(38)`, which will drift again once the 3 task events are added), update the test-local `allTypes` array by adding `CREATE_TASK`, `DROP_TASK`, `CONVERT_TASK`, then use `allTypes.length` for both assertions so they stay consistent. Add a comment like `// Must match StateEvent union members in src/schemas/state-events.ts` to document the completeness requirement. Note: `allTypes` is defined inside the test file — there is no runtime-accessible enumeration to import from the source. Verify the test still validates all event types correctly.
-- [ ] **Add `tasks/overview.json` to all test fixtures**: For each fixture directory in `tests/fixtures/` that has a `.project/` directory, add `tasks/overview.json` with `{"items":[]}` to match current `INIT_PROJECT` output. Fixtures to update: `fresh-init`, `epic-created`, `epic-activated`, `slice-in-progress`, `slice-refining-max-rounds`, and any others with `.project/`. Exclude `pre-cli-project` and `learnings-migration` fixtures (pre-CLI format, used by migration tests — they intentionally lack modern entities).
-- [ ] **Verify no fixture-dependent tests break**: Run full test suite after fixture updates.
+- [x] **Update event count in `state-events.test.ts`**: Rather than hardcoding a count (currently `toHaveLength(38)`, which will drift again once the 3 task events are added), update the test-local `allTypes` array by adding `CREATE_TASK`, `DROP_TASK`, `CONVERT_TASK`, then use `allTypes.length` for both assertions so they stay consistent. Add a comment like `// Must match StateEvent union members in src/schemas/state-events.ts` to document the completeness requirement. Note: `allTypes` is defined inside the test file — there is no runtime-accessible enumeration to import from the source. Verify the test still validates all event types correctly.
+- [x] **Add `tasks/overview.json` to all test fixtures**: For each fixture directory in `tests/fixtures/` that has a `.project/` directory, add `tasks/overview.json` with `{"items":[]}` to match current `INIT_PROJECT` output. Fixtures to update: `fresh-init`, `epic-created`, `epic-activated`, `slice-in-progress`, `slice-refining-max-rounds`, and any others with `.project/`. Exclude `pre-cli-project` and `learnings-migration` fixtures (pre-CLI format, used by migration tests — they intentionally lack modern entities).
+- [x] **Verify no fixture-dependent tests break**: Run full test suite after fixture updates.
 
 ### Verification
 
