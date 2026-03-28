@@ -173,6 +173,12 @@
 			"created": "2026-03-28T15:05:29.784Z",
 			"name": "test-infrastructure-polish",
 			"status": "completed"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-28T21:54:33.391Z",
+			"name": "rpc-api-doc-drift",
+			"status": "plan-refined"
 		}
 	]
 }

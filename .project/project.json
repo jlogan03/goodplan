@@ -1,9 +1,9 @@
 {
 	"activeEpic": null,
-	"activeQuest": "test-infrastructure-polish",
+	"activeQuest": "rpc-api-doc-drift",
 	"activeSlice": null,
 	"created": "2026-03-28T00:06:46.961Z",
 	"name": "goodplan",
-	"updated": "2026-03-28T15:53:35.670Z",
+	"updated": "2026-03-28T21:56:36.094Z",
 	"version": "1.0.0"
 }

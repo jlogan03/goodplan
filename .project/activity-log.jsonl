@@ -31,3 +31,9 @@
 {"phase":"begin-quest-implementation","scope":"quests/test-infrastructure-polish","status":"complete","summary":"Quest \"test-infrastructure-polish\" implementation started","ts":"2026-03-28T16:01:06.490Z"}
 {"phase":"complete-quest-implementation","scope":"quests/test-infrastructure-polish","status":"complete","summary":"Quest \"test-infrastructure-polish\" implementation completed","ts":"2026-03-28T16:05:07.721Z"}
 {"phase":"complete-quest","scope":"quests/test-infrastructure-polish","status":"complete","summary":"Quest \"test-infrastructure-polish\" completed","ts":"2026-03-28T16:09:00.903Z"}
+{"phase":"drop-task","scope":"tasks/self-verifying-error-codes","status":"complete","summary":"Task \"self-verifying-error-codes\" dropped: Completed as part of quest test-infrastructure-polish","ts":"2026-03-28T16:11:15.827Z"}
+{"phase":"drop-task","scope":"tasks/dedup-fitness-collect-ts","status":"complete","summary":"Task \"dedup-fitness-collect-ts\" dropped: Completed as part of quest test-infrastructure-polish","ts":"2026-03-28T16:11:16.021Z"}
+{"phase":"create-quest","scope":"quests/rpc-api-doc-drift","status":"complete","summary":"Quest \"rpc-api-doc-drift\" created","ts":"2026-03-28T21:54:33.391Z"}
+{"phase":"begin-quest-plan","scope":"quests/rpc-api-doc-drift","status":"complete","summary":"Quest \"rpc-api-doc-drift\" planning started","ts":"2026-03-28T21:56:36.094Z"}
+{"phase":"complete-quest-plan","scope":"quests/rpc-api-doc-drift","status":"complete","summary":"Quest \"rpc-api-doc-drift\" plan completed","ts":"2026-03-28T21:57:22.822Z"}
+{"phase":"complete-quest-refinement","scope":"quests/rpc-api-doc-drift","status":"complete","summary":"Quest \"rpc-api-doc-drift\" plan refined","ts":"2026-03-28T22:21:05.363Z"}
