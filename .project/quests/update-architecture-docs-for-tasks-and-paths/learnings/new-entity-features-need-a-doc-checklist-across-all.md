@@ -1,0 +1,1 @@
+The Task entity was fully implemented across all 4 layers but had zero documentation in 3 of 4 architecture docs. Future entity additions should include a documentation checklist: commands-api (namespace section + mapping table), state-machine-api (StateEvent union entries), rpc-layer-api (BeginPhase type), data-model (schema registry patterns + entity section).

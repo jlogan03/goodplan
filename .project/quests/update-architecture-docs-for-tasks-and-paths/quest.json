@@ -3,6 +3,6 @@
 	"goal": "Update architecture docs to reflect current codebase reality. Three themes: (1) Add Task entity to commands-api.md, state-machine-api.md, rpc-layer-api.md, and data-model.md schema registry. (2) Fix flat slice paths in schema registry examples across data-layer-api.md and data-model.md to use nested epics/<epic>/slices/ paths. (3) Update fitness function status from candidate to actual test file paths in per-API docs. (4) Fix CREATE_QUEST missing goal field and COMPLETE event type names. (5) Update docs/primer.md directory structure. (6) Clean up conventions.md stale entries (workflow dir, activity dir, missing skills). Done when: all architecture docs match the actual codebase for task entity, nested paths, and fitness functions.",
 	"name": "update-architecture-docs-for-tasks-and-paths",
 	"refinement": null,
-	"status": "implementation-complete",
-	"updated": "2026-03-28T03:51:40.003Z"
+	"status": "completed",
+	"updated": "2026-03-28T04:44:18.584Z"
 }
