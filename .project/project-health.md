@@ -72,8 +72,8 @@
 
 ## Recent Changes
 
+- **rpc-api-doc-drift** (2026-03-28): Fixed 10 doc-code divergences in rpc-layer-api.md (signatures, types, module locations). Tightened LearningInput.rollupTo schema from open string[] to z.enum(["epic", "project"]). 2 files changed.
 - **test-infrastructure-polish** (2026-03-28): Replaced manual EXPECTED_ERROR_CODE_COUNT with regex-based set-equality verification against source type definitions. Moved collectFiles() from data-determinism.test.ts to shared fitness helpers. Removed dead export from errors.ts. 3 files changed.
 - **improve-test-coverage-and-quality** (2026-03-28): Fixed 53 integration test failures (global-setup.ts --define quoting). Added unit tests for helpers.ts, serialize.ts, markdown-files.ts. Fixed stale event count and fixture data. Added INV-007 and INV-001 fitness functions. 1378 tests (+303 new), 98 files.
-- **learnings-directory-pattern** (2026-03-27): Per-learning .md files replacing monolithic learnings.md. Zod union schema, LearningEventEntry type, slug derivation, Data Layer markdown helpers, shared processLearnings, RPC layer input mapping, migration logic. 1075 tests (+35 new), 40 files changed.
 
-<!-- Last updated by: complete for test-infrastructure-polish, 2026-03-28 -->
+<!-- Last updated by: complete for rpc-api-doc-drift, 2026-03-28 -->

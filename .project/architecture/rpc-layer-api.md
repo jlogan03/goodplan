@@ -296,7 +296,7 @@ interface LearningInput {
   summary: string;
   detail: string;
   tags: string[];
-  rollupTo: string[];  // strict enum per design intent: 'epic' | 'project'; schema uses open string[] for forward-compatibility but only 'epic' and 'project' are supported; 'project' implies epic rollup; for quests, either 'project' or omit; empty array = don't roll up
+  rollupTo: ('epic' | 'project')[];  // input schema enforces z.enum(["epic", "project"]); 'project' implies epic rollup; for quests, either 'project' or omit; empty array = don't roll up
 }
 
 interface CompleteResult {
