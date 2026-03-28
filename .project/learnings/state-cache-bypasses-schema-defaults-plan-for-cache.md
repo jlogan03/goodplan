@@ -1,0 +1,1 @@
+Zod `.default()` only applies when `loadState` runs `safeParse().data`. The state cache stores raw `ProjectState` from before schema changes, so cached data lacks new defaults. After adding defaulted fields, document that `.state-cache.json` must be deleted or bump `CACHE_VERSION` (but test for side effects first).

@@ -1,8 +1,8 @@
 {
-	"created": "2026-03-27T16:40:17.622Z",
-	"goal": "A skill that migrates repos with an old-version .project/ directory to the current workflow version.",
+	"created": "2026-03-28T00:06:46.961Z",
+	"goal": "A skill that migrates repos with an old-version .project/ to the current workflow version.",
 	"name": "upgrade-workflow",
 	"refinement": null,
 	"status": "created",
-	"updated": "2026-03-27T16:40:17.622Z"
+	"updated": "2026-03-28T00:06:46.961Z"
 }

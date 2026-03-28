@@ -1,0 +1,1 @@
+Three change types emerged: simple replacement, dual-path expansion, and conditional logic insertion. The Agent Skill reviewer scored 5/10 initially because the plan treated all changes as find-and-replace. Classify each file's change type upfront during planning. Also verify condensed reference files (guidance.md) stay in sync with their source SKILL.md after updates.

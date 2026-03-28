@@ -1,0 +1,1 @@
+Concurrent modification, deterministic serialization, and schema validation are internal to `commitState`/`assembleState` — not observable through the CLI binary. Fitness function plans should explicitly classify each invariant as binary-testable or import-testable.

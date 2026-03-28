@@ -1,0 +1,1 @@
+Conversation-driven planning (restate goal → propose phases → per-phase deep dive → readiness gate) with AskUserQuestion gates between stages prevents the agent from charging ahead with assumptions.

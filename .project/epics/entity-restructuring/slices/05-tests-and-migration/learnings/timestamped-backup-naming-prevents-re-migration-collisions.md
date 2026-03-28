@@ -1,0 +1,1 @@
+Using .project-old-<YYYYMMDD-HHmmss>/ instead of fixed .project-old/ means multiple migrations accumulate backups. The sub-second fs.existsSync guard is defensive but costs nothing.

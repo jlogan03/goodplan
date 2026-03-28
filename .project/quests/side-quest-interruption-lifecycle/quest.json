@@ -1,8 +1,8 @@
 {
-	"created": "2026-03-27T16:40:17.622Z",
+	"created": "2026-03-28T00:06:46.961Z",
 	"goal": "The mechanics for interrupting a slice with a side quest and resuming afterward.",
 	"name": "side-quest-interruption-lifecycle",
 	"refinement": null,
 	"status": "created",
-	"updated": "2026-03-27T16:40:17.622Z"
+	"updated": "2026-03-28T00:06:46.961Z"
 }

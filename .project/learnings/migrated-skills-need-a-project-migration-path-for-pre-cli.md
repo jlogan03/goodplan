@@ -1,0 +1,1 @@
+Skills rewritten to use CLI commands can't run on projects without `project.json` (predating the CLI). The CLI returns `DATA_NO_PROJECT`. A `migrate` command or init-from-existing feature is needed before these tools can be used on the project that created them.

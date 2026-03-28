@@ -1,0 +1,1 @@
+Investigation during skill-workflow-bugs quest revealed `copyMarkdownFiles()` already copies ALL .md files from source directories. The original concern about missed siblings was based on a misunderstanding of the migration code. No enhancement needed.

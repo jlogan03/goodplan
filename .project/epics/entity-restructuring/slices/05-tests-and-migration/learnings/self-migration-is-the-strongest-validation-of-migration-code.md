@@ -1,0 +1,1 @@
+Running goodplan migrate on the goodplan repo itself after updating the migration code caught issues that unit/integration tests missed (activity log scope strings, architecture doc staleness). This dogfooding step should be standard for migration-related changes.

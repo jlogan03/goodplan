@@ -1,154 +1,154 @@
 {
 	"items": [
 		{
-			"completed": "2026-03-27T16:40:17.622Z",
-			"created": "2026-03-27T16:40:17.622Z",
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "architecture-quality",
 			"status": "completed"
 		},
 		{
-			"completed": "2026-03-27T16:40:17.622Z",
-			"created": "2026-03-27T16:40:17.622Z",
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "archived-prefix-migration",
 			"status": "completed"
 		},
 		{
 			"completed": null,
-			"created": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "audit-docs-and-tests",
 			"status": "created"
 		},
 		{
-			"completed": "2026-03-27T16:40:17.622Z",
-			"created": "2026-03-27T16:40:17.622Z",
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "complete-rename",
 			"status": "completed"
 		},
 		{
 			"completed": null,
-			"created": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "consistent-skill-output",
 			"status": "created"
 		},
 		{
-			"completed": "2026-03-27T16:40:17.622Z",
-			"created": "2026-03-27T16:40:17.622Z",
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "decisions-and-expertise",
 			"status": "completed"
 		},
 		{
-			"completed": "2026-03-27T16:40:17.622Z",
-			"created": "2026-03-27T16:40:17.622Z",
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "dogfood-harness",
 			"status": "completed"
 		},
 		{
 			"completed": null,
-			"created": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "entity-path-and-learnings-cleanup",
 			"status": "created"
 		},
 		{
-			"completed": "2026-03-27T16:40:17.622Z",
-			"created": "2026-03-27T16:40:17.622Z",
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "initiatives-infrastructure",
 			"status": "completed"
 		},
 		{
 			"completed": null,
-			"created": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-28T00:06:46.961Z",
+			"name": "learnings-directory-pattern",
+			"status": "implementation-complete"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "list-pagination",
 			"status": "created"
 		},
 		{
-			"completed": null,
-			"created": "2026-03-27T16:40:17.622Z",
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "maturity-context-loading",
 			"status": "completed"
 		},
 		{
-			"completed": "2026-03-27T16:40:17.622Z",
-			"created": "2026-03-27T16:40:17.622Z",
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "maturity-invariants-fitness",
 			"status": "completed"
 		},
 		{
-			"completed": "2026-03-27T16:40:17.622Z",
-			"created": "2026-03-27T16:40:17.622Z",
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "migrate-to-cli",
 			"status": "completed"
 		},
 		{
 			"completed": null,
-			"created": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "migration-sibling-check",
 			"status": "created"
 		},
 		{
 			"completed": null,
-			"created": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "onboard-repo",
 			"status": "created"
 		},
 		{
-			"completed": "2026-03-27T16:40:17.622Z",
-			"created": "2026-03-27T16:40:17.622Z",
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "onboarding-and-refactors",
 			"status": "completed"
 		},
 		{
-			"completed": "2026-03-27T16:40:17.622Z",
-			"created": "2026-03-27T16:40:17.622Z",
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "refactor-intelligence",
 			"status": "completed"
 		},
 		{
-			"completed": "2026-03-27T16:40:17.622Z",
-			"created": "2026-03-27T16:40:17.622Z",
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "refine-plan-shared-loop",
 			"status": "completed"
 		},
 		{
 			"completed": null,
-			"created": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "side-quest-interruption-lifecycle",
 			"status": "created"
 		},
 		{
-			"completed": "2026-03-27T16:40:17.622Z",
-			"created": "2026-03-27T16:40:17.622Z",
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "skill-workflow-bugs",
 			"status": "completed"
 		},
 		{
-			"completed": "2026-03-27T16:40:17.622Z",
-			"created": "2026-03-27T16:40:17.622Z",
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "slice-quality-and-health",
 			"status": "completed"
 		},
 		{
-			"completed": "2026-03-27T16:40:17.622Z",
-			"created": "2026-03-27T16:40:17.622Z",
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "task-capture",
 			"status": "completed"
 		},
 		{
 			"completed": null,
-			"created": "2026-03-27T16:40:17.622Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "upgrade-workflow",
 			"status": "created"
 		},
 		{
-			"completed": "2026-03-27T16:40:17.622Z",
-			"created": "2026-03-27T16:40:17.622Z",
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "workflow-v2",
 			"status": "completed"
-		},
-		{
-			"completed": null,
-			"created": "2026-03-27T17:26:33.004Z",
-			"name": "learnings-directory-pattern",
-			"status": "implementation-complete"
 		}
 	]
 }

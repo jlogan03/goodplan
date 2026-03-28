@@ -1,0 +1,1 @@
+`/create-slices` called `submit-slices` (epic-level) but not `slice:create` (per-entity). `slice:list` returned empty. Skills that create child entities must call the per-entity creation command for each one in addition to the parent's phase transition.

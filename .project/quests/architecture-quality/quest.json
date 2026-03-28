@@ -1,8 +1,8 @@
 {
-	"created": "2026-03-27T16:40:17.622Z",
-	"goal": "Upgrade the architecture workflow from one-shot definition to a multi-option exploration with iterative refinement.",
+	"created": "2026-03-28T00:06:46.961Z",
+	"goal": "Upgrade the architecture workflow from one-shot definition to multi-option exploration with iterative refinement.",
 	"name": "architecture-quality",
 	"refinement": null,
 	"status": "completed",
-	"updated": "2026-03-27T16:40:17.622Z"
+	"updated": "2026-03-28T00:06:46.961Z"
 }

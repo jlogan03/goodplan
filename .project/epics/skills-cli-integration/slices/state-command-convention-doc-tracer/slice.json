@@ -1,10 +1,10 @@
 {
-	"created": "2026-03-27T16:40:17.622Z",
+	"created": "2026-03-28T00:06:46.961Z",
 	"deferred": [],
 	"epic": "skills-cli-integration",
-	"goal": "The foundational slice: goodplan state command, convention docs, and tracer bullet proving CLI-integrated skills work.",
+	"goal": "Foundational slice: goodplan state, convention docs, tracer bullet.",
 	"name": "state-command-convention-doc-tracer",
 	"refinement": null,
 	"status": "completed",
-	"updated": "2026-03-27T16:40:17.622Z"
+	"updated": "2026-03-28T00:06:46.961Z"
 }

@@ -1,0 +1,1 @@
+resolveScope, entityDir, and priorities.ts lived in the same modules being updated for RPC path changes in slice 02. Recognizing this during refinement avoided duplicate work.

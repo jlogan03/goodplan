@@ -1,8 +1,8 @@
 {
-	"created": "2026-03-27T16:40:17.622Z",
-	"goal": "Getting pre-existing repos set up in the goodplan workflow and making /complete smarter about refactoring.",
+	"created": "2026-03-28T00:06:46.961Z",
+	"goal": "Getting pre-existing repos set up in the goodplan workflow and making /complete smarter.",
 	"name": "onboarding-and-refactors",
 	"refinement": null,
 	"status": "completed",
-	"updated": "2026-03-27T16:40:17.622Z"
+	"updated": "2026-03-28T00:06:46.961Z"
 }

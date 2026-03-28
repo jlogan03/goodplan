@@ -1,8 +1,8 @@
 {
-	"created": "2026-03-27T16:40:17.622Z",
-	"goal": "Replace the __done__ directory prefix with ~~archived~~ across the entire codebase.",
+	"created": "2026-03-28T00:06:46.961Z",
+	"goal": "Replace the __done__ directory prefix with ~~archived~~ across the codebase.",
 	"name": "archived-prefix-migration",
 	"refinement": null,
 	"status": "completed",
-	"updated": "2026-03-27T16:40:17.622Z"
+	"updated": "2026-03-28T00:06:46.961Z"
 }

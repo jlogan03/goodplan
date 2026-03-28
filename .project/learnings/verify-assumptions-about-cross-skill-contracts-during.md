@@ -1,0 +1,1 @@
+When a plan references another skill's output format or behavior (flow-log entries, commit message patterns, state files), verify the assumption by reading the source skill's code during `/create-plan` or `/refine-plan`. Catching mismatches during planning is cheaper than pivoting during implementation.

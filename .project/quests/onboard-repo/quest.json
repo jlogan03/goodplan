@@ -1,8 +1,8 @@
 {
-	"created": "2026-03-27T16:40:17.622Z",
-	"goal": "A skill that brings existing repos into the goodplan workflow by extracting information from the repo itself.",
+	"created": "2026-03-28T00:06:46.961Z",
+	"goal": "A skill that brings existing repos into the goodplan workflow.",
 	"name": "onboard-repo",
 	"refinement": null,
 	"status": "created",
-	"updated": "2026-03-27T16:40:17.622Z"
+	"updated": "2026-03-28T00:06:46.961Z"
 }

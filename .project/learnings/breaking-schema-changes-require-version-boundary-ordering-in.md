@@ -1,0 +1,1 @@
+Phase ordering must ensure semver infrastructure is in place before breaking changes ship. The 1.0.0 bump (Phase 4) had to precede the `status --json` breaking schema change (Phase 2). Plans with breaking changes should encode this ordering explicitly.

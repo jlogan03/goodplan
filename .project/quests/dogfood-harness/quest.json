@@ -1,8 +1,8 @@
 {
-	"created": "2026-03-27T16:40:17.622Z",
-	"goal": "A test harness using @anthropic-ai/claude-agent-sdk that programmatically runs goodplan skills for automated dogfooding.",
+	"created": "2026-03-28T00:06:46.961Z",
+	"goal": "A test harness using @anthropic-ai/claude-agent-sdk for automated dogfooding.",
 	"name": "dogfood-harness",
 	"refinement": null,
 	"status": "completed",
-	"updated": "2026-03-27T16:40:17.622Z"
+	"updated": "2026-03-28T00:06:46.961Z"
 }
