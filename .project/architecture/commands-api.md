@@ -377,5 +377,5 @@ Priority: 3 (implement after State Machine and Data Layer)
 
 ### Every error produces structured JSON and correct exit code
 
-- **Test file:** candidate — not yet written
-- **Verifies:** For each error code path (validation, state, data, internal), the output matches `{ error: { code, message } }` shape and exit code is 1 (internal), 2 (validation), or 3 (state machine)
+- **Test file:** `tests/fitness/structured-errors.test.ts`
+- **Verifies:** For each error code path (validation, state, data, internal), the output matches `{ error: { code, message } }` shape and exit code is 1 (internal), 2 (validation), or 3 (state machine). Static: every GoodplanErrorCode has a valid exit code mapping. Dynamic: spawns the binary to trigger each error category and verifies structured JSON output.

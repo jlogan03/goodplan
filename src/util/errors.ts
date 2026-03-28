@@ -32,6 +32,49 @@ export type GoodplanErrorCode =
 	| StateErrorCode
 	| ValidationErrorCode;
 
+/**
+ * Canonical list of all error codes. Exported for fitness testing.
+ * Every element is type-checked via `satisfies`. When adding a new code to any
+ * error-code union, also add it here — the count assertion in the fitness test
+ * will fail if the array length doesn't match EXPECTED_ERROR_CODE_COUNT.
+ */
+export const ALL_ERROR_CODES = [
+	// DATA_*
+	"DATA_CONCURRENT_MODIFICATION",
+	"DATA_FILE_NOT_FOUND",
+	"DATA_INVALID_JSON",
+	"DATA_MIGRATION_BACKUP_EXISTS",
+	"DATA_NO_PROJECT",
+	"DATA_READ_ERROR",
+	"DATA_VALIDATION_ERROR",
+	"DATA_WRITE_ERROR",
+	// STATE_*
+	"STATE_ALREADY_INITIALIZED",
+	"STATE_INVALID_TRANSITION",
+	"STATE_EPIC_ALREADY_ACTIVE",
+	"STATE_MISSING_VERIFICATIONS",
+	"STATE_VERIFICATION_FAILED",
+	"STATE_SLICE_NOT_READY",
+	"STATE_CONTENT_MISSING",
+	"STATE_MAX_ROUNDS_REACHED",
+	"STATE_QUEST_ALREADY_ACTIVE",
+	"STATE_DUPLICATE_DECISION",
+	// VALIDATION_*
+	"VALIDATION_INVALID_INPUT",
+	"VALIDATION_INVALID_QUERY",
+	"VALIDATION_INVALID_STDIN",
+	"VALIDATION_MIGRATION_CORRECTION_LIMIT",
+	"VALIDATION_MIGRATION_INVALID",
+	"VALIDATION_STDIN_TOO_LARGE",
+	"VALIDATION_UNKNOWN_COMMAND",
+	"VALIDATION_VERSION_MAJOR_MISMATCH",
+	// INTERNAL_*
+	"INTERNAL_ERROR",
+] as const satisfies readonly GoodplanErrorCode[];
+
+/** Expected count — update when adding/removing error codes. */
+export const EXPECTED_ERROR_CODE_COUNT = 27;
+
 export class GoodplanError extends Error {
 	readonly code: GoodplanErrorCode;
 	readonly detail: string | Record<string, unknown> | undefined;

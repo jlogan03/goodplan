@@ -111,26 +111,26 @@ Add 2 missing fitness functions for documented invariants.
 ### Expected Behavior
 
 **Before implementation** (should fail / show absence):
-- [ ] `ls tests/fitness/structured-errors.test.ts 2>&1` fails — doesn't exist
-- [ ] `ls tests/fitness/mutation-through-state-machine.test.ts 2>&1` fails — doesn't exist
+- [x] `ls tests/fitness/structured-errors.test.ts 2>&1` fails — doesn't exist
+- [x] `ls tests/fitness/mutation-through-state-machine.test.ts 2>&1` fails — doesn't exist
 
 **After implementation** (should pass / show presence):
-- [ ] `ls tests/fitness/structured-errors.test.ts` succeeds
-- [ ] `ls tests/fitness/mutation-through-state-machine.test.ts` succeeds
-- [ ] `bun run test -- --run tests/fitness/structured-errors.test.ts` passes
-- [ ] `bun run test -- --run tests/fitness/mutation-through-state-machine.test.ts` passes
+- [x] `ls tests/fitness/structured-errors.test.ts` succeeds
+- [x] `ls tests/fitness/mutation-through-state-machine.test.ts` succeeds
+- [x] `bun run test -- --run tests/fitness/structured-errors.test.ts` passes
+- [x] `bun run test -- --run tests/fitness/mutation-through-state-machine.test.ts` passes
 
 ### Tasks
 
-- [ ] **Create `tests/fitness/structured-errors.test.ts`** (INV-007): Two distinct sub-steps:
+- [x] **Create `tests/fitness/structured-errors.test.ts`** (INV-007): Two distinct sub-steps:
   - **Static**: Import `src/util/errors.ts` and verify every GoodplanError code has a documented exit code mapping (1, 2, or 3) — no binary spawn needed.
   - **Dynamic**: Spawn the compiled binary with representative inputs that trigger each error category (at least one VALIDATION_* → exit 2, one STATE_* → exit 3, one INTERNAL_* → exit 1) and verify: (a) correct exit code, (b) stdout contains valid JSON with `{ error: { code, message } }` shape. Also verify no error path produces exit code 0.
-- [ ] **Create `tests/fitness/mutation-through-state-machine.test.ts`** (INV-001): Static analysis approach — read source files and verify that:
+- [x] **Create `tests/fitness/mutation-through-state-machine.test.ts`** (INV-001): Static analysis approach — read source files and verify that:
   - `fs.writeFileSync` / `fs.writeFile` for `.json`/`.jsonl` files only appears in `src/core/data/commit.ts` (and documented exception: `migrate.ts`). Scope: `.json`/`.jsonl` files only; `.md` writes via `markdown-files.ts` are out of scope
   - No command handler or RPC function directly writes `.project/` JSON files
   - Import graph verification: commands and RPC modules do not import `fs` write functions directly (they go through the data layer)
-- [ ] **Update fitness function references**: Update `commands-api.md` and `rpc-layer-api.md` fitness function sections to reference the new test files (replacing "candidate — not yet written" entries where applicable).
-- [ ] **Update `_overview.md` subsystem maturity table**: List `tests/fitness/structured-errors.test.ts` in the Commands row and `tests/fitness/mutation-through-state-machine.test.ts` in the RPC Layer row.
+- [x] **Update fitness function references**: Update `commands-api.md` and `rpc-layer-api.md` fitness function sections to reference the new test files (replacing "candidate — not yet written" entries where applicable).
+- [x] **Update `_overview.md` subsystem maturity table**: List `tests/fitness/structured-errors.test.ts` in the Commands row and `tests/fitness/mutation-through-state-machine.test.ts` in the RPC Layer row.
 
 ### Verification
 

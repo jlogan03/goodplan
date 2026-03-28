@@ -61,8 +61,8 @@ Installed alongside Claude Code skills. Skills are versioned in the repo (`skill
 
 | Subsystem | Maturity | Dependents | Fitness Functions | Notes |
 |---|---|---|---|---|
-| Commands | Developing | — | `tests/fitness/stateless-commands.test.ts`, `tests/fitness/schema-output-accuracy.test.ts` | Thin CLI layer. Stable across 8 slices. |
-| RPC Layer | Developing | Commands | — | Workflow orchestration. Stable across 8 slices. Tested indirectly via integration tests. |
+| Commands | Developing | — | `tests/fitness/stateless-commands.test.ts`, `tests/fitness/schema-output-accuracy.test.ts`, `tests/fitness/structured-errors.test.ts` | Thin CLI layer. Stable across 8 slices. |
+| RPC Layer | Developing | Commands | `tests/fitness/mutation-through-state-machine.test.ts` | Workflow orchestration. Stable across 8 slices. Tested indirectly via integration tests. |
 | State Machine | Developing | RPC Layer | `tests/fitness/state-machine-purity.test.ts`, `tests/fitness/transition-completeness.test.ts` | Pure rules engine. Purity and completeness fitness functions in place. |
 | Data Layer | Developing | RPC Layer, Commands | `tests/fitness/data-determinism.test.ts`, `tests/fitness/schema-validation.test.ts`, `tests/fitness/tree-accuracy.test.ts`, `tests/fitness/concurrent-modification.test.ts`, `tests/fitness/atomic-writes.test.ts` | All planned fitness functions implemented. |
 | Context | Developing | RPC Layer, Commands | candidate | Peer module at `src/core/context/`. Budget-based content inlining, per-phase priority tables. Depends on tree types and Data Layer reads. |

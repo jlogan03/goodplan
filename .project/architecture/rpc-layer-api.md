@@ -406,6 +406,11 @@ Priority: 3 (implement after State Machine and Data Layer — per _overview.md s
 - **Test file:** candidate — not yet written
 - **Verifies:** With `--inline=N`, the total size of inlined content never exceeds N bytes
 
+### All .project/ JSON/JSONL mutations go through the state machine (INV-001)
+
+- **Test file:** `tests/fitness/mutation-through-state-machine.test.ts`
+- **Verifies:** `fs.writeFileSync`/`fs.writeFile` for `.json`/`.jsonl` files only appears in `src/core/data/commit.ts` (and documented exception: `migrate.ts`). Command handlers and RPC modules (except migrate) do not import fs write functions directly. `.md` writes via `markdown-files.ts` are out of scope.
+
 ### All mutation operations call reduce() before commitState()
 
 - **Test file:** candidate — not yet written

@@ -7,6 +7,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { describe, expect, it } from "vitest";
+import { collectTsFiles } from "./helpers.js";
 
 const STATE_DIR = path.resolve(import.meta.dirname, "../../src/core/state");
 
@@ -26,23 +27,6 @@ const FORBIDDEN_MODULES = new Set([
 	"net",
 	"node:net",
 ]);
-
-/**
- * Recursively collect all .ts files under a directory.
- */
-function collectTsFiles(dir: string): string[] {
-	const results: string[] = [];
-	const entries = fs.readdirSync(dir, { withFileTypes: true });
-	for (const entry of entries) {
-		const full = path.join(dir, entry.name);
-		if (entry.isDirectory()) {
-			results.push(...collectTsFiles(full));
-		} else if (entry.isFile() && entry.name.endsWith(".ts")) {
-			results.push(full);
-		}
-	}
-	return results;
-}
 
 /**
  * Parse value imports from a TypeScript source file.
