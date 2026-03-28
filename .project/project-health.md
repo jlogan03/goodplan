@@ -72,8 +72,8 @@
 
 ## Recent Changes
 
-- **improve-test-coverage-and-quality** (2026-03-28): Fixed 53 integration test failures (global-setup.ts --define quoting). Added unit tests for helpers.ts, serialize.ts, markdown-files.ts. Fixed stale event count and fixture data. Added INV-007 (structured-errors) and INV-001 (mutation-through-state-machine) fitness functions. Exported ALL_ERROR_CODES from errors.ts for exhaustiveness checking. Shared collectTsFiles helper for fitness tests. 1378 tests (+303 new), 98 files.
-- **learnings-directory-pattern** (2026-03-27): Per-learning .md files replacing monolithic learnings.md. Zod union schema for non-breaking transition, LearningEventEntry type, slug derivation utility, Data Layer markdown helpers, shared processLearnings helper, RPC layer input mapping, migration logic. 1075 tests (+35 new), 40 files changed.
-- **05-tests-and-migration** (2026-03-27): Fixed 3 failing integration tests and 2 fixture files for nested paths. Added ENTITY_EXEMPT_COMMANDS fitness test category. Removed STATE_ALREADY_INITIALIZED guard, sliceSequence from buildMigrationState, typed epicJsonContent. Self-migrated .project/ to nested epic paths. 1040 tests, 13 files changed.
+- **test-infrastructure-polish** (2026-03-28): Replaced manual EXPECTED_ERROR_CODE_COUNT with regex-based set-equality verification against source type definitions. Moved collectFiles() from data-determinism.test.ts to shared fitness helpers. Removed dead export from errors.ts. 3 files changed.
+- **improve-test-coverage-and-quality** (2026-03-28): Fixed 53 integration test failures (global-setup.ts --define quoting). Added unit tests for helpers.ts, serialize.ts, markdown-files.ts. Fixed stale event count and fixture data. Added INV-007 and INV-001 fitness functions. 1378 tests (+303 new), 98 files.
+- **learnings-directory-pattern** (2026-03-27): Per-learning .md files replacing monolithic learnings.md. Zod union schema, LearningEventEntry type, slug derivation, Data Layer markdown helpers, shared processLearnings, RPC layer input mapping, migration logic. 1075 tests (+35 new), 40 files changed.
 
-<!-- Last updated by: complete for improve-test-coverage-and-quality, 2026-03-28 -->
+<!-- Last updated by: complete for test-infrastructure-polish, 2026-03-28 -->
