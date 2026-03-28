@@ -165,7 +165,7 @@ export function setSliceStatus(
 	ts: string,
 ): ProjectState {
 	let tree = setSliceJson(state, epic, name, { ...slice, status: newStatus, updated: ts });
-	tree = updateSliceOverviewStatus(tree, epic, name, newStatus);
+	tree = updateSliceOverviewStatus(tree, epic, name, newStatus, ts);
 	return tree;
 }
 
@@ -177,10 +177,11 @@ export function updateSliceOverviewStatus(
 	epicName: string,
 	sliceName: string,
 	newStatus: SliceStatus,
+	ts: string,
 ): ProjectState {
 	const overview = getJson<EpicOverview>(state, "epics/overview.json");
 	if (overview === undefined) return state;
-	const completed = isSliceTerminal(newStatus) ? new Date().toISOString() : null;
+	const completed = isSliceTerminal(newStatus) ? ts : null;
 	return setEntry(state, "epics/overview.json", {
 		type: "json",
 		content: {

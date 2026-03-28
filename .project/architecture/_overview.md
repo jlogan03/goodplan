@@ -20,7 +20,7 @@ Workflow orchestration layer. Coordinates the State Machine and Data Layer to ex
 
 - Hydrate entity state from filesystem, feed to State Machine, write results back
 - Append to activity log on every state transition
-- Assemble context bundles for each phase (with `--inline` budget-based content inlining). Context bundling is a peer module alongside the RPC layer (`src/core/context/`) — depends on tree types and Data Layer, consumed by both the RPC layer (for `--inline` on mutations) and the Commands layer (for `start-*` commands).
+- Assemble context bundles for each phase (with `--inline` budget-based content inlining). Context bundling is a peer module alongside the RPC layer (`src/core/context/`) — depends on tree types, schema types, and RPC types, consumed by both the RPC layer (for `--inline` on mutations) and the Commands layer (for `start-*` commands).
 - Handle implicit transitions (e.g., all slices complete → epic needs completion)
 - Enforce completion flow ordering (verify goal → deferred work → arch delta → learnings)
 
@@ -65,4 +65,4 @@ Installed alongside Claude Code skills. Skills are versioned in the repo (`skill
 | RPC Layer | Developing | Commands | `tests/fitness/mutation-through-state-machine.test.ts` | Workflow orchestration. Stable across 8 slices. Tested indirectly via integration tests. |
 | State Machine | Developing | RPC Layer | `tests/fitness/state-machine-purity.test.ts`, `tests/fitness/transition-completeness.test.ts` | Pure rules engine. Purity and completeness fitness functions in place. |
 | Data Layer | Developing | RPC Layer, Commands | `tests/fitness/data-determinism.test.ts`, `tests/fitness/schema-validation.test.ts`, `tests/fitness/tree-accuracy.test.ts`, `tests/fitness/concurrent-modification.test.ts`, `tests/fitness/atomic-writes.test.ts` | All planned fitness functions implemented. |
-| Context | Developing | RPC Layer, Commands | candidate | Peer module at `src/core/context/`. Budget-based content inlining, per-phase priority tables. Depends on tree types and Data Layer reads. |
+| Context | Developing | RPC Layer, Commands | candidate | Peer module at `src/core/context/`. Budget-based content inlining, per-phase priority tables. Depends on tree types, schema types, and RPC types. |
