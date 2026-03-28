@@ -142,7 +142,7 @@
 			"completed": null,
 			"created": "2026-03-28T00:06:46.961Z",
 			"name": "upgrade-workflow",
-			"status": "created"
+			"status": "abandoned"
 		},
 		{
 			"completed": "2026-03-28T00:06:46.961Z",
