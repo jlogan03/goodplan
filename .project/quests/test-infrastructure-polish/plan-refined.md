@@ -55,9 +55,9 @@ Deduplicate file-collection logic across fitness tests.
 
 ### Tasks
 
-- [ ] **Add `collectFiles` to `tests/fitness/helpers.ts`**: The `data-determinism.test.ts` version collects ALL files (not just `.ts`) and returns **sorted** relative paths (`.sort()`). This sorting contract is load-bearing — `snapshotFiles` (which calls `collectFiles` locally) depends on deterministic ordering for snapshot stability. Add this as a separate export alongside the existing `collectTsFiles`. Signature: `collectFiles(dir: string, base?: string): string[]`.
-- [ ] **Update `data-determinism.test.ts`**: Remove the local `collectFiles` function and import from `./helpers.js` instead. Note that `snapshotFiles` also calls the local `collectFiles`, so the import change applies transitively to `snapshotFiles` as well.
-- [ ] **Verify**: Run full test suite. Then confirm no other fitness tests have local file collectors: `grep -r 'function collect' tests/fitness/ | grep -v helpers.ts | grep -v tree-accuracy` should return empty.
+- [x] **Add `collectFiles` to `tests/fitness/helpers.ts`**: The `data-determinism.test.ts` version collects ALL files (not just `.ts`) and returns **sorted** relative paths (`.sort()`). This sorting contract is load-bearing — `snapshotFiles` (which calls `collectFiles` locally) depends on deterministic ordering for snapshot stability. Add this as a separate export alongside the existing `collectTsFiles`. Signature: `collectFiles(dir: string, base?: string): string[]`.
+- [x] **Update `data-determinism.test.ts`**: Remove the local `collectFiles` function and import from `./helpers.js` instead. Note that `snapshotFiles` also calls the local `collectFiles`, so the import change applies transitively to `snapshotFiles` as well.
+- [x] **Verify**: Run full test suite. Then confirm no other fitness tests have local file collectors: `grep -r 'function collect' tests/fitness/ | grep -v helpers.ts | grep -v tree-accuracy` should return empty.
 
 ### Verification
 

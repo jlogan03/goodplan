@@ -21,3 +21,21 @@ export function collectTsFiles(dir: string): string[] {
 	}
 	return results;
 }
+
+/**
+ * Recursively collect all files under a directory, returning sorted relative paths.
+ * The sort is load-bearing — callers depend on deterministic ordering.
+ */
+export function collectFiles(dir: string, base?: string): string[] {
+	const root = base ?? dir;
+	const results: string[] = [];
+	for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+		const full = path.join(dir, entry.name);
+		if (entry.isDirectory()) {
+			results.push(...collectFiles(full, root));
+		} else if (entry.isFile()) {
+			results.push(path.relative(root, full));
+		}
+	}
+	return results.sort();
+}
