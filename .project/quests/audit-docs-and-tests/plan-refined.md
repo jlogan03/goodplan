@@ -30,7 +30,7 @@ Create the documentation audit skill with sub-agent reviewers, auto-fix capabili
 
 ### Tasks
 
-- [ ] **Create `skills/audit-docs/SKILL.md`**: The main skill file with frontmatter including `name: audit-docs` and `description` field (~270 chars with embedded trigger phrases, following audit-architecture's pattern). Draft description: `"Audit documentation against the actual codebase. Spawns parallel reviewers to find stale docs, undocumented APIs, and cross-doc inconsistencies. Batches trivial fixes for approval, confirms substantive changes, and proposes side quests for gaps. Common triggers: 'audit docs', 'check documentation', 'are the docs up to date', 'documentation audit', 'review docs'."` Structure:
+- [x] **Create `skills/audit-docs/SKILL.md`**: The main skill file with frontmatter including `name: audit-docs` and `description` field (~270 chars with embedded trigger phrases, following audit-architecture's pattern). Draft description: `"Audit documentation against the actual codebase. Spawns parallel reviewers to find stale docs, undocumented APIs, and cross-doc inconsistencies. Batches trivial fixes for approval, confirms substantive changes, and proposes side quests for gaps. Common triggers: 'audit docs', 'check documentation', 'are the docs up to date', 'documentation audit', 'review docs'."` Structure:
   - **Step 0 — Version Check**: Read `../_shared/references/cli-interaction.md`. Run `goodplan --version --json`, validate against `requires: goodplan >= 1.0.0`.
   - **Step 1 — Load Context**: Following audit-architecture Step 1 pattern:
     1. Load learnings via `goodplan learning:list --json`
@@ -61,10 +61,10 @@ Create the documentation audit skill with sub-agent reviewers, auto-fix capabili
       - **During Step 7 (Refresh Health)**: `<!-- partial — interrupted during project-health refresh. Audit report complete. Project-health.md not updated. -->` Audit report is already written.
       - On resume (detected in Step 1), read the partial report and continue from where it left off.
   - **Step 9 — Expertise Check**: Reflect on conversation. If new expertise info observed, read `../_shared/references/expertise-tracking.md` and update `~/.claude/CLAUDE.md`. Otherwise skip silently.
-- [ ] **Create `skills/audit-docs/references/` directory**: Add reference files:
+- [x] **Create `skills/audit-docs/references/` directory**: Add reference files:
   - `guidance.md` — contents: (1) severity level definitions (Critical, Important, Minor — matching audit-architecture convention), (2) shared reviewer output format (findings table with columns: Severity, Description, Evidence, Suggested Action), (3) side quest proposal template (name, goal, scope, verification criteria), (4) doc-specific finding categories (staleness, gap, inconsistency). Does NOT include fitness functions, invariants, or maturity criteria (those are architecture-specific).
   - `sub-agent-prompts.md` — fully self-contained templates for the 3 reviewer sub-agents (staleness, gap, consistency). Each template must include `{placeholders}`, explicit "do NOT read parent skill files" instructions, and defined output format matching the findings table schema from `guidance.md` (Severity, Description, Evidence, Suggested Action).
-- [ ] **Register in `scripts/install-skills.sh`**: Add `"audit-docs"` to the `SKILL_DIRS` array (alphabetical order, after `audit-architecture`).
+- [x] **Register in `scripts/install-skills.sh`**: Add `"audit-docs"` to the `SKILL_DIRS` array (alphabetical order, after `audit-architecture`).
 - [ ] **Test on this repo**: Invoke `/audit-docs` end-to-end on the goodplan repo. Verify it discovers sources, spawns reviewers, produces findings, writes audit report to `.project/audits/`, and the batch-approval fix flow works. Verify it handles `.project/` documentation (architecture files, conventions, learnings) correctly.
 
 ### Verification
