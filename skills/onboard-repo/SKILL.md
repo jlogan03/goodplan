@@ -205,17 +205,132 @@ Omit sections where no conventions were detected. Each bullet should be concise 
 
 ## Step 6 — Architecture Extraction
 
-*Placeholder — implemented in Phase 3.*
+Read `references/architecture-extraction.md` (relative to this skill's directory) for extraction heuristics — subsystem identification, dependency mapping, maturity estimation, and deployment context.
 
-Read `references/architecture-extraction.md` for extraction patterns.
+### Re-entry
 
-Analyze directory structure, imports, and module boundaries to draft initial architecture files.
+Check if `.project/architecture/_overview.md` already exists and has content (more than just headings). If so, ask: "Found existing architecture files. Re-extract from the codebase, or keep the current version?" Respect their choice. If they choose to keep, skip to Step 7.
+
+### 6a. Create architecture directory
+
+```bash
+mkdir -p .project/architecture/
+```
+
+Note: `architecture/` is an LLM-owned content directory — the CLI creates entity directories (epics/, slices/, quests/) but `architecture/` is created by skills that write free-form markdown. `mkdir -p` is appropriate here; the "no mkdir" rule in `cli-interaction.md` applies only to entity directories managed by the state machine.
+
+### 6b. Identify subsystems
+
+Follow the subsystem identification heuristics in `architecture-extraction.md` section 1:
+
+1. Scan for top-level source directories:
+
+```bash
+ls -d src/*/ lib/*/ app/*/ cmd/*/ internal/*/ packages/*/ 2>/dev/null
+```
+
+2. Check for monorepo workspaces (package.json `workspaces`, pnpm-workspace.yaml, Cargo workspace, go.work).
+
+3. For each candidate directory, evaluate against the multi-signal heuristic table: entry point files, cross-directory imports, domain naming, file count, test files, distinct dependencies. Require at least 2 signals (one Strong or Medium) to classify as a subsystem.
+
+4. Identify shared/utility directories (`shared`, `common`, `utils`, `lib`, `helpers`, `types`) — note these as cross-cutting infrastructure, not subsystems.
+
+### 6c. Map dependencies
+
+Build an import graph between identified subsystems per `architecture-extraction.md` section 2:
+
+1. If TypeScript (`tsconfig.json` exists): read path aliases from `tsconfig.json` `compilerOptions.paths` first — expand aliases when scanning imports.
+2. For each subsystem, Grep its source files for imports referencing other subsystems. Distinguish `import type` (type-only edge) from value imports (runtime edge).
+3. Trace barrel re-exports in index files to understand true public API surfaces.
+4. Scan for dynamic `import()` expressions — these indicate runtime dependencies and potential code-splitting boundaries.
+5. Flag circular dependencies (bidirectional runtime edges).
+
+Record edges as a dependency table: `From → To (runtime|type-only)` with key imported symbols.
+
+### 6d. Estimate maturity
+
+Check `git rev-parse --is-shallow-repository` before git analysis. If shallow, note the limitation and proceed with available history.
+
+For each subsystem, collect per `architecture-extraction.md` section 4:
+
+1. **Churn rate**: `git log --format='' --name-only -- '<path>/' | sort | uniq -c | sort -rn | head -20`
+2. **Recency**: `git log -1 --format=%ci -- '<path>/'`
+3. **Contributors**: `git log --format='%aN' -- '<path>/' | sort -u | wc -l`
+4. **Commit patterns**: `git log --oneline -50 -- '<path>/'` — classify by prefix (fix/feat/refactor/chore), compute fix-to-feature ratio.
+
+Combine signals using the weighted table in the reference to assign: Mature, Developing, Nascent, or Unknown.
+
+### 6e. Detect deployment context
+
+Per `architecture-extraction.md` section 5: scan for Dockerfile, docker-compose, k8s configs, serverless configs, CI/CD files (from Step 2e), Procfile. Summarize deployment model.
+
+### 6f. Extract key dependencies
+
+Read the package manifest (from Step 2b) and extract architecturally significant dependencies — frameworks, databases, ORMs, auth libraries, API clients. Record name, version, and purpose.
+
+### 6g. Draft system summary
+
+Synthesize findings from Steps 6b-6f into a 2-3 paragraph system summary describing:
+- What the system does (from Step 4 idea.md)
+- How it's organized (subsystem boundaries, layering if visible)
+- Key design decisions visible from the code (e.g., monorepo, microservices, serverless, strict TypeScript)
+
+Hold all findings in working memory for presentation in Step 7.
 
 ## Step 7 — Architecture Interview
 
-*Placeholder — implemented in Phase 3.*
+Present extracted architecture findings to the user for validation and correction. Max 3 exchanges (present → correct → confirm).
 
-Ask targeted questions about architectural decisions that cannot be inferred from code (e.g., deployment topology, scaling strategy, data flow ownership).
+### 7a. Present subsystem boundaries
+
+Present the subsystem map as a table:
+
+```
+I identified these subsystems from the codebase:
+
+| Subsystem | Description | Key files | Dependencies |
+|---|---|---|---|
+| api | HTTP handlers and routing | src/api/ | db, auth, shared |
+| db | Database access layer | src/db/ | shared |
+| auth | Authentication/authorization | src/auth/ | db |
+| (shared) | Cross-cutting utilities | src/shared/ | — |
+```
+
+Ask: "Are these the right subsystem boundaries? Any to merge, split, rename, or add?"
+
+### 7b. Present maturity estimates
+
+After incorporating subsystem corrections (if any), present maturity:
+
+```
+Based on git history, here are my maturity estimates:
+
+| Subsystem | Maturity | Justification |
+|---|---|---|
+| api | Developing | Active commits, 3 contributors, mix of feat/fix |
+| db | Mature | Low churn, last changed 4 months ago, mostly maintenance |
+| auth | Nascent | Created recently, single contributor, all feature commits |
+```
+
+Ask: "Do these maturity levels match your understanding? Any corrections?"
+
+### 7c. Incorporate corrections and confirm
+
+Apply any user corrections from 7a and 7b. If the user made changes, briefly restate the final version: "Updated architecture: [summary of changes]. Writing to `.project/architecture/_overview.md`."
+
+If no corrections, proceed directly.
+
+### 7d. Write architecture overview
+
+Write `.project/architecture/_overview.md` directly using the Write tool. Follow the output format in `architecture-extraction.md` section 6:
+
+- **System Summary** — 2-3 paragraphs
+- **Subsystems** — one `###` section per subsystem with description and dependencies
+- **Key Dependencies** — table of significant external packages
+- **Deployment Model** — deployment context summary
+- **Subsystem Maturity** — table with maturity level, dependents, and justification notes
+
+Do not include a "Fitness Functions" column unless specific test infrastructure was detected that maps to subsystems.
 
 ## Step 8 — Migration Detection
 

@@ -142,7 +142,7 @@ Add subsystem identification from code structure, maturity estimation from git h
 
 ### Tasks
 
-- [ ] **Create references/architecture-extraction.md**: Document extraction rules:
+- [x] **Create references/architecture-extraction.md**: Document extraction rules:
   - Subsystem identification: top-level directories under src/, package.json workspaces, independent modules with their own dependencies. Heuristic (tunable): directory with 2+ files that has a clear entry point (index.ts/mod.ts) or shared imports from other directories = candidate subsystem. Use multiple signals (entry point, cross-directory imports, distinct domain naming) rather than a single file-count threshold — small but well-structured subsystems (e.g., 3-file `src/api/`) should be detected.
   - Dependency mapping: which subsystems import from which others (build import graph from Grep-based heuristics — regex matching import/export statements). TypeScript module semantics: (1) distinguish `import type` vs value imports — type-only imports indicate design coupling but not runtime dependency, (2) resolve path aliases by reading tsconfig `paths` via Read tool before building the graph, (3) trace through barrel re-exports (`export * from` in index.ts) to actual modules via Grep, (4) scan for dynamic `import()` expressions (e.g., `await import('./module')`) — these indicate runtime dependencies and potential code-splitting boundaries
   - Shallow clone detection: check `git rev-parse --is-shallow-repository` before running git-based analysis; warn and suggest `git fetch --unshallow` if shallow (also checked in Step 1 pre-flight)
@@ -153,11 +153,11 @@ Add subsystem identification from code structure, maturity estimation from git h
     - Commit message patterns (fix/bug vs feat/add) — high fix ratio = stability issues
   - Deployment context: Dockerfile, docker-compose.yml, k8s/, serverless config, CI/CD files, Procfile
 
-- [ ] **Flesh out SKILL.md Steps 6-7 (Architecture + Interview)**:
+- [x] **Flesh out SKILL.md Steps 6-7 (Architecture + Interview)**:
   - Step 6: Run extraction, build subsystem map with maturity estimates, generate dependency graph. Must `mkdir -p .project/architecture/` before writing any architecture files (`architecture/` is an LLM-owned content directory per `cli-interaction.md` section 2, so `mkdir -p` is appropriate — the "no mkdir" rule applies to entity directories managed by the state machine). Detect if architecture files already exist and offer re-extraction or skip (re-entry).
   - Step 7: Present findings to user via AskUserQuestion — "These are the subsystems I found: [table]. Are these the right boundaries? Any I should merge/split/rename?" Then: "Here are my maturity estimates based on git history: [table]. Do these match your understanding?" Single confirmation round with a max of 3 exchanges (present, correct, confirm — matching `/create-epic` Step 3's wrap-up heuristic). Write `.project/architecture/_overview.md` directly using Write tool with validated subsystems and maturity table.
 
-- [ ] **Enhance fixture repo**: Ensure the fixture has clear subsystem boundaries (e.g., `src/api/`, `src/db/`, `src/auth/`) with different git activity levels to test maturity heuristics.
+- [x] **Enhance fixture repo**: Ensure the fixture has clear subsystem boundaries (e.g., `src/api/`, `src/db/`, `src/auth/`) with different git activity levels to test maturity heuristics.
 
 - [ ] **Verify via test harness**: Extend automated test to verify architecture extraction on the fixture. Confirm architecture files are generated with subsystems matching fixture structure (`api`, `db`, `auth`).
 
