@@ -19,7 +19,9 @@ Read these before doing any significant work in this repo:
 - `.project/architecture/transition-tables.md` — complete state transition spec (source of truth)
 
 Also check if relevant to your task:
-- `.project/epics/entity-restructuring/architecture/` — epic target architecture (nested slice paths, consolidated overview, affected APIs)
+- `.project/epics/plugin-distribution/architecture/` — plugin distribution epic target architecture (plugin packaging, CLI rename, nextCommands, HMAC signatures)
+- `.project/epics/plugin-distribution/slices/sequencing.md` — plugin distribution slice ordering and dependencies
+- `.project/epics/entity-restructuring/architecture/` — entity restructuring epic target architecture (nested slice paths, consolidated overview, affected APIs)
 - `.project/research/` — tech stack and library research
 - `.project/brainstorm/` — architecture brainstorming output
 - `.project/decisions/` — active architectural decisions

@@ -13,6 +13,13 @@
 			"name": "dedup-fitness-collect-ts",
 			"status": "dropped",
 			"title": "Deduplicate collectTsFiles() across fitness tests"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-29T18:20:26.557Z",
+			"name": "scoped-decision-rollup",
+			"status": "open",
+			"title": "Scope decisions to entities and roll up like learnings"
 		}
 	]
 }

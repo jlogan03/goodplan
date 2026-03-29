@@ -1,0 +1,10 @@
+{
+	"created": "2026-03-29T20:39:01.066Z",
+	"deferred": [],
+	"epic": "plugin-distribution",
+	"goal": "Implement commandMetadata registry, computeNextCommands(), and Commands layer integration",
+	"name": "05-next-commands",
+	"refinement": null,
+	"status": "created",
+	"updated": "2026-03-29T20:39:01.066Z"
+}

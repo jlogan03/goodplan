@@ -1,0 +1,10 @@
+{
+	"created": "2026-03-29T20:39:01.354Z",
+	"deferred": [],
+	"epic": "plugin-distribution",
+	"goal": "GitHub Actions workflow: build, smoke test, validate, publish to release branch",
+	"name": "07-ci-distribution",
+	"refinement": null,
+	"status": "created",
+	"updated": "2026-03-29T20:39:01.354Z"
+}

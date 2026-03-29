@@ -187,6 +187,56 @@
 				}
 			],
 			"status": "completed"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-29T17:24:53.004Z",
+			"name": "plugin-distribution",
+			"slices": [
+				{
+					"completed": null,
+					"created": "2026-03-29T20:39:00.525Z",
+					"name": "01-rename-gp",
+					"status": "plan-refined"
+				},
+				{
+					"completed": null,
+					"created": "2026-03-29T20:39:00.657Z",
+					"name": "02-plugin-scaffold",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-03-29T20:39:00.799Z",
+					"name": "03-hmac-signatures",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-03-29T20:39:00.933Z",
+					"name": "04-state-protection-hooks",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-03-29T20:39:01.066Z",
+					"name": "05-next-commands",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-03-29T20:39:01.206Z",
+					"name": "06-skill-packaging",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-03-29T20:39:01.354Z",
+					"name": "07-ci-distribution",
+					"status": "created"
+				}
+			],
+			"status": "activated"
 		}
 	]
 }
