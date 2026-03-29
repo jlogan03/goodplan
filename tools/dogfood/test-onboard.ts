@@ -147,11 +147,13 @@ async function main(): Promise<void> {
 				result = message.result;
 				costUsd = message.total_cost_usd;
 				log(`\n--- RESULT ($${costUsd.toFixed(4)}) ---\n${result.slice(0, 3000)}`);
+				break;
 			} else if (message.type === "result") {
 				log(`\n--- ERROR (${message.subtype}) ---\n${JSON.stringify("errors" in message ? message.errors : "unknown").slice(0, 1000)}`);
 				if ("total_cost_usd" in message) {
 					costUsd = message.total_cost_usd;
 				}
+				break;
 			} else if (message.type === "assistant") {
 				for (const block of message.message.content) {
 					if (block.type === "tool_use") {
@@ -282,8 +284,10 @@ async function negativeTest(): Promise<void> {
 					stopped = true;
 				}
 				log(`[negative-test] Result: ${message.result.slice(0, 500)}`);
+				break;
 			} else if (message.type === "result") {
 				log(`[negative-test] Error result: ${message.subtype}`);
+				break;
 			}
 		}
 	} catch (err) {
