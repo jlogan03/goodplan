@@ -1,0 +1,6 @@
+{"id":"2026-01-01-decision-one","status":"active","domain":"architecture","title":"Decision One","summary":"First decision","date":"2026-01-01","supersededBy":null}
+{"id":"2026-01-02-decision-two","status":"active","domain":"process","title":"Decision Two","summary":"Second decision","date":"2026-01-02","supersededBy":null}
+{"id":"2026-01-03-decision-three","status":"active","domain":"architecture","title":"Decision Three","summary":"Third decision","date":"2026-01-03","supersededBy":null}
+{"id":"2026-01-04-decision-four","status":"superseded","domain":"architecture","title":"Decision Four","summary":"Fourth decision","date":"2026-01-04","supersededBy":"2026-01-05-decision-five"}
+{"id":"2026-01-05-decision-five","status":"active","domain":"architecture","title":"Decision Five","summary":"Fifth decision","date":"2026-01-05","supersededBy":null}
+{"id":"2026-01-06-decision-six","status":"active","domain":"process","title":"Decision Six","summary":"Sixth decision","date":"2026-01-06","supersededBy":null}

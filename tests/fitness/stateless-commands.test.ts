@@ -6,10 +6,11 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { globalArgs } from "../../src/commands/global-args.js";
 import { buildBinary, runCommand } from "../integration/helpers.js";
 
-/** Global args that are not entity-identifying. */
-const GLOBAL_ARG_NAMES = new Set(["json", "quiet", "query", "verbose"]);
+/** Global args that are not entity-identifying — derived from globalArgs source of truth. */
+const GLOBAL_ARG_NAMES = new Set(Object.keys(globalArgs));
 
 /** Read-only commands that don't need entity-identifying flags. */
 const READ_ONLY_COMMANDS = new Set([
@@ -36,9 +37,7 @@ const ENTITY_ARGS = new Set(["epic", "slice", "quest", "task", "id", "from", "to
  * Commands that operate on the entire project rather than targeting a specific entity.
  * Note: `init` is also project-scoped but lives in `READ_ONLY_COMMANDS`.
  */
-const ENTITY_EXEMPT_COMMANDS = new Set([
-	"migrate",
-]);
+const ENTITY_EXEMPT_COMMANDS = new Set(["migrate"]);
 
 /** Commands that accept stdin with required entity-identifying fields. */
 const STDIN_ENTITY_COMMANDS = new Set([

@@ -31,13 +31,13 @@ Add pagination args, helper function, and update output patterns so all list com
 
 ### Tasks
 
-- [ ] **Add pagination args to `globalArgs`** in `src/commands/global-args.ts`: add `limit` (type: `"string"`, description: "Maximum number of items to return", required: false) and `offset` (type: `"string"`, description: "Number of items to skip", required: false). Use string type matching the `state` command's pattern — parse to number at call site. Note: `state.ts` defines its own `offset`/`limit` args with `state`-specific descriptions ("requires --query"). These shadow the global args — keep the `state.ts` overrides with their context-specific descriptions (citty supports this).
+- [x] **Add pagination args to `globalArgs`** in `src/commands/global-args.ts`: add `limit` (type: `"string"`, description: "Maximum number of items to return", required: false) and `offset` (type: `"string"`, description: "Number of items to skip", required: false). Use string type matching the `state` command's pattern — parse to number at call site. Note: `state.ts` defines its own `offset`/`limit` args with `state`-specific descriptions ("requires --query"). These shadow the global args — keep the `state.ts` overrides with their context-specific descriptions (citty supports this).
 
-- [ ] **Add `"limit"` and `"offset"` to `GLOBAL_FLAG_KEYS`** in `src/util/validate.ts`. Without this, these flags will leak into `validateInput()` Zod `.strict()` schema validation on mutating commands, producing spurious validation errors. Add a unit test confirming `validateInput` strips these flags.
+- [x] **Add `"limit"` and `"offset"` to `GLOBAL_FLAG_KEYS`** in `src/util/validate.ts`. Without this, these flags will leak into `validateInput()` Zod `.strict()` schema validation on mutating commands, producing spurious validation errors. Add a unit test confirming `validateInput` strips these flags.
 
-- [ ] **Extract `parseNonNegativeInt` from `src/commands/global/state.ts` to `src/util/pagination.ts`**. Update `state.ts` to import from the new shared location. This makes the parser available to `applyPagination()` without duplication.
+- [x] **Extract `parseNonNegativeInt` from `src/commands/global/state.ts` to `src/util/pagination.ts`**. Update `state.ts` to import from the new shared location. This makes the parser available to `applyPagination()` without duplication.
 
-- [ ] **Create `applyPagination()` helper** in `src/util/pagination.ts`:
+- [x] **Create `applyPagination()` helper** in `src/util/pagination.ts`:
   ```typescript
   interface PaginationArgs { limit?: string; offset?: string }
   interface PaginatedResult<T> { items: T[]; total: number; offset?: number; limit?: number }
@@ -51,7 +51,7 @@ Add pagination args, helper function, and update output patterns so all list com
   - Bare `--limit` or `--offset` without a value (citty delivers `"true"`) intentionally produces a validation error from `parseNonNegativeInt`. This is correct behavior — no special handling needed.
   - Add a doc comment explaining that list commands paginate-then-query while `state` queries-then-paginates, so future contributors don't "fix" this difference.
 
-- [ ] **Create `formatPaginationFooter()` helper** in `src/util/pagination.ts`:
+- [x] **Create `formatPaginationFooter()` helper** in `src/util/pagination.ts`:
   ```typescript
   function formatPaginationFooter(result: PaginatedResult<unknown>): string | undefined
   ```
@@ -60,13 +60,13 @@ Add pagination args, helper function, and update output patterns so all list com
   - When `total > 0` but paginated items are empty (e.g., `--offset` beyond total), show the footer (not "No items found"). Reserve "No items found" for `total === 0` only.
   - Uses `picocolors.dim()` for the footer text
 
-- [ ] **Update `learning:list` as the first consumer** — wire `applyPagination()` into the command. For JSON mode: `output(paginatedResult, args)`. For human mode: format the paginated `items`, append footer if present. This validates the pattern before applying to all commands.
+- [x] **Update `learning:list` as the first consumer** — wire `applyPagination()` into the command. For JSON mode: `output(paginatedResult, args)`. For human mode: format the paginated `items`, append footer if present. This validates the pattern before applying to all commands.
 
-- [ ] **Add unit tests for `applyPagination()`** in `tests/unit/util/pagination.test.ts`: no pagination args (returns all items + total, verify `offset`/`limit` keys are absent via `expect(result).not.toHaveProperty("offset")`), limit only (includes both limit and offset in result), offset only (includes both offset and limit in result), limit + offset, offset beyond array length (returns empty items, total unchanged), limit larger than array, zero limit (returns empty), negative values (error), `--offset` without `--limit` (offset present, limit defaults), offset on empty array (produces `limit: 0` — document this semantic oddity). Also test `parseNonNegativeInt` edge cases: `"0"`, `"-1"`, `"1.5"`, `""`, `"true"` (bare flag), very large numbers.
+- [x] **Add unit tests for `applyPagination()`** in `tests/unit/util/pagination.test.ts`: no pagination args (returns all items + total, verify `offset`/`limit` keys are absent via `expect(result).not.toHaveProperty("offset")`), limit only (includes both limit and offset in result), offset only (includes both offset and limit in result), limit + offset, offset beyond array length (returns empty items, total unchanged), limit larger than array, zero limit (returns empty), negative values (error), `--offset` without `--limit` (offset present, limit defaults), offset on empty array (produces `limit: 0` — document this semantic oddity). Also test `parseNonNegativeInt` edge cases: `"0"`, `"-1"`, `"1.5"`, `""`, `"true"` (bare flag), very large numbers.
 
-- [ ] **Create a `pagination` fixture** under `tests/fixtures/pagination/` with 5+ entries for each of the 6 entity types (learnings, epics, quests, slices, tasks, decisions). Reference this fixture by name in integration tests across Phase 1 and Phase 2.
+- [x] **Create a `pagination` fixture** under `tests/fixtures/pagination/` with 5+ entries for each of the 6 entity types (learnings, epics, quests, slices, tasks, decisions). Reference this fixture by name in integration tests across Phase 1 and Phase 2.
 
-- [ ] **Add integration tests for `learning:list` pagination** in `tests/integration/`: test `--limit`, `--offset`, `--limit --offset`, `--json` output shape, `--limit abc` produces a validation error with exit code 2 (INV-007), and `--limit` combined with `--query` (validates paginate-then-query ordering is correct before rolling out to all commands). Use the `pagination` fixture.
+- [x] **Add integration tests for `learning:list` pagination** in `tests/integration/`: test `--limit`, `--offset`, `--limit --offset`, `--json` output shape, `--limit abc` produces a validation error with exit code 2 (INV-007), and `--limit` combined with `--query` (validates paginate-then-query ordering is correct before rolling out to all commands). Use the `pagination` fixture.
 
 ### Verification
 

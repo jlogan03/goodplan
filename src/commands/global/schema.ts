@@ -26,7 +26,7 @@ import {
 import { taskCreateInputSchema } from "../../schemas/commands/task.js";
 import { GoodplanError } from "../../util/errors.js";
 import { output } from "../../util/output.js";
-import { globalArgs } from "../global-args.js";
+import { globalArgs, listArgs } from "../global-args.js";
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -100,6 +100,17 @@ const globalArgDefs: Record<string, ArgDefinition> = Object.fromEntries(
 		};
 		if ("required" in def && def.required !== undefined) argDef.required = def.required;
 		if ("default" in def && def.default !== undefined) argDef.default = def.default;
+		return [key, argDef];
+	}),
+);
+
+const listArgDefs: Record<string, ArgDefinition> = Object.fromEntries(
+	Object.entries(listArgs).map(([key, def]) => {
+		const argDef: ArgDefinition = {
+			type: def.type,
+			description: def.description,
+		};
+		if ("required" in def && def.required !== undefined) argDef.required = def.required;
 		return [key, argDef];
 	}),
 );
@@ -356,6 +367,7 @@ registerCommand(
 // Learning commands
 registerCommand("learning:list", "List learnings.", {
 	...globalArgDefs,
+	...listArgDefs,
 	source: { type: "string", description: "Filter by source scope" },
 });
 registerCommand("learning:rollup", "Roll up learnings from one scope to another.", {

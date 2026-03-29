@@ -1,11 +1,12 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { resolveProjectDir } from "../../core/data/project.js";
 import { loadState } from "../../core/data/load.js";
+import { resolveProjectDir } from "../../core/data/project.js";
 import { getJsonl } from "../../core/tree.js";
 import type { LearningEntry } from "../../schemas/records/learning.js";
 import { output } from "../../util/output.js";
-import { globalArgs } from "../global-args.js";
+import { applyPagination, formatPaginationFooter } from "../../util/pagination.js";
+import { globalArgs, listArgs } from "../global-args.js";
 
 /**
  * `goodplan learning:list [--source <scope>]` — list learnings.
@@ -22,6 +23,7 @@ export const learningListCommand = defineCommand({
 	},
 	args: {
 		...globalArgs,
+		...listArgs,
 		source: {
 			type: "string",
 			description: "Source scope (e.g., slices/01-auth). Omit for project-level learnings.",
@@ -34,19 +36,25 @@ export const learningListCommand = defineCommand({
 
 		const jsonlPath =
 			args.source !== undefined ? `${args.source}/learnings.jsonl` : "learnings.jsonl";
-		const items = getJsonl<LearningEntry>(state, jsonlPath) ?? [];
+		const allItems = getJsonl<LearningEntry>(state, jsonlPath) ?? [];
+		const paginated = applyPagination(allItems, args);
 
 		if (args.json || args.query) {
-			output({ items }, args);
+			output(paginated, args);
 		} else if (!args.quiet) {
-			if (items.length === 0) {
+			if (paginated.total === 0) {
 				output("No learnings found.", args);
 			} else {
 				const lines: string[] = [];
-				for (const item of items) {
-					lines.push(
-						`  ${pc.bold(item.category)} ${item.summary} ${pc.dim(`(${item.source})`)}`,
-					);
+				if (paginated.items.length === 0) {
+					lines.push("No learnings in this range.");
+				}
+				for (const item of paginated.items) {
+					lines.push(`  ${pc.bold(item.category)} ${item.summary} ${pc.dim(`(${item.source})`)}`);
+				}
+				const footer = formatPaginationFooter(paginated);
+				if (footer !== undefined) {
+					lines.push(footer);
 				}
 				output(lines.join("\n"), args);
 			}
