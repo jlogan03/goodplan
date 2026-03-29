@@ -332,19 +332,104 @@ Write `.project/architecture/_overview.md` directly using the Write tool. Follow
 
 Do not include a "Fitness Functions" column unless specific test infrastructure was detected that maps to subsystems.
 
-## Step 8 — Migration Detection
+## Step 8 — Migration Detection & Debt Analysis
 
-*Placeholder — implemented in Phase 4.*
+Read `references/migration-detection.md` (relative to this skill's directory) for detection patterns, confidence scoring, and presentation format.
 
-Read `references/migration-detection.md` for detection patterns.
+### Re-entry
 
-Scan for in-progress migrations, version upgrade markers, and deprecated patterns to create migration-tracking side quests.
+Before running detection, check if quests already exist for detected items:
+
+```bash
+goodplan quest:list --json
+```
+
+Parse quest names and goals. If a quest already covers a detected migration or debt item (fuzzy match on keywords like "esm", "cjs", "migration", "todo", "test coverage"), note "Quest already exists: `<quest-name>`" and skip that item.
+
+### 8a. Migration detection
+
+Scan for in-flight migrations using the coexistence patterns in `migration-detection.md` section 1. For each detected pair:
+
+1. **Identify coexistence**: Grep for old-pattern markers (`require(`, `module.exports`, `class.*extends Component`, callback signatures) and new-pattern markers (`import`/`export` statements, hooks, `async`/`await`).
+
+2. **Correlate with git timeline** per section 2: When did the new pattern first appear? Is the old pattern still receiving new additions (regression) or only the new pattern? Use:
+
+```bash
+# Example for CJS→ESM: when were CJS files last added/modified?
+git log --all --diff-filter=A --format='%ci %s' -- '*.cjs' '*.mjs'
+git log --format='%ci %s' -10 -- '*.cjs'
+```
+
+3. **Check config-level signals** per section 3: dual `main`+`exports` in package.json, `.mts`/`.cts` extensions, `"type": "module"` with `require()` calls, mixed linter/test configs.
+
+4. **Score confidence** per section 4: High (clear timeline + config evidence), Medium (coexistence but ambiguous timeline), Low (likely intentional variation). Only present High and Medium findings.
+
+### 8b. Tech debt analysis
+
+Scan for accumulated debt per `migration-detection.md` section 5:
+
+1. **TODO/FIXME/HACK comments**: Grep case-insensitively for `TODO|FIXME|HACK|XXX|WORKAROUND` across source files. Record file, line, and comment text.
+
+2. **Skeleton tests**: Check test files for placeholder assertions (`expect(true).toBe(true)`, `assert(true)`, empty test bodies).
+
+3. **Long files**: Find source files over 500 lines. Exclude `.d.ts` files, generated files, and lock files.
+
+4. **Untested source files**: Cross-reference `src/` files against test file locations (from Step 5 convention detection).
+
+5. **Circular imports**: Reference the dependency graph from Step 6 — any bidirectional runtime edges are circular import debt.
+
+6. **Unused dependencies**: For each dependency in package.json, Grep `src/` for import/require of that package name. Flag packages with zero matches.
+
+### 8c. Present findings
+
+Present findings in two categories per `migration-detection.md` section 6:
+
+**Migrations** — each with: pattern description, old→new, timeline evidence, scope (file count), confidence level.
+
+**Tech Debt** — each with: signal type, locations/counts, severity.
+
+For each finding, ask the user to triage:
+
+> "**[Finding name]** — [brief description]
+> → Create side quest / Acknowledge and defer / Skip"
+
+Collect all triage decisions before proceeding to Step 9. Items triaged as "Create side quest" will be created in Step 9. Items triaged as "Acknowledge and defer" are noted in the summary but no quest is created. Items triaged as "Skip" are dropped.
 
 ## Step 9 — Side Quest Creation
 
-*Placeholder — implemented in Phase 4.*
+For each item the user triaged as "Create side quest" in Step 8c, create a quest via the CLI:
 
-Create side quests for detected tech debt, migration work, and documentation gaps discovered during scanning.
+```bash
+echo '{"name":"<kebab-case-name>","goal":"<goal-text>"}' | goodplan quest:create --json
+```
+
+### Quest naming
+
+Use descriptive kebab-case names that indicate the work:
+
+- Migrations: `migrate-cjs-to-esm`, `migrate-class-to-function-components`, `migrate-jest-to-vitest`
+- Debt: `fix-todo-comments`, `add-missing-tests`, `resolve-circular-imports`, `split-long-files`
+
+### Quest goals
+
+Keep goals to 2-3 sentences. Reference patterns and directories rather than listing every file. Include:
+
+- **What** to migrate/fix
+- **Old → new pattern** (for migrations)
+- **Estimated scope** (file count, subsystem affected)
+
+Example goals:
+
+- `"Complete the CJS-to-ESM migration in scripts/. Three .cjs files (seed-db, check-health, migrate-db) still use require()/module.exports while the rest of the codebase uses ESM imports. Convert to ESM and update any callers."`
+- `"Replace skeleton test assertions in tests/api.test.ts and tests/db.test.ts with real test logic. Currently using placeholder expect(true).toBe(true) assertions."`
+- `"Address 5 TODO/FIXME comments across src/db/ and src/api/. Implement the noted improvements or remove stale TODOs with explanations."`
+
+### Notes
+
+- `quest:create` creates quests in `created` status — multiple quests can be created without conflict.
+- The single-active-quest constraint only applies at planning time, not creation time.
+- Handle errors per `cli-interaction.md` section 10. Exit code 2 (validation error) likely means the quest name already exists — skip and note.
+- After all quests are created, briefly summarize: "Created N side quests: [list names]."
 
 ## Step 10 — Expertise Profiling
 

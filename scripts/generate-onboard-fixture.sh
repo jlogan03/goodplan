@@ -290,6 +290,8 @@ export async function insertTask(input: TaskInput): Promise<Task> {
   return row;
 }
 
+// TODO: add pagination support to findAllTasks — currently returns all rows
+
 export async function patchTask(id: string, input: Partial<TaskInput>): Promise<Task> {
   const fields: string[] = [];
   const values: unknown[] = [];
@@ -440,6 +442,109 @@ describe("Auth tokens", () => {
 });
 TSEOF
 
+# ── CJS scripts (legacy, pre-ESM migration) ───────────────
+# These files use require()/module.exports — planted to test
+# migration detection (CJS→ESM coexistence with "type": "module").
+# Placed in scripts/ to stay outside tsconfig include scope.
+
+mkdir -p scripts
+
+cat > scripts/seed-db.cjs << 'CJSEOF'
+const { Pool } = require("pg");
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+async function seed() {
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      INSERT INTO tasks (title, description, status)
+      VALUES ('Sample task', 'Created by seed script', 'pending')
+    `);
+    console.log("Seeded database");
+  } finally {
+    client.release();
+  }
+  await pool.end();
+}
+
+module.exports = { seed };
+
+if (require.main === module) {
+  seed().catch(console.error);
+}
+CJSEOF
+
+cat > scripts/check-health.cjs << 'CJSEOF'
+const http = require("http");
+
+function checkHealth(port) {
+  return new Promise((resolve, reject) => {
+    const req = http.get(`http://localhost:${port}/health`, (res) => {
+      resolve(res.statusCode === 200);
+    });
+    req.on("error", reject);
+    req.setTimeout(5000, () => {
+      req.destroy();
+      reject(new Error("Timeout"));
+    });
+  });
+}
+
+module.exports = { checkHealth };
+
+if (require.main === module) {
+  const port = process.env.PORT || 3000;
+  checkHealth(port)
+    .then((ok) => {
+      console.log(ok ? "Healthy" : "Unhealthy");
+      process.exit(ok ? 0 : 1);
+    })
+    .catch((err) => {
+      console.error(err.message);
+      process.exit(1);
+    });
+}
+CJSEOF
+
+cat > scripts/migrate-db.cjs << 'CJSEOF'
+const { Pool } = require("pg");
+const fs = require("fs");
+const path = require("path");
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+async function migrate() {
+  const migrationsDir = path.join(__dirname, "../migrations");
+  if (!fs.existsSync(migrationsDir)) {
+    console.log("No migrations directory found");
+    return;
+  }
+  const files = fs.readdirSync(migrationsDir).sort();
+  const client = await pool.connect();
+  try {
+    for (const file of files) {
+      const sql = fs.readFileSync(path.join(migrationsDir, file), "utf-8");
+      await client.query(sql);
+      console.log(`Applied: ${file}`);
+    }
+  } finally {
+    client.release();
+  }
+  await pool.end();
+}
+
+module.exports = { migrate };
+
+if (require.main === module) {
+  migrate().catch(console.error);
+}
+CJSEOF
+
 # ── Git init + commits ─────────────────────────────────────
 
 AUTHOR_A="$REAL_NAME <$REAL_EMAIL>"
@@ -465,6 +570,10 @@ commit "Initial project setup" "$AUTHOR_A" 60
 
 git add .github/
 commit "Add CI workflow" "$AUTHOR_A" 55
+
+# Legacy CJS scripts (committed early — before ESM src/ code)
+git add scripts/seed-db.cjs scripts/check-health.cjs scripts/migrate-db.cjs
+commit "Add database seed and health check scripts" "$AUTHOR_B" 52
 
 # Shared types and utils
 git add src/shared/types.ts src/shared/utils.ts

@@ -186,16 +186,16 @@ Add pattern coexistence analysis, git timeline correlation for in-flight migrati
 
 ### Tasks
 
-- [ ] **Plant a half-done CJS-to-ESM migration in fixture**: Update the fixture generation script to include pattern coexistence — some `.cjs` or `.js` files using `require()`/`module.exports` (CJS) and TypeScript files using `import`/`export` (ESM), with git history showing ESM files added more recently. Use `.cjs`/`.mjs` extensions or plain `.js` for CJS files to avoid TypeScript errors with `verbatimModuleSyntax`. **Place CJS files in `scripts/` or project root — NOT under `src/`** — to stay outside tsconfig include scope and avoid `verbatimModuleSyntax` compilation errors. Ensure fixture `package.json` has `"type": "module"` for coherent ESM configuration.
+- [x] **Plant a half-done CJS-to-ESM migration in fixture**: Update the fixture generation script to include pattern coexistence — some `.cjs` or `.js` files using `require()`/`module.exports` (CJS) and TypeScript files using `import`/`export` (ESM), with git history showing ESM files added more recently. Use `.cjs`/`.mjs` extensions or plain `.js` for CJS files to avoid TypeScript errors with `verbatimModuleSyntax`. **Place CJS files in `scripts/` or project root — NOT under `src/`** — to stay outside tsconfig include scope and avoid `verbatimModuleSyntax` compilation errors. Ensure fixture `package.json` has `"type": "module"` for coherent ESM configuration.
 
-- [ ] **Create references/migration-detection.md**: Document detection rules:
+- [x] **Create references/migration-detection.md**: Document detection rules:
   - Pattern coexistence: same conceptual operation done two different ways (e.g., class vs function components, callbacks vs async/await, CommonJS vs ESM, old API vs new API)
   - Git timeline correlation: when did the new pattern first appear? Is the old pattern still being added to (regression) or only the new pattern?
   - Config-level migration signals: `.mts`/`.cts` file extensions, dual `main`+`exports` in package.json, `module: "nodenext"` in tsconfig with CJS code still present
   - Confidence scoring: high (clear old→new with timeline), medium (coexistence but unclear direction), low (might just be stylistic variation)
   - Tech debt heuristics: TODO/FIXME/HACK comments, files with no test coverage, unused dependencies in package.json, outdated dependencies (major version behind), circular imports, files over 500 lines (exclude `.d.ts` files and heavily-typed interface files — LOC inflated by type declarations)
 
-- [ ] **Flesh out SKILL.md Steps 8-9 (Detection + Side Quests)**:
+- [x] **Flesh out SKILL.md Steps 8-9 (Detection + Side Quests)**:
   - Step 8: Run migration detection + debt analysis. Present findings categorized as migrations (in-flight transitions) vs debt (accumulated issues). Use AskUserQuestion for each: "Create side quest / Acknowledge and defer / Skip". Detect if already-created quests exist for these items and skip (re-entry).
   - Step 9: For approved items, create quests via Bash tool with `echo '{"name":"<name>","goal":"<goal>"}' | goodplan quest:create --json` (per `cli-interaction.md` section 4 invocation patterns). Keep quest goals to 2-3 sentences: reference patterns and directories rather than listing every file. Include in goal: what to migrate/fix, old→new pattern, estimated scope. Note: `quest:create` creates quests in `created` status — multiple quests can be created without conflict. The single-active-quest constraint only applies at planning time.
 
