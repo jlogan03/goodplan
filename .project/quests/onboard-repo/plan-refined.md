@@ -104,7 +104,7 @@ Add convention detection heuristics that analyze code patterns, naming, testing,
 
 ### Tasks
 
-- [ ] **Create references/convention-heuristics.md**: Document detection rules. Include a **dispatch table** at the top: project type detection based on marker files (e.g., `tsconfig.json` exists → apply TypeScript rules; `pyproject.toml` exists → Python rules; `Cargo.toml` exists → Rust rules; `go.mod` exists → Go rules; `pom.xml`/`build.gradle` exists → Java rules). Multiple markers can match (multi-language project). SKILL.md Step 5 must reference this dispatch logic to select which language-specific heuristics to run. Detection rules:
+- [x] **Create references/convention-heuristics.md**: Document detection rules. Include a **dispatch table** at the top: project type detection based on marker files (e.g., `tsconfig.json` exists → apply TypeScript rules; `pyproject.toml` exists → Python rules; `Cargo.toml` exists → Rust rules; `go.mod` exists → Go rules; `pom.xml`/`build.gradle` exists → Java rules). Multiple markers can match (multi-language project). SKILL.md Step 5 must reference this dispatch logic to select which language-specific heuristics to run. Detection rules:
   - Naming conventions: file naming (kebab-case, camelCase, PascalCase), export naming, variable naming — detect by sampling up to 20 src/ files, prioritizing files with the most git commits
   - Code structure: module organization (barrel exports, index files, flat vs nested), import patterns (absolute vs relative)
   - Testing conventions: test file location (co-located vs `__tests__/` vs `tests/`), naming pattern (`*.test.*`, `*.spec.*`), framework detection prioritizing config file presence (`vitest.config.ts` > `jest.config.*` > `.mocharc.*`) over package.json script inspection, coverage configuration, whether tests use TypeScript natively (via vitest/bun) vs requiring compilation
@@ -113,9 +113,9 @@ Add convention detection heuristics that analyze code patterns, naming, testing,
   - PR conventions (when `gh` available): review comment patterns, PR template usage, label conventions from `gh pr list --limit 20 --json number,title,labels,reviewDecision`
   - Generalization notes: Python gets pyproject.toml/mypy/ruff detection, Rust gets Cargo.toml/clippy detection. **Known limitation**: non-TypeScript heuristics (Python, Rust, Go, Java) are included in the dispatch table but are unverified — the fixture and smoke test are both TypeScript projects. A future side quest should add multi-language fixture repos and tests.
 
-- [ ] **Flesh out SKILL.md Step 5 (Convention Detection)**: Replace placeholder with full implementation instructions. Include: scan each category, present findings to user for confirmation/correction, write `.project/conventions.md` directly using Write tool. Handle the `gh` fallback — when not available, skip PR conventions and note the gap. Step must detect if conventions.md already has content and offer re-detection or skip (re-entry).
+- [x] **Flesh out SKILL.md Step 5 (Convention Detection)**: Replace placeholder with full implementation instructions. Include: scan each category, present findings to user for confirmation/correction, write `.project/conventions.md` directly using Write tool. Handle the `gh` fallback — when not available, skip PR conventions and note the gap. Step must detect if conventions.md already has content and offer re-detection or skip (re-entry).
 
-- [ ] **Add fixture PR data**: If feasible, add mock PR data to the fixture. Otherwise, document that PR convention detection is verified via the real repo smoke test only.
+- [x] **Add fixture PR data**: No fixture PR data added — the fixture has no GitHub remote so `gh` commands will fail. PR convention detection is verified via the real repo smoke test only (documented as known test limitation in the Overview section and in `convention-heuristics.md` section 10).
 
 - [ ] **Verify via test harness**: Extend automated test to verify convention detection on the fixture. Confirm conventions.md is generated with correct findings including TypeScript strictness flags and vitest detection.
 

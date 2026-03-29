@@ -150,11 +150,58 @@ Write `.project/idea.md` directly using the Write tool. Content structure:
 
 ## Step 5 — Convention Detection
 
-*Placeholder — implemented in Phase 2.*
+Read `references/convention-heuristics.md` (relative to this skill's directory) for the dispatch table and all detection heuristics.
 
-Read `references/convention-heuristics.md` for the dispatch table mapping config files to conventions.
+### Re-entry
 
-Detect coding conventions from config files (linting rules, formatting settings, TypeScript strictness, import style) and write `.project/conventions.md`.
+If `.project/conventions.md` already exists and has content (more than just a heading), ask the user: "Found existing `.project/conventions.md`. Re-detect conventions from the codebase, or keep the current version?" Respect their choice. If they choose to keep, skip to Step 6.
+
+### 5a. Project type dispatch
+
+Scan the repo root for marker files per the dispatch table in `convention-heuristics.md`:
+
+- `tsconfig.json` → TypeScript rules
+- `pyproject.toml` → Python rules
+- `Cargo.toml` → Rust rules
+- `go.mod` → Go rules
+- `pom.xml` / `build.gradle` → Java rules
+
+Multiple markers can match. Record which rule sets apply. If none match, use general heuristics only and note the gap.
+
+### 5b. Run detection categories
+
+For each matching rule set, scan the following categories using the heuristics documented in `convention-heuristics.md`:
+
+1. **Naming conventions** — sample up to 20 `src/` files (prioritizing files with most git commits via `git log --format='' --name-only -- 'src/' | sort | uniq -c | sort -rn | head -20`). Detect file naming pattern (kebab-case, camelCase, PascalCase, snake_case), export naming (named vs default), variable naming.
+
+2. **Code structure** — check for barrel exports (index files with only export statements), flat vs nested module layout, import patterns (relative vs absolute/alias).
+
+3. **Testing conventions** — detect test file location (co-located, separate `tests/`, `__tests__/`), naming pattern (`*.test.*` vs `*.spec.*`), framework (prioritize config file presence: `vitest.config.*` > `jest.config.*` > `.mocharc.*` over package.json scripts), coverage config, native TypeScript test support.
+
+4. **Language-specific** — for TypeScript: read `tsconfig.json` strictness flags (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`), module system (ESM/CJS), path aliases (only report if 3+ import statements use them), build tooling (vite/webpack/esbuild/tsup/bun/tsc), runtime detection from lockfiles, package manager detection from lockfiles.
+
+5. **Git conventions** — check the shallow-repo flag from Step 1. If shallow, skip and note the gap. Otherwise: commit message format from `git log --oneline -50` (conventional commits, prefix style, ticket references, freeform), branch naming from `git branch -r`.
+
+6. **PR conventions** — only if `{gh_available}` is true. Run `gh pr list --limit 20 --json number,title,labels,reviewDecision`. Detect PR title format, label usage, review requirements, PR template existence. If `{gh_available}` is false, skip and note: "GitHub CLI not available — PR conventions not analyzed."
+
+### 5c. Present findings for confirmation
+
+Present all detected conventions to the user organized by category, using a structured summary. Ask: "These are the conventions I detected. Anything to correct, add, or remove?"
+
+Accept corrections in a single round — apply the user's changes, then proceed. Do not re-present for a second confirmation unless the user explicitly asks.
+
+### 5d. Write conventions.md
+
+Write `.project/conventions.md` directly using the Write tool. Follow the output format documented in `convention-heuristics.md`:
+
+- **Tech Stack** — language, runtime, frameworks, test framework, significant deps
+- **Repo Structure** — abbreviated directory tree of key directories
+- **Dependency Management** — package manager (from lockfile), lockfile status, monorepo tooling
+- **Code Style** — linter/formatter, naming conventions, import style, TypeScript strictness
+- **Testing** — framework, test location, naming pattern, coverage config
+- **Other Conventions** — error handling patterns, git commit format, branch naming, PR conventions
+
+Omit sections where no conventions were detected. Each bullet should be concise — one line per convention signal.
 
 ## Step 6 — Architecture Extraction
 
