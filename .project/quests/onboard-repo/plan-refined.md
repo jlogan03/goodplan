@@ -227,24 +227,24 @@ Add git authorship analysis for expertise profiling, PR comment analysis, churn�
 
 ### Tasks
 
-- [ ] **Create references/expertise-profiling.md**: Document profiling rules:
+- [x] **Create references/expertise-profiling.md**: Document profiling rules:
   - Git authorship: `git shortlog -sn` for commit counts, `git log --format='%aN' -- <path>` for per-subsystem expertise. The user who runs the skill is assumed to be one of the git authors — match by `git config user.name` or `git config user.email`.
   - Expertise inference: primary language (most commits), subsystem ownership (most commits in each subsystem), role indicators (commit types — infra/CI commits vs feature commits vs fix commits)
   - PR comment analysis (when `gh` available) using explicit three-tier data access: (1) **list**: `gh pr list --author <user> --limit 20 --json number,title,labels,reviews,reviewDecision` for overview, (2) **view**: `gh pr view {number} --json reviews,comments,body` for top-level review verdicts and PR body, (3) **API**: `gh api repos/{owner}/{repo}/pulls/{number}/comments` for inline code review comments (the `reviews` field from list/view does NOT contain inline comments). The reference file must explicitly document this three-tier pattern to prevent the LLM from assuming `reviews` is sufficient. Extract review quality signals (thoroughness, domains reviewed), architectural discussions, convention enforcement
   - Hot spot analysis: file-level `churn × complexity` where churn = commit count in last 6 months, complexity = lines of code (proxy). Deprioritize `.d.ts` files and heavily-typed interface files when presenting hot spots (LOC inflated by type declarations). Top 10 hot spots inform slice prioritization.
   - Two-layer expertise protocol (per `expertise-tracking.md`): (1) `~/.claude/CLAUDE.md` `## Expertise` section for cross-project profile, (2) `~/.claude/projects/<project>/memory/expertise_<domain>.md` files for project-specific expertise. The `<project>` path component is derived from the repo root (via `git rev-parse --show-toplevel`, not `pwd` — avoids wrong path when invoked from a subdirectory) with slashes replaced by dashes (e.g., `/Users/iwhite/Repos/myapp` becomes `-Users-iwhite-Repos-myapp`).
 
-- [ ] **Flesh out SKILL.md Steps 10-11 (Expertise + Hot Spots)**:
+- [x] **Flesh out SKILL.md Steps 10-11 (Expertise + Hot Spots)**:
   - Step 10 (Expertise profiling): analyze git history, build user profile, write to two-layer memory system (`~/.claude/CLAUDE.md` `## Expertise` section + `~/.claude/projects/<project>/memory/expertise_<domain>.md`) and present to user for validation. Detect if expertise files already exist and offer update or skip (re-entry).
   - Step 11 (Hot spot analysis): compute churn×complexity, present top 10, note which subsystems they fall in — these are likely candidates for first slices
 
-- [ ] **Complete SKILL.md Step 12 (CLAUDE.md Update + Summary)** — single step with two sub-activities (not separate steps):
+- [x] **Complete SKILL.md Step 12 (CLAUDE.md Update + Summary)** — single step with two sub-activities (not separate steps):
   - Write/update the repo's `CLAUDE.md` with a `## Project Context` section referencing `.project/idea.md`, `.project/conventions.md`, and `.project/architecture/_overview.md` (following the pattern from `/create-epic` Step 9). Match `/create-epic` Step 9 placement logic exactly: if CLAUDE.md exists but has no `## Project Context` section, append the section at the end with a blank line before the header; if the section already exists, leave it in place. If CLAUDE.md doesn't exist, create it with the section.
   - End-of-run expertise check: observe what the user revealed during the onboarding conversation and update expertise accordingly (per `expertise-tracking.md` end-of-run protocol).
   - Present full onboarding summary using Variant B (loose checklist) from `output-templates.md`: project initialized, N subsystems identified, N conventions detected, N migrations found, N quests created, expertise profile built. (These summary fields are onboard-repo-specific extensions of Variant B — not fields to be added to the shared `output-templates.md`.)
   - Offer optional epic creation: "Would you like to create an initial epic for the first development direction?" If approved, invoke via `echo '{"name":"<name>","goal":"<goal>"}' | goodplan epic:create --json` (matching `/create-epic` Mode B pattern). The epic goal should incorporate relevant quests from Step 9 if any were created. Verified: `epic:create` works on zero-epic projects after `goodplan init` — only guards are name uniqueness and `epics/overview.json` existence (both satisfied by init).
 
-- [ ] **Update `expertise-tracking.md` consumer list**: Append `/onboard-repo` to the `Current consumers:` list in `skills/_shared/references/expertise-tracking.md` — this enables coordinated updates when the two-layer expertise format changes.
+- [x] **Update `expertise-tracking.md` consumer list**: Append `/onboard-repo` to the `Current consumers:` list in `skills/_shared/references/expertise-tracking.md` — this enables coordinated updates when the two-layer expertise format changes.
 
 - [ ] **Verify via test harness**: Extend automated test to verify full end-to-end skill invocation on the fixture. Confirm expertise profile reflects fixture's git history, hot spots identified, CLAUDE.md contains Project Context section.
 

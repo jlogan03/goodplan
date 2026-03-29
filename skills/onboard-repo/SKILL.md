@@ -433,21 +433,181 @@ Example goals:
 
 ## Step 10 — Expertise Profiling
 
-*Placeholder — implemented in Phase 5.*
+Load `../_shared/references/expertise-tracking.md` for the two-layer expertise protocol. Read `references/expertise-profiling.md` (relative to this skill's directory) for profiling heuristics.
 
-Load `../_shared/references/expertise-tracking.md` here. Calibrate user expertise based on the project's tech stack domains and update expertise tracking.
+### Re-entry
+
+Check if expertise files already exist:
+
+```bash
+# Check Layer 1
+grep -c '## Expertise' ~/.claude/CLAUDE.md 2>/dev/null
+```
+
+```bash
+# Check Layer 2 — derive project path
+git rev-parse --show-toplevel
+```
+
+Replace slashes with dashes in the repo root path to get `<project>`. Check for existing memory files:
+
+```bash
+ls ~/.claude/projects/<project>/memory/expertise_*.md 2>/dev/null
+```
+
+If both layers already have content, ask the user: "Found existing expertise profile. Update with new observations from this onboarding, or keep the current version?" Respect their choice.
+
+### 10a. Analyze git history
+
+Run the authorship analysis from `expertise-profiling.md` section 1:
+
+1. Get global commit distribution: `git shortlog -sn --no-merges`
+2. Identify the current user via `git config user.name` / `git config user.email` — match against commit authors
+3. For each subsystem from Step 6, compute per-subsystem authorship: `git log --format='%aN' -- '<path>/' | sort | uniq -c | sort -rn`
+
+### 10b. Infer expertise domains
+
+Per `expertise-profiling.md` section 2:
+
+1. Determine primary language from the user's most-committed file types
+2. Classify subsystem ownership: Owner (>50%), Contributor (10-50%), Peripheral (<10%)
+3. Detect role indicators from commit message patterns (feature-heavy, fix-heavy, infra-heavy, mixed)
+4. Apply recency weighting — recent commits (last 3 months) carry more weight
+
+### 10c. PR comment analysis (when `{gh_available}`)
+
+If `{gh_available}` is false, skip and note: "GitHub CLI not available — skipping PR analysis for expertise profiling."
+
+If available, follow the three-tier access pattern from `expertise-profiling.md` section 3:
+
+1. **Tier 1 — List**: `gh pr list --author <user> --limit 20 --json number,title,labels,reviews,reviewDecision`
+2. **Tier 2 — View**: For up to 5 informative PRs: `gh pr view {number} --json reviews,comments,body`
+3. **Tier 3 — API**: For up to 3 PRs where the user was a reviewer: `gh api repos/{owner}/{repo}/pulls/{number}/comments` — this is the ONLY way to access inline code review comments; they are NOT in Tier 1 or Tier 2 responses.
+
+Extract domain coverage, review quality signals, convention enforcement, and architectural discussion indicators.
+
+### 10d. Present and validate
+
+Present the inferred expertise profile to the user per `expertise-profiling.md` section 5:
+
+> Based on your git history and PR activity, here's what I infer about your expertise:
+>
+> **Strong areas**: [list]
+> **Less familiar**: [list]
+>
+> Does this match your understanding? Any corrections?
+
+Apply corrections in a single round.
+
+### 10e. Write to two-layer system
+
+Per `expertise-tracking.md`:
+
+1. **Layer 1**: Write/update `~/.claude/CLAUDE.md` `## Expertise` section with the validated profile. If the section exists, update in place. If not, append it.
+2. **Layer 2**: Derive the project path from `git rev-parse --show-toplevel` with slashes replaced by dashes. Create expertise memory files at `~/.claude/projects/<project>/memory/expertise_<domain>.md` for each significant domain, with a dated onboarding observation.
 
 ## Step 11 — Hot Spot Analysis
 
-*Placeholder — implemented in Phase 5.*
+Compute churn×complexity to identify the highest-risk files in the codebase.
 
-Analyze git history for change frequency, churn hotspots, and contributor patterns to inform subsystem maturity and risk assessment.
+### 11a. Compute churn
+
+```bash
+git log --since='6 months ago' --format='' --name-only | sort | uniq -c | sort -rn | head -30
+```
+
+If the repo is a shallow clone (detected in Step 1), use all available history instead of the 6-month window.
+
+### 11b. Score hot spots
+
+For each high-churn file from 11a, compute:
+
+```
+hot_spot_score = churn_count × line_count (via wc -l)
+```
+
+Filter per `expertise-profiling.md` section 4:
+- Deprioritize `.d.ts` files (LOC inflated by type declarations)
+- Deprioritize generated files (`*.generated.*`, `*.g.*`, files with `// @generated` header)
+- Deprioritize lockfiles, config files, and non-source files
+- Include test files (high-churn tests may indicate fragile test infrastructure)
+
+### 11c. Present top 10
+
+Present as a ranked table:
+
+```
+| Rank | File | Churn (6mo) | LOC | Score | Subsystem |
+|------|------|-------------|-----|-------|-----------|
+| 1    | src/api/router.ts | 45 | 320 | 14400 | api |
+| ...  |      |             |     |       |           |
+```
+
+Map each hot spot to its subsystem (from Step 6). Note which subsystems the hot spots cluster in — these are likely candidates for first slices or architectural attention.
 
 ## Step 12 — CLAUDE.md Update + Summary
 
-*Placeholder — implemented in Phase 5.*
+Load `../_shared/references/output-templates.md` for the Variant B done summary format.
 
-Load `../_shared/references/output-templates.md` here. Two sub-activities:
+This step has two sub-activities followed by a summary and optional epic creation.
 
-1. **CLAUDE.md update** — Add or update `.project/` path references and project context in CLAUDE.md.
-2. **Summary** — Present a structured onboarding summary: what was discovered, what was created, and recommended next steps.
+### 12a. Update repo CLAUDE.md
+
+Write or update the repo's `CLAUDE.md` with a `## Project Context` section referencing the generated project files.
+
+**Case 1 — No CLAUDE.md exists**: Create it with the Project Context section:
+
+```markdown
+## Project Context
+
+Read these before doing any significant work in this repo:
+
+- `.project/idea.md` — project goal, scope, constraints
+- `.project/conventions.md` — tech stack, repo structure, coding style
+- `.project/architecture/_overview.md` — system architecture, subsystem maturity
+```
+
+**Case 2 — CLAUDE.md exists but no `## Project Context` section**: Append the section at the end with a blank line before the `## Project Context` header.
+
+**Case 3 — `## Project Context` already exists**: Check if the three files (`.project/idea.md`, `.project/conventions.md`, `.project/architecture/_overview.md`) already appear. Add any that are missing. Do not duplicate entries that are already present.
+
+### 12b. End-of-run expertise check
+
+Per `expertise-tracking.md` "All Interactive Skills" end-of-run protocol:
+
+1. Check if the onboarding conversation revealed new expertise information beyond what was captured in Step 10 — corrections the user made, domain knowledge demonstrated during architecture interview (Step 7), migration triage decisions (Step 8), etc.
+2. If yes: update `~/.claude/CLAUDE.md` `## Expertise` section and write/update the relevant memory file with a dated observation.
+3. If no new information: skip silently.
+
+### 12c. Present onboarding summary
+
+Present a Variant B (loose checklist) done summary per `output-templates.md`. The following fields are onboard-repo-specific extensions of Variant B:
+
+> **Onboarding complete.**
+>
+> **Artifacts written:**
+> - `.project/idea.md` — project description and goals
+> - `.project/conventions.md` — N conventions detected
+> - `.project/architecture/_overview.md` — N subsystems identified
+> - `CLAUDE.md` — updated with project context
+>
+> **Migrations detected**: N (M quests created, K deferred)
+> **Side quests created**: [list names, or "None"]
+> **Expertise profile**: written to `~/.claude/CLAUDE.md` + N domain memory files
+> **Hot spots**: N high-churn files identified across M subsystems
+>
+> **Recommended next step**: `/create-epic` to define the first development direction, or `/explore` to investigate a specific area first.
+
+### 12d. Optional epic creation
+
+Offer: "Would you like to create an initial epic for the first development direction?"
+
+If the user approves, gather a name and goal, then create via:
+
+```bash
+echo '{"name":"<kebab-case-name>","goal":"<goal-text>"}' | goodplan epic:create --json
+```
+
+The epic goal should incorporate relevant quests from Step 9 if any were created. Handle errors per `cli-interaction.md` section 10.
+
+Note: `epic:create` works on zero-epic projects after `goodplan init` — the only guards are name uniqueness and `epics/overview.json` existence (both satisfied by init).
