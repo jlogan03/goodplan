@@ -20,9 +20,9 @@ describe("Concurrent modification detection", () => {
 	let projectDir: string;
 
 	beforeEach(() => {
-		tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-concurrent-"));
+		tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-concurrent-"));
 		fs.cpSync(FIXTURE_DIR, tmpDir, { recursive: true });
-		projectDir = path.join(tmpDir, ".project");
+		projectDir = path.join(tmpDir, ".goodplan");
 	});
 
 	afterEach(() => {

@@ -6,7 +6,7 @@ import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan quest:plan --quest <name>` — begin planning phase for a quest.
+ * `gp quest:plan --quest <name>` — begin planning phase for a quest.
  *
  * Precondition: quest in 'created' status.
  * Transition: created -> planning

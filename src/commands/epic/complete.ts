@@ -9,7 +9,7 @@ import { validateInput } from "../../util/validate.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan epic:complete --epic <name>` — complete an epic.
+ * `gp epic:complete --epic <name>` — complete an epic.
  *
  * Stdin: { "verificationResults": [{ "index": 0, "passed": true, "notes": "..." }, ...] }
  * Precondition: epic in 'activated' status, all verifications passed.

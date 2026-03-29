@@ -9,7 +9,7 @@ let tmpDir: string;
 let projectDir: string;
 
 beforeEach(() => {
-	tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-rpc-migrate-"));
+	tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-rpc-migrate-"));
 	projectDir = path.join(tmpDir, ".project");
 	fs.mkdirSync(projectDir, { recursive: true });
 });
@@ -170,7 +170,7 @@ describe("rpcMigrate — Confirmation round", () => {
 		expect(hint).toContain("slice-one");
 	});
 
-	it("executes migration on approval: creates state, renames .project/, cleans up", async () => {
+	it("executes migration on approval: creates state, renames project dir, cleans up", async () => {
 		setupOldProject();
 		await rpcMigrate(projectDir, round1Answers(), tmpDir);
 		await rpcMigrate(projectDir, round2Answers(), tmpDir);
@@ -192,10 +192,13 @@ describe("rpcMigrate — Confirmation round", () => {
 			expect(result.summary.questCount).toBe(1);
 		}
 
-		// .project/project.json should exist (state committed)
-		expect(fs.existsSync(path.join(projectDir, "project.json"))).toBe(true);
+		// Output goes to .goodplan/ regardless of input path
+		const outputDir = path.join(tmpDir, ".goodplan");
 
-		// .project-old-<timestamp>/ should exist (renamed)
+		// project.json should exist (state committed to .goodplan/)
+		expect(fs.existsSync(path.join(outputDir, "project.json"))).toBe(true);
+
+		// backup dir should exist (renamed from .project)
 		const backupDirs = fs.readdirSync(tmpDir).filter((d) => d.startsWith(".project-old-"));
 		expect(backupDirs).toHaveLength(1);
 
@@ -204,23 +207,23 @@ describe("rpcMigrate — Confirmation round", () => {
 
 		// Verify state structure
 		const projectJson = JSON.parse(
-			fs.readFileSync(path.join(projectDir, "project.json"), "utf-8"),
+			fs.readFileSync(path.join(outputDir, "project.json"), "utf-8"),
 		) as Record<string, unknown>;
 		expect(projectJson.name).toBe("test-project");
 		expect(projectJson.activeEpic).toBe("my-epic");
 		expect(projectJson.activeQuest).toBe("my-quest");
 
 		// Verify overview files
-		expect(fs.existsSync(path.join(projectDir, "epics", "overview.json"))).toBe(true);
-		expect(fs.existsSync(path.join(projectDir, "quests", "overview.json"))).toBe(true);
+		expect(fs.existsSync(path.join(outputDir, "epics", "overview.json"))).toBe(true);
+		expect(fs.existsSync(path.join(outputDir, "quests", "overview.json"))).toBe(true);
 
 		// Verify entity directories
-		expect(fs.existsSync(path.join(projectDir, "epics", "my-epic", "epic.json"))).toBe(true);
-		expect(fs.existsSync(path.join(projectDir, "epics", "my-epic", "slices", "slice-one", "slice.json"))).toBe(true);
-		expect(fs.existsSync(path.join(projectDir, "quests", "my-quest", "quest.json"))).toBe(true);
+		expect(fs.existsSync(path.join(outputDir, "epics", "my-epic", "epic.json"))).toBe(true);
+		expect(fs.existsSync(path.join(outputDir, "epics", "my-epic", "slices", "slice-one", "slice.json"))).toBe(true);
+		expect(fs.existsSync(path.join(outputDir, "quests", "my-quest", "quest.json"))).toBe(true);
 
 		// Verify activity log
-		expect(fs.existsSync(path.join(projectDir, "activity-log.jsonl"))).toBe(true);
+		expect(fs.existsSync(path.join(outputDir, "activity-log.jsonl"))).toBe(true);
 	});
 });
 

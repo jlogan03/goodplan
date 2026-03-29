@@ -23,11 +23,11 @@ async function withLearningsMigrationFixture<T>(
 	fn: (tmpDir: string, projectDir: string) => T | Promise<T>,
 ): Promise<T> {
 	const fixtureDir = path.resolve(import.meta.dirname, "../fixtures/learnings-migration");
-	const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-learnings-migrate-"));
+	const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-learnings-migrate-"));
 
 	try {
 		fs.cpSync(fixtureDir, tmpDir, { recursive: true });
-		const projectDir = path.join(tmpDir, ".project");
+		const projectDir = path.join(tmpDir, ".goodplan");
 		return await fn(tmpDir, projectDir);
 	} finally {
 		fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -329,16 +329,16 @@ describe("migrate: learnings conversion", () => {
 
 			// Now re-migrate: copy the migrated project as a new fixture
 			// Re-migration uses the NEW directory structure (epics/test-epic, not epics/~~archived~~01_test-epic)
-			const tmpDir2 = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-learnings-remigrate-"));
+			const tmpDir2 = fs.mkdtempSync(path.join(os.tmpdir(), "gp-learnings-remigrate-"));
 			try {
 				fs.cpSync(tmpDir, tmpDir2, { recursive: true });
-				const projectDir2 = path.join(tmpDir2, ".project");
+				const projectDir2 = path.join(tmpDir2, ".goodplan");
 
 				// Remove migration state file and old backups from first migration
 				const migFile = path.join(tmpDir2, ".migration-in-progress.json");
 				if (fs.existsSync(migFile)) fs.unlinkSync(migFile);
 				for (const entry of fs.readdirSync(tmpDir2)) {
-					if (entry.startsWith(".project-old-")) {
+					if (entry.startsWith(".goodplan-old-")) {
 						fs.rmSync(path.join(tmpDir2, entry), { recursive: true, force: true });
 					}
 				}

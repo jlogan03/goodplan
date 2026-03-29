@@ -6,7 +6,7 @@ import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan task:drop --task <name> --reason <text>` — drop a task.
+ * `gp task:drop --task <name> --reason <text>` — drop a task.
  *
  * Uses flags (not stdin) because all fields are simple scalars.
  * Precondition: task exists and is in 'open' status.

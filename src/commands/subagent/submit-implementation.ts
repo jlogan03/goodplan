@@ -11,7 +11,7 @@ import { globalArgs } from "../global-args.js";
 import { requireActiveEpic } from "../slice/utils.js";
 
 /**
- * `goodplan submit-implementation --slice <name>|--quest <name>` — complete implementation phase.
+ * `gp submit-implementation --slice <name>|--quest <name>` — complete implementation phase.
  *
  * Called by sub-agent after writing implementation to filesystem.
  * No stdin content required (code is already on disk).

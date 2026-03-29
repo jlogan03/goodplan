@@ -9,7 +9,7 @@ import { validateInput } from "../../util/validate.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan epic:create` — create a new epic.
+ * `gp epic:create` — create a new epic.
  *
  * Stdin: { "name": "<name>", "goal": "<goal text>" }
  * Precondition: project initialized.

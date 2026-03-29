@@ -9,7 +9,7 @@ import { validateInput } from "../../util/validate.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan epic:update-verification --epic <name> --index <n>` — update a verification criterion.
+ * `gp epic:update-verification --epic <name> --index <n>` — update a verification criterion.
  *
  * Stdin: { "verification": { "description": "...", "status": "passed", "addedDuring": "...", "modifiedDuring": "..." } }
  * Flag: --index specifies which verification to update (0-based).

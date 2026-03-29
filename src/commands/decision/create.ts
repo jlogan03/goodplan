@@ -9,7 +9,7 @@ import { validateInput } from "../../util/validate.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan decision:create` — create a new decision.
+ * `gp decision:create` — create a new decision.
  *
  * Stdin: { "id": "<id>", "domain": "<domain>", "title": "<title>", "summary": "<summary>" }
  * Precondition: project initialized.

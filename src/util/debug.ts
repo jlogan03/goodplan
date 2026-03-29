@@ -16,6 +16,6 @@ function isEnabled(): boolean {
 
 export function debug(message: string): void {
 	if (isEnabled()) {
-		process.stderr.write(`[goodplan] ${message}\n`);
+		process.stderr.write(`[gp] ${message}\n`);
 	}
 }

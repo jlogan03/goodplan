@@ -9,7 +9,7 @@ import { validateInput } from "../../util/validate.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan submit-architecture --epic <name>` — complete architecture phase.
+ * `gp submit-architecture --epic <name>` — complete architecture phase.
  *
  * Called by sub-agent after writing architecture to filesystem.
  * No stdin content required (content is already on disk).

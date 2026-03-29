@@ -6,7 +6,7 @@ import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan learning:rollup --from <source> --to <target>` — roll up learnings.
+ * `gp learning:rollup --from <source> --to <target>` — roll up learnings.
  *
  * Moves learnings tagged with rollupTo matching `to` from `from` scope to `to` scope.
  * Transition: ROLLUP_LEARNINGS event.

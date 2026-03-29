@@ -6,7 +6,7 @@ import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan quest:abandon --quest <name> --reason <text>` — abandon a quest.
+ * `gp quest:abandon --quest <name> --reason <text>` — abandon a quest.
  *
  * Uses flags (not stdin) because reason is a simple scalar.
  * Precondition: quest exists and is not already completed/abandoned.

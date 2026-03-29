@@ -9,7 +9,7 @@ import { applyPagination, formatPaginationFooter } from "../../util/pagination.j
 import { globalArgs, listArgs } from "../global-args.js";
 
 /**
- * `goodplan learning:list [--source <scope>]` — list learnings.
+ * `gp learning:list [--source <scope>]` — list learnings.
  *
  * Read-only: goes directly to the data layer, no RPC.
  * Without --source: reads project-level learnings.jsonl.

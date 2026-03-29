@@ -9,7 +9,7 @@ import { validateInput } from "../../util/validate.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan task:create` — create a new task.
+ * `gp task:create` — create a new task.
  *
  * Stdin: { "name": "<slug>", "title": "<title>", "description?": "<text>", "context?": {...} }
  * Precondition: project initialized.

@@ -2,16 +2,19 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { GoodplanError } from "../../util/errors.js";
 
-const PROJECT_DIR_NAME = ".project";
+export const PROJECT_DIR_NAME = ".goodplan";
+
+/** Legacy directory name for pre-rename projects (used by migrate command). */
+export const LEGACY_DIR_NAME = ".project";
 
 /**
- * Resolve the `.project/` metadata directory.
+ * Resolve the `.goodplan/` metadata directory.
  *
- * Returns the path to the `.project/` directory (not the project root).
+ * Returns the path to the `.goodplan/` directory (not the project root).
  *
- * 1. If GOODPLAN_DIR env var is set, use it (must point to the `.project/` directory).
+ * 1. If GOODPLAN_DIR env var is set, use it (must point to the `.goodplan/` directory).
  *    Validates that the path exists and is a directory.
- * 2. Otherwise, walk up from cwd looking for a `.project/` directory.
+ * 2. Otherwise, walk up from cwd looking for a `.goodplan/` directory.
  * 3. Throws DATA_NO_PROJECT if no project directory is found.
  */
 export function resolveProjectDir(cwd?: string): string {
@@ -36,10 +39,10 @@ export function resolveProjectDir(cwd?: string): string {
 
 		const parent = path.dirname(current);
 		if (parent === current) {
-			// Reached filesystem root without finding .project/
+			// Reached filesystem root without finding .goodplan/
 			throw new GoodplanError(
 				"DATA_NO_PROJECT",
-				"No .project/ directory found. Run `goodplan init` to create one.",
+				"No .goodplan/ directory found. Run `gp init` to create one.",
 			);
 		}
 		current = parent;

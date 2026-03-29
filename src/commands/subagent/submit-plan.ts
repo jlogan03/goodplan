@@ -11,7 +11,7 @@ import { globalArgs } from "../global-args.js";
 import { requireActiveEpic } from "../slice/utils.js";
 
 /**
- * `goodplan submit-plan --slice <name>|--quest <name>` — complete plan phase.
+ * `gp submit-plan --slice <name>|--quest <name>` — complete plan phase.
  *
  * Called by sub-agent after writing plan to filesystem.
  * No stdin content required (plan is already on disk).

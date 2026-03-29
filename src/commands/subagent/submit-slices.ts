@@ -9,7 +9,7 @@ import { validateInput } from "../../util/validate.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan submit-slices --epic <name>` — complete slicing phase.
+ * `gp submit-slices --epic <name>` — complete slicing phase.
  *
  * Called by sub-agent after writing slice definitions to filesystem.
  * No stdin content required (content is already on disk).

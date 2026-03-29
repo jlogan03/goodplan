@@ -1,5 +1,5 @@
 /**
- * RPC migrate — multi-round Q&A protocol for migrating pre-CLI .project/ to CLI format.
+ * RPC migrate — multi-round Q&A protocol for migrating pre-CLI .project/ or .goodplan/ to CLI format.
  *
  * Owns all orchestration logic: pre-checks, question generation, answer validation,
  * intermediate state persistence (.migration-in-progress.json), and round dispatch.
@@ -39,6 +39,7 @@ import { deriveSlug } from "../../util/slug.js";
 import { VERSION } from "../../version.js";
 import { commitState } from "../data/commit.js";
 import { writeMarkdownFiles, type MarkdownFile } from "../data/markdown-files.js";
+import { PROJECT_DIR_NAME } from "../data/project.js";
 import type {
 	DirectoryEntry,
 	JsonEntry,
@@ -427,7 +428,7 @@ function countAllSlices(
 }
 
 // ---------------------------------------------------------------------------
-// .project/ → .project-old-<YYYYMMDD-HHmmss>/ Rename
+// Project dir → <dir>-old-<YYYYMMDD-HHmmss>/ Rename
 // ---------------------------------------------------------------------------
 
 function renameProjectDir(projectDir: string): string {
@@ -450,7 +451,7 @@ function renameProjectDir(projectDir: string): string {
 		if (errCode === "EXDEV") {
 			throw new GoodplanError(
 				"DATA_WRITE_ERROR",
-				`Cannot rename ${projectDir} to ${projectOldDir}: cross-filesystem rename (EXDEV). This happens when .project/ is a symlink or on a different mount. Move it manually and retry.`,
+				`Cannot rename ${projectDir} to ${projectOldDir}: cross-filesystem rename (EXDEV). This happens when the project directory is a symlink or on a different mount. Move it manually and retry.`,
 				{ projectDir, projectOldDir },
 				err,
 			);
@@ -489,7 +490,7 @@ const PROJECT_MARKDOWN_FILES = [
 ];
 
 /**
- * Copy markdown artifacts from .project-old/ to the new .project/ directory.
+ * Copy markdown artifacts from the old project directory to the new .goodplan/ directory.
  * Uses an allowlist approach: only copies *.md files and specific directories.
  */
 function copyMigrationArtifacts(
@@ -944,18 +945,20 @@ function executeMigration(
 	cwd: string,
 	validatedAnswers: Record<string, unknown>,
 ): MigrationResult {
-	// Step 1: Rename .project/ → .project-old/
+	// Step 1: Rename project dir → <dir>-old-<timestamp>/
 	const projectOldDir = renameProjectDir(projectDir);
 
 	// Step 2: Build state tree
 	const newState = buildMigrationState(validatedAnswers);
 
-	// Step 3: Guard — project.json must not exist (zero state)
-	// After rename, projectDir should not exist. commitState will create it.
+	// Step 3: Compute output directory — always .goodplan/, regardless of input path.
+	// When migrating from legacy .project/, projectDir points to .project/ which was
+	// just renamed. Output must go to .goodplan/ so the renamed CLI can find it.
+	const outputDir = path.join(cwd, PROJECT_DIR_NAME);
 
-	// Step 4: Commit state (creates .project/ from scratch)
+	// Step 4: Commit state (creates .goodplan/ from scratch)
 	try {
-		commitState(projectDir, ZERO_STATE, newState);
+		commitState(outputDir, ZERO_STATE, newState);
 	} catch (err) {
 		// Preserve .migration-in-progress.json so user can retry
 		// Error message instructs manual recovery
@@ -971,22 +974,22 @@ function executeMigration(
 
 	// Step 5: Copy markdown artifacts from old to new
 	try {
-		copyMigrationArtifacts(projectDir, projectOldDir, validatedAnswers);
+		copyMigrationArtifacts(outputDir, projectOldDir, validatedAnswers);
 	} catch (err) {
 		// Non-fatal for the migration itself — state is committed
 		// Log but don't fail the migration
 		process.stderr.write(
-			`[goodplan] Warning: some markdown artifacts may not have been copied: ${String(err)}\n`,
+			`[gp] Warning: some markdown artifacts may not have been copied: ${String(err)}\n`,
 		);
 	}
 
 	// Step 5b: Convert monolithic learnings.md to per-file learnings/ and inline JSONL detail → file
 	try {
-		migrateLearnings(projectDir, projectOldDir, validatedAnswers);
+		migrateLearnings(outputDir, projectOldDir, validatedAnswers);
 	} catch (err) {
 		// Non-fatal — migration state is committed, learnings just won't be per-file yet
 		process.stderr.write(
-			`[goodplan] Warning: learnings migration may be incomplete: ${String(err)}\n`,
+			`[gp] Warning: learnings migration may be incomplete: ${String(err)}\n`,
 		);
 	}
 
@@ -996,7 +999,7 @@ function executeMigration(
 		fs.unlinkSync(migrationFile);
 	} catch (err) {
 		process.stderr.write(
-			`[goodplan] Warning: could not remove ${migrationFile}: ${String(err)}\n`,
+			`[gp] Warning: could not remove ${migrationFile}: ${String(err)}\n`,
 		);
 	}
 
@@ -1321,7 +1324,7 @@ export { migrationResponseSchema };
 /**
  * Execute one round of the migration protocol.
  *
- * @param projectDir - The `.project/` directory path (checked directly, no walk-up)
+ * @param projectDir - The project directory path (checked directly, no walk-up)
  * @param stdin - Parsed stdin object, or null if no stdin provided
  * @param cwd - Working directory (for .migration-in-progress.json location)
  * @param stdinStream - Optional stream for test injection (passed to readStdin)
@@ -1332,11 +1335,11 @@ export async function rpcMigrate(
 	cwd: string,
 ): Promise<MigrationResult> {
 	// ── Pre-checks ──────────────────────────────────────────────
-	// .project/ must exist
+	// Project directory must exist
 	if (!fs.existsSync(projectDir)) {
 		throw new GoodplanError(
 			"DATA_NO_PROJECT",
-			"No .project/ directory found. Cannot migrate without existing project artifacts.",
+			"No project directory found. Cannot migrate without existing project artifacts.",
 		);
 	}
 
@@ -1566,7 +1569,7 @@ function handleConfirmation(
 	const data = result.data as ConfirmationResponse;
 
 	if (data.approved) {
-		// Migration approved — construct state, rename .project/, copy artifacts
+		// Migration approved — construct state, rename project dir, copy artifacts
 		return executeMigration(projectDir, cwd, existingState.answers);
 	}
 

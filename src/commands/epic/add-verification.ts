@@ -9,7 +9,7 @@ import { validateInput } from "../../util/validate.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan epic:add-verification --epic <name>` — add a verification criterion.
+ * `gp epic:add-verification --epic <name>` — add a verification criterion.
  *
  * Stdin: { "verification": { "description": "...", "status": "pending", "addedDuring": "...", "modifiedDuring": null } }
  * Precondition: epic exists and is not completed/abandoned.

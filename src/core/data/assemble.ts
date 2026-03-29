@@ -1,7 +1,7 @@
 /**
- * assembleState — reads the `.project/` filesystem into a ProjectState tree.
+ * assembleState — reads the `.goodplan/` filesystem into a ProjectState tree.
  * Validates all JSON/JSONL against the schema registry.
- * Returns ZERO_STATE if `.project/` doesn't exist.
+ * Returns ZERO_STATE if `.goodplan/` doesn't exist.
  */
 
 import * as fs from "node:fs";

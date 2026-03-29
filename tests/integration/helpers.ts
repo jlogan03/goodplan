@@ -8,7 +8,7 @@
  *   bun test                             — alias for npx vitest run (via package.json)
  *
  * Fitness functions verify architectural invariants (INV-001 through INV-007).
- * Integration tests spawn the compiled binary against fixture `.project/` directories.
+ * Integration tests spawn the compiled binary against fixture `.goodplan/` directories.
  * Both rely on globalSetup (tests/global-setup.ts) to compile the binary once.
  */
 
@@ -19,7 +19,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 
 /** Well-known path for the compiled binary (set by globalSetup). */
-const BINARY_PATH = path.resolve(import.meta.dirname, "../../goodplan");
+const BINARY_PATH = path.resolve(import.meta.dirname, "../../gp");
 
 export interface CommandResult {
 	stdout: string;
@@ -105,7 +105,7 @@ export interface FixtureContext {
 
 /**
  * Copy a fixture to a temp directory, set GOODPLAN_DIR, run the callback, clean up.
- * Uses GOODPLAN_DIR env var to isolate from the repo's own `.project/`.
+ * Uses GOODPLAN_DIR env var to isolate from the repo's own `.goodplan/`.
  * Returns a FixtureContext with tmpDir, env, and the binary path.
  */
 export async function withFixture<T>(
@@ -119,7 +119,7 @@ export async function withFixture<T>(
 	}
 
 	const tmpDir = fs.mkdtempSync(
-		path.join(os.tmpdir(), `goodplan-integration-${fixtureName}-`),
+		path.join(os.tmpdir(), `gp-integration-${fixtureName}-`),
 	);
 
 	try {
@@ -127,7 +127,7 @@ export async function withFixture<T>(
 		fs.cpSync(fixtureDir, tmpDir, { recursive: true });
 
 		const env: Record<string, string> = {
-			GOODPLAN_DIR: path.join(tmpDir, ".project"),
+			GOODPLAN_DIR: path.join(tmpDir, ".goodplan"),
 		};
 
 		const bin = buildBinary();
@@ -146,12 +146,12 @@ export async function withTempDir<T>(
 	fn: (tmpDir: string, env: Record<string, string>) => T | Promise<T>,
 ): Promise<T> {
 	const tmpDir = fs.mkdtempSync(
-		path.join(os.tmpdir(), "goodplan-integration-temp-"),
+		path.join(os.tmpdir(), "gp-integration-temp-"),
 	);
 
 	try {
 		const env: Record<string, string> = {
-			GOODPLAN_DIR: path.join(tmpDir, ".project"),
+			GOODPLAN_DIR: path.join(tmpDir, ".goodplan"),
 		};
 		return await fn(tmpDir, env);
 	} finally {

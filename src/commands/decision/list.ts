@@ -9,7 +9,7 @@ import { applyPagination, formatPaginationFooter } from "../../util/pagination.j
 import { globalArgs, listArgs } from "../global-args.js";
 
 /**
- * `goodplan decision:list` — list all decisions.
+ * `gp decision:list` — list all decisions.
  *
  * Read-only: goes directly to the data layer, no RPC.
  * Returns { items: DecisionEntry[] } from decisions.jsonl.

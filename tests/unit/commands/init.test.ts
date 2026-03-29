@@ -8,7 +8,7 @@ let tmpDir: string;
 let originalCwd: string;
 
 beforeEach(() => {
-	tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-init-test-"));
+	tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-init-test-"));
 	originalCwd = process.cwd();
 	process.chdir(tmpDir);
 });
@@ -46,13 +46,13 @@ async function runInit(args: {
 }
 
 describe("init command", () => {
-	it("creates .project/ with valid project.json", async () => {
+	it("creates .goodplan/ with valid project.json", async () => {
 		// Capture stdout
 		const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 
 		await runInit({ name: "test-project" });
 
-		const projectJsonPath = path.join(tmpDir, ".project", "project.json");
+		const projectJsonPath = path.join(tmpDir, ".goodplan", "project.json");
 		expect(fs.existsSync(projectJsonPath)).toBe(true);
 
 		const raw = fs.readFileSync(projectJsonPath, "utf-8");
@@ -75,7 +75,7 @@ describe("init command", () => {
 
 		await runInit({ name: "full-tree" });
 
-		const projectDir = path.join(tmpDir, ".project");
+		const projectDir = path.join(tmpDir, ".goodplan");
 
 		// Overview files
 		expect(fs.existsSync(path.join(projectDir, "epics", "overview.json"))).toBe(true);
@@ -115,22 +115,22 @@ describe("init command", () => {
 
 		await runInit({});
 
-		const projectJsonPath = path.join(namedDir, ".project", "project.json");
+		const projectJsonPath = path.join(namedDir, ".goodplan", "project.json");
 		const data = JSON.parse(fs.readFileSync(projectJsonPath, "utf-8"));
 		expect(data.name).toBe("my-cool-project");
 
 		writeSpy.mockRestore();
 	});
 
-	it("throws STATE_ALREADY_INITIALIZED if .project/ already exists", async () => {
-		fs.mkdirSync(path.join(tmpDir, ".project"));
+	it("throws STATE_ALREADY_INITIALIZED if .goodplan/ already exists", async () => {
+		fs.mkdirSync(path.join(tmpDir, ".goodplan"));
 
 		await expect(runInit({ name: "test" })).rejects.toThrow("already initialized");
 	});
 
-	it("does NOT detect parent .project/ (only checks cwd)", async () => {
-		// Create .project/ in parent
-		fs.mkdirSync(path.join(tmpDir, ".project"));
+	it("does NOT detect parent .goodplan/ (only checks cwd)", async () => {
+		// Create .goodplan/ in parent
+		fs.mkdirSync(path.join(tmpDir, ".goodplan"));
 
 		// Create a child directory and chdir into it
 		const childDir = path.join(tmpDir, "child");
@@ -142,7 +142,7 @@ describe("init command", () => {
 		// Should succeed — init only checks cwd, not parents
 		await runInit({ name: "child-project" });
 
-		const projectJsonPath = path.join(childDir, ".project", "project.json");
+		const projectJsonPath = path.join(childDir, ".goodplan", "project.json");
 		expect(fs.existsSync(projectJsonPath)).toBe(true);
 
 		writeSpy.mockRestore();
@@ -190,6 +190,6 @@ describe("init command", () => {
 		expect(chunks.join("")).toBe("");
 
 		// But project should still be created
-		expect(fs.existsSync(path.join(tmpDir, ".project", "project.json"))).toBe(true);
+		expect(fs.existsSync(path.join(tmpDir, ".goodplan", "project.json"))).toBe(true);
 	});
 });

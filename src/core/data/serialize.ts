@@ -1,6 +1,6 @@
 /**
  * serializeStateTree — transforms a ProjectState tree into a plain
- * JSON-serializable object for the `goodplan state` command.
+ * JSON-serializable object for the `gp state` command.
  *
  * The return type `Record<string, unknown>` is a public API contract.
  * External consumers (skills, agents) depend on this shape. Changes

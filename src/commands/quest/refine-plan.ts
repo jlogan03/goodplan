@@ -6,7 +6,7 @@ import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan quest:refine-plan --quest <name>` — begin plan refinement for a quest.
+ * `gp quest:refine-plan --quest <name>` — begin plan refinement for a quest.
  *
  * Precondition: quest in 'plan-created' status.
  * Transition: plan-created -> refining

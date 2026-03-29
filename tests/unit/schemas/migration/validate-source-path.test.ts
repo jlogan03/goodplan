@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { validateSourcePath } from "../../../../src/commands/global/migrate/validate-source-path.js";
 
 describe("validateSourcePath", () => {
-	const testDir = join(tmpdir(), `goodplan-test-${Date.now()}`);
+	const testDir = join(tmpdir(), `gp-test-${Date.now()}`);
 	const existingDir = join(testDir, "epics", "my-epic");
 
 	beforeAll(() => {

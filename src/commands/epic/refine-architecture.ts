@@ -6,7 +6,7 @@ import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan epic:refine-architecture --epic <name>` — begin architecture refinement.
+ * `gp epic:refine-architecture --epic <name>` — begin architecture refinement.
  *
  * Precondition: epic in 'architecture-defined' status.
  * Transition: architecture-defined -> refining-architecture

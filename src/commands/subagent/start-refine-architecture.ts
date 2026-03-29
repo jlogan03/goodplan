@@ -6,7 +6,7 @@ import { output } from "../../util/output.js";
 import { globalArgs, parseInlineBudget } from "../global-args.js";
 
 /**
- * `goodplan start-refine-architecture --epic <name> [--inline[=<bytes>]]`
+ * `gp start-refine-architecture --epic <name> [--inline[=<bytes>]]`
  *
  * Read-only context assembly for the refine-architecture phase. Returns ContextBundle JSON.
  * Always outputs JSON regardless of --json flag (sub-agent command).

@@ -16,8 +16,8 @@ let tmpDir: string;
 let projectDir: string;
 
 beforeEach(() => {
-	tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-rpc-version-stamp-"));
-	projectDir = path.join(tmpDir, ".project");
+	tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-rpc-version-stamp-"));
+	projectDir = path.join(tmpDir, ".goodplan");
 });
 
 afterEach(() => {

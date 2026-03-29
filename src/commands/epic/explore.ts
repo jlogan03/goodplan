@@ -6,7 +6,7 @@ import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan epic:explore --epic <name>` — begin exploration phase.
+ * `gp epic:explore --epic <name>` — begin exploration phase.
  *
  * Precondition: epic in 'created' status.
  * Transition: created -> exploring

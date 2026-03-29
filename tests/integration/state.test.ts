@@ -134,6 +134,6 @@ describe("--version --json", () => {
 		const bin = buildBinary();
 		const result = runCommand(bin, ["--version"]);
 		expect(result.exitCode).toBe(0);
-		expect(result.stdout).toMatch(/^goodplan \d+\.\d+\.\d+\n$/);
+		expect(result.stdout).toMatch(/^gp \d+\.\d+\.\d+\n$/);
 	});
 });

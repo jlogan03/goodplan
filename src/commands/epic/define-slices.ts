@@ -6,7 +6,7 @@ import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan epic:define-slices --epic <name>` — begin slice definition.
+ * `gp epic:define-slices --epic <name>` — begin slice definition.
  *
  * Precondition: epic in 'architecture-defined' or 'architecture-refined' status.
  * Transition: -> defining-slices

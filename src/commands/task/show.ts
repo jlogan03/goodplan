@@ -9,7 +9,7 @@ import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan task:show --task <name>` — show full task entity.
+ * `gp task:show --task <name>` — show full task entity.
  *
  * Read-only: goes directly to the data layer, no RPC.
  * Returns the full task.json content for the named task.

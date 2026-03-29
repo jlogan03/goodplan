@@ -9,7 +9,7 @@ import { validateInput } from "../../util/validate.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan submit-explore --epic <name>` — complete exploration phase.
+ * `gp submit-explore --epic <name>` — complete exploration phase.
  *
  * Called by sub-agent after writing research/brainstorm to filesystem.
  * No stdin content required (content is already on disk).

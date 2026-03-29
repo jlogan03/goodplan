@@ -10,7 +10,7 @@ import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan epic:show --epic <name>` — show full epic entity.
+ * `gp epic:show --epic <name>` — show full epic entity.
  *
  * Read-only: goes directly to the data layer, no RPC.
  * Returns the full epic.json content for the named epic.

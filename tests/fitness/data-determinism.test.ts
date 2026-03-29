@@ -32,7 +32,7 @@ describe("INV-002: Data determinism — round-trip produces identical files", ()
 	let tmpDir: string;
 
 	beforeEach(() => {
-		tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-determinism-"));
+		tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-determinism-"));
 	});
 
 	afterEach(() => {
@@ -46,7 +46,7 @@ describe("INV-002: Data determinism — round-trip produces identical files", ()
 
 			// Copy fixture to temp dir
 			fs.cpSync(fixtureDir, tmpDir, { recursive: true });
-			const projectDir = path.join(tmpDir, ".project");
+			const projectDir = path.join(tmpDir, ".goodplan");
 
 			// Snapshot before
 			const before = snapshotFiles(projectDir);

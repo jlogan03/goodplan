@@ -9,7 +9,7 @@ import { validateInput } from "../../util/validate.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan quest:complete --quest <name>` — complete a quest.
+ * `gp quest:complete --quest <name>` — complete a quest.
  *
  * Stdin: { "verificationPassed": true, "learnings": [...], "architectureDelta": [...] }
  * Precondition: quest in 'implementation-complete' status.

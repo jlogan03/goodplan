@@ -7,7 +7,7 @@ import { globalArgs } from "../global-args.js";
 import { requireActiveEpic } from "./utils.js";
 
 /**
- * `goodplan slice:abandon --slice <name> --reason <text>` — abandon a slice.
+ * `gp slice:abandon --slice <name> --reason <text>` — abandon a slice.
  *
  * Uses flags (not stdin) because reason is a simple scalar.
  * Precondition: slice exists and is not already completed/abandoned.

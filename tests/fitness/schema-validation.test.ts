@@ -18,9 +18,9 @@ describe("INV-005: Schema validation — malformed JSON rejected on read", () =>
 	let projectDir: string;
 
 	beforeEach(() => {
-		tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-schema-val-"));
+		tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-schema-val-"));
 		fs.cpSync(FIXTURE_DIR, tmpDir, { recursive: true });
-		projectDir = path.join(tmpDir, ".project");
+		projectDir = path.join(tmpDir, ".goodplan");
 	});
 
 	afterEach(() => {

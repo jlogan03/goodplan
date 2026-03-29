@@ -19,7 +19,7 @@ export interface InitResult {
  * Initialize a new project via the state machine.
  * Routes through begin('create', {type:'project'}, {name}).
  *
- * @param projectDir - The `.project/` directory path (will be created by commitState)
+ * @param projectDir - The `.goodplan/` directory path (will be created by commitState)
  * @param name - Project name
  */
 export function rpcInit(projectDir: string, name: string): InitResult {

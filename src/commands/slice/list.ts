@@ -12,7 +12,7 @@ import { globalArgs, listArgs } from "../global-args.js";
 type SliceWithEpic = SliceOverviewItem & { epic: string };
 
 /**
- * `goodplan slice:list [--epic <name>] [--all]` — list slices.
+ * `gp slice:list [--epic <name>] [--all]` — list slices.
  *
  * Read-only: goes directly to the data layer, no RPC.
  * Reads epics/overview.json and returns embedded slice arrays.

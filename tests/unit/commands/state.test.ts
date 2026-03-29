@@ -11,7 +11,7 @@ let tmpDir: string;
 let originalCwd: string;
 
 beforeEach(() => {
-	tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-state-test-"));
+	tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-state-test-"));
 	originalCwd = process.cwd();
 	process.chdir(tmpDir);
 });
@@ -24,9 +24,9 @@ afterEach(() => {
 
 const NOW = "2026-03-22T00:00:00.000Z";
 
-/** Helper: create a minimal .project/ with project.json and test data */
+/** Helper: create a minimal .goodplan/ with project.json and test data */
 function createProject(name: string) {
-	const projectDir = path.join(tmpDir, ".project");
+	const projectDir = path.join(tmpDir, ".goodplan");
 	fs.mkdirSync(projectDir, { recursive: true });
 	const project = {
 		version: "1.0.0",

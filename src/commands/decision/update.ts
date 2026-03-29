@@ -10,7 +10,7 @@ import { validateInput } from "../../util/validate.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan decision:update --id <id>` — update an existing decision.
+ * `gp decision:update --id <id>` — update an existing decision.
  *
  * Stdin: { "changes": { "status": "revisiting", ... } }
  * The --id flag identifies the decision (authoritative).

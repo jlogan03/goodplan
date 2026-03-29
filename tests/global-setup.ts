@@ -8,7 +8,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 const projectRoot = path.resolve(import.meta.dirname, "..");
-const outfile = path.join(projectRoot, "goodplan");
+const outfile = path.join(projectRoot, "gp");
 
 export function setup(): void {
 	console.log("[global-setup] Compiling binary...");

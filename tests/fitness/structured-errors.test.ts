@@ -4,8 +4,9 @@
  * and that the binary produces structured JSON errors with the correct exit codes.
  */
 
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { ALL_ERROR_CODES, GoodplanError } from "../../src/util/errors.js";
 import { exitCodeForError } from "../../src/util/output.js";
@@ -115,16 +116,22 @@ describe("INV-007: Structured error output", () => {
 		});
 
 		it("STATE_* error → exit 3 with structured error (init on already-initialized project)", () => {
-			// Use the repo's own .project/ — init should fail with STATE_ALREADY_INITIALIZED
-			const result = runCommand(bin, ["init", "--json"]);
-			expect(result.exitCode).toBe(3);
+			// Create a temp dir with .goodplan/ so init detects an existing project
+			const tmpDir = mkdtempSync(join(tmpdir(), "gp-fitness-init-"));
+			try {
+				mkdirSync(join(tmpDir, ".goodplan"));
+				const result = runCommand(bin, ["init", "--json"], { cwd: tmpDir });
+				expect(result.exitCode).toBe(3);
 
-			const parsed = JSON.parse(result.stdout) as {
-				error: { code: string; message: string };
-			};
-			expect(parsed.error).toBeDefined();
-			expect(parsed.error.code).toBe("STATE_ALREADY_INITIALIZED");
-			expect(typeof parsed.error.message).toBe("string");
+				const parsed = JSON.parse(result.stdout) as {
+					error: { code: string; message: string };
+				};
+				expect(parsed.error).toBeDefined();
+				expect(parsed.error.code).toBe("STATE_ALREADY_INITIALIZED");
+				expect(typeof parsed.error.message).toBe("string");
+			} finally {
+				rmSync(tmpDir, { recursive: true, force: true });
+			}
 		});
 
 		it("DATA_NO_PROJECT → exit 1 with structured error (status in empty dir)", () => {
@@ -142,22 +149,29 @@ describe("INV-007: Structured error output", () => {
 		});
 
 		it("all error JSON responses match { error: { code, message } } shape", () => {
-			const errorScenarios = [
-				runCommand(bin, ["nonexistent-command", "--json"]),
-				runCommand(bin, ["init", "--json"]),
-				runCommand(bin, ["status", "--json"], {
-					env: { GOODPLAN_DIR: "/tmp/goodplan-nonexistent-dir-fitness-test" },
-				}),
-			];
+			// Create a temp dir with .goodplan/ for init-already-initialized scenario
+			const initTmpDir = mkdtempSync(join(tmpdir(), "gp-fitness-shape-"));
+			try {
+				mkdirSync(join(initTmpDir, ".goodplan"));
+				const errorScenarios = [
+					runCommand(bin, ["nonexistent-command", "--json"]),
+					runCommand(bin, ["init", "--json"], { cwd: initTmpDir }),
+					runCommand(bin, ["status", "--json"], {
+						env: { GOODPLAN_DIR: "/tmp/goodplan-nonexistent-dir-fitness-test" },
+					}),
+				];
 
-			for (const result of errorScenarios) {
-				expect(result.exitCode).not.toBe(0);
-				const parsed = JSON.parse(result.stdout) as {
-					error?: { code?: unknown; message?: unknown };
-				};
-				expect(parsed.error).toBeDefined();
-				expect(typeof parsed.error?.code).toBe("string");
-				expect(typeof parsed.error?.message).toBe("string");
+				for (const result of errorScenarios) {
+					expect(result.exitCode).not.toBe(0);
+					const parsed = JSON.parse(result.stdout) as {
+						error?: { code?: unknown; message?: unknown };
+					};
+					expect(parsed.error).toBeDefined();
+					expect(typeof parsed.error?.code).toBe("string");
+					expect(typeof parsed.error?.message).toBe("string");
+				}
+			} finally {
+				rmSync(initTmpDir, { recursive: true, force: true });
 			}
 		});
 	});

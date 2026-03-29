@@ -9,7 +9,7 @@ import { validateInput } from "../../util/validate.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan quest:create` — create a new quest.
+ * `gp quest:create` — create a new quest.
  *
  * Stdin: { "name": "<name>", "goal": "<goal text>" }
  * No --epic flag (quests are project-scoped).

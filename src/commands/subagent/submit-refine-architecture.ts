@@ -10,7 +10,7 @@ import { validateInput } from "../../util/validate.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan submit-refine-architecture --epic <name> [--override]` — complete architecture refinement.
+ * `gp submit-refine-architecture --epic <name> [--override]` — complete architecture refinement.
  *
  * Stdin: { "scores": { "<criterion>": <number>, ... } }
  * Triggers COMPLETE_REFINE_ARCHITECTURE.

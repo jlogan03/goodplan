@@ -71,7 +71,7 @@ describe("loadState", () => {
 	});
 
 	it("returns ZERO_STATE when projectDir does not exist", () => {
-		const state = loadState("/nonexistent/path/.project");
+		const state = loadState("/nonexistent/path/.goodplan");
 		expect(state).toEqual(ZERO_STATE);
 	});
 

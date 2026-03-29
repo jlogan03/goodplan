@@ -10,7 +10,7 @@ beforeAll(() => {
 });
 
 describe("workflow: init", () => {
-	it("creates .project/ with expected structure and exits 0", async () => {
+	it("creates .goodplan/ with expected structure and exits 0", async () => {
 		await withTempDir((tmpDir, env) => {
 			const result = runCommand(bin, ["init", "--json"], {
 				cwd: tmpDir,
@@ -21,7 +21,7 @@ describe("workflow: init", () => {
 			expect(result.exitCode).toBe(0);
 			expect(result.json).toBeDefined();
 
-			const projectDir = path.join(tmpDir, ".project");
+			const projectDir = path.join(tmpDir, ".goodplan");
 			expect(fs.existsSync(projectDir)).toBe(true);
 			expect(fs.existsSync(path.join(projectDir, "project.json"))).toBe(true);
 			expect(fs.existsSync(path.join(projectDir, "activity-log.jsonl"))).toBe(true);
@@ -56,13 +56,13 @@ describe("workflow: init", () => {
 
 			expect(result.exitCode).toBe(0);
 
-			const projectJsonPath = path.join(tmpDir, ".project", "project.json");
+			const projectJsonPath = path.join(tmpDir, ".goodplan", "project.json");
 			const projectJson = JSON.parse(fs.readFileSync(projectJsonPath, "utf-8")) as Record<string, unknown>;
 			expect(projectJson.name).toBe("my-custom-project");
 		});
 	});
 
-	it("returns STATE_ALREADY_INITIALIZED if .project/ already exists", async () => {
+	it("returns STATE_ALREADY_INITIALIZED if .goodplan/ already exists", async () => {
 		await withTempDir((tmpDir, env) => {
 			// First init
 			runCommand(bin, ["init", "--json"], {

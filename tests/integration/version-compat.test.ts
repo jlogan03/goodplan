@@ -5,11 +5,11 @@ import { describe, expect, it } from "vitest";
 import { buildBinary, runCommand, withFixture } from "./helpers.js";
 
 /**
- * Create a temp .project/ with a specific version in project.json.
+ * Create a temp .goodplan/ with a specific version in project.json.
  * Returns env object with GOODPLAN_DIR set.
  */
 function createProjectWithVersion(tmpDir: string, version: string): Record<string, string> {
-	const projectDir = path.join(tmpDir, ".project");
+	const projectDir = path.join(tmpDir, ".goodplan");
 	fs.mkdirSync(projectDir, { recursive: true });
 
 	const project = {
@@ -53,7 +53,7 @@ describe("version compatibility checking", () => {
 
 	it("warns on stderr for cli-minor-behind (same major, data minor > CLI minor)", () => {
 		const bin = buildBinary();
-		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-compat-minor-"));
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-compat-minor-"));
 
 		try {
 			// Data version ahead of CLI (1.99.0 > 1.0.0)
@@ -73,7 +73,7 @@ describe("version compatibility checking", () => {
 
 	it("warns on stderr for major-ahead (CLI major > data major)", () => {
 		const bin = buildBinary();
-		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-compat-major-ahead-"));
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-compat-major-ahead-"));
 
 		try {
 			// Data at version 0.1.0, CLI at 1.0.0
@@ -91,7 +91,7 @@ describe("version compatibility checking", () => {
 
 	it("exits with VALIDATION_VERSION_MAJOR_MISMATCH for major-behind", () => {
 		const bin = buildBinary();
-		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-compat-major-behind-"));
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-compat-major-behind-"));
 
 		try {
 			// Data at version 2.0.0, CLI at 1.0.0 — major behind
@@ -111,7 +111,7 @@ describe("version compatibility checking", () => {
 
 	it("suppresses warning in --json mode for cli-minor-behind", () => {
 		const bin = buildBinary();
-		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-compat-json-suppress-"));
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-compat-json-suppress-"));
 
 		try {
 			const env = createProjectWithVersion(tmpDir, "1.99.0");
@@ -127,7 +127,7 @@ describe("version compatibility checking", () => {
 
 	it("suppresses warning in --quiet mode for cli-minor-behind", () => {
 		const bin = buildBinary();
-		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-compat-quiet-suppress-"));
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-compat-quiet-suppress-"));
 
 		try {
 			const env = createProjectWithVersion(tmpDir, "1.99.0");
@@ -142,7 +142,7 @@ describe("version compatibility checking", () => {
 
 	it("--version works without a project (no compat check)", () => {
 		const bin = buildBinary();
-		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-compat-no-project-"));
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-compat-no-project-"));
 
 		try {
 			// GOODPLAN_DIR points to a non-existent directory

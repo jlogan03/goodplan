@@ -10,21 +10,21 @@ import { debug } from "../../util/debug.js";
 import { GoodplanError } from "../../util/errors.js";
 
 export interface MarkdownFile {
-	/** Relative path within .project/ (e.g., "epics/e1/slices/s1/learnings/my-slug.md") */
+	/** Relative path within .goodplan/ (e.g., "epics/e1/slices/s1/learnings/my-slug.md") */
 	path: string;
 	content: string;
 }
 
 export interface MarkdownCopy {
-	/** Source path relative to .project/ */
+	/** Source path relative to .goodplan/ */
 	from: string;
-	/** Destination path relative to .project/ */
+	/** Destination path relative to .goodplan/ */
 	to: string;
 }
 
 /**
  * Write markdown files to the filesystem. Creates directories on-demand.
- * @param projectDir - Absolute path to .project/
+ * @param projectDir - Absolute path to .goodplan/
  * @param files - Array of {path, content} where path is relative to projectDir
  */
 export function writeMarkdownFiles(
@@ -58,8 +58,8 @@ export function writeMarkdownFiles(
 }
 
 /**
- * Copy markdown files within .project/. Creates destination directories on-demand.
- * @param projectDir - Absolute path to .project/
+ * Copy markdown files within .goodplan/. Creates destination directories on-demand.
+ * @param projectDir - Absolute path to .goodplan/
  * @param copies - Array of {from, to} where paths are relative to projectDir
  */
 export function copyMarkdownFiles(

@@ -6,7 +6,7 @@ import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan epic:abandon --epic <name> --reason <text>` — abandon an epic.
+ * `gp epic:abandon --epic <name> --reason <text>` — abandon an epic.
  *
  * Uses flags (not stdin) because reason is a simple scalar.
  * Precondition: epic exists and is not already completed/abandoned.

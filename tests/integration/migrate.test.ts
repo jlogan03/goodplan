@@ -20,7 +20,7 @@ async function withMigrateFixture<T>(
 	fn: (tmpDir: string, projectDir: string) => T | Promise<T>,
 ): Promise<T> {
 	const fixtureDir = path.resolve(import.meta.dirname, "../fixtures/pre-cli-project");
-	const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-migrate-test-"));
+	const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-migrate-test-"));
 
 	try {
 		fs.cpSync(fixtureDir, tmpDir, { recursive: true });
@@ -160,9 +160,11 @@ describe("migrate: full flow", () => {
 			expect(r4.summary.sliceCount).toBe(2);
 
 			// ── Post-migration assertions ──────────────────────────
+			// Output always goes to .goodplan/ regardless of input path
+			const outputDir = path.join(tmpDir, ".goodplan");
 
-			// project.json exists
-			const projectJsonPath = path.join(projectDir, "project.json");
+			// project.json exists in .goodplan/
+			const projectJsonPath = path.join(outputDir, "project.json");
 			expect(fs.existsSync(projectJsonPath)).toBe(true);
 			const projectJson = JSON.parse(fs.readFileSync(projectJsonPath, "utf-8")) as Record<
 				string,
@@ -173,7 +175,7 @@ describe("migrate: full flow", () => {
 			expect(projectJson.activeQuest).toBeNull(); // fix-typos is "created", not active
 
 			// Epic overview
-			const epicOverviewPath = path.join(projectDir, "epics", "overview.json");
+			const epicOverviewPath = path.join(outputDir, "epics", "overview.json");
 			expect(fs.existsSync(epicOverviewPath)).toBe(true);
 			const epicOverview = JSON.parse(fs.readFileSync(epicOverviewPath, "utf-8")) as {
 				items: Array<{ name: string; status: string }>;
@@ -183,7 +185,7 @@ describe("migrate: full flow", () => {
 			expect(epicOverview.items[0]?.status).toBe("completed");
 
 			// Slices nested under epic (no top-level slices/ directory)
-			const epicSlicesDir = path.join(projectDir, "epics", "test-epic", "slices");
+			const epicSlicesDir = path.join(outputDir, "epics", "test-epic", "slices");
 			expect(fs.existsSync(epicSlicesDir)).toBe(true);
 			expect(fs.existsSync(path.join(epicSlicesDir, "first-slice", "slice.json"))).toBe(true);
 			expect(fs.existsSync(path.join(epicSlicesDir, "second-slice", "slice.json"))).toBe(true);
@@ -195,7 +197,7 @@ describe("migrate: full flow", () => {
 			expect(sliceNames).toContain("second-slice");
 
 			// Quest overview
-			const questOverviewPath = path.join(projectDir, "quests", "overview.json");
+			const questOverviewPath = path.join(outputDir, "quests", "overview.json");
 			expect(fs.existsSync(questOverviewPath)).toBe(true);
 			const questOverview = JSON.parse(fs.readFileSync(questOverviewPath, "utf-8")) as {
 				items: Array<{ name: string; status: string }>;
@@ -207,31 +209,31 @@ describe("migrate: full flow", () => {
 
 			// Entity JSON files
 			const epicJson = JSON.parse(
-				fs.readFileSync(path.join(projectDir, "epics", "test-epic", "epic.json"), "utf-8"),
+				fs.readFileSync(path.join(outputDir, "epics", "test-epic", "epic.json"), "utf-8"),
 			) as Record<string, unknown>;
 			expect(epicJson.status).toBe("completed");
 			// sliceSequence removed from epicSchema — no longer in on-disk output
 
 			const sliceJson = JSON.parse(
-				fs.readFileSync(path.join(projectDir, "epics", "test-epic", "slices", "first-slice", "slice.json"), "utf-8"),
+				fs.readFileSync(path.join(outputDir, "epics", "test-epic", "slices", "first-slice", "slice.json"), "utf-8"),
 			) as Record<string, unknown>;
 			expect(sliceJson.status).toBe("completed");
 			expect(sliceJson.epic).toBe("test-epic");
 
 			// Markdown artifacts preserved
-			expect(fs.existsSync(path.join(projectDir, "idea.md"))).toBe(true);
-			expect(fs.existsSync(path.join(projectDir, "conventions.md"))).toBe(true);
-			const ideaContent = fs.readFileSync(path.join(projectDir, "idea.md"), "utf-8");
+			expect(fs.existsSync(path.join(outputDir, "idea.md"))).toBe(true);
+			expect(fs.existsSync(path.join(outputDir, "conventions.md"))).toBe(true);
+			const ideaContent = fs.readFileSync(path.join(outputDir, "idea.md"), "utf-8");
 			expect(ideaContent).toContain("A test project");
 
 			// Epic architecture markdown copied
 			expect(
-				fs.existsSync(path.join(projectDir, "epics", "test-epic", "architecture", "_overview.md")),
+				fs.existsSync(path.join(outputDir, "epics", "test-epic", "architecture", "_overview.md")),
 			).toBe(true);
 
 			// Epic completion markdown copied
 			expect(
-				fs.existsSync(path.join(projectDir, "epics", "test-epic", "completion", "learnings.md")),
+				fs.existsSync(path.join(outputDir, "epics", "test-epic", "completion", "learnings.md")),
 			).toBe(true);
 
 			// .project-old-<timestamp>/ exists (renamed original)
@@ -246,7 +248,7 @@ describe("migrate: full flow", () => {
 			expect(fs.existsSync(path.join(tmpDir, ".migration-in-progress.json"))).toBe(false);
 
 			// Activity log has migration entry
-			const activityLog = fs.readFileSync(path.join(projectDir, "activity-log.jsonl"), "utf-8");
+			const activityLog = fs.readFileSync(path.join(outputDir, "activity-log.jsonl"), "utf-8");
 			expect(activityLog).toContain("migration");
 		});
 	});
@@ -283,8 +285,8 @@ describe("migrate: full flow", () => {
 // ---------------------------------------------------------------------------
 
 describe("migrate: error cases", () => {
-	it("throws DATA_NO_PROJECT when .project/ does not exist", async () => {
-		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-migrate-no-project-"));
+	it("throws DATA_NO_PROJECT when project directory does not exist", async () => {
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-migrate-no-project-"));
 		try {
 			const missingDir = path.join(tmpDir, ".project");
 			await expect(rpcMigrate(missingDir, null, tmpDir)).rejects.toThrow(GoodplanError);
@@ -299,8 +301,24 @@ describe("migrate: error cases", () => {
 		}
 	});
 
+	it("throws DATA_NO_PROJECT when .goodplan/ directory does not exist", async () => {
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-migrate-no-goodplan-"));
+		try {
+			const missingDir = path.join(tmpDir, ".goodplan");
+			await expect(rpcMigrate(missingDir, null, tmpDir)).rejects.toThrow(GoodplanError);
+
+			try {
+				await rpcMigrate(missingDir, null, tmpDir);
+			} catch (err) {
+				expect((err as GoodplanError).code).toBe("DATA_NO_PROJECT");
+			}
+		} finally {
+			fs.rmSync(tmpDir, { recursive: true, force: true });
+		}
+	});
+
 	it("emits warning when project.json exists (re-migration)", async () => {
-		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-migrate-already-init-"));
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-migrate-already-init-"));
 		try {
 			const projectDir = path.join(tmpDir, ".project");
 			fs.mkdirSync(projectDir, { recursive: true });

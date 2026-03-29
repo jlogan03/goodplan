@@ -69,14 +69,14 @@ function isCLIError(error: unknown): error is Error & { code: string } {
 /**
  * Check CLI version compatibility against project data version.
  * Uses resolveProjectDir() with DATA_NO_PROJECT try-catch for natural skip
- * of init/version/help and any context where no .project/ exists.
+ * of init/version/help and any context where no .goodplan/ exists.
  */
 function checkVersionCompatibility(globalFlags: { json: boolean; quiet: boolean }): void {
 	let projectDir: string;
 	try {
 		projectDir = resolveProjectDir();
 	} catch (error: unknown) {
-		// No .project/ found — silently skip compat check.
+		// No .goodplan/ found — silently skip compat check.
 		// This naturally covers init, --version, --help, schema, etc.
 		if (isGoodplanError(error) && error.code === "DATA_NO_PROJECT") {
 			return;
@@ -116,7 +116,7 @@ function checkVersionCompatibility(globalFlags: { json: boolean; quiet: boolean 
 		case "major-behind":
 			throw new GoodplanError(
 				"VALIDATION_VERSION_MAJOR_MISMATCH",
-				`Project data requires goodplan >= ${project.version} but this is ${VERSION}. Upgrade the CLI.`,
+				`Project data requires gp >= ${project.version} but this is ${VERSION}. Upgrade the CLI.`,
 			);
 	}
 }
@@ -138,13 +138,13 @@ async function main(): Promise<void> {
 	const firstNonFlag = rawArgs.find((a) => !a.startsWith("-"));
 
 	// Handle --version (runCommand doesn't auto-handle it).
-	// --version is handled pre-dispatch and will not appear in `goodplan schema --json`
+	// --version is handled pre-dispatch and will not appear in `gp schema --json`
 	// output — this is a known limitation; the convention doc documents it manually.
 	if (rawArgs.includes("--version")) {
 		if (rawArgs.includes("--json")) {
 			process.stdout.write(`${deterministicStringify({ version: VERSION })}\n`);
 		} else {
-			process.stdout.write(`goodplan ${VERSION}\n`);
+			process.stdout.write(`gp ${VERSION}\n`);
 		}
 		return;
 	}

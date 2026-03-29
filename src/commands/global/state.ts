@@ -1,5 +1,5 @@
 /**
- * `goodplan state` — expose the full .project/ state tree as JSON.
+ * `gp state` — expose the full .goodplan/ state tree as JSON.
  *
  * This command is LLM-facing and always outputs JSON. There is no
  * human-readable format. It bypasses the shared `output()` function
@@ -26,7 +26,7 @@ export const stateCommand = defineCommand({
 	meta: {
 		name: "state",
 		description:
-			"Expose the full .project/ state tree as JSON. Always outputs JSON regardless of --json flag.",
+			"Expose the full .goodplan/ state tree as JSON. Always outputs JSON regardless of --json flag.",
 	},
 	args: {
 		...globalArgs,

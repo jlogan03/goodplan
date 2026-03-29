@@ -148,7 +148,7 @@ function mapLearningInputs(
 			rollupTo: input.rollupTo,
 		});
 
-		// Scope-relative file path resolved to .project/ path
+		// Scope-relative file path resolved to .goodplan/ path
 		markdownFiles.push({
 			path: `${scopePath}/${file}`,
 			content: input.detail,

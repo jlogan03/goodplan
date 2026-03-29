@@ -8,7 +8,7 @@ let tmpDir: string;
 const originalEnv = process.env.GOODPLAN_DIR;
 
 beforeEach(() => {
-	tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-project-test-"));
+	tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-project-test-"));
 	// biome-ignore lint/performance/noDelete: process.env.X = undefined sets the string "undefined"
 	delete process.env.GOODPLAN_DIR;
 });
@@ -24,9 +24,9 @@ afterEach(() => {
 });
 
 describe("resolveProjectDir", () => {
-	it("uses GOODPLAN_DIR env var when set, even when walk-up would find .project/", () => {
-		// Create a .project/ that walk-up would find
-		const walkUpProject = path.join(tmpDir, ".project");
+	it("uses GOODPLAN_DIR env var when set, even when walk-up would find .goodplan/", () => {
+		// Create a .goodplan/ that walk-up would find
+		const walkUpProject = path.join(tmpDir, ".goodplan");
 		fs.mkdirSync(walkUpProject);
 
 		// Create a separate directory for GOODPLAN_DIR to point to
@@ -43,16 +43,16 @@ describe("resolveProjectDir", () => {
 		expect(() => resolveProjectDir()).toThrow("GOODPLAN_DIR points to a path");
 	});
 
-	it("finds .project/ in the given cwd", () => {
-		const projectDir = path.join(tmpDir, ".project");
+	it("finds .goodplan/ in the given cwd", () => {
+		const projectDir = path.join(tmpDir, ".goodplan");
 		fs.mkdirSync(projectDir);
 
 		expect(resolveProjectDir(tmpDir)).toBe(projectDir);
 	});
 
-	it("walks up to find .project/ from a nested subdirectory", () => {
-		// Create .project/ at root
-		const projectDir = path.join(tmpDir, ".project");
+	it("walks up to find .goodplan/ from a nested subdirectory", () => {
+		// Create .goodplan/ at root
+		const projectDir = path.join(tmpDir, ".goodplan");
 		fs.mkdirSync(projectDir);
 
 		// Create nested subdirectory two levels deep
@@ -62,11 +62,11 @@ describe("resolveProjectDir", () => {
 		expect(resolveProjectDir(nestedDir)).toBe(projectDir);
 	});
 
-	it("throws when no .project/ directory exists", () => {
+	it("throws when no .goodplan/ directory exists", () => {
 		const isolatedDir = path.join(tmpDir, "isolated");
 		fs.mkdirSync(isolatedDir);
 
-		// Walk-up goes past tmpDir to /tmp and parents which won't have .project/
-		expect(() => resolveProjectDir(isolatedDir)).toThrow("No .project/ directory found");
+		// Walk-up goes past tmpDir to /tmp and parents which won't have .goodplan/
+		expect(() => resolveProjectDir(isolatedDir)).toThrow("No .goodplan/ directory found");
 	});
 });

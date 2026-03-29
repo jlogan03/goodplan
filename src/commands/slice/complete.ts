@@ -10,7 +10,7 @@ import { globalArgs } from "../global-args.js";
 import { requireActiveEpic } from "./utils.js";
 
 /**
- * `goodplan slice:complete --slice <name>` — complete a slice.
+ * `gp slice:complete --slice <name>` — complete a slice.
  *
  * Stdin: { "verificationPassed": true, "deferred": [...], "learnings": [...], "architectureDelta": [...] }
  * Precondition: slice in 'implementation-complete' status.

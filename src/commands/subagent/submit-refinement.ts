@@ -11,7 +11,7 @@ import { globalArgs } from "../global-args.js";
 import { requireActiveEpic } from "../slice/utils.js";
 
 /**
- * `goodplan submit-refinement --slice <name>|--quest <name> [--override]` — complete refinement round.
+ * `gp submit-refinement --slice <name>|--quest <name> [--override]` — complete refinement round.
  *
  * Stdin: { "scores": { "<criterion>": <number>, ... } }
  * Triggers COMPLETE_REFINEMENT_ROUND or COMPLETE_QUEST_REFINEMENT_ROUND.

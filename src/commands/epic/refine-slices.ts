@@ -6,7 +6,7 @@ import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan epic:refine-slices --epic <name>` — begin slice refinement.
+ * `gp epic:refine-slices --epic <name>` — begin slice refinement.
  *
  * Precondition: epic in 'slices-defined' status.
  * Transition: slices-defined -> refining-slices

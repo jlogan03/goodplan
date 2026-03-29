@@ -7,7 +7,7 @@ import { globalArgs } from "../global-args.js";
 import { requireActiveEpic } from "./utils.js";
 
 /**
- * `goodplan slice:plan --slice <name>` — begin planning phase for a slice.
+ * `gp slice:plan --slice <name>` — begin planning phase for a slice.
  *
  * Precondition: slice in 'created' status, previous sibling slices completed/abandoned (sequential enforcement).
  * Transition: created -> planning

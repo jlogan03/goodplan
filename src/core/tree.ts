@@ -37,7 +37,7 @@ export type StateEntry =
 	| MarkdownEntry;
 
 /**
- * The root of the state tree — a directory representing `.project/`.
+ * The root of the state tree — a directory representing `.goodplan/`.
  */
 export type ProjectState = DirectoryEntry;
 

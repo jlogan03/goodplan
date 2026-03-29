@@ -70,7 +70,7 @@ describe("Tree accuracy — tree keys match filesystem listing", () => {
 	let tmpDir: string;
 
 	beforeEach(() => {
-		tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-tree-accuracy-"));
+		tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-tree-accuracy-"));
 	});
 
 	afterEach(() => {
@@ -83,7 +83,7 @@ describe("Tree accuracy — tree keys match filesystem listing", () => {
 			expect(fs.existsSync(fixtureDir), `Fixture ${fixture} should exist`).toBe(true);
 
 			fs.cpSync(fixtureDir, tmpDir, { recursive: true });
-			const projectDir = path.join(tmpDir, ".project");
+			const projectDir = path.join(tmpDir, ".goodplan");
 
 			const state = assembleState(projectDir);
 			const mismatches: string[] = [];

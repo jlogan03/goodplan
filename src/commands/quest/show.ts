@@ -10,7 +10,7 @@ import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan quest:show --quest <name>` — show full quest entity.
+ * `gp quest:show --quest <name>` — show full quest entity.
  *
  * Read-only: goes directly to the data layer, no RPC.
  * Returns the full quest.json content for the named quest.

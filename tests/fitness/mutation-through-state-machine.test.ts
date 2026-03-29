@@ -1,5 +1,5 @@
 /**
- * Fitness function: INV-001 — All .project/ mutations go through the state machine.
+ * Fitness function: INV-001 — All .goodplan/ mutations go through the state machine.
  * Verifies that fs.writeFileSync/writeFile for .json/.jsonl files only appears
  * in src/core/data/commit.ts (and documented exception: migrate.ts).
  * Commands and RPC modules do not import fs write functions directly.
@@ -66,7 +66,7 @@ function findWriteCalls(source: string): Array<{ line: number; text: string }> {
 	return results;
 }
 
-describe("INV-001: All .project/ JSON/JSONL mutations go through the state machine", () => {
+describe("INV-001: All .goodplan/ JSON/JSONL mutations go through the state machine", () => {
 	const allFiles = collectTsFiles(SRC_DIR);
 	const rootDir = path.resolve(import.meta.dirname, "../..");
 

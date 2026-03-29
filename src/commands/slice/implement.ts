@@ -7,7 +7,7 @@ import { globalArgs } from "../global-args.js";
 import { requireActiveEpic } from "./utils.js";
 
 /**
- * `goodplan slice:implement --slice <name>` — begin implementation for a slice.
+ * `gp slice:implement --slice <name>` — begin implementation for a slice.
  *
  * Precondition: slice in 'plan-refined' status.
  * Transition: plan-refined -> implementing

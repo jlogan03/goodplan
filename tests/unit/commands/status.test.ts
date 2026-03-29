@@ -11,7 +11,7 @@ let tmpDir: string;
 let originalCwd: string;
 
 beforeEach(() => {
-	tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-status-test-"));
+	tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-status-test-"));
 	originalCwd = process.cwd();
 	process.chdir(tmpDir);
 });
@@ -24,7 +24,7 @@ afterEach(() => {
 
 const NOW = "2026-03-22T00:00:00.000Z";
 
-/** Helper: create a minimal .project/ with project.json */
+/** Helper: create a minimal .goodplan/ with project.json */
 function createProject(
 	name: string,
 	overrides?: Partial<{
@@ -33,7 +33,7 @@ function createProject(
 		activeQuest: string | null;
 	}>,
 ) {
-	const projectDir = path.join(tmpDir, ".project");
+	const projectDir = path.join(tmpDir, ".goodplan");
 	fs.mkdirSync(projectDir, { recursive: true });
 	const project = {
 		version: "1.0.0",
@@ -357,7 +357,7 @@ describe("buildStatusResult", () => {
 		const projectDir = createPopulatedProject();
 		const result = buildStatusResult(projectDir);
 
-		// All file paths should be relative to .project/ (no absolute paths)
+		// All file paths should be relative to .goodplan/ (no absolute paths)
 		for (const f of result.artifacts.architecture.files) {
 			expect(f).not.toMatch(/^\//);
 			expect(f).toMatch(/\.md$/);

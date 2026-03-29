@@ -10,7 +10,7 @@ import { validateInput } from "../../util/validate.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan submit-refine-slices --epic <name> [--override]` — complete slices refinement.
+ * `gp submit-refine-slices --epic <name> [--override]` — complete slices refinement.
  *
  * Stdin: { "scores": { "<criterion>": <number>, ... } }
  * Triggers COMPLETE_REFINE_SLICES.

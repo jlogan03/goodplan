@@ -13,8 +13,8 @@ let tmpDir: string;
 let projectDir: string;
 
 beforeEach(() => {
-	tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-rpc-complete-"));
-	projectDir = path.join(tmpDir, ".project");
+	tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-rpc-complete-"));
+	projectDir = path.join(tmpDir, ".goodplan");
 });
 
 afterEach(() => {

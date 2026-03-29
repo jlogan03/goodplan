@@ -11,7 +11,7 @@ import { globalArgs } from "../global-args.js";
 import { requireActiveEpic } from "./utils.js";
 
 /**
- * `goodplan slice:show --slice <name> [--epic <name>]` — show full slice entity.
+ * `gp slice:show --slice <name> [--epic <name>]` — show full slice entity.
  *
  * Read-only: goes directly to the data layer, no RPC.
  * Returns the full slice.json content for the named slice.

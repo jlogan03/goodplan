@@ -258,7 +258,7 @@ function checkConcurrentModification(
 		const globalForce = (globalThis as Record<string, unknown>).__goodplan_force === true;
 		if (force || globalForce) {
 			process.stderr.write(
-				`[goodplan] --force: overwriting externally modified file ${relativePath}\n`,
+				`[gp] --force: overwriting externally modified file ${relativePath}\n`,
 			);
 			return;
 		}

@@ -12,8 +12,8 @@ let projectDir: string;
 let originalCwd: string;
 
 beforeEach(() => {
-	tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-learning-cmd-"));
-	projectDir = path.join(tmpDir, ".project");
+	tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-learning-cmd-"));
+	projectDir = path.join(tmpDir, ".goodplan");
 	originalCwd = process.cwd();
 	process.chdir(tmpDir);
 });

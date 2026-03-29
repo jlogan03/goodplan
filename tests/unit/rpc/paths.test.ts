@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { resolvePathReferences } from "../../../src/core/rpc/paths.js";
 import type { Target } from "../../../src/core/rpc/types.js";
 
-const PROJECT_DIR = "/test/.project";
+const PROJECT_DIR = "/test/.goodplan";
 
 describe("resolvePathReferences", () => {
 	describe("slice targets", () => {

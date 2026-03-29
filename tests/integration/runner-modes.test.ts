@@ -41,7 +41,7 @@ describe("runner: main runner behavior", () => {
 		const result = runCommand(bin, ["--version"]);
 
 		expect(result.exitCode).toBe(0);
-		expect(result.stdout).toContain("goodplan");
+		expect(result.stdout).toMatch(/\bgp\b/);
 		expect(result.stdout).toMatch(/\d+\.\d+\.\d+/);
 	});
 

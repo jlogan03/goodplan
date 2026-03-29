@@ -14,7 +14,7 @@ const activeEntityProjection = z
 
 /**
  * Enriched artifact file info — count + file paths.
- * Files arrays use state-tree-relative paths (relative to `.project/`).
+ * Files arrays use state-tree-relative paths (relative to `.goodplan/`).
  * Changed in 1.0.0: replaces plain number counts (architectureFiles, researchFiles,
  * brainstormFiles, prototypeFiles) with { count, files } objects.
  */

@@ -9,7 +9,7 @@ import { globalArgs, parseInlineBudget } from "../global-args.js";
 import { requireActiveEpic } from "../slice/utils.js";
 
 /**
- * `goodplan start-implementation --slice <name>|--quest <name> [--inline[=<bytes>]]`
+ * `gp start-implementation --slice <name>|--quest <name> [--inline[=<bytes>]]`
  *
  * Read-only context assembly for the implementation phase. Returns ContextBundle JSON.
  * Always outputs JSON regardless of --json flag (sub-agent command).

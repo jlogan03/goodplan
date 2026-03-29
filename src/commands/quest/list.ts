@@ -9,7 +9,7 @@ import { applyPagination, formatPaginationFooter } from "../../util/pagination.j
 import { globalArgs, listArgs } from "../global-args.js";
 
 /**
- * `goodplan quest:list` — list all quests.
+ * `gp quest:list` — list all quests.
  *
  * Read-only: goes directly to the data layer, no RPC.
  * Returns { items: Array<{ name, status, created, completed }> } from quests/overview.json.

@@ -6,7 +6,7 @@ import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan task:convert --task <name> --to quest|epic [--name <override>] [--goal <override>]`
+ * `gp task:convert --task <name> --to quest|epic [--name <override>] [--goal <override>]`
  *
  * Converts a task into a quest or epic. Uses all-flags pattern since all fields are simple scalars.
  * Auto-derives quest/epic name from task slug, goal from task title + description if not overridden.

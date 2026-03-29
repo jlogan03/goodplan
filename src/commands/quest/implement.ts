@@ -6,7 +6,7 @@ import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan quest:implement --quest <name>` — begin implementation for a quest.
+ * `gp quest:implement --quest <name>` — begin implementation for a quest.
  *
  * Precondition: quest in 'plan-refined' status.
  * Transition: plan-refined -> implementing

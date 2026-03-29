@@ -6,7 +6,7 @@ import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan epic:define-architecture --epic <name>` — begin architecture definition.
+ * `gp epic:define-architecture --epic <name>` — begin architecture definition.
  *
  * Precondition: epic in 'explored' status.
  * Transition: explored -> defining-architecture

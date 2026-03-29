@@ -63,12 +63,12 @@ import { taskListCommand } from "./task/list.js";
 import { taskShowCommand } from "./task/show.js";
 
 /**
- * Main goodplan command. Subcommands are registered here.
+ * Main gp command. Subcommands are registered here.
  * Uses flat colon-namespaced keys for entity commands (e.g., "epic:create").
  */
 export const mainCommand = defineCommand({
 	meta: {
-		name: "goodplan",
+		name: "gp",
 		description: "Project workflow CLI for structured development with LLMs",
 	},
 	args: {

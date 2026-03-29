@@ -9,7 +9,7 @@ import { applyPagination, formatPaginationFooter } from "../../util/pagination.j
 import { globalArgs, listArgs } from "../global-args.js";
 
 /**
- * `goodplan task:list [--all]` — list tasks.
+ * `gp task:list [--all]` — list tasks.
  *
  * Read-only: goes directly to the data layer, no RPC.
  * Defaults to open tasks only. Use --all to include converted/dropped.

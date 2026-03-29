@@ -9,7 +9,7 @@ import { validateInput } from "../../util/validate.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan slice:create --epic <name>` — create a new slice.
+ * `gp slice:create --epic <name>` — create a new slice.
  *
  * Stdin: { "name": "<name>", "goal": "<goal text>" }
  * Flag: --epic <name> (required per INV-004)

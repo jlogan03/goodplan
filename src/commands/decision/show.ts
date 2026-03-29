@@ -9,7 +9,7 @@ import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan decision:show --id <id>` — show full decision entry.
+ * `gp decision:show --id <id>` — show full decision entry.
  *
  * Read-only: goes directly to the data layer, no RPC.
  * Returns the full DecisionEntry for the given id.

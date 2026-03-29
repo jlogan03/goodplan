@@ -23,6 +23,14 @@
 		}
 	},
 	"files": {
-		"ignore": ["node_modules", "dist", "bun.lockb", ".project", ".claude", ".superpowers"]
+		"ignore": [
+			"node_modules",
+			"dist",
+			"bun.lockb",
+			".project",
+			".goodplan",
+			".claude",
+			".superpowers"
+		]
 	}
 }

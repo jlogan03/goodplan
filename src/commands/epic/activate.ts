@@ -6,7 +6,7 @@ import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan epic:activate --epic <name>` — activate an epic.
+ * `gp epic:activate --epic <name>` — activate an epic.
  *
  * Precondition: epic in 'slices-defined' or 'slices-refined' status, has verifications.
  * Transition: -> activated

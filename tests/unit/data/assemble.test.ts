@@ -59,11 +59,11 @@ describe("assembleState", () => {
 	});
 
 	it("returns ZERO_STATE when projectDir does not exist", () => {
-		const state = assembleState("/nonexistent/path/.project");
+		const state = assembleState("/nonexistent/path/.goodplan");
 		expect(state).toEqual(ZERO_STATE);
 	});
 
-	it("returns empty directory for empty .project/", () => {
+	it("returns empty directory for empty .goodplan/", () => {
 		const state = assembleState(projectDir());
 		expect(state.type).toBe("directory");
 		expect(Object.keys(state.contents)).toHaveLength(0);

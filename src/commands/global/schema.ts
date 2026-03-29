@@ -24,6 +24,7 @@ import {
 	submitSlicesInputSchema,
 } from "../../schemas/commands/submit.js";
 import { taskCreateInputSchema } from "../../schemas/commands/task.js";
+import { LEGACY_DIR_NAME, PROJECT_DIR_NAME } from "../../core/data/project.js";
 import { GoodplanError } from "../../util/errors.js";
 import { output } from "../../util/output.js";
 import { globalArgs, listArgs } from "../global-args.js";
@@ -118,13 +119,13 @@ const listArgDefs: Record<string, ArgDefinition> = Object.fromEntries(
 // ── Populate command registry ────────────────────────────────
 
 // Global commands
-registerCommand("init", "Initialize a new .project/ directory", {
+registerCommand("init", `Initialize a new ${PROJECT_DIR_NAME}/ directory`, {
 	...globalArgDefs,
 	name: { type: "string", description: "Project name (defaults to directory name)" },
 });
 registerCommand(
 	"migrate",
-	"Migrate a pre-CLI .project/ directory to CLI format. Stdin: {round, answers: [{id, data}]}. Requires .project/ to exist and .project/project.json to NOT exist.",
+	`Migrate a ${PROJECT_DIR_NAME}/ or legacy ${LEGACY_DIR_NAME}/ directory to CLI format. Stdin: {round, answers: [{id, data}]}. Accepts both ${PROJECT_DIR_NAME}/ (re-migration) and ${LEGACY_DIR_NAME}/ (legacy migration).`,
 	{
 		...globalArgDefs,
 	},
@@ -138,7 +139,7 @@ registerCommand("schema", "Show CLI command tree with input/output schemas", {
 });
 registerCommand(
 	"state",
-	"Expose the full .project/ state tree as JSON. Always outputs JSON regardless of --json flag.",
+	`Expose the full ${PROJECT_DIR_NAME}/ state tree as JSON. Always outputs JSON regardless of --json flag.`,
 	{
 		...globalArgDefs,
 		inline: {
@@ -516,7 +517,7 @@ function buildCommandDetail(commandName: string): Record<string, unknown> {
 }
 
 /**
- * `goodplan schema` — show CLI command tree with input/output schemas.
+ * `gp schema` — show CLI command tree with input/output schemas.
  *
  * Without `--command`: returns `{ commands: [...] }` with all registered commands.
  * With `--command <name>`: returns that command's detail including stdin schema (if any).

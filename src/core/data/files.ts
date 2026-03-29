@@ -12,8 +12,8 @@ import * as path from "node:path";
  * Non-recursive — counts only direct children.
  * Returns 0 if the directory does not exist.
  *
- * @param projectDir - Absolute path to .project/
- * @param subpath - Relative path within .project/ (e.g., "epics/my-epic/architecture")
+ * @param projectDir - Absolute path to .goodplan/
+ * @param subpath - Relative path within .goodplan/ (e.g., "epics/my-epic/architecture")
  * @param ext - File extension to match, including dot (e.g., ".md")
  */
 export function countFiles(projectDir: string, subpath: string, ext: string): number {

@@ -13,8 +13,8 @@ let projectDir: string;
 let originalCwd: string;
 
 beforeEach(() => {
-	tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "goodplan-start-cmd-"));
-	projectDir = path.join(tmpDir, ".project");
+	tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-start-cmd-"));
+	projectDir = path.join(tmpDir, ".goodplan");
 	originalCwd = process.cwd();
 	process.chdir(tmpDir);
 });

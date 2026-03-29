@@ -1,7 +1,7 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
 import { assembleState } from "../../core/data/assemble.js";
-import { resolveProjectDir } from "../../core/data/project.js";
+import { PROJECT_DIR_NAME, resolveProjectDir } from "../../core/data/project.js";
 import { getDir, getJson, getJsonl } from "../../core/data/tree.js";
 import type { DirectoryEntry, ProjectState } from "../../core/tree.js";
 import type { Artifacts, StatusResult } from "../../schemas/commands/status.js";
@@ -30,7 +30,7 @@ export function buildStatusResult(projectDir?: string): StatusResult {
 
 	const project = getJson<Project>(state, "project.json");
 	if (project === undefined) {
-		throw new GoodplanError("DATA_NO_PROJECT", "No project.json found in .project/ directory");
+		throw new GoodplanError("DATA_NO_PROJECT", `No project.json found in ${PROJECT_DIR_NAME}/ directory`);
 	}
 
 	// ── Active entities ──
@@ -147,7 +147,7 @@ function countArtifacts(project: Project, state: ProjectState): Artifacts {
 
 	// File-based artifacts — walk state tree for dual-directory aggregation
 	// (project-level + active epic). Files arrays use state-tree-relative paths
-	// (relative to .project/) so consumers can distinguish origin directory.
+	// (relative to .goodplan/) so consumers can distinguish origin directory.
 	let architectureFiles = collectMdFiles(state, "architecture");
 	let researchFiles = collectMdFiles(state, "research");
 	let brainstormFiles = collectMdFiles(state, "brainstorm");
@@ -385,7 +385,7 @@ export function formatStatusHuman(status: StatusResult): string {
 }
 
 /**
- * `goodplan status` — show current project status.
+ * `gp status` — show current project status.
  *
  * Flags:
  * - --json: output as structured JSON

@@ -9,7 +9,7 @@ import { applyPagination, formatPaginationFooter } from "../../util/pagination.j
 import { globalArgs, listArgs } from "../global-args.js";
 
 /**
- * `goodplan epic:list` — list all epics.
+ * `gp epic:list` — list all epics.
  *
  * Read-only: goes directly to the data layer, no RPC.
  * Returns { items: Array<{ name, status, created, completed }> } from epics/overview.json.

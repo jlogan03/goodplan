@@ -7,7 +7,7 @@ import { globalArgs } from "../global-args.js";
 import { requireActiveEpic } from "./utils.js";
 
 /**
- * `goodplan slice:refine-plan --slice <name>` — begin plan refinement for a slice.
+ * `gp slice:refine-plan --slice <name>` — begin plan refinement for a slice.
  *
  * Precondition: slice in 'plan-created' status.
  * Transition: plan-created -> refining
