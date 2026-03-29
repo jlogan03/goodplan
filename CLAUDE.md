@@ -30,7 +30,7 @@ Also check if relevant to your task:
 We are implementing a set of improvements to the goodplan workflow itself. These span multiple epics and quests. Always read these before starting work on any workflow improvement:
 
 - `Target Workflow Vision.md` — north star document describing the target state for all workflow systems. Check implementations against this to prevent drift.
-- `Workflow Improvements - Work Items.md` — prioritized work items (2 epics, 16 quests) with dependency graph, status tracking, and execution order. Update status and capture learnings after completing each item.
+- `Workflow Improvements - Work Items.md` — prioritized work items (2 epics, 23 quests) with dependency graph, status tracking, and execution order. Update status and capture learnings after completing each item.
 - `Development Workflow.md` — exploration scratchpad from the design session (reference, not authoritative — the Target Workflow Vision supersedes this where they differ)
 
 **After completing any workflow improvement epic or quest:**
@@ -40,16 +40,25 @@ We are implementing a set of improvements to the goodplan workflow itself. These
 4. Adjust remaining items — update scope, reorder, add/drop items based on what we learned
 5. Pick the next highest-priority unblocked item
 
-## Skills
+## Three Separate Things — Do Not Confuse
 
-The `skills/` directory in this repo is the **source of truth** for all goodplan skills. These are installed to `~/.claude/skills/` via `bun run install:skills`. When modifying skills, ALWAYS edit files under `skills/` in this repo — NEVER edit the installed copies at `~/.claude/skills/`.
+This repo builds the goodplan workflow system. It contains the source code for both the CLI and skills, AND it uses an older installed version of those same tools to manage its own `.project/` state. These are three distinct things:
 
-## Installed vs Repo: Two Separate Worlds
+### 1. Repo source code (`skills/`, `src/`)
+This is what we are actively developing. **"Update a skill" always means editing files here.** The `skills/` directory is the **source of truth** for all goodplan skills. The `src/` directory is the source for the CLI. These are NOT installed or active anywhere until explicitly built/installed.
 
-The **installed** CLI (`goodplan` on PATH) and skills (`~/.claude/skills/`) are a different version than what's in this repo. The `.project/` directory is managed by the installed CLI and must stay compatible with it.
+### 2. Installed tools (`~/.claude/skills/`, `goodplan` on PATH)
+These are an **older version**, installed from the repo at some earlier point via `bun run install:skills`. They are what `/project-status`, `/create-plan`, `/implement-plan`, and all other slash commands actually use. They may have **different capabilities** from what's in the repo — we are actively improving the repo versions. The installed `goodplan` CLI binary lives at `~/.local/bin/goodplan`. **Never edit `~/.claude/skills/` directly** — those files get overwritten by `bun run install:skills`.
 
-**Rules:**
-- **Always use the installed CLI** (`goodplan` on PATH) to interact with `.project/` state — never the locally-built `./goodplan` binary
-- **Never manually edit** `.project/` state files (slice.json, overview.json, project.json, activity-log.jsonl) — always go through the installed CLI
-- The locally-built `./goodplan` binary is for **testing on fixture repos only** (unit tests, integration tests, copies of this repo) — never run it against this repo's `.project/`
-- Upgrading the installed CLI/skills and migrating this repo's `.project/` is a separate user-initiated process, not part of development work
+### 3. This repo's `.project/` directory
+This is managed by the **installed** CLI and skills (#2 above), not the repo source code (#1). It must stay compatible with the installed version. It tracks this repo's own epics, quests, learnings, and architecture.
+
+### Rules
+
+| Action | Correct | Wrong |
+|---|---|---|
+| Edit a skill | Edit `skills/<name>/SKILL.md` in the repo | Edit `~/.claude/skills/<name>/SKILL.md` |
+| Run a workflow command | `goodplan status --json` (installed CLI) | `./goodplan status --json` (local build) |
+| Mutate `.project/` state | `goodplan quest:complete ...` (installed CLI) | Directly edit `.project/quests/*/quest.json` |
+| Test CLI changes | Run `./goodplan` against a **fixture repo** in `/tmp` | Run `./goodplan` against this repo's `.project/` |
+| Install updated skills | `bun run install:skills` (explicit, user-initiated) | Auto-install during development |
