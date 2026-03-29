@@ -18,6 +18,7 @@ export type SliceStatus = z.infer<typeof sliceStatusSchema>;
 export const deferredItemSchema = z.object({
 	description: z.string().min(1),
 	targetSlice: z.string().min(1),
+	targetEpic: z.string().min(1).optional(),
 });
 export type DeferredItem = z.infer<typeof deferredItemSchema>;
 

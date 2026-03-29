@@ -1,0 +1,46 @@
+{
+	"items": [
+		{
+			"completed": null,
+			"created": "2026-01-01T00:00:00.000Z",
+			"epic": "epic-alpha",
+			"name": "slice-a1",
+			"status": "completed"
+		},
+		{
+			"completed": null,
+			"created": "2026-01-02T00:00:00.000Z",
+			"epic": "epic-alpha",
+			"name": "slice-a2",
+			"status": "implementing"
+		},
+		{
+			"completed": null,
+			"created": "2026-01-03T00:00:00.000Z",
+			"epic": "epic-beta",
+			"name": "slice-b1",
+			"status": "goal-set"
+		},
+		{
+			"completed": null,
+			"created": "2026-01-04T00:00:00.000Z",
+			"epic": "epic-beta",
+			"name": "slice-b2",
+			"status": "goal-set"
+		},
+		{
+			"completed": null,
+			"created": "2026-01-05T00:00:00.000Z",
+			"epic": "epic-beta",
+			"name": "slice-b3",
+			"status": "goal-set"
+		},
+		{
+			"completed": null,
+			"created": "2026-01-06T00:00:00.000Z",
+			"epic": "epic-alpha",
+			"name": "slice-a3",
+			"status": "goal-set"
+		}
+	]
+}

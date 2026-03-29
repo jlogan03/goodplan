@@ -8,6 +8,7 @@ import { output } from "../../util/output.js";
 import { readStdin } from "../../util/stdin.js";
 import { validateInput } from "../../util/validate.js";
 import { globalArgs } from "../global-args.js";
+import { requireActiveEpic } from "../slice/utils.js";
 
 /**
  * `goodplan submit-plan --slice <name>|--quest <name>` — complete plan phase.
@@ -37,11 +38,11 @@ export const submitPlanCommand = defineCommand({
 		const stdin = await readStdin();
 		const input = validateInput(submitPlanInputSchema, args, stdin);
 
+		const projectDir = resolveProjectDir();
 		const target: Target = input.slice !== undefined
-			? { type: "slice", name: input.slice }
+			? { type: "slice", name: input.slice, epic: requireActiveEpic(projectDir) }
 			: { type: "quest", name: input.quest! };
 
-		const projectDir = resolveProjectDir();
 		const result = submit(projectDir, "plan", target, { phase: "plan" });
 
 		if (args.json || args.query) {

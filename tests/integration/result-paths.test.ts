@@ -16,7 +16,7 @@ describe("RPC result paths", () => {
 			const paths = json.paths as Record<string, string>;
 			expect(paths.plan).toBeDefined();
 			expect(path.isAbsolute(paths.plan)).toBe(true);
-			expect(paths.plan).toContain("slices/test-slice/plan.md");
+			expect(paths.plan).toContain("epics/test-epic/slices/test-slice/plan.md");
 		});
 	});
 
@@ -44,7 +44,7 @@ describe("RPC result paths", () => {
 			runCommand(bin, ["slice:plan", "--slice", "test-slice", "--json"], { env, stdin: "" });
 
 			// Write plan.md (simulating sub-agent)
-			const sliceDir = path.join(env.GOODPLAN_DIR, "slices", "test-slice");
+			const sliceDir = path.join(env.GOODPLAN_DIR, "epics", "test-epic", "slices", "test-slice");
 			fs.writeFileSync(path.join(sliceDir, "plan.md"), "# Plan\nContent");
 
 			// Submit plan

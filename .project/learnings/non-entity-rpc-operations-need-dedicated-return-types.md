@@ -1,0 +1,1 @@
+Forcing `learning:rollup` into the entity-shaped `begin()` Target/BeginResult contract was flagged as critical by all 4 reviewers. Design dedicated types for operations that don't fit the entity pattern.

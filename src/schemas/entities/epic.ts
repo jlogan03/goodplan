@@ -40,7 +40,6 @@ export const epicSchema = z.object({
 	goal: z.string().min(1),
 	verifications: z.array(verificationSchema),
 	refinement: refinementSchema.nullable(),
-	sliceSequence: z.array(z.string()),
 	created: timestampSchema,
 	activated: timestampSchema.nullable(),
 	updated: timestampSchema,

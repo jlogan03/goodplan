@@ -113,6 +113,8 @@ Read and follow `../_shared/references/codebase-context-discovery.md`. Delegate 
 
 Also load `.project/conventions.md` if it exists — project conventions provide context for reviewers evaluating the plan.
 
+Also load `.project/architecture/_overview.md` and extract the `## Subsystem Maturity` table. If no maturity table exists, set `{maturity_summary}` to empty. Also read `../_shared/references/maturity-legend.md` and store its content as `{maturity_legend}`. If maturity data was found, display: "**Maturity context**: [list of subsystems at Maturing or Foundational, or 'All subsystems at Developing or below']". When filling shared preamble placeholders for reviewer sub-agents, include `{maturity_summary}` and `{maturity_legend}`. When `{maturity_summary}` is empty, omit the `## Subsystem Maturity` section from the shared preamble entirely.
+
 ### Step 3: Refinement Loop
 
 Read `../_shared/references/iteration-loop.md` for the shared orchestration structure. This step fills in the plan-specific parameters.
@@ -246,82 +248,17 @@ Display these templates exactly as shown (with actual values substituted). These
 
 ### Iteration Summary Template
 
-Display after every iteration, immediately after synthesizing feedback and before applying fixes.
-
-```
----
-
-### Iteration {N} Review
-
-**Reviewers**: {reviewer1} ({score}/10), {reviewer2} ({score}/10), ...
-
-| # | Severity | Issue | Source | Resolution |
-|---|----------|-------|--------|------------|
-| 1 | CRITICAL | {brief issue description} | {Reviewer name(s)} | {DIRECTLY_ACTIONABLE / USER_INPUT / RESEARCH_NEEDED / CODEBASE_EXPLORATION} |
-| 2 | IMPORTANT | {brief issue description} | {Reviewer} | {resolution} |
-| ... | ... | ... | ... | ... |
-
-**Contradictions**: {N resolved, N unresolved — or "None"}
-**USER_INPUT needed**: {brief list — or "None"}
-**RESEARCH_NEEDED**: {brief list of topics to research — or "None"}
-
-**Actions**: {what will be done — e.g., "Researching 2 topics, then applying 4 IMPORTANT and 3 MINOR fixes. Asking user about 1 item."}
-
----
-```
-
-Notes:
-- List ALL issues, not just a summary count. Users want to see what was found.
-- Order by severity (CRITICAL first, then IMPORTANT, then MINOR).
-- Keep issue descriptions to one line — enough to identify the issue, not the full explanation.
-- The "Source" column shows which reviewer(s) flagged the issue. If multiple reviewers flagged the same issue (deduplicated), list all of them (e.g., "Holistic, Backend").
-- The "Actions" line previews what happens next before the orchestrator proceeds.
+Read `../_shared/references/output-templates.md` for the shared Iteration Summary template, substitution rules, and display rules. Use `{scope_prefix}` = empty (omit the Phase prefix). Display after every iteration.
 
 ### Completion Summary Template
 
-Display at the end of Step 5, after renaming to `-refined`.
+Display at the end of Step 5, after renaming to `-refined`. Use the Completion Summary Template from `../_shared/references/output-templates.md` with these skill-specific values:
 
-```
----
-
-## Refinement Complete
-
-**Final plan score**: {min score across all reviewers in final iteration}/10
-**Path**: {path to -refined file or directory}
-**Iterations**: {N}
-
-### Score Progression
-
-| Iteration | {Reviewer1} | {Reviewer2} | {Reviewer3} | ... |
-|-----------|-------------|-------------|-------------|-----|
-| 1         | {score}     | {score}     | {score}     |     |
-| 2         | —           | {score}     | {score}     |     |
-| ...       |             |             |             |     |
-
-(Use — for reviewers not active in that iteration)
-
-### Issues Resolved Per Iteration
-
-**Iteration 1** ({N} issues: {breakdown by severity})
-
-| # | Severity | Issue | Source | Status |
-|---|----------|-------|--------|--------|
-| 1 | IMPORTANT | {brief description} | {Reviewer} | Fixed |
-| 2 | MINOR | {brief description} | {Reviewer} | Fixed |
-| 3 | MINOR | {brief description} | {Reviewer} | Skipped — stylistic |
-
-**Iteration 2** ({N} issues: ...)
-
-| # | Severity | Issue | Source | Status |
-|---|----------|-------|--------|--------|
-| ... | ... | ... | ... | ... |
-
-### Remaining Issues
-
-{List any unresolved MINOR issues, or "None — all issues resolved."}
-
----
-```
+- `{completion_heading}`: `Refinement Complete`
+- `{score_label}`: `plan score`
+- `{skill_specific_header_fields}`: `**Path**: {path to -refined file or directory}`
+- `{issues_resolved_variant}`: `Per Iteration` — use per-iteration tables with `# | Severity | Issue | Source | Status` columns
+- `{skill_specific_extension_sections}`: none
 
 ## Converting to Directory-Based Format
 

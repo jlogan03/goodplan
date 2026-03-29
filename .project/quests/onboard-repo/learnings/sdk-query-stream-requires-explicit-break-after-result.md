@@ -1,0 +1,1 @@
+The Claude Agent SDK query() async generator can hang indefinitely after emitting the result message if subagents were spawned during the session. The for-await loop never terminates naturally. Fix: break immediately after receiving any message.type === result. This applies to all dogfood test harnesses.

@@ -1,16 +1,15 @@
 import type { Epic } from "../../../schemas/entities/epic.js";
-import type { Overview } from "../../../schemas/entities/overview.js";
 import type { SliceStatus } from "../../../schemas/entities/slice.js";
 /**
  * CREATE_SLICE transition handler.
  * Guard: slice name must not already exist in tree.
- * Apply: create slice.json, update slices/overview.json, update epic sliceSequence, append activity log.
+ * Apply: create slice.json in epics/<epic>/slices/<name>/, add to epic overview's slices array, append activity log.
  * Pure function, no I/O.
  */
 import type { ProjectState } from "../../tree.js";
 import { getJson, hasChild, setEntry } from "../../tree.js";
 import type { StateError, StateEvent } from "../types.js";
-import { appendActivityLog, setEpicJson } from "./helpers.js";
+import { addSliceToOverview, appendActivityLog, setEpicJson } from "./helpers.js";
 
 type CreateSliceEvent = Extract<StateEvent, { type: "CREATE_SLICE" }>;
 
@@ -18,8 +17,8 @@ export function handleCreateSlice(
 	state: ProjectState,
 	event: CreateSliceEvent,
 ): ProjectState | StateError {
-	// Guard: slice must not already exist
-	if (hasChild(state, "slices", event.name)) {
+	// Guard: slice must not already exist within this epic
+	if (hasChild(state, `epics/${event.epic}/slices`, event.name)) {
 		return {
 			code: "STATE_INVALID_TRANSITION",
 			message: `Slice "${event.name}" already exists`,
@@ -40,8 +39,8 @@ export function handleCreateSlice(
 	const now = event.ts;
 	let tree = state;
 
-	// Create slice.json
-	tree = setEntry(tree, `slices/${event.name}/slice.json`, {
+	// Create slice.json under nested path
+	tree = setEntry(tree, `epics/${event.epic}/slices/${event.name}/slice.json`, {
 		type: "json",
 		content: {
 			name: event.name,
@@ -55,28 +54,17 @@ export function handleCreateSlice(
 		},
 	});
 
-	// Update slices/overview.json
-	const overview = getJson<Overview>(tree, "slices/overview.json");
-	if (overview === undefined) {
-		return {
-			code: "STATE_INVALID_TRANSITION",
-			message: "slices/overview.json not found — is the project initialized?",
-		};
-	}
-	tree = setEntry(tree, "slices/overview.json", {
-		type: "json",
-		content: {
-			items: [
-				...overview.items,
-				{ name: event.name, status: "created", epic: event.epic, created: now, completed: null },
-			],
-		},
+	// Add slice to epic's embedded slices array in epics/overview.json
+	tree = addSliceToOverview(tree, event.epic, {
+		name: event.name,
+		status: "created",
+		created: now,
+		completed: null,
 	});
 
-	// Append to epic sliceSequence
+	// Update epic's updated timestamp
 	tree = setEpicJson(tree, event.epic, {
 		...epic,
-		sliceSequence: [...epic.sliceSequence, event.name],
 		updated: now,
 	});
 
@@ -85,7 +73,7 @@ export function handleCreateSlice(
 		tree,
 		now,
 		"create-slice",
-		`slices/${event.name}`,
+		`epics/${event.epic}/slices/${event.name}`,
 		`Slice "${event.name}" created for epic "${event.epic}"`,
 	);
 

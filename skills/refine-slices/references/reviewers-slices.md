@@ -34,6 +34,8 @@ Before evaluating, use Grep, Glob, and Read tools to explore the codebase. Focus
 4. **Scope clarity**: Is each slice's scope well-defined relative to the architecture?
    Consider: could an implementer read the slice goal and know exactly which architecture components are involved? Are there ambiguous areas where the slice could be interpreted as touching different subsystems? Does the slice description use the same terminology as the architecture?
 
+5. **Maturity Note completeness**: For each slice, check whether it touches subsystems at Maturing or Foundational maturity (using the maturity table in the preamble). If no maturity table is available in the preamble, skip this criterion. If a slice touches a Maturing or Foundational subsystem, verify the slice's goal.md contains a `## Maturity Note` section that names the affected subsystem(s) and maturity level(s). Flag missing Maturity Notes as IMPORTANT — plans for these slices need fitness function and migration awareness that the Maturity Note triggers in `/create-plan`.
+
 ## Output
 
 ### Issues

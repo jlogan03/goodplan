@@ -1,0 +1,1 @@
+All 10 doc-code divergences turned out to be intentional code changes where the doc lagged behind. The git history investigation also revealed the rollupTo type ambiguity that led to a schema tightening. Always investigate intent before assuming which side needs fixing.

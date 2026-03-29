@@ -28,8 +28,8 @@ Resolve scope variables used throughout all subsequent steps:
      - If no `.activeSlice` and `.activeEpic` exists → `epic` (or check argument)
      - If argument is a quest name → `side-quest`
 2. **Set `$SLICES_DIR`**:
-   - `epic-slice` → `.project/slices/` (slices live at `.project/slices/<name>/`, NOT under epic directory)
-   - `epic` → `.project/slices/` (to scan for epic's slices)
+   - `epic-slice` → `.project/epics/<epic-name>/slices/` (slices live under their parent epic)
+   - `epic` → `.project/epics/<epic-name>/slices/` (to scan for epic's slices)
    - `top-level-slice` → `.project/slices/`
    - `side-quest` → N/A (no slices directory)
 3. **Set `$EPIC_DIR`** (epic-slice and epic):
@@ -79,7 +79,7 @@ goodplan state --json --query '[.slices | to_entries[] | select(.value.status ==
 For each candidate, check that `completion/learnings.md` does NOT exist (re-entry detection). Note: `stat` on LLM-owned `completion/` artifacts is permitted — the CLI has no `completion` field in `artifacts`, so this is the only way to detect partial completion.
 
 ```bash
-stat .project/slices/<name>/completion/learnings.md
+stat $SLICES_DIR/<name>/completion/learnings.md
 ```
 
 If `stat` fails (file not found), the scope is eligible for fresh completion. If `stat` succeeds, the scope has partial completion — offer to resume (see re-entry check below).
@@ -106,8 +106,7 @@ Read all implementation artifacts for the scope (skip missing). These are LLM-ow
 6. `after-implementation-fixes-and-polish.md`
 7. `.project/architecture/` — current architecture for comparison
 8. Existing decisions (already loaded in Step 1 via CLI)
-9. `.project/learnings.md` — existing learnings to avoid duplication
-10. For epic slices: the epic's `architecture/` directory (target architecture for alignment verification)
+9. For epic slices: the epic's `architecture/` directory (target architecture for alignment verification)
 
 For activity-log context (e.g., recent activity, signal tracking):
 
@@ -132,11 +131,8 @@ Note: `slice:show` artifacts are boolean flags (`{ goal, exploreComplete, plan, 
 - `$EPIC_DIR/architecture/` (target architecture)
 - `.project/architecture/` (current reality — top-level)
 - `$EPIC_DIR/research/`, `brainstorm/`, `prototypes/` (for promotion step)
-- `.project/learnings.md` (to avoid duplication in rollup)
 
-Present: "Epic [name]: N slices completed, M research files, K brainstorm files, J prototypes."
-
-**For slices/quests**, present summary: "Found: plan (N phases), M implementation reviews, K research files, [plan-learnings-and-feedback], [fixes-and-polish]. Architecture: N files."
+Display using the Context Load Summary Template from `../_shared/references/output-templates.md`. For the `**Context**` line, use scope-dependent format: epic scope: "Epic [name]: {N} slices completed, {M} research files, {K} brainstorm files, {J} prototypes." Slice/quest scope: "Plan ({N} phases), {M} implementation reviews, {K} research files, architecture ({N} files)."
 
 Follow calibration depth guidance in `../_shared/references/expertise-tracking.md`.
 
@@ -145,7 +141,8 @@ Follow calibration depth guidance in `../_shared/references/expertise-tracking.m
 First, review architecture files against what was built (quick scan for divergences — the formal propose-and-approve process is in Step 6). Note divergences found here for Step 6; reference them in the learnings draft where they affected implementation. This informs learnings. Then run `mkdir -p <scope-dir>/completion/` and draft `completion/learnings.md`. (Note: `completion/` is a skill-owned LLM artifact directory, not a CLI-managed entity directory; direct `mkdir` and `stat` operations are permitted here — the CLI has no `completion` field in `artifacts`.)
 
 The scope directory is derived from the entity name using deterministic conventions:
-- Slices: `.project/slices/<name>/` (NOT `.project/epics/<epic>/slices/<name>/`)
+- Epic slices: `.project/epics/<epic>/slices/<name>/` (nested under parent epic)
+- Top-level slices: `.project/slices/<name>/` (no-active-epic fallback)
 - Quests: `.project/quests/<name>/` (if applicable)
 - Epics: `.project/epics/<name>/`
 
@@ -164,7 +161,7 @@ Analyze the gap between plan and implementation through these lenses:
 
 Each learning should be actionable — it should change how a future slice is planned, architected, or implemented. Skip observations that don't affect future work.
 
-Present the draft. Iterate on corrections. Write `completion/learnings.md` when approved.
+Present the learnings for visibility, then write `completion/learnings.md`.
 
 **For epic scope** (`$SCOPE_TYPE = epic`): instead of the above per-slice questions, synthesize epic-level learnings:
 1. Cross-reference per-slice learnings for patterns — themes recurring across 2+ slices
@@ -172,15 +169,11 @@ Present the draft. Iterate on corrections. Write `completion/learnings.md` when 
 3. What architectural insights emerged that affect future epics or the project's direction?
 4. Write `$EPIC_DIR/completion/learnings.md` — epic-level insights, not a rehash of per-slice learnings.
 
-## Step 5 — Roll Up to Top-Level Learnings
+## Step 5 — Roll Up Learnings via CLI Payload
 
 Re-load `references/guidance.md` (relative to this skill's directory) for the learnings entry format.
 
-Read `.project/learnings.md`. **Idempotency check**: scan for existing `_Source: <slice-name>_` tag matching the current scope — if found, use AskUserQuestion: "Replace existing entry / Keep both / Skip". Add new entries at the top (newest first). Each entry: heading, `_Source: <slice-name>_` tag (for epics, use `_Source: <epic-name>_`), 2-3 sentence actionable summary.
-
-**JSONL learnings rollup**: Do NOT call `learning:rollup` separately. The accumulated learnings from `completion/learnings.md` will be read back and included in the `slice:complete` payload (Step 10) as the `learnings` array. Learnings with `rollupTo` tags are processed atomically by the CLI reducer — no separate rollup invocation needed.
-
-**LLM-owned `.project/learnings.md` synthesis**: This step is a content authoring step where the skill reads the accumulated learnings from `completion/learnings.md` and edits the human-readable `.project/learnings.md` (LLM-owned, direct edit allowed).
+**JSONL learnings rollup**: Do NOT call `learning:rollup` separately. The accumulated learnings from `completion/learnings.md` will be read back and included in the `slice:complete` payload (Step 10) as the `learnings` array. Each learning entry's `detail` field contains the full text that the CLI will write to a per-learning `.md` file in the `learnings/` directory — the CLI handles file creation, slug derivation, and JSONL persistence. Learnings with `rollupTo` tags are processed atomically by the CLI reducer — no separate rollup invocation needed.
 
 **Cross-project tool learnings**: If any learnings are about general-purpose tools, libraries, or frameworks (not project-specific), save them to the user's auto memory system as well. These learnings are likely useful across projects — for example, "pnpm 10 replaces corepack" or "oxfmt beta has stability issues with certain config patterns." Use the memory Write tool to save these as project-type memories with the tool name in the filename.
 
@@ -224,7 +217,7 @@ If no divergences: "Architecture files still accurately describe the system."
 
 Run `mkdir -p <scope-dir>/completion/` (covers re-entry path where Step 4 was skipped). Write `completion/architecture-updates.md` summarizing changes made, declined, and flagged as tech debt. If none needed, write "No architecture updates needed."
 
-If architecture updates revealed additional learnings, append to `completion/learnings.md` and update the top-level learnings rollup.
+If architecture updates revealed additional learnings, append to `completion/learnings.md`.
 
 ## Step 6b — Update project-health.md
 
@@ -257,7 +250,7 @@ Use AskUserQuestion for each finding: "Fix now (localized) / Propose side quest 
 
 Examine artifact directories for the last 3 completed slices. Discovery logic:
 
-1. **Discover completed scopes**: Scan for `.project/slices/*/completion/learnings.md`, `.project/side-quests/*/completion/learnings.md`, and `.project/quests/*/completion/learnings.md`
+1. **Discover completed scopes**: Scan for `.project/slices/*/completion/learnings.md`, `.project/epics/*/slices/*/completion/learnings.md`, `.project/side-quests/*/completion/learnings.md`, and `.project/quests/*/completion/learnings.md`
 2. **Derive scope values**: Strip `.project/` prefix and `/completion/learnings.md` suffix to get the scope path (e.g., `slices/my-slice`)
 3. **Correlate with activity-log**: Use CLI to query activity-log entries:
 
@@ -268,7 +261,7 @@ goodplan state --json --query '[.["activity-log.jsonl"][] | select(.phase == "co
 Match entries by `scope` field against derived scope values. Activity-log entry shape: `{ ts, phase, scope, status, summary, detail? }`.
 
 4. **Select window**: Take 3 most recent by timestamp
-5. **Count refinement effort**: Count `round-N/` directories under `<scope>/refinement/` for each scope (measures per-slice plan refinement quality). Note: rounds under `.project/slices/slices-refining/` measure slice *definition* quality (from refine-slices) — separate metric, do not mix.
+5. **Count refinement effort**: Count `round-N/` directories under `<scope>/refinement/` for each scope (measures per-slice plan refinement quality). Note: rounds under `$SLICES_DIR/slices-refining/` (either `.project/slices/slices-refining/` or `.project/epics/<epic>/slices/slices-refining/`) measure slice *definition* quality (from refine-slices) — separate metric, do not mix.
 
 Look for trends in:
 - **Refinement effort**: Count `round-N/` directories in `<scope>/refinement/`
@@ -332,7 +325,7 @@ After updating: "Updated CLAUDE.md to reference new architecture files."
 goodplan slice:list --json
 ```
 
-Filter for slices with `status` not in `["completed", "abandoned"]`. For each, read the slice's `goal.md` directly (LLM-owned markdown) and the relevant `sequencing.md` (`.project/slices/sequencing.md` for top-level slices, or the epic's `slices/sequencing.md` for epic slices). Assess:
+Filter for slices with `status` not in `["completed", "abandoned"]`. For each, read the slice's `goal.md` directly (LLM-owned markdown) and the relevant `sequencing.md` (`.project/slices/sequencing.md` for top-level slices, or `.project/epics/<epic>/slices/sequencing.md` for epic slices). Assess:
 
 1. Does anything we learned warrant updating this goal?
 2. Should ordering change based on what we now know?
@@ -408,7 +401,11 @@ Completed entities are identified by their `status === "completed"` field in the
 
 ## Step 11 — Done Summary
 
-List: learnings written, architecture updates made (if any), decisions written during this run (if any), slice goal changes (if any), recommended next step.
+Display using the Done Summary Template (Variant A — Strict Fenced) from `../_shared/references/output-templates.md` with these skill-specific values:
+
+- `{done_heading}`: `Completion Summary`
+- `{done_fields}`: `**Scope**: {slice/quest/epic name}`, `**Artifacts written**: {list of files written during completion}`, `**Architecture updates**: {count} proposed`, `**Learnings**: {count} recorded`
+- `{next_step}`: context-dependent (next slice, next epic phase, etc.)
 
 ## Graceful Stop (Steps 4-9)
 

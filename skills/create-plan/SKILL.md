@@ -41,9 +41,9 @@ Use the Read tool to load (paths relative to this skill's directory):
 
 1. **Argument passed**: if a path, use its parent directory as scope (works for `slices/`, `side-quests/`, and `epics/<name>/slices/`). If a name, resolve via `goodplan status --json` → `.activeEpic` to find the epic name, then check `.project/epics/<name>/slices/`, `.project/slices/`, or `.project/side-quests/`.
 
-2. **No argument**: query `goodplan status --json`. Check `.activeSlice` for the active slice, `.activeQuest` for the active quest. These fields are `{ name: string, status: string } | undefined` — check for presence, not null. If `.activeSlice` is present, use `.project/slices/<activeSlice.name>/` (or `.project/epics/<activeEpic.name>/slices/<activeSlice.name>/` if an active epic exists). If `.activeQuest` is present, use `.project/side-quests/<activeQuest.name>/`.
+2. **No argument**: query `goodplan status --json`. Check `.activeSlice` for the active slice, `.activeQuest` for the active quest. These fields are `{ name: string, status: string } | undefined` — check for presence, not null. If `.activeSlice` is present and `.activeEpic` exists, use `.project/epics/<activeEpic.name>/slices/<activeSlice.name>/`; if `.activeSlice` is present but no `.activeEpic`, use `.project/slices/<activeSlice.name>/`. If `.activeQuest` is present, use `.project/side-quests/<activeQuest.name>/`.
 
-3. **No argument and no active slice/quest**: use `goodplan status --json` → `.activeEpic` to determine the epic name (if any), then scan `.project/slices/` and `.project/epics/<name>/slices/` for the first directory with `goal.md` AND (`explore-complete.md` or `explore-skipped.md`) but no `plan.md`/`plan/`. If none found, fall back to slices with `goal.md` but no explore marker — use AskUserQuestion: "This slice hasn't completed exploration — plan it anyway?" If still ambiguous, use AskUserQuestion to choose.
+3. **No argument and no active slice/quest**: use `goodplan status --json` → `.activeEpic` to determine the epic name (if any). If an active epic exists, scan `.project/epics/<name>/slices/` for the first directory with `goal.md` AND (`explore-complete.md` or `explore-skipped.md`) but no `plan.md`/`plan/`. If no active epic, scan `.project/slices/`. If none found, fall back to slices with `goal.md` but no explore marker — use AskUserQuestion: "This slice hasn't completed exploration — plan it anyway?" If still ambiguous, use AskUserQuestion to choose.
 
 4. Read the scope's `goal.md`. If absent, tell the user and stop.
 
@@ -61,8 +61,8 @@ Read (skip missing):
    - **No active epic**: Load `.project/architecture/` only.
    - For whichever architecture directory is primary: start with `_overview.md`. If more than 8 files, read `_overview.md` and `conventions.md` in full, first 30 lines of each remaining file.
 4. **Maturity extraction**: Extract the `## Subsystem Maturity` table from the primary architecture's `_overview.md`. If no maturity table exists, skip maturity-aware behavior in Step 4. Also check for a `## Maturity Note` section in the loaded `goal.md` — treat this as an additional maturity signal (written by `/create-slices` for slices touching maturing+ subsystems).
-5. `.project/learnings.md`
-6. **Sequencing**: If the scope is an epic slice, load `.project/epics/<epicName>/slices/sequencing.md` first (where `<epicName>` comes from `goodplan status --json` → `.activeEpic.name`). Fall back to `.project/slices/sequencing.md`.
+5. Load learnings via CLI: `goodplan learning:list --json`
+6. **Sequencing**: If the scope is an epic slice, load `.project/epics/<epicName>/slices/sequencing.md` (where `<epicName>` comes from `goodplan status --json` → `.activeEpic.name`). If no active epic, load `.project/slices/sequencing.md`.
 7. Other slice `goal.md` files — for dependency and ordering context
 8. Existing research: `.project/research/` (project-level) and scope's `research/`
 9. Scope's `brainstorm/` directories
@@ -74,7 +74,7 @@ Follow the Stale Assumption Detection Algorithm in `../_shared/references/epic-c
 
 When staleness is detected: present the specific architecture changes (use `git diff` or `git log` to show what changed) and ask the user to confirm the goal still applies or update it before proceeding with planning.
 
-Present: "Loaded: [files]. Slice context: [goal.md summary]. Missing: [list or 'nothing']."
+Display using the Context Load Summary Template from `../_shared/references/output-templates.md`. For the `**Context**` line: summarize slice goal, architecture, and conventions (e.g., "Slice 02-data-layer: schema + seed data, 3 architecture files loaded").
 
 ## Step 4 — Interactive Planning
 
@@ -92,10 +92,20 @@ Present phase names and one-line objectives. Use AskUserQuestion: "Does this pha
 
 For each phase:
 
-1. **Present phase context first**: Before asking any questions, state the phase name, its objective (from 4b), and how it connects to the prior phase. Example: "**Phase 2: Data Layer** — Goal: set up the database schema and seed data. This builds on Phase 1's project scaffolding." Then lead with outcome questions: "What should be observable when this phase is done that isn't true now?" and "How would you verify that right now, before any code is written?" Then ask about implementation approach, technology choices, integration points, and error handling.
+1. **Present phase context first**: Before asking any questions, display the phase header using this template:
+
+   ```
+   **Phase {N}: {name}** — Goal: {one-line objective}. Builds on: {prior phase name or "N/A"}.
+   ```
+
+   Then lead with outcome questions: "What should be observable when this phase is done that isn't true now?" and "How would you verify that right now, before any code is written?" Then ask about implementation approach, technology choices, integration points, and error handling.
 2. Follow up immediately if answers raise new questions.
 3. **Research dependencies** as they surface: check `.project/research/` and scope's `research/` first. Only research what's new or stale. Spawn sub-agents using the Agent tool (model: "opus") with WebSearch and Context7 MCP tools. Save to scope's `research/` with header: `# <Topic>\n\nResearched: <date> | Source: <tool>\n\n---`. Present findings summary before incorporating.
-4. After each phase: show progress ("Phase 2 of 5 fleshed out. Moving to Phase 3: [name].") and offer a natural pause point.
+4. After each phase, show progress using this template and offer a natural pause point:
+
+   ```
+   **Progress**: Phase {N} of {M} fleshed out. Next: Phase {N+1}: {name}.
+   ```
 
 ### 4c2. Architectural change detection
 
@@ -173,7 +183,11 @@ If the plan is standalone (not under `.project/`), skip CLI mutation.
 
 ## Step 8 — Done Summary
 
-Present: plan location, phase count, research files written during this session, recommended next step (`/refine-plan`).
+Display using the Done Summary Template (Variant A — Strict Fenced) from `../_shared/references/output-templates.md` with these skill-specific values:
+
+- `{done_heading}`: `Plan Created`
+- `{done_fields}`: `**Plan**: {path to plan file}`, `**Phases**: {N}`, `**Research files written**: {list or "None"}`
+- `{next_step}`: `/refine-plan {path}`
 
 ## Error Handling
 

@@ -1,0 +1,7 @@
+{"category":"domain","summary":"Learning one","file":"learnings/001.md","tags":["tag-a"],"source":"project","rollup":false,"rollupTo":[]}
+{"category":"worked","summary":"Learning two","file":"learnings/002.md","tags":["tag-b"],"source":"project","rollup":false,"rollupTo":[]}
+{"category":"didnt-work","summary":"Learning three","file":"learnings/003.md","tags":["tag-c"],"source":"project","rollup":false,"rollupTo":[]}
+{"category":"do-differently","summary":"Learning four","file":"learnings/004.md","tags":["tag-d"],"source":"project","rollup":false,"rollupTo":[]}
+{"category":"domain","summary":"Learning five","file":"learnings/005.md","tags":["tag-e"],"source":"project","rollup":false,"rollupTo":[]}
+{"category":"worked","summary":"Learning six","file":"learnings/006.md","tags":["tag-f"],"source":"project","rollup":false,"rollupTo":[]}
+{"category":"domain","summary":"Learning seven","file":"learnings/007.md","tags":["tag-g"],"source":"project","rollup":false,"rollupTo":[]}

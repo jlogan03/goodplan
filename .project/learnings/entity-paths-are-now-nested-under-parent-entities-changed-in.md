@@ -1,0 +1,1 @@
+`resolveEntityDir` now places slices at `.project/epics/<epic>/slices/<name>/` (nested under parent epic). This was changed by the entity-restructuring epic. Quests remain flat at `.project/quests/<name>/`. The nested structure matches conceptual hierarchy and eliminates cross-epic name collisions.

@@ -1,0 +1,1 @@
+Removing the pre-dispatch check caused `badcommand` to silently exit 0. Only caught by code review, not the test suite. Process-spawning integration tests for `src/index.ts` are needed — scoped for slice 08.

@@ -1,0 +1,1 @@
+Running goodplan migrate handles data conversion as part of its standard pipeline, maintaining state consistency. Direct .project/ file modification via scripts is prohibited. Future conversions should always go through migration, even if the interactive Q&A feels heavyweight.

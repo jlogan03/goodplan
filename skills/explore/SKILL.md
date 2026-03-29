@@ -44,12 +44,12 @@ Also load `../_shared/references/decisions-format.md` for the decisions format a
 Normalize the argument:
 
 1. Strip trailing slashes.
-2. If it is a full path starting with `.project/` (e.g. `.project/slices/03-explore`), use as-is.
+2. If it is a full path starting with `.project/` (e.g. `.project/slices/03-explore` or `.project/epics/entity-restructuring/slices/02-rpc`), use as-is.
 3. If it is a relative path like `slices/03-explore`, `side-quests/foo`, or `epics/foo`, prepend `.project/`.
 4. If it is a short name (e.g. `03-explore`), search for a match:
 
 ```bash
-ls -d .project/slices/*"$SHORT_NAME"* .project/side-quests/*"$SHORT_NAME"* .project/epics/*"$SHORT_NAME"* 2>/dev/null
+ls -d .project/slices/*"$SHORT_NAME"* .project/epics/*/slices/*"$SHORT_NAME"* .project/side-quests/*"$SHORT_NAME"* .project/epics/*"$SHORT_NAME"* 2>/dev/null
 ```
 
 If exactly one match, use it. If multiple, list them and ask the user to pick. If none, tell the user and ask for a valid scope.
@@ -66,7 +66,7 @@ goodplan status --json
 
 Determine scope using resolution order (check fields in the status response):
 
-1. **Active Slice** — if `.activeSlice` is present (not `undefined`/absent), use `.project/slices/<activeSlice.name>/` as scope.
+1. **Active Slice** — if `.activeSlice` is present (not `undefined`/absent): if `.activeEpic` also exists, use `.project/epics/<activeEpic.name>/slices/<activeSlice.name>/` as scope; otherwise use `.project/slices/<activeSlice.name>/` as scope.
 2. **Active Quest** — if `.activeQuest` is present, use `.project/side-quests/<activeQuest.name>/` as scope.
 3. **Active Epic** — if `.activeEpic` is present, use `.project/epics/<activeEpic.name>/` as scope. If the epic's status is `created` or `exploring`, it is ready for exploration.
 4. **Project level** — if no active entities, scope is project-level.
@@ -84,7 +84,7 @@ ls -d <scope-directory> 2>/dev/null
 If it does not exist, list available scopes and prompt the user:
 
 ```bash
-ls .project/slices/ .project/side-quests/ .project/epics/ 2>/dev/null
+ls .project/slices/ .project/epics/*/slices/ .project/side-quests/ .project/epics/ 2>/dev/null
 ```
 
 ### Check for pre-existing exploration
@@ -230,10 +230,15 @@ This transitions the epic to `explored` and records the activity. If this step i
 
 The CLI only supports epic-scoped exploration state transitions. For project, slice, and quest scopes, the `explore-complete.md` artifact serves as the completion record. No CLI mutation is needed.
 
-### After completion
+### After completion — Done Summary
 
-Summarize all decisions written during this run (if any). List each decision title and recommend next steps:
-- Epic: `/create-architecture`
-- Project-level (no epic): `/create-architecture`
-- Slice: `/create-plan`
-- Side quest: `/create-plan`
+Display using the Done Summary Template (Variant B — Loose Checklist) from `../_shared/references/output-templates.md`. Include:
+
+- All artifacts written during this run (file paths)
+- All decisions written during this run (if any) — list each decision title
+- CLAUDE.md update confirmation (if applicable)
+- Recommend next step based on scope:
+  - Epic: `/create-architecture`
+  - Project-level (no epic): `/create-architecture`
+  - Slice: `/create-plan`
+  - Side quest: `/create-plan`

@@ -3,14 +3,14 @@
 ## Scope Resolution
 
 1. **Argument**: resolve path (parent dir = scope) or name. Use `goodplan status --json` → `.activeEpic` to find the epic name, then match in `.project/epics/<name>/slices/`, `.project/slices/`, or `.project/side-quests/`.
-2. **No argument**: query `goodplan status --json` → `.activeSlice` for the active slice, `.activeQuest` for the active quest.
-3. **Auto-detect**: use `goodplan status --json` → `.activeEpic` to determine the epic name (if any), then scan `.project/slices/` and `.project/epics/<name>/slices/` for first dir with `goal.md` + (`explore-complete.md` or `explore-skipped.md`) but no `plan.md`/`plan/`. This is the explore-gate.
+2. **No argument**: query `goodplan status --json`. Check `.activeSlice` for the active slice, `.activeQuest` for the active quest. If `.activeSlice` is present and `.activeEpic` exists, use `.project/epics/<activeEpic.name>/slices/<activeSlice.name>/`; if `.activeSlice` is present but no `.activeEpic`, use `.project/slices/<activeSlice.name>/`. If `.activeQuest` is present, use `.project/side-quests/<activeQuest.name>/`.
+3. **Auto-detect**: use `goodplan status --json` → `.activeEpic` to determine the epic name (if any). If an active epic exists, scan `.project/epics/<name>/slices/` for the first dir with `goal.md` + (`explore-complete.md` or `explore-skipped.md`) but no `plan.md`/`plan/`. If no active epic, scan `.project/slices/`. This is the explore-gate.
 4. **Fallback**: slices with `goal.md` but no explore marker — use AskUserQuestion to confirm planning without exploration.
 5. **Ambiguous**: use AskUserQuestion to choose slice/quest.
 
 ## Context Loading
 
-Read (skip missing): `.project/idea.md`, `conventions.md`, `architecture/` (`_overview.md` first; if >8 files, full read only `_overview.md` + `conventions.md`, 30 lines of rest), `learnings.md`, `.project/decisions/` (follow Loading Protocol from `decisions-format.md`: glob `*.md`, skip superseded, flag `revisiting` to user), sequencing.md (for epic slices, load from `epics/<epicName>/slices/sequencing.md` first where `<epicName>` comes from `goodplan status --json` → `.activeEpic.name`, fall back to `.project/slices/sequencing.md`), other slice `goal.md` files, `.project/research/` + scope's `research/`, scope's `brainstorm/`.
+Read (skip missing): `.project/idea.md`, `conventions.md`, `architecture/` (`_overview.md` first; if >8 files, full read only `_overview.md` + `conventions.md`, 30 lines of rest), learnings via `goodplan learning:list --json`, `.project/decisions/` (follow Loading Protocol from `decisions-format.md`: glob `*.md`, skip superseded, flag `revisiting` to user), sequencing.md (for epic slices, load from `.project/epics/<epicName>/slices/sequencing.md` where `<epicName>` comes from `goodplan status --json` → `.activeEpic.name`; if no active epic, load `.project/slices/sequencing.md`), other slice `goal.md` files, `.project/research/` + scope's `research/`, scope's `brainstorm/`.
 
 Follow SKILL.md Step 3 sub-step 4 for maturity table extraction and Maturity Note loading.
 

@@ -7,7 +7,7 @@ import { isStateError } from "../../../src/core/state/types.js";
 import type { StateError } from "../../../src/core/state/types.js";
 import type { Slice } from "../../../src/schemas/entities/slice.js";
 import type { Epic } from "../../../src/schemas/entities/epic.js";
-import type { Overview } from "../../../src/schemas/entities/overview.js";
+import type { EpicOverview } from "../../../src/schemas/entities/overview.js";
 
 const TS = "2026-01-01T00:00:00.000Z";
 const TS2 = "2026-01-02T00:00:00.000Z";
@@ -32,7 +32,7 @@ describe("reduce — CREATE_SLICE", () => {
 		expect(isStateError(result)).toBe(false);
 		const newState = result as ProjectState;
 
-		const slice = getJson<Slice>(newState, "slices/s1/slice.json");
+		const slice = getJson<Slice>(newState, "epics/e1/slices/s1/slice.json");
 		expect(slice).toBeDefined();
 		expect(slice!.name).toBe("s1");
 		expect(slice!.epic).toBe("e1");
@@ -44,7 +44,7 @@ describe("reduce — CREATE_SLICE", () => {
 		expect(slice!.updated).toBe(TS2);
 	});
 
-	it("updates slices/overview.json with epic field", () => {
+	it("adds slice to epic's embedded slices array in epics/overview.json", () => {
 		const state = initWithEpic();
 		const result = reduce(state, {
 			type: "CREATE_SLICE",
@@ -54,15 +54,16 @@ describe("reduce — CREATE_SLICE", () => {
 			ts: TS2,
 		}) as ProjectState;
 
-		const overview = getJson<Overview>(result, "slices/overview.json");
+		const overview = getJson<EpicOverview>(result, "epics/overview.json");
 		expect(overview).toBeDefined();
-		expect(overview!.items).toHaveLength(1);
-		expect(overview!.items[0]!.name).toBe("s1");
-		expect(overview!.items[0]!.status).toBe("created");
-		expect(overview!.items[0]!.epic).toBe("e1");
+		const epicItem = overview!.items.find((i) => i.name === "e1");
+		expect(epicItem).toBeDefined();
+		expect(epicItem!.slices).toHaveLength(1);
+		expect(epicItem!.slices[0]!.name).toBe("s1");
+		expect(epicItem!.slices[0]!.status).toBe("created");
 	});
 
-	it("appends to epic sliceSequence", () => {
+	it("updates epic's updated timestamp", () => {
 		const state = initWithEpic();
 		const result = reduce(state, {
 			type: "CREATE_SLICE",
@@ -73,7 +74,7 @@ describe("reduce — CREATE_SLICE", () => {
 		}) as ProjectState;
 
 		const epic = getJson<Epic>(result, "epics/e1/epic.json");
-		expect(epic!.sliceSequence).toEqual(["s1"]);
+		expect(epic!.updated).toBe(TS2);
 	});
 
 	it("appends activity log entry", () => {
@@ -90,7 +91,7 @@ describe("reduce — CREATE_SLICE", () => {
 		expect(log).toBeDefined();
 		const entry = log![log!.length - 1]!;
 		expect(entry.phase).toBe("create-slice");
-		expect(entry.scope).toBe("slices/s1");
+		expect(entry.scope).toBe("epics/e1/slices/s1");
 	});
 
 	it("rejects duplicate slice name", () => {
@@ -134,10 +135,8 @@ describe("reduce — CREATE_SLICE", () => {
 		s = reduce(s, { type: "CREATE_SLICE", name: "s1", epic: "e1", goal: "First", ts: TS }) as ProjectState;
 		s = reduce(s, { type: "CREATE_SLICE", name: "s2", epic: "e1", goal: "Second", ts: TS2 }) as ProjectState;
 
-		const epic = getJson<Epic>(s, "epics/e1/epic.json");
-		expect(epic!.sliceSequence).toEqual(["s1", "s2"]);
-
-		const overview = getJson<Overview>(s, "slices/overview.json");
-		expect(overview!.items).toHaveLength(2);
+		const overview = getJson<EpicOverview>(s, "epics/overview.json");
+		const epicItem = overview!.items.find((i) => i.name === "e1");
+		expect(epicItem!.slices).toHaveLength(2);
 	});
 });

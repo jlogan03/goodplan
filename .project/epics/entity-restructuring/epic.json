@@ -1,0 +1,10 @@
+{
+	"activated": "2026-03-25T00:00:00Z",
+	"created": "2026-03-28T00:06:46.961Z",
+	"goal": "Restructure the data model so slices live under their parent epic directories.",
+	"name": "entity-restructuring",
+	"refinement": null,
+	"status": "completed",
+	"updated": "2026-03-28T00:06:46.961Z",
+	"verifications": []
+}

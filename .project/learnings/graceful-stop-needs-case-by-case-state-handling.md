@@ -1,0 +1,1 @@
+Each graceful stop scenario needs its own state.md string and flow-log behavior. "No files written" should not touch state at all; partial work should list exactly what was written.

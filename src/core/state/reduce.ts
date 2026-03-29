@@ -7,6 +7,7 @@
  * for compile-time exhaustiveness checking before Map conversion.
  */
 import type { ProjectState } from "../tree.js";
+import { handleCreateDecision, handleUpdateDecision } from "./transitions/decision.js";
 import { handleCreateEpic } from "./transitions/epic-create.js";
 import {
 	handleAbandonEpic,
@@ -29,7 +30,6 @@ import {
 } from "./transitions/epic-refine.js";
 import { handleAddVerification, handleUpdateVerification } from "./transitions/epic-verify.js";
 import { handleInitProject } from "./transitions/init.js";
-import { handleCreateDecision, handleUpdateDecision } from "./transitions/decision.js";
 import { handleAbandonQuest } from "./transitions/quest-abandon.js";
 import { handleCompleteQuest } from "./transitions/quest-complete.js";
 import { handleCreateQuest } from "./transitions/quest-create.js";
@@ -38,12 +38,12 @@ import {
 	handleBeginQuestRefinement,
 } from "./transitions/quest-implement.js";
 import { handleBeginQuestPlan } from "./transitions/quest-plan.js";
+import { handleRollupLearnings } from "./transitions/rollup-learnings.js";
 import { handleAbandonSlice } from "./transitions/slice-abandon.js";
 import { handleCompleteSlice } from "./transitions/slice-complete.js";
 import { handleCreateSlice } from "./transitions/slice-create.js";
 import { handleBeginImplementation, handleBeginRefinement } from "./transitions/slice-implement.js";
 import { handleBeginPlan } from "./transitions/slice-plan.js";
-import { handleRollupLearnings } from "./transitions/rollup-learnings.js";
 import {
 	handleCompleteImplementation,
 	handleCompletePlan,
@@ -52,6 +52,8 @@ import {
 	handleCompleteQuestRefinementRound,
 	handleCompleteRefinementRound,
 } from "./transitions/slice-submit.js";
+import { handleCreateTask } from "./transitions/task-create.js";
+import { handleConvertTask, handleDropTask } from "./transitions/task-lifecycle.js";
 import type { StateError, StateEvent } from "./types.js";
 
 /**
@@ -102,6 +104,9 @@ export const handlerRecord = {
 	COMPLETE_QUEST_IMPLEMENTATION: handleCompleteQuestImplementation,
 	COMPLETE_QUEST: handleCompleteQuest,
 	ABANDON_QUEST: handleAbandonQuest,
+	CREATE_TASK: handleCreateTask,
+	DROP_TASK: handleDropTask,
+	CONVERT_TASK: handleConvertTask,
 	CREATE_DECISION: handleCreateDecision,
 	UPDATE_DECISION: handleUpdateDecision,
 	ROLLUP_LEARNINGS: handleRollupLearnings,

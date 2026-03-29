@@ -1,8 +1,9 @@
 import type { Verification, VerificationResult } from "./entities/epic.js";
 import type { DeferredItem } from "./entities/slice.js";
+import type { TaskContext } from "./entities/task.js";
 import type { ArchitectureDeltaInput } from "./records/architecture-delta.js";
 import type { DecisionEntry } from "./records/decision.js";
-import type { LearningInput } from "./records/learning.js";
+import type { LearningEventEntry, LearningInput } from "./records/learning.js";
 
 // `ts` field is injected by the RPC layer on ALL events to keep the reducer pure (no Date.now() inside).
 // See state-machine-api.md "Timestamp convention" for the documented pattern.
@@ -52,28 +53,30 @@ export type StateEvent =
 	  }
 	// Slice lifecycle
 	| { type: "CREATE_SLICE"; name: string; epic: string; goal: string; ts: string }
-	| { type: "BEGIN_PLAN"; slice: string; ts: string }
-	| { type: "COMPLETE_PLAN"; slice: string; ts: string }
-	| { type: "BEGIN_REFINEMENT"; slice: string; ts: string }
+	| { type: "BEGIN_PLAN"; epic: string; slice: string; ts: string }
+	| { type: "COMPLETE_PLAN"; epic: string; slice: string; ts: string }
+	| { type: "BEGIN_REFINEMENT"; epic: string; slice: string; ts: string }
 	| {
 			type: "COMPLETE_REFINEMENT_ROUND";
+			epic: string;
 			slice: string;
 			ts: string;
 			scores: Record<string, number>;
 			override?: boolean;
 	  }
-	| { type: "BEGIN_IMPLEMENTATION"; slice: string; ts: string }
-	| { type: "COMPLETE_IMPLEMENTATION"; slice: string; ts: string }
+	| { type: "BEGIN_IMPLEMENTATION"; epic: string; slice: string; ts: string }
+	| { type: "COMPLETE_IMPLEMENTATION"; epic: string; slice: string; ts: string }
 	| {
 			type: "COMPLETE_SLICE";
+			epic: string;
 			slice: string;
 			ts: string;
 			verificationPassed: boolean;
 			deferred: DeferredItem[];
-			learnings: LearningInput[];
+			learnings: LearningEventEntry[];
 			architectureDelta: ArchitectureDeltaInput[];
 	  }
-	| { type: "ABANDON_SLICE"; slice: string; ts: string; reason: string }
+	| { type: "ABANDON_SLICE"; epic: string; slice: string; ts: string; reason: string }
 	// Quest lifecycle
 	| { type: "CREATE_QUEST"; name: string; goal: string; ts: string }
 	| { type: "BEGIN_QUEST_PLAN"; quest: string; ts: string }
@@ -93,13 +96,43 @@ export type StateEvent =
 			quest: string;
 			ts: string;
 			verificationPassed: boolean;
-			learnings: LearningInput[];
+			learnings: LearningEventEntry[];
 			architectureDelta: ArchitectureDeltaInput[];
 	  }
 	| { type: "ABANDON_QUEST"; quest: string; ts: string; reason: string }
+	// Task lifecycle
+	| {
+			type: "CREATE_TASK";
+			name: string;
+			title: string;
+			description?: string;
+			context?: TaskContext;
+			ts: string;
+	  }
+	| { type: "DROP_TASK"; name: string; reason: string; ts: string }
+	| {
+			type: "CONVERT_TASK";
+			name: string;
+			to: "quest" | "epic";
+			convertedName: string;
+			convertedGoal?: string;
+			ts: string;
+	  }
 	// Cross-cutting: decisions and learnings rollup
-	| { type: "CREATE_DECISION"; id: string; domain: string; title: string; summary: string; ts: string }
-	| { type: "UPDATE_DECISION"; id: string; changes: Partial<Omit<DecisionEntry, "id" | "date">>; ts: string }
+	| {
+			type: "CREATE_DECISION";
+			id: string;
+			domain: string;
+			title: string;
+			summary: string;
+			ts: string;
+	  }
+	| {
+			type: "UPDATE_DECISION";
+			id: string;
+			changes: Partial<Omit<DecisionEntry, "id" | "date">>;
+			ts: string;
+	  }
 	| { type: "ROLLUP_LEARNINGS"; from: string; to: string; ts: string };
 
 /** Error codes produced by state machine transitions. Single source of truth — also used by GoodplanErrorCode. */

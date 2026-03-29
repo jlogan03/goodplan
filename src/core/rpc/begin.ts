@@ -7,6 +7,7 @@ import type { Epic } from "../../schemas/entities/epic.js";
 import type { Project } from "../../schemas/entities/project.js";
 import type { Quest } from "../../schemas/entities/quest.js";
 import type { Slice } from "../../schemas/entities/slice.js";
+import type { Task } from "../../schemas/entities/task.js";
 import type { DecisionEntry } from "../../schemas/records/decision.js";
 import type { LearningEntry } from "../../schemas/records/learning.js";
 import type { StateEvent } from "../../schemas/state-events.js";
@@ -14,6 +15,8 @@ import { GoodplanError } from "../../util/errors.js";
 import { VERSION } from "../../version.js";
 import { commitState } from "../data/commit.js";
 import { loadState } from "../data/load.js";
+import type { MarkdownCopy } from "../data/markdown-files.js";
+import { copyMarkdownFiles } from "../data/markdown-files.js";
 import { reduce } from "../state/reduce.js";
 import { isStateError } from "../state/types.js";
 import { getJson, getJsonl } from "../tree.js";
@@ -54,7 +57,20 @@ export function begin<P extends BeginPhase>(
 	// Version stamp: bump project.json.version if CLI version > data version (INV-001 exception — see version-stamp.ts)
 	const stampedResult = bumpDataVersionIfNeeded(result, VERSION);
 
-	commitState(projectDir, oldState, stampedResult, options?.force === true ? { force: true } : undefined);
+	// For rollup: copy .md files from source to target scope before commitState
+	if (phase === "rollup" && target.type === "rollup") {
+		const copies = collectRollupMarkdownCopies(target, oldState, stampedResult);
+		if (copies.length > 0) {
+			copyMarkdownFiles(projectDir, copies);
+		}
+	}
+
+	commitState(
+		projectDir,
+		oldState,
+		stampedResult,
+		options?.force === true ? { force: true } : undefined,
+	);
 
 	// Rollup has a different result type (RollupResult) — paths field not applicable
 	if (phase === "rollup" && target.type === "rollup") {
@@ -122,6 +138,46 @@ function buildBeginEvent<P extends BeginPhase>(
 			return buildRefinePlanEvent(target, ts);
 		case "implement":
 			return buildImplementEvent(target, ts);
+		case "create-task": {
+			const ctp = payload as BeginPayloadMap["create-task"];
+			if (target.type !== "task") {
+				throw new GoodplanError("VALIDATION_INVALID_INPUT", "create-task requires task target");
+			}
+			return {
+				type: "CREATE_TASK",
+				name: target.name,
+				title: ctp.title,
+				ts,
+				...(ctp.description ? { description: ctp.description } : {}),
+				...(ctp.context ? { context: ctp.context } : {}),
+			};
+		}
+		case "drop-task": {
+			const dtp = payload as BeginPayloadMap["drop-task"];
+			if (target.type !== "task") {
+				throw new GoodplanError("VALIDATION_INVALID_INPUT", "drop-task requires task target");
+			}
+			return {
+				type: "DROP_TASK",
+				name: target.name,
+				reason: dtp.reason,
+				ts,
+			};
+		}
+		case "convert-task": {
+			const cvp = payload as BeginPayloadMap["convert-task"];
+			if (target.type !== "task") {
+				throw new GoodplanError("VALIDATION_INVALID_INPUT", "convert-task requires task target");
+			}
+			return {
+				type: "CONVERT_TASK",
+				name: target.name,
+				to: cvp.to,
+				convertedName: cvp.name ?? target.name,
+				ts,
+				...(cvp.goal ? { convertedGoal: cvp.goal } : {}),
+			};
+		}
 		case "create-decision": {
 			const cdp = payload as BeginPayloadMap["create-decision"];
 			return {
@@ -218,6 +274,11 @@ function buildCreateEvent(
 				ts,
 			};
 		}
+		case "task":
+			throw new GoodplanError(
+				"INTERNAL_ERROR",
+				"Use begin('create-task', ...) for task creation, not begin('create', {type:'task'})",
+			);
 		case "decision":
 			throw new GoodplanError(
 				"INTERNAL_ERROR",
@@ -247,7 +308,7 @@ function buildAbandonEvent(
 		case "epic":
 			return { type: "ABANDON_EPIC", epic: target.name, ts, reason: payload.reason };
 		case "slice":
-			return { type: "ABANDON_SLICE", slice: target.name, ts, reason: payload.reason };
+			return { type: "ABANDON_SLICE", slice: target.name, epic: target.epic, ts, reason: payload.reason };
 		case "quest":
 			return { type: "ABANDON_QUEST", quest: target.name, ts, reason: payload.reason };
 		default:
@@ -258,7 +319,7 @@ function buildAbandonEvent(
 function buildPlanPhaseEvent(target: Target, ts: string): StateEvent {
 	switch (target.type) {
 		case "slice":
-			return { type: "BEGIN_PLAN", slice: target.name, ts };
+			return { type: "BEGIN_PLAN", slice: target.name, epic: target.epic, ts };
 		case "quest":
 			return { type: "BEGIN_QUEST_PLAN", quest: target.name, ts };
 		default:
@@ -272,7 +333,7 @@ function buildPlanPhaseEvent(target: Target, ts: string): StateEvent {
 function buildRefinePlanEvent(target: Target, ts: string): StateEvent {
 	switch (target.type) {
 		case "slice":
-			return { type: "BEGIN_REFINEMENT", slice: target.name, ts };
+			return { type: "BEGIN_REFINEMENT", slice: target.name, epic: target.epic, ts };
 		case "quest":
 			return { type: "BEGIN_QUEST_REFINEMENT", quest: target.name, ts };
 		default:
@@ -286,7 +347,7 @@ function buildRefinePlanEvent(target: Target, ts: string): StateEvent {
 function buildImplementEvent(target: Target, ts: string): StateEvent {
 	switch (target.type) {
 		case "slice":
-			return { type: "BEGIN_IMPLEMENTATION", slice: target.name, ts };
+			return { type: "BEGIN_IMPLEMENTATION", slice: target.name, epic: target.epic, ts };
 		case "quest":
 			return { type: "BEGIN_QUEST_IMPLEMENTATION", quest: target.name, ts };
 		default:
@@ -330,6 +391,11 @@ function buildBeginResult(
 		const newQuest = getJson<Quest>(newState, entityPath);
 		previousStatus = oldQuest?.status ?? "none";
 		newStatus = newQuest?.status ?? "unknown";
+	} else if (target.type === "task") {
+		const oldTask = getJson<Task>(oldState, entityPath);
+		const newTask = getJson<Task>(newState, entityPath);
+		previousStatus = oldTask?.status ?? "none";
+		newStatus = newTask?.status ?? "unknown";
 	} else if (target.type === "decision") {
 		// Decision entries live in decisions.jsonl — find by id to extract status
 		const oldDecisions = getJsonl<DecisionEntry>(oldState, "decisions.jsonl") ?? [];
@@ -360,6 +426,50 @@ function buildRollupResult(
 		to: target.to,
 		rolledUp,
 	};
+}
+
+/**
+ * Collect markdown file copies needed for ROLLUP_LEARNINGS.
+ * New-format entries (with `file` field) need their .md files copied
+ * from <source-scope>/learnings/<slug>.md to <target-scope>/learnings/<slug>.md.
+ * The target scope path is resolved from the target label ("project" or "epic").
+ */
+function collectRollupMarkdownCopies(
+	target: Extract<Target, { type: "rollup" }>,
+	oldState: ProjectState,
+	newState: ProjectState,
+): MarkdownCopy[] {
+	// Resolve target scope path (mirrors resolveTargetPath in rollup-learnings.ts)
+	let targetScopePath: string;
+	if (target.to === "project") {
+		targetScopePath = "";
+	} else if (target.to === "epic") {
+		const project = getJson<Project>(newState, "project.json");
+		if (project === undefined || project.activeEpic === null) return [];
+		targetScopePath = `epics/${project.activeEpic}`;
+	} else {
+		return [];
+	}
+
+	// Find newly added entries at target that have a `file` field
+	const targetJsonlPath = targetScopePath
+		? `${targetScopePath}/learnings.jsonl`
+		: "learnings.jsonl";
+	const oldEntries = getJsonl<LearningEntry>(oldState, targetJsonlPath) ?? [];
+	const newEntries = getJsonl<LearningEntry>(newState, targetJsonlPath) ?? [];
+	// Relies on JSONL being append-only — new entries are at the end after oldEntries.length
+	const addedEntries = newEntries.slice(oldEntries.length);
+
+	const copies: MarkdownCopy[] = [];
+	for (const entry of addedEntries) {
+		// Source: <from-scope>/<file> (e.g., "epics/e1/slices/s1/learnings/slug.md")
+		const fromPath = `${target.from}/${entry.file}`;
+		// Target: <target-scope>/<file> (e.g., "learnings/slug.md" at project level or "epics/e1/learnings/slug.md")
+		const toPath = targetScopePath ? `${targetScopePath}/${entry.file}` : entry.file;
+		copies.push({ from: fromPath, to: toPath });
+	}
+
+	return copies;
 }
 
 // ── Helpers ──────────────────────────────────────────────────

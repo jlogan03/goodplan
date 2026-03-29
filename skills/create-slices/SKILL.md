@@ -69,13 +69,13 @@ Also load `../_shared/references/decisions-format.md` for the decisions format a
 
 5. Extract the `## Subsystem Maturity` table from the primary architecture's `_overview.md`. If present, note which subsystems are at Maturing or Foundational maturity — these inform slice flagging in Step 6. If no maturity table exists, skip maturity-aware behavior in Step 6.
 
-6. Read `.project/learnings.md` if it exists.
+6. Load learnings via CLI: `goodplan learning:list --json`. Present summaries for context.
 
 7. Load `.project/decisions/` following the Loading Protocol in `decisions-format.md`: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions inform slice boundaries and ordering.
 
 8. Check for existing slices by running: `ls $SLICES_DIR/sequencing.md $SLICES_DIR/*/goal.md 2>/dev/null` (using the resolved `$SLICES_DIR` from Step 0).
 
-Present summary listing only what was found: "Found: idea.md, epic goal.md, conventions.md, N architecture files, learnings.md. Existing slices: [list or 'none']." Omit items that don't exist rather than showing them in brackets.
+Display using the Context Load Summary Template from `../_shared/references/output-templates.md`. For the `**Context**` line: summarize epic/project scope and architecture state (e.g., "Epic initial: 4 subsystems defined, 2 active decisions").
 
 ## Step 3 — Re-entry Check
 
@@ -93,7 +93,18 @@ Follow calibration depth guidance in `../_shared/references/expertise-tracking.m
 
 1. Based on idea.md, architecture, and conventions, propose an initial set of slices. Ground each slice in specific architecture subsystems or flows. Order so each builds on the last. **Each slice must deliver a complete end-to-end flow** that the implementing agent can verify by actually running the code — executing scripts, calling APIs, interacting with a UI in the browser, or running the system and inspecting its output. If a proposed slice can't be verified this way, it's too thin or too abstract — merge it with another slice or redefine it.
 
-2. Present as a numbered list with: name, one-line description, key dependencies, brief ordering rationale.
+2. Present using this template:
+
+   ```
+   ### Proposed Slices
+
+   | # | Name | Objective |
+   |---|------|-----------|
+   | 1 | {name} | {one-line objective} |
+   | ... | | |
+
+   **Sequencing rationale**: {why this order}
+   ```
 
 3. Ask: "What needs changing? Add, remove, reorder, or rename slices. Or say 'looks good' to proceed to details."
 
@@ -129,9 +140,7 @@ For each slice in order:
 
 1. Draft the full goal.md using the goal.md template from guidance.md.
 2. If a maturity table was extracted in Step 2 sub-step 5, determine which subsystems this slice touches by mapping the slice's scope description against subsystem names in the maturity table. This is a best-effort name-match heuristic — if uncertain whether a subsystem is touched, include it (false positives are cheaper than false negatives; e.g., slice scope "add API validation" matches subsystem "api-contract"; "refactor error messages" is uncertain — include all potentially relevant subsystems). If the slice touches subsystems at Maturing or Foundational maturity, add a `## Maturity Note` section to the goal.md draft (after `## Scope Boundaries`): "This slice touches [subsystem] ([level]). Plan must include fitness function update steps and justify changes per the architecture proposal (for epic slices) or architecture definition (for side quests/top-level slices)." Developing subsystems do not trigger a Maturity Note — only Maturing and Foundational do.
-3. Focus on **Success Criteria** and **Verification** — these are the most important parts of each goal.md:
-   - Each success criterion must specify: what to run (command, script, browser action, API call) and what the expected outcome is. Reject vague criteria like "works correctly" or "tests pass".
-   - The **Verification** section must describe the minimum live end-to-end verification the implementing agent should perform after the slice is built. This is not unit tests — it's running the actual system and confirming the flow works. Examples: "Start the dev server, navigate to /dashboard in browser, create a new item, verify it appears in the list and persists after refresh." Or: "Run the CLI with `tool analyze src/`, verify it prints a summary table with at least 3 rows." Think about what a human would do to convince themselves this slice actually works, and write that down.
+3. Focus on **Verification** — this is the most important part of each goal.md. It has two parts: checkable assertions (checklist format) followed by a narrative live-testing paragraph. Each checkable assertion must specify: what to run (command, script, browser action, API call) and what the expected outcome is. Reject vague criteria like "works correctly" or "tests pass". The narrative paragraph must describe the minimum live end-to-end verification the implementing agent should perform after the slice is built. This is not unit tests — it's running the actual system and confirming the flow works. Examples: "Start the dev server, navigate to /dashboard in browser, create a new item, verify it appears in the list and persists after refresh." Or: "Run the CLI with `tool analyze src/`, verify it prints a summary table with at least 3 rows." Think about what a human would do to convince themselves this slice actually works, and write that down.
 4. **Present slice context first**: State the slice number, name, and one-line objective before showing the draft. Example: "**Slice 2: Data Layer** — Set up the database schema and seed data. Here's the draft goal.md:" Then ask for corrections.
 5. Iterate until satisfied.
 6. Create the directory and write goal.md:
@@ -139,7 +148,11 @@ For each slice in order:
    mkdir -p $SLICES_DIR/NN-slice-name/
    ```
    Write goal.md with the Write tool.
-7. Show progress: "Defined N of M slices. Next: [next slice]."
+7. Show progress using this template:
+
+   ```
+   **Progress**: Defined {N} of {M} slices. Next: {next slice name}.
+   ```
 
 **Graceful stop** — if the user says "that's enough" or "stop here" mid-slice:
 
@@ -166,7 +179,7 @@ Where:
 - `<one-line goal>` is the first line of the slice's Behavior/Goal section
 - `<epic-name>` is from `goodplan status --json` → `.activeEpic.name`
 
-This creates the slice entity at `.project/slices/<name>/slice.json` and registers it in `slices/overview.json`. Without this step, `slice:list` returns empty and per-slice planning/implementation cannot proceed.
+This creates the slice entity (at `.project/epics/<epic>/slices/<name>/slice.json` for epic slices, or `.project/slices/<name>/slice.json` for top-level slices) and registers it in the overview. Without this step, `slice:list` returns empty and per-slice planning/implementation cannot proceed.
 
 **Note:** This step is independent of `submit-slices` (Step 9), which transitions the epic's phase. Both are required: `slice:create` registers individual entities, `submit-slices` advances the epic state machine.
 
@@ -219,7 +232,11 @@ For non-epic scopes, no CLI mutation is needed — the written artifacts serve a
 
 ## Step 10 — Done Summary
 
-List all slices defined. Recommend `/create-plan` for the first unplanned slice.
+Display using the Done Summary Template (Variant A — Strict Fenced) from `../_shared/references/output-templates.md` with these skill-specific values:
+
+- `{done_heading}`: `Slices Defined`
+- `{done_fields}`: `**Total**: {N} slices`, `**Output**: {path to slices directory}`, `**Slices**: {numbered list of slice names}`
+- `{next_step}`: `/create-plan` for {first unplanned slice name}
 
 ## Error Handling
 

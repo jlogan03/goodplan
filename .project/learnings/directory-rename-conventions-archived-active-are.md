@@ -1,0 +1,1 @@
+The CLI resolves entity paths using bare names (`epics/<name>/epic.json`). Renaming directories with prefixes like `~~archived~~` or `__active__` permanently breaks CLI access. Completed entities should be identified by `status === "completed"` via CLI queries, not filesystem naming. Removed the ~~archived~~ convention; __active__ remains as legacy concern.

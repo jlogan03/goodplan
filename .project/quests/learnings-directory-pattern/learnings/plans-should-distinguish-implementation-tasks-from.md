@@ -1,0 +1,1 @@
+Three of Phase 2's eight tasks required no code changes — learning:list, assembleState, and status already handled the new format correctly. Marking these as verification rather than implementation would have saved review budget and set clearer expectations.

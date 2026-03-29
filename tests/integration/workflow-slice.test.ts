@@ -17,7 +17,7 @@ describe("workflow: slice lifecycle", () => {
 			expect(json.newStatus).toBe("created");
 
 			// Verify slice directory
-			const sliceDir = path.join(env.GOODPLAN_DIR, "slices", "new-slice");
+			const sliceDir = path.join(env.GOODPLAN_DIR, "epics", "test-epic", "slices", "new-slice");
 			expect(fs.existsSync(sliceDir)).toBe(true);
 			expect(fs.existsSync(path.join(sliceDir, "slice.json"))).toBe(true);
 		});
@@ -32,7 +32,7 @@ describe("workflow: slice lifecycle", () => {
 			expect((planResult.json as Record<string, unknown>).newStatus).toBe("planning");
 
 			// Write plan.md to filesystem (sub-agent normally does this)
-			const sliceDir = path.join(env.GOODPLAN_DIR, "slices", "test-slice");
+			const sliceDir = path.join(env.GOODPLAN_DIR, "epics", "test-epic", "slices", "test-slice");
 			fs.writeFileSync(path.join(sliceDir, "plan.md"), "# Test Plan\n\nThis is the plan.");
 
 			// Submit plan

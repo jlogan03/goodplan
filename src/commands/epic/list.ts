@@ -1,11 +1,12 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { resolveProjectDir } from "../../core/data/project.js";
 import { loadState } from "../../core/data/load.js";
+import { resolveProjectDir } from "../../core/data/project.js";
 import { getJson } from "../../core/tree.js";
 import type { Overview } from "../../schemas/entities/overview.js";
 import { output } from "../../util/output.js";
-import { globalArgs } from "../global-args.js";
+import { applyPagination, formatPaginationFooter } from "../../util/pagination.js";
+import { globalArgs, listArgs } from "../global-args.js";
 
 /**
  * `goodplan epic:list` — list all epics.
@@ -20,6 +21,7 @@ export const epicListCommand = defineCommand({
 	},
 	args: {
 		...globalArgs,
+		...listArgs,
 	},
 	setup() {},
 	async run({ args }) {
@@ -28,17 +30,25 @@ export const epicListCommand = defineCommand({
 
 		// Treat missing overview.json as empty list (supports fresh projects with no epics yet)
 		const overview = getJson<Overview>(state, "epics/overview.json") ?? { items: [] };
+		const paginated = applyPagination(overview.items, args);
 
 		if (args.json || args.query) {
-			output({ items: overview.items }, args);
+			output(paginated, args);
 		} else if (!args.quiet) {
-			if (overview.items.length === 0) {
+			if (paginated.total === 0) {
 				output("No epics found.", args);
 			} else {
 				const lines: string[] = [];
-				for (const item of overview.items) {
+				if (paginated.items.length === 0) {
+					lines.push("No epics in this range.");
+				}
+				for (const item of paginated.items) {
 					const completedStr = item.completed !== null ? ` (completed ${item.completed})` : "";
 					lines.push(`  ${pc.bold(item.name)}  ${item.status}${completedStr}`);
+				}
+				const footer = formatPaginationFooter(paginated);
+				if (footer !== undefined) {
+					lines.push(footer);
 				}
 				output(lines.join("\n"), args);
 			}

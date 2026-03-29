@@ -6,7 +6,7 @@ import { readStdin } from "../../util/stdin.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `goodplan migrate` — migrate a pre-CLI .project/ directory to CLI format.
+ * `goodplan migrate` — migrate or re-migrate a .project/ directory to CLI format.
  *
  * Multi-round Q&A protocol driven via --json. Each invocation either emits
  * questions (stdout JSON) or accepts answers (stdin JSON).
@@ -15,8 +15,11 @@ import { globalArgs } from "../global-args.js";
  * No stdin = fresh start or resume (re-emits current round's questions).
  *
  * Preconditions:
- * - .project/ must exist (pre-CLI artifacts to migrate)
- * - .project/project.json must NOT exist (already migrated)
+ * - .project/ must exist (pre-CLI artifacts or existing CLI state to re-migrate)
+ *
+ * Supports re-migration of already-initialized projects. When project.json exists,
+ * a warning is included in the first questions response. The existing .project/ is
+ * renamed to .project-old-<YYYYMMDD-HHmmss>/ and state is rebuilt from directory contents.
  *
  * Intermediate state stored at <cwd>/.migration-in-progress.json (overwritten on restart).
  * --force has no migration-specific behavior (handled by commitState as usual).
@@ -28,9 +31,9 @@ export const migrateCommand = defineCommand({
 	meta: {
 		name: "migrate",
 		description:
-			"Migrate a pre-CLI .project/ directory to CLI format. " +
+			"Migrate or re-migrate a .project/ directory to CLI format. " +
 			"Stdin: {round, answers: [{id, data}]}. " +
-			"Requires .project/ to exist and .project/project.json to NOT exist.",
+			"Requires .project/ to exist.",
 	},
 	args: {
 		...globalArgs,

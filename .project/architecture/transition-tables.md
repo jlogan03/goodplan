@@ -124,6 +124,18 @@ Quest lifecycle mirrors slice. Quests are project-scoped (no epic field, no sequ
 | implementation | refined plan, quest goal, current architecture, target architecture, conventions, relevant learnings | architecture/*.md |
 | complete | quest goal, implementation results, current architecture, target architecture, learnings at all levels | architecture/*.md |
 
+## Task
+
+### Task Lifecycle
+
+| From | Event | To | Guard | Error | Orchestrator Returns | Notes |
+|---|---|---|---|---|---|---|
+| (none) | CREATE_TASK | open | — | — | task, status | Creates task.json. Lazily creates tasks/overview.json if missing. |
+| open | DROP_TASK | dropped | — | — | task, status, reason | Requires reason. Sets completed timestamp in overview. |
+| open | CONVERT_TASK | converted | target entity name does not exist AND target overview exists | STATE_INVALID_TRANSITION | task, status, convertedTo | Atomically creates quest or epic entity. Sets completed timestamp in overview. |
+| * (terminal) | DROP_TASK | (error) | current status is terminal | STATE_INVALID_TRANSITION | — | |
+| * (non-open) | CONVERT_TASK | (error) | current status is not open | STATE_INVALID_TRANSITION | — | |
+
 ## Decision
 
 | From | Event | To | Guard | Error | Orchestrator Returns | Notes |
@@ -165,4 +177,5 @@ Not triggered by events — detected by the RPC layer after a state change.
 | Epic | completed, abandoned |
 | Slice | completed, abandoned |
 | Quest | completed, abandoned |
+| Task | dropped, converted |
 | Decision | superseded (revisiting is NOT terminal) |

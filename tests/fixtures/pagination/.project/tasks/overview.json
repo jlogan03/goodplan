@@ -1,0 +1,46 @@
+{
+	"items": [
+		{
+			"created": "2026-01-01T00:00:00.000Z",
+			"completed": null,
+			"name": "task-one",
+			"title": "First task",
+			"status": "open"
+		},
+		{
+			"created": "2026-01-02T00:00:00.000Z",
+			"completed": null,
+			"name": "task-two",
+			"title": "Second task",
+			"status": "open"
+		},
+		{
+			"created": "2026-01-03T00:00:00.000Z",
+			"completed": null,
+			"name": "task-three",
+			"title": "Third task",
+			"status": "open"
+		},
+		{
+			"created": "2026-01-04T00:00:00.000Z",
+			"completed": "2026-01-05T00:00:00.000Z",
+			"name": "task-four",
+			"title": "Fourth task",
+			"status": "converted"
+		},
+		{
+			"created": "2026-01-05T00:00:00.000Z",
+			"completed": null,
+			"name": "task-five",
+			"title": "Fifth task",
+			"status": "open"
+		},
+		{
+			"created": "2026-01-06T00:00:00.000Z",
+			"completed": "2026-01-07T00:00:00.000Z",
+			"name": "task-six",
+			"title": "Sixth task",
+			"status": "dropped"
+		}
+	]
+}

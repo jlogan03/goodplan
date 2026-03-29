@@ -77,7 +77,7 @@ function setupActivatedEpic(epicName = "e1") {
  */
 /** Write required content files for slice state machine guards, then invalidate cache. */
 function writeSliceContent(sliceName: string, ...files: string[]) {
-	const dir = path.join(projectDir, "slices", sliceName);
+	const dir = path.join(projectDir, "epics", "e1", "slices", sliceName);
 	fs.mkdirSync(dir, { recursive: true });
 	for (const f of files) {
 		fs.writeFileSync(path.join(dir, f), `# ${f}\nContent.`);
@@ -90,22 +90,22 @@ function writeSliceContent(sliceName: string, ...files: string[]) {
 }
 
 function advanceSliceToImplementationComplete(sliceName: string) {
-	begin(projectDir, "plan", { type: "slice", name: sliceName }, {});
+	begin(projectDir, "plan", { type: "slice", name: sliceName, epic: "e1" }, {});
 	writeSliceContent(sliceName, "plan.md");
-	submit(projectDir, "plan", { type: "slice", name: sliceName }, { phase: "plan" });
+	submit(projectDir, "plan", { type: "slice", name: sliceName, epic: "e1" }, { phase: "plan" });
 	// submit-refinement to skip refinement
 	submit(
 		projectDir,
 		"refinement",
-		{ type: "slice", name: sliceName },
+		{ type: "slice", name: sliceName, epic: "e1" },
 		{ phase: "refinement", scores: {} },
 	);
 	writeSliceContent(sliceName, "plan-refined.md");
-	begin(projectDir, "implement", { type: "slice", name: sliceName }, {});
+	begin(projectDir, "implement", { type: "slice", name: sliceName, epic: "e1" }, {});
 	submit(
 		projectDir,
 		"implementation",
-		{ type: "slice", name: sliceName },
+		{ type: "slice", name: sliceName, epic: "e1" },
 		{ phase: "implementation" },
 	);
 }
@@ -232,7 +232,7 @@ describe("slice:create", () => {
 		expect(parsed.newStatus).toBe("created");
 
 		// Verify on disk
-		const sliceJson = path.join(projectDir, "slices", "01-auth", "slice.json");
+		const sliceJson = path.join(projectDir, "epics", "e1", "slices", "01-auth", "slice.json");
 		expect(fs.existsSync(sliceJson)).toBe(true);
 
 		restore();
@@ -264,7 +264,7 @@ describe("slice:create", () => {
 		expect(chunks.join("")).toBe("");
 
 		// But slice should still be created
-		const sliceJson = path.join(projectDir, "slices", "01-auth", "slice.json");
+		const sliceJson = path.join(projectDir, "epics", "e1", "slices", "01-auth", "slice.json");
 		expect(fs.existsSync(sliceJson)).toBe(true);
 
 		restore();
@@ -312,7 +312,7 @@ describe("slice:list", () => {
 		begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "01-auth" },
+			{ type: "slice", name: "01-auth", epic: "e1" },
 			{ name: "01-auth", goal: "Auth", epic: "e1" },
 		);
 
@@ -337,13 +337,13 @@ describe("slice:list", () => {
 		begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "s1" },
+			{ type: "slice", name: "s1", epic: "e1" },
 			{ name: "s1", goal: "G1", epic: "e1" },
 		);
 		begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "s2" },
+			{ type: "slice", name: "s2", epic: "e1" },
 			{ name: "s2", goal: "G2", epic: "e1" },
 		);
 
@@ -384,7 +384,7 @@ describe("slice:show", () => {
 		begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "01-auth" },
+			{ type: "slice", name: "01-auth", epic: "e1" },
 			{ name: "01-auth", goal: "Auth feature", epic: "e1" },
 		);
 
@@ -404,6 +404,7 @@ describe("slice:show", () => {
 
 	it("throws for nonexistent slice", async () => {
 		initProject();
+		setupActivatedEpic();
 		const { restore } = captureStdout();
 
 		await expect(runSliceShow({ slice: "nonexistent", json: true })).rejects.toThrow("not found");
@@ -417,7 +418,7 @@ describe("slice:show", () => {
 		begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "01-auth" },
+			{ type: "slice", name: "01-auth", epic: "e1" },
 			{ name: "01-auth", goal: "Auth", epic: "e1" },
 		);
 
@@ -443,7 +444,7 @@ describe("slice:plan", () => {
 		begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "01-auth" },
+			{ type: "slice", name: "01-auth", epic: "e1" },
 			{ name: "01-auth", goal: "Auth", epic: "e1" },
 		);
 
@@ -463,7 +464,7 @@ describe("slice:plan", () => {
 		begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "01-auth" },
+			{ type: "slice", name: "01-auth", epic: "e1" },
 			{ name: "01-auth", goal: "Auth", epic: "e1" },
 		);
 
@@ -488,12 +489,12 @@ describe("slice:refine-plan", () => {
 		begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "01-auth" },
+			{ type: "slice", name: "01-auth", epic: "e1" },
 			{ name: "01-auth", goal: "Auth", epic: "e1" },
 		);
-		begin(projectDir, "plan", { type: "slice", name: "01-auth" }, {});
+		begin(projectDir, "plan", { type: "slice", name: "01-auth", epic: "e1" }, {});
 		writeSliceContent("01-auth", "plan.md");
-		submit(projectDir, "plan", { type: "slice", name: "01-auth" }, { phase: "plan" });
+		submit(projectDir, "plan", { type: "slice", name: "01-auth", epic: "e1" }, { phase: "plan" });
 
 		const { chunks, restore } = captureStdout();
 		await runSliceRefinePlan({ slice: "01-auth", json: true });
@@ -515,17 +516,17 @@ describe("slice:implement", () => {
 		begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "01-auth" },
+			{ type: "slice", name: "01-auth", epic: "e1" },
 			{ name: "01-auth", goal: "Auth", epic: "e1" },
 		);
-		begin(projectDir, "plan", { type: "slice", name: "01-auth" }, {});
+		begin(projectDir, "plan", { type: "slice", name: "01-auth", epic: "e1" }, {});
 		writeSliceContent("01-auth", "plan.md");
-		submit(projectDir, "plan", { type: "slice", name: "01-auth" }, { phase: "plan" });
+		submit(projectDir, "plan", { type: "slice", name: "01-auth", epic: "e1" }, { phase: "plan" });
 		// Skip refinement
 		submit(
 			projectDir,
 			"refinement",
-			{ type: "slice", name: "01-auth" },
+			{ type: "slice", name: "01-auth", epic: "e1" },
 			{ phase: "refinement", scores: {} },
 		);
 		writeSliceContent("01-auth", "plan-refined.md");
@@ -550,7 +551,7 @@ describe("slice:complete", () => {
 		begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "01-auth" },
+			{ type: "slice", name: "01-auth", epic: "e1" },
 			{ name: "01-auth", goal: "Auth", epic: "e1" },
 		);
 		advanceSliceToImplementationComplete("01-auth");
@@ -572,13 +573,13 @@ describe("slice:complete", () => {
 		begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "01-auth" },
+			{ type: "slice", name: "01-auth", epic: "e1" },
 			{ name: "01-auth", goal: "Auth", epic: "e1" },
 		);
 		begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "02-api" },
+			{ type: "slice", name: "02-api", epic: "e1" },
 			{ name: "02-api", goal: "API", epic: "e1" },
 		);
 		advanceSliceToImplementationComplete("01-auth");
@@ -619,7 +620,7 @@ describe("slice:complete", () => {
 		begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "01-auth" },
+			{ type: "slice", name: "01-auth", epic: "e1" },
 			{ name: "01-auth", goal: "Auth", epic: "e1" },
 		);
 		advanceSliceToImplementationComplete("01-auth");
@@ -646,7 +647,7 @@ describe("slice:abandon", () => {
 		begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "01-auth" },
+			{ type: "slice", name: "01-auth", epic: "e1" },
 			{ name: "01-auth", goal: "Auth", epic: "e1" },
 		);
 
@@ -666,7 +667,7 @@ describe("slice:abandon", () => {
 		begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "01-auth" },
+			{ type: "slice", name: "01-auth", epic: "e1" },
 			{ name: "01-auth", goal: "Auth", epic: "e1" },
 		);
 
@@ -702,7 +703,7 @@ describe("output modes", () => {
 		begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "01-auth" },
+			{ type: "slice", name: "01-auth", epic: "e1" },
 			{ name: "01-auth", goal: "Auth", epic: "e1" },
 		);
 
@@ -720,7 +721,7 @@ describe("output modes", () => {
 		begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "01-auth" },
+			{ type: "slice", name: "01-auth", epic: "e1" },
 			{ name: "01-auth", goal: "Auth", epic: "e1" },
 		);
 
@@ -738,7 +739,7 @@ describe("output modes", () => {
 		begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "01-auth" },
+			{ type: "slice", name: "01-auth", epic: "e1" },
 			{ name: "01-auth", goal: "Auth", epic: "e1" },
 		);
 		advanceSliceToImplementationComplete("01-auth");
@@ -750,7 +751,7 @@ describe("output modes", () => {
 
 		// But slice should still be completed
 		const sliceJson = JSON.parse(
-			fs.readFileSync(path.join(projectDir, "slices", "01-auth", "slice.json"), "utf-8"),
+			fs.readFileSync(path.join(projectDir, "epics", "e1", "slices", "01-auth", "slice.json"), "utf-8"),
 		);
 		expect(sliceJson.status).toBe("completed");
 
@@ -763,7 +764,7 @@ describe("output modes", () => {
 		begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "01-auth" },
+			{ type: "slice", name: "01-auth", epic: "e1" },
 			{ name: "01-auth", goal: "Auth", epic: "e1" },
 		);
 
@@ -774,7 +775,7 @@ describe("output modes", () => {
 
 		// But slice should still be abandoned
 		const sliceJson = JSON.parse(
-			fs.readFileSync(path.join(projectDir, "slices", "01-auth", "slice.json"), "utf-8"),
+			fs.readFileSync(path.join(projectDir, "epics", "e1", "slices", "01-auth", "slice.json"), "utf-8"),
 		);
 		expect(sliceJson.status).toBe("abandoned");
 
@@ -804,7 +805,7 @@ describe("full slice lifecycle via CLI commands", () => {
 
 		// Write plan.md (state machine guards its existence) then submit plan
 		writeSliceContent("01-auth", "plan.md");
-		submit(projectDir, "plan", { type: "slice", name: "01-auth" }, { phase: "plan" });
+		submit(projectDir, "plan", { type: "slice", name: "01-auth", epic: "e1" }, { phase: "plan" });
 
 		// Refine plan
 		await runSliceRefinePlan({ slice: "01-auth", json: true });
@@ -816,7 +817,7 @@ describe("full slice lifecycle via CLI commands", () => {
 		submit(
 			projectDir,
 			"refinement",
-			{ type: "slice", name: "01-auth" },
+			{ type: "slice", name: "01-auth", epic: "e1" },
 			{ phase: "refinement", scores: {} },
 		);
 
@@ -831,7 +832,7 @@ describe("full slice lifecycle via CLI commands", () => {
 		submit(
 			projectDir,
 			"implementation",
-			{ type: "slice", name: "01-auth" },
+			{ type: "slice", name: "01-auth", epic: "e1" },
 			{ phase: "implementation" },
 		);
 

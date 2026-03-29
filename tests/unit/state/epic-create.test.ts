@@ -6,7 +6,7 @@ import { reduce } from "../../../src/core/state/reduce.js";
 import { isStateError } from "../../../src/core/state/types.js";
 import type { StateError } from "../../../src/core/state/types.js";
 import type { Epic } from "../../../src/schemas/entities/epic.js";
-import type { Overview } from "../../../src/schemas/entities/overview.js";
+import type { EpicOverview } from "../../../src/schemas/entities/overview.js";
 
 const TS = "2026-01-01T00:00:00.000Z";
 
@@ -35,7 +35,6 @@ describe("reduce — CREATE_EPIC", () => {
 		expect(epic!.status).toBe("created");
 		expect(epic!.goal).toBe("Build something great");
 		expect(epic!.verifications).toEqual([]);
-		expect(epic!.sliceSequence).toEqual([]);
 		expect(epic!.refinement).toBeNull();
 		expect(epic!.created).toBe("2026-01-02T00:00:00.000Z");
 		expect(epic!.activated).toBeNull();
@@ -66,11 +65,12 @@ describe("reduce — CREATE_EPIC", () => {
 			ts: "2026-01-02T00:00:00.000Z",
 		}) as ProjectState;
 
-		const overview = getJson<Overview>(result, "epics/overview.json");
+		const overview = getJson<EpicOverview>(result, "epics/overview.json");
 		expect(overview).toBeDefined();
 		expect(overview!.items).toHaveLength(1);
 		expect(overview!.items[0]!.name).toBe("my-epic");
 		expect(overview!.items[0]!.status).toBe("created");
+		expect(overview!.items[0]!.slices).toEqual([]);
 	});
 
 	it("appends activity log entry", () => {

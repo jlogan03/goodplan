@@ -4,7 +4,7 @@ import { projectSchema } from "../../../src/schemas/entities/project.js";
 import { epicSchema } from "../../../src/schemas/entities/epic.js";
 import { sliceSchema } from "../../../src/schemas/entities/slice.js";
 import { questSchema } from "../../../src/schemas/entities/quest.js";
-import { overviewSchema } from "../../../src/schemas/entities/overview.js";
+import { epicOverviewSchema, overviewSchema } from "../../../src/schemas/entities/overview.js";
 import { activityEntrySchema } from "../../../src/schemas/records/activity-log.js";
 import { decisionEntrySchema } from "../../../src/schemas/records/decision.js";
 import { learningEntrySchema } from "../../../src/schemas/records/learning.js";
@@ -16,12 +16,8 @@ describe("findSchema", () => {
 		expect(findSchema("project.json")).toBe(projectSchema);
 	});
 
-	it("resolves epics/overview.json", () => {
-		expect(findSchema("epics/overview.json")).toBe(overviewSchema);
-	});
-
-	it("resolves slices/overview.json", () => {
-		expect(findSchema("slices/overview.json")).toBe(overviewSchema);
+	it("resolves epics/overview.json to epicOverviewSchema", () => {
+		expect(findSchema("epics/overview.json")).toBe(epicOverviewSchema);
 	});
 
 	it("resolves quests/overview.json", () => {
@@ -32,8 +28,8 @@ describe("findSchema", () => {
 		expect(findSchema("epics/goodplan-cli/epic.json")).toBe(epicSchema);
 	});
 
-	it("resolves slices/<name>/slice.json", () => {
-		expect(findSchema("slices/01-data-layer/slice.json")).toBe(sliceSchema);
+	it("resolves epics/<epic>/slices/<name>/slice.json", () => {
+		expect(findSchema("epics/goodplan-cli/slices/01-data-layer/slice.json")).toBe(sliceSchema);
 	});
 
 	it("resolves quests/<name>/quest.json", () => {
@@ -53,8 +49,8 @@ describe("findSchema", () => {
 		expect(findSchema("learnings.jsonl")).toBe(learningEntrySchema);
 	});
 
-	it("resolves per-slice learnings.jsonl", () => {
-		expect(findSchema("slices/01-data-layer/learnings.jsonl")).toBe(
+	it("resolves per-slice learnings.jsonl (nested path)", () => {
+		expect(findSchema("epics/goodplan-cli/slices/01-data-layer/learnings.jsonl")).toBe(
 			learningEntrySchema,
 		);
 	});
@@ -65,9 +61,9 @@ describe("findSchema", () => {
 		);
 	});
 
-	it("resolves per-slice architecture-deltas.jsonl", () => {
+	it("resolves per-slice architecture-deltas.jsonl (nested path)", () => {
 		expect(
-			findSchema("slices/01-data-layer/architecture-deltas.jsonl"),
+			findSchema("epics/goodplan-cli/slices/01-data-layer/architecture-deltas.jsonl"),
 		).toBe(architectureDeltaSchema);
 	});
 

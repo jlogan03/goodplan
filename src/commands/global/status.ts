@@ -4,15 +4,15 @@ import { assembleState } from "../../core/data/assemble.js";
 import { resolveProjectDir } from "../../core/data/project.js";
 import { getDir, getJson, getJsonl } from "../../core/data/tree.js";
 import type { DirectoryEntry, ProjectState } from "../../core/tree.js";
-import type { ActivityEntry } from "../../schemas/records/activity-log.js";
-import type { DecisionEntry } from "../../schemas/records/decision.js";
-import type { LearningEntry } from "../../schemas/records/learning.js";
+import type { Artifacts, StatusResult } from "../../schemas/commands/status.js";
 import type { Epic } from "../../schemas/entities/epic.js";
-import type { Overview } from "../../schemas/entities/overview.js";
+import type { EpicOverview, Overview } from "../../schemas/entities/overview.js";
 import type { Project } from "../../schemas/entities/project.js";
 import type { Quest } from "../../schemas/entities/quest.js";
 import type { Slice } from "../../schemas/entities/slice.js";
-import type { Artifacts, StatusResult } from "../../schemas/commands/status.js";
+import type { ActivityEntry } from "../../schemas/records/activity-log.js";
+import type { DecisionEntry } from "../../schemas/records/decision.js";
+import type { LearningEntry } from "../../schemas/records/learning.js";
 import { GoodplanError } from "../../util/errors.js";
 import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
@@ -30,10 +30,7 @@ export function buildStatusResult(projectDir?: string): StatusResult {
 
 	const project = getJson<Project>(state, "project.json");
 	if (project === undefined) {
-		throw new GoodplanError(
-			"DATA_NO_PROJECT",
-			"No project.json found in .project/ directory",
-		);
+		throw new GoodplanError("DATA_NO_PROJECT", "No project.json found in .project/ directory");
 	}
 
 	// ── Active entities ──
@@ -48,7 +45,14 @@ export function buildStatusResult(projectDir?: string): StatusResult {
 	const recommendations: string[] = [];
 	const warnings: string[] = [];
 
-	generateRecommendations(project, activeEpic, activeSlice, activeQuest, artifacts, recommendations);
+	generateRecommendations(
+		project,
+		activeEpic,
+		activeSlice,
+		activeQuest,
+		artifacts,
+		recommendations,
+	);
 	generateWarnings(project, state, warnings);
 
 	return {
@@ -67,30 +71,22 @@ export function buildStatusResult(projectDir?: string): StatusResult {
 
 // ── Active entity resolution ─────────────────────────────────
 
-function resolveActiveEpic(
-	project: Project,
-	state: ProjectState,
-): StatusResult["activeEpic"] {
+function resolveActiveEpic(project: Project, state: ProjectState): StatusResult["activeEpic"] {
 	if (project.activeEpic === null) return null;
 	const epic = getJson<Epic>(state, `epics/${project.activeEpic}/epic.json`);
 	if (epic === undefined) return null;
 	return { name: epic.name, status: epic.status };
 }
 
-function resolveActiveSlice(
-	project: Project,
-	state: ProjectState,
-): StatusResult["activeSlice"] {
+function resolveActiveSlice(project: Project, state: ProjectState): StatusResult["activeSlice"] {
 	if (project.activeSlice === null) return null;
-	const slice = getJson<Slice>(state, `slices/${project.activeSlice}/slice.json`);
+	if (project.activeEpic === null) return null;
+	const slice = getJson<Slice>(state, `epics/${project.activeEpic}/slices/${project.activeSlice}/slice.json`);
 	if (slice === undefined) return null;
 	return { name: slice.name, status: slice.status };
 }
 
-function resolveActiveQuest(
-	project: Project,
-	state: ProjectState,
-): StatusResult["activeQuest"] {
+function resolveActiveQuest(project: Project, state: ProjectState): StatusResult["activeQuest"] {
 	if (project.activeQuest === null) return null;
 	const quest = getJson<Quest>(state, `quests/${project.activeQuest}/quest.json`);
 	if (quest === undefined) return null;
@@ -104,10 +100,7 @@ function resolveActiveQuest(
  * Returns state-tree-relative paths (prefixed with `dirPath`).
  * Non-recursive — only direct children.
  */
-function collectMdFiles(
-	state: ProjectState,
-	dirPath: string,
-): string[] {
+function collectMdFiles(state: ProjectState, dirPath: string): string[] {
 	const dir: DirectoryEntry | undefined = getDir(state, dirPath);
 	if (dir === undefined) return [];
 	const files: string[] = [];
@@ -119,23 +112,35 @@ function collectMdFiles(
 	return files;
 }
 
-function countArtifacts(
-	project: Project,
-	state: ProjectState,
-): Artifacts {
+function countArtifacts(project: Project, state: ProjectState): Artifacts {
 	// Decisions and learnings from JSONL in state
 	const decisions = getJsonl<DecisionEntry>(state, "decisions.jsonl");
 	const learnings = getJsonl<LearningEntry>(state, "learnings.jsonl");
 
-	// Slice overview for completed/total counts
-	const sliceOverview = getJson<Overview>(state, "slices/overview.json");
+	// Slice overview for completed/total counts — aggregate across all epics
+	const epicOverview = getJson<EpicOverview>(state, "epics/overview.json");
 	let completedSlices = 0;
 	let totalSlices = 0;
-	if (sliceOverview !== undefined) {
-		totalSlices = sliceOverview.items.length;
-		for (const item of sliceOverview.items) {
-			if (item.status === "completed") {
-				completedSlices++;
+	if (epicOverview !== undefined) {
+		for (const epicItem of epicOverview.items) {
+			for (const slice of epicItem.slices) {
+				totalSlices++;
+				if (slice.status === "completed") {
+					completedSlices++;
+				}
+			}
+		}
+	}
+
+	// Task overview for open/total counts
+	const taskOverview = getJson<Overview>(state, "tasks/overview.json");
+	let openTasks = 0;
+	let totalTasks = 0;
+	if (taskOverview !== undefined) {
+		totalTasks = taskOverview.items.length;
+		for (const item of taskOverview.items) {
+			if (item.status === "open") {
+				openTasks++;
 			}
 		}
 	}
@@ -165,6 +170,8 @@ function countArtifacts(
 		learnings: learnings?.length ?? 0,
 		completedSlices,
 		totalSlices,
+		openTasks,
+		totalTasks,
 	};
 }
 
@@ -230,22 +237,32 @@ function generateRecommendations(
 
 const STALE_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-function generateWarnings(
-	project: Project,
-	state: ProjectState,
-	warnings: string[],
-): void {
+function generateWarnings(project: Project, state: ProjectState, warnings: string[]): void {
 	const activityLog = getJsonl<ActivityEntry>(state, "activity-log.jsonl");
 	if (activityLog === undefined || activityLog.length === 0) return;
 
 	const now = Date.now();
 
 	// Check for stale active entities
-	if (project.activeSlice !== null) {
-		checkStale(activityLog, `slices/${project.activeSlice}`, project.activeSlice, "slice", now, warnings);
+	if (project.activeSlice !== null && project.activeEpic !== null) {
+		checkStale(
+			activityLog,
+			`epics/${project.activeEpic}/slices/${project.activeSlice}`,
+			project.activeSlice,
+			"slice",
+			now,
+			warnings,
+		);
 	}
 	if (project.activeQuest !== null) {
-		checkStale(activityLog, `quests/${project.activeQuest}`, project.activeQuest, "quest", now, warnings);
+		checkStale(
+			activityLog,
+			`quests/${project.activeQuest}`,
+			project.activeQuest,
+			"quest",
+			now,
+			warnings,
+		);
 	}
 }
 
@@ -289,9 +306,7 @@ export function formatStatusHuman(status: StatusResult): string {
 
 	// ── Active Work section ──
 	const hasActiveWork =
-		status.activeEpic !== null ||
-		status.activeSlice !== null ||
-		status.activeQuest !== null;
+		status.activeEpic !== null || status.activeSlice !== null || status.activeQuest !== null;
 
 	if (!hasActiveWork) {
 		lines.push("");
@@ -314,7 +329,16 @@ export function formatStatusHuman(status: StatusResult): string {
 	if (status.artifacts.totalSlices > 0) {
 		lines.push("");
 		lines.push(pc.bold("Progress"));
-		lines.push(`  Slices: ${status.artifacts.completedSlices}/${status.artifacts.totalSlices} complete`);
+		lines.push(
+			`  Slices: ${status.artifacts.completedSlices}/${status.artifacts.totalSlices} complete`,
+		);
+	}
+
+	// ── Tasks section ──
+	if (status.artifacts.openTasks > 0) {
+		lines.push("");
+		lines.push(pc.bold("Tasks"));
+		lines.push(`  Tasks: ${status.artifacts.openTasks} open`);
 	}
 
 	// ── Artifacts section ──
@@ -337,10 +361,8 @@ export function formatStatusHuman(status: StatusResult): string {
 			lines.push(`  Brainstorm:   ${status.artifacts.brainstorm.count} files`);
 		if (status.artifacts.prototypes.count > 0)
 			lines.push(`  Prototypes:   ${status.artifacts.prototypes.count} files`);
-		if (status.artifacts.decisions > 0)
-			lines.push(`  Decisions:    ${status.artifacts.decisions}`);
-		if (status.artifacts.learnings > 0)
-			lines.push(`  Learnings:    ${status.artifacts.learnings}`);
+		if (status.artifacts.decisions > 0) lines.push(`  Decisions:    ${status.artifacts.decisions}`);
+		if (status.artifacts.learnings > 0) lines.push(`  Learnings:    ${status.artifacts.learnings}`);
 	}
 
 	// ── Recommendations section ──

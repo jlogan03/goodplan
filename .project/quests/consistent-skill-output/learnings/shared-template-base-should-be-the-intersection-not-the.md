@@ -1,0 +1,1 @@
+When consolidating near-identical templates from multiple skills, the shared base should contain only what ALL consumers share (intersection). Skill-specific sections become documented extension points. The union approach forces every consumer to handle omit-section conditionals — the intersection approach keeps the base clean.

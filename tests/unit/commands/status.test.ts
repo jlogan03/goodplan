@@ -2,13 +2,10 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	buildStatusResult,
-	formatStatusHuman,
-} from "../../../src/commands/global/status.js";
-import { applyQuery } from "../../../src/util/query.js";
+import { buildStatusResult, formatStatusHuman } from "../../../src/commands/global/status.js";
 import { statusResultSchema } from "../../../src/schemas/commands/status.js";
 import { deterministicStringify } from "../../../src/util/json.js";
+import { applyQuery } from "../../../src/util/query.js";
 
 let tmpDir: string;
 let originalCwd: string;
@@ -47,10 +44,7 @@ function createProject(
 		created: NOW,
 		updated: NOW,
 	};
-	fs.writeFileSync(
-		path.join(projectDir, "project.json"),
-		`${deterministicStringify(project)}\n`,
-	);
+	fs.writeFileSync(path.join(projectDir, "project.json"), `${deterministicStringify(project)}\n`);
 	return projectDir;
 }
 
@@ -84,9 +78,16 @@ function createPopulatedProject() {
 		activeQuest: null,
 	});
 
-	// Epic
+	// Epic (with embedded slices in overview)
 	writeJson(projectDir, "epics/overview.json", {
-		items: [{ name: "my-epic", status: "activated", created: NOW, completed: null }],
+		items: [{
+			name: "my-epic", status: "activated", created: NOW, completed: null,
+			slices: [
+				{ name: "01-auth", status: "implementing", created: NOW, completed: null },
+				{ name: "02-api", status: "created", created: NOW, completed: null },
+				{ name: "03-ui", status: "completed", created: NOW, completed: NOW },
+			],
+		}],
 	});
 	writeJson(projectDir, "epics/my-epic/epic.json", {
 		name: "my-epic",
@@ -106,15 +107,17 @@ function createPopulatedProject() {
 	writeMarkdown(projectDir, "epics/my-epic/research/topic.md", "# Topic");
 	writeMarkdown(projectDir, "epics/my-epic/brainstorm/ideas.md", "# Ideas");
 
-	// Slices
-	writeJson(projectDir, "slices/overview.json", {
+	// Tasks
+	writeJson(projectDir, "tasks/overview.json", {
 		items: [
-			{ name: "01-auth", status: "implementing", epic: "my-epic", created: NOW, completed: null },
-			{ name: "02-api", status: "created", epic: "my-epic", created: NOW, completed: null },
-			{ name: "03-ui", status: "completed", epic: "my-epic", created: NOW, completed: NOW },
+			{ name: "fix-bug", status: "open", title: "Fix bug", created: NOW, completed: null },
+			{ name: "add-tests", status: "open", title: "Add tests", created: NOW, completed: null },
+			{ name: "old-task", status: "dropped", title: "Old task", created: NOW, completed: NOW },
 		],
 	});
-	writeJson(projectDir, "slices/01-auth/slice.json", {
+
+	// Slice data (nested under epic)
+	writeJson(projectDir, "epics/my-epic/slices/01-auth/slice.json", {
 		name: "01-auth",
 		epic: "my-epic",
 		status: "implementing",
@@ -124,23 +127,53 @@ function createPopulatedProject() {
 		created: NOW,
 		updated: NOW,
 	});
-	writeJsonl(projectDir, "slices/01-auth/learnings.jsonl", []);
-	writeJsonl(projectDir, "slices/01-auth/architecture-deltas.jsonl", []);
+	writeJsonl(projectDir, "epics/my-epic/slices/01-auth/learnings.jsonl", []);
+	writeJsonl(projectDir, "epics/my-epic/slices/01-auth/architecture-deltas.jsonl", []);
 
 	// Decisions
 	writeJsonl(projectDir, "decisions.jsonl", [
-		{ id: "d1", status: "active", domain: "architecture", title: "T1", summary: "S1", date: "2026-03-20", supersededBy: null },
-		{ id: "d2", status: "active", domain: "testing", title: "T2", summary: "S2", date: "2026-03-21", supersededBy: null },
+		{
+			id: "d1",
+			status: "active",
+			domain: "architecture",
+			title: "T1",
+			summary: "S1",
+			date: "2026-03-20",
+			supersededBy: null,
+		},
+		{
+			id: "d2",
+			status: "active",
+			domain: "testing",
+			title: "T2",
+			summary: "S2",
+			date: "2026-03-21",
+			supersededBy: null,
+		},
 	]);
 
 	// Learnings (project-level)
 	writeJsonl(projectDir, "learnings.jsonl", [
-		{ category: "worked", summary: "Zod is great", detail: "Detail", tags: ["zod"], source: "slices/01-auth", rollup: true, rollupTo: ["project"] },
+		{
+			category: "worked",
+			summary: "Zod is great",
+			file: "learnings/zod-is-great.md",
+			tags: ["zod"],
+			source: "slices/01-auth",
+			rollup: true,
+			rollupTo: ["project"],
+		},
 	]);
 
 	// Activity log
 	writeJsonl(projectDir, "activity-log.jsonl", [
-		{ ts: NOW, phase: "begin-implementation", scope: "slices/01-auth", status: "complete", summary: "Started impl" },
+		{
+			ts: NOW,
+			phase: "begin-implementation",
+			scope: "epics/my-epic/slices/01-auth",
+			status: "complete",
+			summary: "Started impl",
+		},
 	]);
 
 	// Quests (empty)
@@ -187,19 +220,17 @@ describe("buildStatusResult", () => {
 			"epics/my-epic/architecture/data-model.md",
 		]);
 		expect(result.artifacts.research.count).toBe(1);
-		expect(result.artifacts.research.files).toEqual([
-			"epics/my-epic/research/topic.md",
-		]);
+		expect(result.artifacts.research.files).toEqual(["epics/my-epic/research/topic.md"]);
 		expect(result.artifacts.brainstorm.count).toBe(1);
-		expect(result.artifacts.brainstorm.files).toEqual([
-			"epics/my-epic/brainstorm/ideas.md",
-		]);
+		expect(result.artifacts.brainstorm.files).toEqual(["epics/my-epic/brainstorm/ideas.md"]);
 		expect(result.artifacts.prototypes.count).toBe(0);
 		expect(result.artifacts.prototypes.files).toEqual([]);
 		expect(result.artifacts.decisions).toBe(2);
 		expect(result.artifacts.learnings).toBe(1);
 		expect(result.artifacts.completedSlices).toBe(1);
 		expect(result.artifacts.totalSlices).toBe(3);
+		expect(result.artifacts.openTasks).toBe(2);
+		expect(result.artifacts.totalTasks).toBe(3);
 	});
 
 	it("detects active epic with name and status", () => {
@@ -248,9 +279,7 @@ describe("buildStatusResult", () => {
 		const result = buildStatusResult(projectDir);
 
 		expect(result.recommendations).toEqual(
-			expect.arrayContaining([
-				expect.stringContaining("Epic my-epic: 1/3 slices complete"),
-			]),
+			expect.arrayContaining([expect.stringContaining("Epic my-epic: 1/3 slices complete")]),
 		);
 	});
 
@@ -259,20 +288,29 @@ describe("buildStatusResult", () => {
 		const result = buildStatusResult(projectDir);
 
 		expect(result.recommendations).toEqual(
-			expect.arrayContaining([
-				expect.stringContaining("Active slice 01-auth is implementing"),
-			]),
+			expect.arrayContaining([expect.stringContaining("Active slice 01-auth is implementing")]),
 		);
 	});
 
 	it("generates stale warning when entity has no recent activity", () => {
 		const projectDir = createProject("stale-proj", {
+			activeEpic: "my-epic",
 			activeSlice: "01-stale",
 		});
-		writeJson(projectDir, "slices/overview.json", {
-			items: [{ name: "01-stale", status: "implementing", epic: "e", created: NOW, completed: null }],
+		writeJson(projectDir, "epics/overview.json", {
+			items: [{
+				name: "my-epic", status: "activated", created: NOW, completed: null,
+				slices: [
+					{ name: "01-stale", status: "implementing", created: NOW, completed: null },
+				],
+			}],
 		});
-		writeJson(projectDir, "slices/01-stale/slice.json", {
+		writeJson(projectDir, "epics/my-epic/epic.json", {
+			name: "my-epic", status: "activated", goal: "Test stale",
+			verifications: [], refinement: null, sliceSequence: ["01-stale"],
+			created: NOW, activated: NOW, updated: NOW,
+		});
+		writeJson(projectDir, "epics/my-epic/slices/01-stale/slice.json", {
 			name: "01-stale",
 			epic: "my-epic",
 			status: "implementing",
@@ -282,13 +320,19 @@ describe("buildStatusResult", () => {
 			created: NOW,
 			updated: NOW,
 		});
-		writeJsonl(projectDir, "slices/01-stale/learnings.jsonl", []);
-		writeJsonl(projectDir, "slices/01-stale/architecture-deltas.jsonl", []);
+		writeJsonl(projectDir, "epics/my-epic/slices/01-stale/learnings.jsonl", []);
+		writeJsonl(projectDir, "epics/my-epic/slices/01-stale/architecture-deltas.jsonl", []);
 
 		// Activity log with old timestamp (10 days ago)
 		const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
 		writeJsonl(projectDir, "activity-log.jsonl", [
-			{ ts: tenDaysAgo, phase: "begin-plan", scope: "slices/01-stale", status: "complete", summary: "Old" },
+			{
+				ts: tenDaysAgo,
+				phase: "begin-plan",
+				scope: "epics/my-epic/slices/01-stale",
+				status: "complete",
+				summary: "Old",
+			},
 		]);
 
 		const result = buildStatusResult(projectDir);
@@ -327,7 +371,7 @@ describe("buildStatusResult", () => {
 			activeQuest: null,
 		});
 		writeJson(projectDir, "epics/overview.json", {
-			items: [{ name: "my-epic", status: "activated", created: NOW, completed: null }],
+			items: [{ name: "my-epic", status: "activated", created: NOW, completed: null, slices: [] }],
 		});
 		writeJson(projectDir, "epics/my-epic/epic.json", {
 			name: "my-epic",
@@ -350,7 +394,9 @@ describe("buildStatusResult", () => {
 
 		expect(result.artifacts.architecture.count).toBe(2);
 		expect(result.artifacts.architecture.files).toContain("architecture/overview.md");
-		expect(result.artifacts.architecture.files).toContain("epics/my-epic/architecture/epic-arch.md");
+		expect(result.artifacts.architecture.files).toContain(
+			"epics/my-epic/architecture/epic-arch.md",
+		);
 	});
 
 	it("enriched artifact shape: fresh project has empty files arrays", () => {

@@ -182,7 +182,7 @@ describe("begin — CREATE_SLICE", () => {
 		const result = begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "s1" },
+			{ type: "slice", name: "s1", epic: "e1" },
 			{
 				name: "s1",
 				goal: "First slice",
@@ -195,7 +195,7 @@ describe("begin — CREATE_SLICE", () => {
 		expect(result.previousStatus).toBe("none");
 		expect(result.newStatus).toBe("created");
 
-		const sliceJson = path.join(projectDir, "slices", "s1", "slice.json");
+		const sliceJson = path.join(projectDir, "epics", "e1", "slices", "s1", "slice.json");
 		expect(fs.existsSync(sliceJson)).toBe(true);
 
 		const slice = JSON.parse(fs.readFileSync(sliceJson, "utf-8"));
@@ -212,7 +212,7 @@ describe("begin — CREATE_SLICE", () => {
 			begin(
 				projectDir,
 				"create",
-				{ type: "slice", name: "s1" },
+				{ type: "slice", name: "s1", epic: "e1" },
 				{
 					name: "s1",
 					goal: "G",
@@ -228,7 +228,7 @@ describe("begin — CREATE_SLICE", () => {
 			begin(
 				projectDir,
 				"create",
-				{ type: "slice", name: "s1" },
+				{ type: "slice", name: "s1", epic: "e1" },
 				{
 					name: "s1",
 					epic: "e1",
@@ -245,7 +245,7 @@ describe("begin — BEGIN_PLAN for slice", () => {
 		begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "s1" },
+			{ type: "slice", name: "s1", epic: "e1" },
 			{
 				name: "s1",
 				goal: "G",
@@ -253,7 +253,7 @@ describe("begin — BEGIN_PLAN for slice", () => {
 			},
 		);
 
-		const result = begin(projectDir, "plan", { type: "slice", name: "s1" }, {});
+		const result = begin(projectDir, "plan", { type: "slice", name: "s1", epic: "e1" }, {});
 
 		expect(result.entity).toBe("s1");
 		expect(result.phase).toBe("plan");
@@ -269,7 +269,7 @@ describe("begin — ABANDON_SLICE", () => {
 		begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "s1" },
+			{ type: "slice", name: "s1", epic: "e1" },
 			{
 				name: "s1",
 				goal: "G",
@@ -280,7 +280,7 @@ describe("begin — ABANDON_SLICE", () => {
 		const result = begin(
 			projectDir,
 			"abandon",
-			{ type: "slice", name: "s1" },
+			{ type: "slice", name: "s1", epic: "e1" },
 			{
 				reason: "No longer needed",
 			},
@@ -311,7 +311,7 @@ describe("begin — error propagation", () => {
 	it("throws state error for slice begin when slice does not exist", () => {
 		initProject();
 
-		expect(() => begin(projectDir, "plan", { type: "slice", name: "s1" }, {})).toThrow(
+		expect(() => begin(projectDir, "plan", { type: "slice", name: "s1", epic: "e1" }, {})).toThrow(
 			GoodplanError,
 		);
 	});
@@ -335,13 +335,13 @@ describe("begin — paths field", () => {
 	it("includes paths in begin result for plan phase", () => {
 		initProject();
 		begin(projectDir, "create", { type: "epic", name: "e1" }, { name: "e1", goal: "G" });
-		begin(projectDir, "create", { type: "slice", name: "s1" }, { name: "s1", goal: "G", epic: "e1" });
+		begin(projectDir, "create", { type: "slice", name: "s1", epic: "e1" }, { name: "s1", goal: "G", epic: "e1" });
 
-		const result = begin(projectDir, "plan", { type: "slice", name: "s1" }, {});
+		const result = begin(projectDir, "plan", { type: "slice", name: "s1", epic: "e1" }, {});
 
 		expect(result.paths).toBeDefined();
 		expect(result.paths).toEqual({
-			plan: path.join(projectDir, "slices", "s1", "plan.md"),
+			plan: path.join(projectDir, "epics", "e1", "slices", "s1", "plan.md"),
 		});
 	});
 

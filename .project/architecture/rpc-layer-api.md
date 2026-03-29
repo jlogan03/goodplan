@@ -9,15 +9,14 @@ Workflow orchestration layer. Coordinates the State Machine and Data Layer to ex
 ### Workflow Operations
 
 ```typescript
-function begin(phase: BeginPhase, target: Target, options: WorkflowOptions): BeginResult;
-function complete(target: Target, input: CompleteInput, options: WorkflowOptions): CompleteResult;
-function submit(phase: SubmitPhase, target: Target, content: SubmitInput, options: WorkflowOptions): SubmitResult;
-function startContext(state: ProjectState, phase: SubmitPhase, target: Target, options?: StartContextOptions): ContextBundle;
-function status(options: StatusOptions): StatusResult;
+function begin<P extends BeginPhase>(projectDir: string, phase: P, target: Target, payload: BeginPayloadMap[P], options?: WorkflowOptions): P extends "rollup" ? RollupResult : BeginResult;
+function complete(projectDir: string, target: Target, input: CompleteInput, options?: WorkflowOptions): CompleteResult;
+function submit(projectDir: string, phase: SubmitPhase, target: Target, content: SubmitInput, options?: WorkflowOptions): SubmitResult;
 ```
 
+See Context Bundling section for `startContext()`. See Commands Layer for `status()`.
+
 - `submit` handles `submit-*` commands: writes content via Data Layer, triggers the appropriate state event (e.g., `COMPLETE_PLAN`), and commits both in one `commitState` call.
-- `startContext` handles `start-*` commands: read-only context assembly for sub-agents (equivalent to the removed `context` command).
 
 ```typescript
 // Separate phase types eliminate ambiguity: a BeginPhase always maps to a
@@ -25,6 +24,9 @@ function status(options: StatusOptions): StatusResult;
 type BeginPhase =
   | 'create'
   | 'create-decision'
+  | 'create-task'
+  | 'drop-task'
+  | 'convert-task'
   | 'explore'
   | 'define-architecture'
   | 'refine-architecture'
@@ -55,73 +57,111 @@ type SubmitPhase =
   | 'complete';
 
 type Target =
+  | { type: 'project' }
   | { type: 'epic'; name: string }
-  | { type: 'slice'; name: string }
+  | { type: 'slice'; name: string; epic: string }
   | { type: 'quest'; name: string }
-  | { type: 'decision'; id: string };
+  | { type: 'task'; name: string }
+  | { type: 'decision'; id: string }
+  | { type: 'rollup'; from: string; to: string };
 
 // Explicit mapping: (function, phase, target.type) → StateEvent
 // BeginPhase mappings:
-//   begin('create', {type:'epic'})        → CREATE_EPIC
-//   begin('explore', {type:'epic'})       → BEGIN_EXPLORE
-//   begin('define-architecture', ...)     → BEGIN_ARCHITECTURE
-//   begin('refine-architecture', ...)     → BEGIN_REFINE_ARCHITECTURE
-//   begin('define-slices', ...)           → BEGIN_SLICING
-//   begin('refine-slices', ...)           → BEGIN_REFINE_SLICES
-//   begin('activate', {type:'epic'})      → ACTIVATE_EPIC
-//   begin('plan', {type:'slice'})         → BEGIN_PLAN
-//   begin('plan', {type:'quest'})         → BEGIN_QUEST_PLAN
-//   begin('implement', {type:'slice'})    → BEGIN_IMPLEMENTATION
-//   begin('implement', {type:'quest'})    → BEGIN_QUEST_IMPLEMENTATION
-//   begin('refine-plan', {type:'slice'})  → BEGIN_REFINEMENT
-//   begin('refine-plan', {type:'quest'})  → BEGIN_QUEST_REFINEMENT
-//   begin('create', {type:'slice'})       → CREATE_SLICE
-//   begin('create', {type:'quest'})       → CREATE_QUEST
-//   begin('abandon', {type:'epic'})       → ABANDON_EPIC
-//   begin('abandon', {type:'slice'})      → ABANDON_SLICE
-//   begin('abandon', {type:'quest'})      → ABANDON_QUEST
-//   begin('add-verification', {type:'epic'}) → ADD_VERIFICATION
-//   begin('update-verification', {type:'epic'}) → UPDATE_VERIFICATION
-//   begin('create-decision', {type:'decision'}) → CREATE_DECISION
-//   begin('update-decision', {type:'decision'}) → UPDATE_DECISION
-//   begin('rollup', {type:'rollup'})      → ROLLUP_LEARNINGS
+//   begin(projectDir, 'create', {type:'epic'}, ...)        → CREATE_EPIC
+//   begin(projectDir, 'explore', {type:'epic'}, ...)       → BEGIN_EXPLORE
+//   begin(projectDir, 'define-architecture', ...)           → BEGIN_ARCHITECTURE
+//   begin(projectDir, 'refine-architecture', ...)           → BEGIN_REFINE_ARCHITECTURE
+//   begin(projectDir, 'define-slices', ...)                 → BEGIN_SLICING
+//   begin(projectDir, 'refine-slices', ...)                 → BEGIN_REFINE_SLICES
+//   begin(projectDir, 'activate', {type:'epic'}, ...)       → ACTIVATE_EPIC
+//   begin(projectDir, 'plan', {type:'slice'}, ...)          → BEGIN_PLAN
+//   begin(projectDir, 'plan', {type:'quest'}, ...)          → BEGIN_QUEST_PLAN
+//   begin(projectDir, 'implement', {type:'slice'}, ...)     → BEGIN_IMPLEMENTATION
+//   begin(projectDir, 'implement', {type:'quest'}, ...)     → BEGIN_QUEST_IMPLEMENTATION
+//   begin(projectDir, 'refine-plan', {type:'slice'}, ...)   → BEGIN_REFINEMENT
+//   begin(projectDir, 'refine-plan', {type:'quest'}, ...)   → BEGIN_QUEST_REFINEMENT
+//   begin(projectDir, 'create', {type:'slice'}, ...)        → CREATE_SLICE
+//   begin(projectDir, 'create', {type:'quest'}, ...)        → CREATE_QUEST
+//   begin(projectDir, 'abandon', {type:'epic'}, ...)        → ABANDON_EPIC
+//   begin(projectDir, 'abandon', {type:'slice'}, ...)       → ABANDON_SLICE
+//   begin(projectDir, 'abandon', {type:'quest'}, ...)       → ABANDON_QUEST
+//   begin(projectDir, 'add-verification', {type:'epic'}, ...) → ADD_VERIFICATION
+//   begin(projectDir, 'update-verification', {type:'epic'}, ...) → UPDATE_VERIFICATION
+//   begin(projectDir, 'create-task', {type:'task'}, ...)    → CREATE_TASK
+//   begin(projectDir, 'drop-task', {type:'task'}, ...)      → DROP_TASK
+//   begin(projectDir, 'convert-task', {type:'task'}, ...)   → CONVERT_TASK
+//   begin(projectDir, 'create-decision', {type:'decision'}, ...) → CREATE_DECISION
+//   begin(projectDir, 'update-decision', {type:'decision'}, ...) → UPDATE_DECISION
+//   begin(projectDir, 'rollup', {type:'rollup'}, ...)       → ROLLUP_LEARNINGS
 // SubmitPhase mappings:
-//   submit('plan', {type:'slice'})        → COMPLETE_PLAN
-//   submit('plan', {type:'quest'})        → COMPLETE_QUEST_PLAN
-//   submit('refinement', {type:'slice'})  → COMPLETE_REFINEMENT_ROUND
-//   submit('refinement', {type:'quest'})  → COMPLETE_QUEST_REFINEMENT_ROUND
-//   submit('implementation', {type:'slice'}) → COMPLETE_IMPLEMENTATION
-//   submit('implementation', {type:'quest'}) → COMPLETE_QUEST_IMPLEMENTATION
-//   submit('explore', {type:'epic'})      → COMPLETE_EXPLORE
-//   submit('architecture', {type:'epic'}) → COMPLETE_ARCHITECTURE
-//   submit('slices', {type:'epic'})       → COMPLETE_SLICING
-//   submit('refine-architecture', ...)    → COMPLETE_REFINE_ARCHITECTURE
-//   submit('refine-slices', ...)          → COMPLETE_REFINE_SLICES
+//   submit(projectDir, 'plan', {type:'slice'}, ...)        → COMPLETE_PLAN
+//   submit(projectDir, 'plan', {type:'quest'}, ...)        → COMPLETE_QUEST_PLAN
+//   submit(projectDir, 'refinement', {type:'slice'}, ...)  → COMPLETE_REFINEMENT_ROUND
+//   submit(projectDir, 'refinement', {type:'quest'}, ...)  → COMPLETE_QUEST_REFINEMENT_ROUND
+//   submit(projectDir, 'implementation', {type:'slice'}, ...) → COMPLETE_IMPLEMENTATION
+//   submit(projectDir, 'implementation', {type:'quest'}, ...) → COMPLETE_QUEST_IMPLEMENTATION
+//   submit(projectDir, 'explore', {type:'epic'}, ...)      → COMPLETE_EXPLORE
+//   submit(projectDir, 'architecture', {type:'epic'}, ...) → COMPLETE_ARCHITECTURE
+//   submit(projectDir, 'slices', {type:'epic'}, ...)       → COMPLETE_SLICING
+//   submit(projectDir, 'refine-architecture', ...)          → COMPLETE_REFINE_ARCHITECTURE
+//   submit(projectDir, 'refine-slices', ...)                → COMPLETE_REFINE_SLICES
+```
+
+### Begin Payload Map
+
+`begin()` is generic over `BeginPhase`. Each phase carries a specific payload shape via `BeginPayloadMap`. Phases that carry no event-specific data use `Record<string, never>` (callers pass `{}`). This is required by `exactOptionalPropertyTypes` — `undefined` is not a valid positional arg.
+
+```typescript
+interface BeginPayloadMap {
+  create: { name: string; goal?: string; epic?: string };
+  'create-decision': { id: string; domain: string; title: string; summary: string };
+  'create-task': { name: string; title: string; description?: string; context?: TaskContext };
+  'drop-task': { reason: string };
+  'convert-task': { to: 'quest' | 'epic'; name?: string; goal?: string };
+  explore: Record<string, never>;
+  'define-architecture': Record<string, never>;
+  'refine-architecture': Record<string, never>;
+  'define-slices': Record<string, never>;
+  'refine-slices': Record<string, never>;
+  activate: Record<string, never>;
+  plan: Record<string, never>;
+  'refine-plan': Record<string, never>;
+  implement: Record<string, never>;
+  abandon: { reason: string };
+  'add-verification': { verification: Verification };
+  'update-verification': { index: number; verification: Verification };
+  'update-decision': { changes: UpdateDecisionChanges };
+  rollup: { from: string; to: string };
+}
 ```
 
 ### Command-to-RPC Routing
 
 | Command pattern | RPC function | Description |
 |---|---|---|
-| `epic:create`, `slice:create`, `quest:create` | `begin('create', ...)` | Entity creation |
-| `decision:create` | `begin('create-decision', {type:'decision', id})` | Decision creation |
-| `epic:explore`, `epic:define-architecture`, `epic:refine-architecture`, `epic:define-slices`, `epic:refine-slices`, `epic:activate`, `slice:plan`, `slice:refine-plan`, `slice:implement`, `quest:plan`, `quest:refine-plan`, `quest:implement` | `begin(phase, ...)` | Phase initiation — transitions entity into a new phase |
-| `epic:complete`, `slice:complete`, `quest:complete` | `complete(target, ...)` | Entity completion — requires verification input |
-| `epic:abandon`, `slice:abandon`, `quest:abandon` | `begin('abandon', ...)` | Entity abandonment |
-| `submit-plan`, `submit-refinement`, `submit-implementation`, `submit-explore`, `submit-architecture`, `submit-slices`, `submit-refine-architecture`, `submit-refine-slices` | `submit(phase, ...)` | Sub-agent content submission — writes content + triggers state event |
-| `start-plan`, `start-refinement`, `start-implementation`, `start-explore`, `start-architecture`, `start-slices`, `start-refine-architecture`, `start-refine-slices` | `startContext(phase, ...)` | Read-only context bundling for sub-agents |
-| `status` | `status(...)` | Read-only status query |
-| `decision:update` | `begin('update-decision', {type:'decision', id})` | Decision update |
-| `epic:add-verification`, `epic:update-verification`, `learning:rollup` | `begin(phase, ...)` | Cross-cutting mutations |
+| `epic:create`, `slice:create`, `quest:create` | `begin(projectDir, 'create', ...)` | Entity creation |
+| `task:create` | `begin(projectDir, 'create-task', {type:'task', name}, ...)` | Task creation |
+| `task:drop` | `begin(projectDir, 'drop-task', {type:'task', name}, ...)` | Task drop |
+| `task:convert` | `begin(projectDir, 'convert-task', {type:'task', name}, ...)` | Task conversion to quest/epic |
+| `decision:create` | `begin(projectDir, 'create-decision', {type:'decision', id}, ...)` | Decision creation |
+| `epic:explore`, `epic:define-architecture`, `epic:refine-architecture`, `epic:define-slices`, `epic:refine-slices`, `epic:activate`, `slice:plan`, `slice:refine-plan`, `slice:implement`, `quest:plan`, `quest:refine-plan`, `quest:implement` | `begin(projectDir, phase, ...)` | Phase initiation — transitions entity into a new phase |
+| `epic:complete`, `slice:complete`, `quest:complete` | `complete(projectDir, target, ...)` | Entity completion — requires verification input |
+| `epic:abandon`, `slice:abandon`, `quest:abandon` | `begin(projectDir, 'abandon', ...)` | Entity abandonment |
+| `submit-plan`, `submit-refinement`, `submit-implementation`, `submit-explore`, `submit-architecture`, `submit-slices`, `submit-refine-architecture`, `submit-refine-slices` | `submit(projectDir, phase, ...)` | Sub-agent content submission — writes content + triggers state event |
+| `start-plan`, `start-refinement`, `start-implementation`, `start-explore`, `start-architecture`, `start-slices`, `start-refine-architecture`, `start-refine-slices` | `startContext(state, phase, ...)` | Read-only context bundling for sub-agents |
+| `status` | `buildStatusResult(projectDir?)` | Read-only status query (Commands layer, not RPC) |
+| `decision:update` | `begin(projectDir, 'update-decision', {type:'decision', id}, ...)` | Decision update |
+| `epic:add-verification`, `epic:update-verification`, `learning:rollup` | `begin(projectDir, phase, ...)` | Cross-cutting mutations |
 
 Each mutating operation follows the same pattern:
-1. Load state via Data Layer (`loadState()`)
+1. Load state via Data Layer (`loadState(projectDir)`)
 2. Build the appropriate `StateEvent` from the command parameters
 3. Call `reduce(state, event)`
-4. Commit new state via Data Layer (`commitState()`)
-5. Assemble and return the response
+4. Write supplementary files if needed (e.g., `complete()` calls `writeMarkdownFiles()` to write per-learning `.md` files after reduce succeeds — see Complete section)
+5. Commit new state via Data Layer (`commitState()`)
+6. Assemble and return the response
 
-`context` and `status` are read-only — they load state but don't call the reducer or commit.
+`startContext` and `status` are read-only — they load/assemble state but don't call the reducer or commit.
 
 ### Shared Options
 
@@ -129,6 +169,7 @@ Each mutating operation follows the same pattern:
 interface WorkflowOptions {
   inlineContext?: boolean | number;  // --inline flag; true = default budget, number = custom budget in bytes
   override?: boolean;                // --override flag; bypasses score threshold circuit breaker on refinement events
+  force?: boolean;                   // --force flag; bypasses DATA_CONCURRENT_MODIFICATION check in commitState(), emitting a stderr warning. Added for recovery when sub-agents modify state files directly.
 }
 ```
 
@@ -177,8 +218,7 @@ interface SubmitResult {
   previousStatus: string;
   newStatus: string;
   advanced: boolean;        // true if scores met threshold and phase advanced
-  context?: ContextBundle;  // included if inlineContext is set
-  paths?: PathReferences;
+  paths?: PathReferences;   // included when paths are available for the submitted phase
 }
 ```
 
@@ -192,12 +232,21 @@ interface BeginResult {
   phase: string;            // the phase that began
   previousStatus: string;
   newStatus: string;
-  context?: ContextBundle;  // included if inlineContext is set
   paths?: PathReferences;   // always included
+}
+
+/** Specialized result for rollup operations — no meaningful entity status. */
+interface RollupResult {
+  phase: 'rollup';
+  from: string;
+  to: string;
+  rolledUp: number;
 }
 ```
 
-Validates the transition, updates state, optionally returns context bundle. Used by orchestrator skills to advance workflow phases.
+`begin()` returns `RollupResult` when `P extends "rollup"`, otherwise `BeginResult`. Validates the transition, updates state, optionally resolves path references. Used by orchestrator skills to advance workflow phases.
+
+Begin operations do not support inline context (`context` field) — there is no meaningful context phase at begin time.
 
 ### Complete
 
@@ -216,30 +265,38 @@ type CompleteInput =
       type: 'slice';
       verificationPassed: boolean;
       deferred?: DeferredItem[];
-      learnings?: Learning[];
-      architectureDelta?: ArchitectureDelta[];  // maps to COMPLETE_SLICE.architectureDelta
+      learnings?: LearningInput[];
+      architectureDelta?: ArchitectureDeltaInput[];  // maps to COMPLETE_SLICE.architectureDelta
     }
   | {
       type: 'quest';
       verificationPassed: boolean;
-      learnings?: Learning[];
-      architectureDelta?: ArchitectureDelta[];  // maps to COMPLETE_QUEST.architectureDelta
+      learnings?: LearningInput[];
+      architectureDelta?: ArchitectureDeltaInput[];  // maps to COMPLETE_QUEST.architectureDelta
     };
-// Note: Slice 03 implements only the epic variant (verificationResults) and the
-// boolean assertion (verificationPassed) for slice/quest. The optional fields
-// (deferred, learnings, architectureDelta) and their coercion logic are deferred
-// to slice 04 (slice lifecycle) where COMPLETE_SLICE is first exercised end-to-end.
 
-// Canonical Learning type — used in CompleteInput and sub-agent submit commands.
-// The `rollupTo` array specifies which scopes this learning should be rolled up to.
-// The Data Layer transforms this to stored form: `source` is populated from the
-// current entity scope, and `rollup: true` is set when rollupTo is non-empty.
-interface Learning {
+// ArchitectureDeltaInput — describes a proposed change to project architecture.
+// Skills pass this in CompleteInput.architectureDelta[]; the RPC layer includes
+// it in the state event for the state machine to persist.
+interface ArchitectureDeltaInput {
+  summary: string;        // short description of the architectural change
+  detail: string;         // full explanation / rationale
+  tags: string[];
+}
+
+// Canonical LearningInput type — used in CompleteInput payloads from skills.
+// Skills pass `detail` (full learning text). The RPC layer maps this to a
+// `LearningEventEntry` (with `file` instead of `detail`) before building the
+// state event: it derives a slug from `summary`, sets `file` to `learnings/<slug>.md`,
+// and after reduce() succeeds, writes the `.md` file via Data Layer's writeMarkdownFiles().
+// During rollup, `begin(projectDir, 'rollup', ...)` copies `.md` files from source to target
+// scope via Data Layer's copyMarkdownFiles() after reduce succeeds.
+interface LearningInput {
   category: 'domain' | 'worked' | 'didnt-work' | 'do-differently';
   summary: string;
   detail: string;
   tags: string[];
-  rollupTo: ('epic' | 'project')[];  // empty array = don't roll up
+  rollupTo: ('epic' | 'project')[];  // input schema enforces z.enum(["epic", "project"]); 'project' implies epic rollup; for quests, either 'project' or omit; empty array = don't roll up
 }
 
 interface CompleteResult {
@@ -259,50 +316,30 @@ interface CompleteResult {
 }
 ```
 
-Runs the completion flow: verification gate → state transition → deferred work routing → learnings rollup. Returns architecture root paths so the LLM can update project-level architecture directly. The LLM owns the architecture content — the CLI does not read, write, or interpret architecture files during completion.
+Runs the completion flow: verification gate -> state transition -> deferred work routing -> learnings rollup. Returns architecture root paths so the LLM can update project-level architecture directly. The LLM owns the architecture content — the CLI does not read, write, or interpret architecture files during completion.
 
-### Context
+### Context Bundling
 
 ```typescript
 interface ContextBundle {
-  inline: Record<string, string>;    // key → markdown content (within budget)
+  inline: Record<string, string>;    // key -> markdown content (within budget)
   references: string[];               // file paths for remaining content
   decisions: DecisionSummary[];
   learnings: LearningSummary[];
 }
 ```
 
-### Supporting Types
+`startContext()` is a peer module export from `src/core/context/`, not an RPC function. It handles `start-*` commands: read-only context assembly for sub-agents (equivalent to the removed `context` command).
 
 ```typescript
-// File/directory paths returned in operation results. Keys are logical names
-// (e.g., "plan", "architecture", "research"), values are absolute filesystem paths.
-type PathReferences = Record<string, string>;
+function startContext(state: ProjectState, phase: SubmitPhase, target: Target, options?: StartContextOptions): ContextBundle;
 
-// Projection of DecisionEntry for context bundles — omits detail fields.
-interface DecisionSummary {
-  id: string;
-  status: 'active' | 'superseded' | 'revisiting';
-  domain: string;
-  title: string;
-  summary: string;
+interface StartContextOptions {
+  inlineBudget?: number;  // budget in bytes; when set, content is inlined in priority order up to this limit
 }
-
-// Projection of stored learning record for context bundles.
-interface LearningSummary {
-  category: 'domain' | 'worked' | 'didnt-work' | 'do-differently';
-  summary: string;
-  tags: string[];
-  source: string;
-}
-
-// Options for the status() function. Empty for now — reserved for future
-// domain-level filtering (e.g., scope). Output formatting (json, query)
-// is handled by the Commands layer's output() function.
-interface StatusOptions {}
-
-// startContext() returns ContextBundle directly — no alias needed.
 ```
+
+`startContext(state, phase, target, options?)` takes a caller-provided `ProjectState` for testability — it does not call `loadState()` internally. This design allows both the RPC layer (which already has state loaded) and the Commands layer (which loads state separately) to use the same function without redundant I/O.
 
 Read-only. Used by `start-*` commands. Assembles the context bundle appropriate for the given phase. Each phase has a hardcoded priority list of content to include. With `--inline`, content is inlined in priority order up to the budget. Without it, only references are returned.
 
@@ -322,30 +359,69 @@ Read-only. Used by `start-*` commands. Assembles the context bundle appropriate 
 | refine-architecture | Epic goal, current architecture, exploration output, conventions, decisions, learnings |
 | refine-slices | Epic goal, full architecture, current slice definitions, conventions, learnings |
 
-### Status
+### Supporting Types
 
 ```typescript
-interface StatusResult {
-  project: { name: string; version: string };
-  activeEpic?: { name: string; status: string; phase: string };
-  activeSlice?: { name: string; status: string; phase: string };
-  activeQuest?: { name: string; status: string; phase: string };
-  artifacts: {
-    architectureFiles?: number;
-    researchFiles?: number;
-    brainstormFiles?: number;
-    prototypeFiles?: number;
-    decisions?: number;
-    learnings?: number;
-    completedSlices?: number;
-    totalSlices?: number;
-  };
-  recommendations: string[];           // next actions
-  warnings: string[];                  // e.g., "all slices complete, epic needs completion"
+// File/directory paths returned in operation results. Keys are logical names
+// (e.g., "plan", "architecture", "research"), values are absolute filesystem paths.
+type PathReferences = Record<string, string>;
+
+// Projection of DecisionEntry for context bundles — omits detail fields.
+// Only active and revisiting decisions are collected; inactive decisions
+// are filtered out by collectDecisions() before reaching the summary type.
+interface DecisionSummary {
+  id: string;
+  status: 'active' | 'revisiting';
+  domain: string;
+  title: string;
+  summary: string;
+}
+
+// Projection of stored learning record for context bundles.
+// After the learnings-dir migration, all entries have a file field.
+interface LearningSummary {
+  category: 'domain' | 'worked' | 'didnt-work' | 'do-differently';
+  summary: string;
+  tags: string[];
+  source: string;
+  file: string;
 }
 ```
 
-Read-only. Derives status from the unified state tree by navigating `DirectoryEntry.contents` to count artifacts and reading entity JSON for status fields. Generates recommendations based on current state.
+### Status
+
+`status()` lives in the Commands layer (`src/commands/global/status.ts`), not the RPC layer. Read-only commands bypass RPC and access the Data Layer directly.
+
+```typescript
+function buildStatusResult(projectDir?: string): StatusResult;
+
+interface StatusResult {
+  project: { name: string; version: string };
+  activeEpic: { name: string; status: string } | null;
+  activeSlice: { name: string; status: string } | null;
+  activeQuest: { name: string; status: string } | null;
+  artifacts: Artifacts;
+  recommendations: string[];
+  warnings: string[];
+}
+
+interface Artifacts {
+  architecture: { count: number; files: string[] };
+  research: { count: number; files: string[] };
+  brainstorm: { count: number; files: string[] };
+  prototypes: { count: number; files: string[] };
+  decisions: number;
+  learnings: number;
+  completedSlices: number;
+  totalSlices: number;
+  openTasks: number;
+  totalTasks: number;
+}
+```
+
+Active entities use `{ name: string; status: string } | null` (no `phase` field — entity status already encodes phase; uses `null` not `undefined` for `exactOptionalPropertyTypes`). File-based artifact categories (`architecture`, `research`, `brainstorm`, `prototypes`) use `{ count: number; files: string[] }` objects; numeric categories (`decisions`, `learnings`, `completedSlices`, `totalSlices`, `openTasks`, `totalTasks`) are plain numbers. All artifact fields are required with defaults (not optional).
+
+Derives status from the unified state tree by navigating `DirectoryEntry.contents` to count artifacts and reading entity JSON for status fields. Generates recommendations based on current state.
 
 ## Contracts
 
@@ -357,7 +433,7 @@ The RPC Layer does not contain transition logic — that's the State Machine's j
 
 Context bundling (budget-based inlining, per-phase priority tables, content assembly) is a peer module alongside the RPC layer, located at `src/core/context/`. It depends on tree types and Data Layer reads, and is consumed by both the RPC layer (for `--inline` on mutations like `complete()`) and the Commands layer (for `start-*` commands). The context module has no direct dependency on the State Machine.
 
-`startContext(state, phase, target, options?)` takes a caller-provided `ProjectState` for testability — it does not call `loadState()` internally. This design allows both the RPC layer (which already has state loaded) and the Commands layer (which loads state separately) to use the same function without redundant I/O.
+`startContext()` receives a caller-provided `ProjectState` rather than loading state itself — callers (RPC layer or Commands layer) pass their already-loaded state. This means it does not perform any Data Layer I/O internally; it reads only from the in-memory state tree.
 
 ### Context Budget
 
@@ -386,6 +462,11 @@ Priority: 3 (implement after State Machine and Data Layer — per _overview.md s
 
 - **Test file:** candidate — not yet written
 - **Verifies:** With `--inline=N`, the total size of inlined content never exceeds N bytes
+
+### All .project/ JSON/JSONL mutations go through the state machine (INV-001)
+
+- **Test file:** `tests/fitness/mutation-through-state-machine.test.ts`
+- **Verifies:** `fs.writeFileSync`/`fs.writeFile` for `.json`/`.jsonl` files only appears in `src/core/data/commit.ts` (and documented exception: `migrate.ts`). Command handlers and RPC modules (except migrate) do not import fs write functions directly. `.md` writes via `markdown-files.ts` are out of scope.
 
 ### All mutation operations call reduce() before commitState()
 

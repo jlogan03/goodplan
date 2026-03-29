@@ -22,12 +22,12 @@ export function handleAbandonSlice(
 	state: ProjectState,
 	event: AbandonSliceEvent,
 ): ProjectState | StateError {
-	const slice = getSlice(state, event.slice);
+	const slice = getSlice(state, event.epic, event.slice);
 	if (slice === undefined) {
 		return {
 			code: "STATE_INVALID_TRANSITION",
-			message: `Slice "${event.slice}" not found`,
-			detail: { slice: event.slice, event: "ABANDON_SLICE" },
+			message: `Slice "${event.slice}" not found in epic "${event.epic}"`,
+			detail: { slice: event.slice, epic: event.epic, event: "ABANDON_SLICE" },
 		};
 	}
 
@@ -36,14 +36,14 @@ export function handleAbandonSlice(
 		return {
 			code: "STATE_INVALID_TRANSITION",
 			message: `Cannot abandon slice "${event.slice}" in terminal status "${slice.status}"`,
-			detail: { slice: event.slice, event: "ABANDON_SLICE", currentStatus: slice.status },
+			detail: { slice: event.slice, epic: event.epic, event: "ABANDON_SLICE", currentStatus: slice.status },
 		};
 	}
 
 	let tree = state;
 
 	// Set status to abandoned + sync overview
-	tree = setSliceStatus(tree, event.slice, slice, "abandoned", event.ts);
+	tree = setSliceStatus(tree, event.epic, event.slice, slice, "abandoned", event.ts);
 
 	// Clear activeSlice if this was the active slice
 	const project = getProject(tree);
@@ -59,7 +59,7 @@ export function handleAbandonSlice(
 		tree,
 		event.ts,
 		"abandon-slice",
-		`slices/${event.slice}`,
+		`epics/${event.epic}/slices/${event.slice}`,
 		`Slice "${event.slice}" abandoned: ${event.reason}`,
 	);
 

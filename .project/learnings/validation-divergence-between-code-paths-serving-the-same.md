@@ -1,0 +1,1 @@
+When cache and full-assembly paths validate differently (one throws, one skips), the same filesystem produces different state trees depending on cache state. Incremental paths must throw to trigger fallback to the authoritative path.

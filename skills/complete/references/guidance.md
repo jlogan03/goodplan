@@ -12,7 +12,7 @@
 
 Scope dir (skip missing): `plan-refined.md` (or dir), `implementation/` (per phase, read last iteration's `merged.md` only; read `result.md` only if review references issues; skip earlier iterations unless investigating recurring problems), `refinement/` (last round's `merged.md`), `research/`, `after-implementation-fixes-and-polish.md`, `plan-learnings-and-feedback.md`, existing `completion/`. All of these are LLM-owned markdown — direct reads are allowed.
 
-Project-level: `.project/architecture/`, `.project/learnings.md`, `slices/sequencing.md` (or the epic's `slices/sequencing.md` for epic slices). For epic slices: also load `$EPIC_DIR/architecture/` (target architecture for alignment verification).
+Project-level: `.project/architecture/`. For sequencing context: `.project/slices/sequencing.md` for top-level slices, or `.project/epics/<epic>/slices/sequencing.md` for epic slices. For epic slices: also load `$EPIC_DIR/architecture/` (target architecture for alignment verification).
 
 For structured state: use CLI commands — `goodplan state --json --query '.["decisions.jsonl"]'` for decisions, `goodplan state --json --query '.["activity-log.jsonl"]'` for activity log, `goodplan slice:show --slice <name> --json` or `goodplan epic:show --epic <name> --json` for entity details.
 
@@ -31,11 +31,13 @@ _Source: <slice-name>_
 <2-3 sentence actionable summary.>
 ```
 
-Newest first, below header. **Idempotency:** in top-level `.project/learnings.md`, check for existing `_Source: <slice-name>_` before adding — offer replace if found.
+Newest first, below header.
 
 ## JSONL Learnings Rollup
 
-Do NOT call `learning:rollup` separately. Accumulated learnings from `completion/learnings.md` are included in the `slice:complete` (or `quest:complete`) payload as the `learnings` array. Learnings with `rollupTo` tags are processed atomically by the CLI reducer. The LLM-owned `.project/learnings.md` synthesis (human-readable markdown) remains a direct content authoring step.
+Do NOT call `learning:rollup` separately. Accumulated learnings from `completion/learnings.md` are included in the `slice:complete` (or `quest:complete`) payload as the `learnings` array. Each learning's `detail` field contains the full text — the CLI derives a slug, writes a per-learning `.md` file to the scope's `learnings/` directory, and creates the JSONL entry with a `file` field pointing to it. Learnings with `rollupTo` tags are processed atomically by the CLI reducer — the CLI copies `.md` files to rollup target scopes automatically.
+
+Note: `completion/learnings.md` continues to be written as a working artifact for re-entry detection. This is distinct from the per-learning `.md` files the CLI writes to `learnings/`.
 
 ## Architecture Update Protocol
 
@@ -50,7 +52,7 @@ echo '{"id":"<id>","domain":"<domain>","title":"<title>","summary":"<summary>. C
 
 5. No divergences: "Architecture files still accurate."
 6. Write `completion/architecture-updates.md` (changes made/declined/flagged).
-7. If new learnings surfaced, append to `completion/learnings.md` + update rollup.
+7. If new learnings surfaced, append to `completion/learnings.md`.
 
 ## Remaining Slice Review
 
@@ -108,7 +110,7 @@ After updating project-health.md, explicitly evaluate architectural debt from th
 Examine the last 3 completed slices for trend signals.
 
 **Discovery logic**:
-1. Glob for `completion/learnings.md` under `.project/slices/*/`, `.project/side-quests/*/`, and `.project/quests/*/`
+1. Glob for `completion/learnings.md` under `.project/slices/*/`, `.project/epics/*/slices/*/`, `.project/side-quests/*/`, and `.project/quests/*/`
 2. Derive scope from path: strip `.project/` prefix and `/completion/learnings.md` suffix to get the scope path (e.g., `slices/my-slice`)
 3. Correlate with activity-log via CLI:
 
@@ -121,7 +123,7 @@ Match entries by `scope` field against derived scope values. Activity-log entry 
 4. Sort by timestamp, take 3 most recent
 
 **Metrics to track**:
-- **Refinement effort**: Count `round-N/` directories under `<scope>/refinement/`. Note: `slices/slices-refining/` rounds measure slice *definition* quality (from refine-slices), not plan refinement — do not mix.
+- **Refinement effort**: Count `round-N/` directories under `<scope>/refinement/`. Note: `$SLICES_DIR/slices-refining/` rounds (either `.project/slices/slices-refining/` or `.project/epics/<epic>/slices/slices-refining/`) measure slice *definition* quality (from refine-slices), not plan refinement — do not mix.
 - **Architectural changes**: Count entries in `<scope>/completion/architecture-updates.md`
 
 **Strictly-increasing detection**: Given 3 data points [a, b, c], trigger ONLY when a < b < c (strictly increasing). Do NOT trigger for: one high value, flat-then-up (e.g., [3, 2, 3]), equal values, or any non-monotonic pattern.

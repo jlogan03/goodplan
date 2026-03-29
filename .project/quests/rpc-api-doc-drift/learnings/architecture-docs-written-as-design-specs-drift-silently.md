@@ -1,0 +1,1 @@
+The rpc-layer-api.md doc was written as a design spec, partially updated twice, but never fully reconciled with code that evolved through 8+ slices. Ten divergences accumulated. Future architecture audit side quests should be scheduled periodically.

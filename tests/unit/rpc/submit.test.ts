@@ -138,7 +138,7 @@ describe("submit — complete phase error", () => {
 			submit(
 				projectDir,
 				"complete",
-				{ type: "slice", name: "s1" },
+				{ type: "slice", name: "s1", epic: "e1" },
 				// complete is not a valid submit phase — must use the complete() RPC function.
 				// We force the type here to test the runtime guard.
 				{ phase: "complete" } as never,
@@ -146,7 +146,7 @@ describe("submit — complete phase error", () => {
 		).toThrow(GoodplanError);
 
 		try {
-			submit(projectDir, "complete", { type: "slice", name: "s1" }, { phase: "complete" } as never);
+			submit(projectDir, "complete", { type: "slice", name: "s1", epic: "e1" }, { phase: "complete" } as never);
 		} catch (err) {
 			expect((err as GoodplanError).code).toBe("INTERNAL_ERROR");
 			expect((err as GoodplanError).message).toContain("submit('complete') is not valid");

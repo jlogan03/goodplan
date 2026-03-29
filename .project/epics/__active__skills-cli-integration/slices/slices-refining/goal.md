@@ -1,0 +1,1 @@
+Migrate all ~15 goodplan workflow skills from direct .project/ file access to CLI-based state operations. Convention-doc-first with tracer bullet. Each slice independently verifiable. Slices map to architecture subsystems. Dependencies minimal and explicit. Riskiest unknown (CLI-to-skill integration) retired in slice 01.

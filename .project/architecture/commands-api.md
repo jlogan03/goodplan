@@ -44,6 +44,9 @@ The RPC layer maps each mutation command to a `StateEvent`. Mapping:
 | `quest:implement` | `BEGIN_QUEST_IMPLEMENTATION` |
 | `quest:complete` | `COMPLETE_QUEST` |
 | `quest:abandon` | `ABANDON_QUEST` |
+| `task:create` | `CREATE_TASK` |
+| `task:drop` | `DROP_TASK` |
+| `task:convert` | `CONVERT_TASK` |
 | `learning:rollup` | `ROLLUP_LEARNINGS` |
 | `decision:create` | `CREATE_DECISION` |
 | `decision:update` | `UPDATE_DECISION` |
@@ -79,8 +82,8 @@ goodplan epic:update-verification --epic <name> --index <n>
 **Slice namespace:**
 
 ```
-goodplan slice:list [--epic <name>]
-goodplan slice:show --slice <name>
+goodplan slice:list [--epic <name>] [--all]
+goodplan slice:show --slice <name> [--epic <name>]
 goodplan slice:create --epic <name>
 goodplan slice:plan --slice <name>
 goodplan slice:refine-plan --slice <name>
@@ -101,6 +104,18 @@ goodplan quest:implement --quest <name>
 goodplan quest:complete --quest <name>
 goodplan quest:abandon --quest <name> --reason <text>
 ```
+
+**Task namespace:**
+
+```
+goodplan task:list [--all]
+goodplan task:show --task <name>
+goodplan task:create
+goodplan task:drop --task <name> --reason <text>
+goodplan task:convert --task <name> --to quest|epic [--name <override>] [--goal <override>]
+```
+
+`task:create` accepts stdin JSON: `{ "name": "<slug>", "title": "<title>", "description?": "<text>", "context?": {...} }`. `task:list` defaults to open tasks only; `--all` includes converted/dropped. `task:drop` and `task:convert` use flags only (all fields are simple scalars). `task:convert` auto-derives the quest/epic name from the task slug and goal from the task title + description if not overridden.
 
 **Decision namespace:**
 
@@ -213,7 +228,7 @@ goodplan submit-refine-slices --epic <name>
 { "id": "2026-03-20-my-decision", "domain": "architecture", "title": "...", "summary": "..." }
 ```
 
-**`activity:list --scope`** — scope is a path-style entity reference matching the `scope` field in `activity-log.jsonl` entries (e.g., `slices/01-auth`, `epics/goodplan-cli`, `quests/fix-logging`).
+**`activity:list --scope`** — scope is a path-style entity reference matching the `scope` field in `activity-log.jsonl` entries (e.g., `epics/goodplan-cli/slices/01-auth`, `epics/goodplan-cli`, `quests/fix-logging`).
 
 **`verificationPassed` semantics:** The `verificationPassed` boolean on `slice:complete` and `quest:complete` is a human/orchestrator assertion. The orchestrator (or user) reviews implementation results, decides whether verification criteria are met, and asserts the result via the stdin JSON payload. The CLI does not automatically determine verification — it trusts the caller's assertion and enforces it as a state machine guard.
 
@@ -227,7 +242,7 @@ goodplan migrate [--json]
 goodplan schema [--command <command-path>] [--json] [--query <jq>]
 ```
 
-`migrate` converts a pre-CLI `.project/` directory into CLI-managed state via a multi-round Q&A protocol. Reads answers from stdin JSON (`{ round, answers }`), validates against Zod schemas, and advances through rounds: inventory → per-epic details → confirmation. On confirmation approval, renames `.project/` to `.project-old/`, constructs `ProjectState` directly (INV-001 exception — bypasses state machine), calls `commitState()`, and copies markdown artifacts from the old directory. Intermediate state is persisted to `<cwd>/.migration-in-progress.json`. Designed for LLM orchestration via the `/migrate` skill.
+`migrate` converts a pre-CLI `.project/` directory into CLI-managed state, or re-migrates an already-initialized project to restructure state. Uses a multi-round Q&A protocol. Reads answers from stdin JSON (`{ round, answers }`), validates against Zod schemas, and advances through rounds: inventory → per-epic details → confirmation. On confirmation approval, renames `.project/` to `.project-old-<YYYYMMDD-HHmmss>/` (timestamped backup), constructs `ProjectState` directly (INV-001 exception — bypasses state machine), calls `commitState()`, and copies markdown artifacts from the old directory. Intermediate state is persisted to `<cwd>/.migration-in-progress.json`. Designed for LLM orchestration via the `/migrate` skill.
 
 `state` exposes the full `.project/` state tree as JSON. Always outputs JSON regardless of `--json` flag (this is an explicit exception to the "no `--json` = human-readable" convention). The `--json` flag is accepted but has no effect. `--query` applies a jq expression to filter the tree. `--inline` includes markdown file content as strings instead of `true` markers. `--offset` and `--limit` paginate array results from `--query` (silently ignored without `--query`). Read-only — routes directly to the Data Layer, bypassing RPC and State Machine.
 
@@ -293,6 +308,17 @@ Available on every command:
 | `--query` | string | jq filter on JSON output |
 | `--verbose` | boolean | Enable diagnostic output on stderr |
 
+### List Flags
+
+Available on all `list` commands (`epic:list`, `slice:list`, `quest:list`, `task:list`, `decision:list`, `learning:list`):
+
+| Flag | Type | Description |
+|---|---|---|
+| `--limit` | string (parsed as non-negative integer) | Maximum number of items to return |
+| `--offset` | string (parsed as non-negative integer) | Number of items to skip |
+
+When either flag is provided, both `offset` and `limit` appear in JSON output alongside `total`. When neither flag is used, only `total` is present. Pagination is applied to the items array before `--query` (paginate-then-query). This differs from the `state` command, which applies pagination after `--query` (query-then-paginate) — both semantics are correct for their context.
+
 ### Common Workflow Flags
 
 These flags are meaningful only on workflow and sub-agent commands. Passing them to read-only commands (`list`, `show`), `status`, `schema`, or `init` has no effect — they are silently ignored.
@@ -357,10 +383,10 @@ Priority: 3 (implement after State Machine and Data Layer)
 
 ### Read-only commands are read-only
 
-- **Test file:** candidate — not yet written
+- **Test file:** `tests/fitness/stateless-commands.test.ts`
 - **Verifies:** All `list` and `show` commands only call Data Layer read functions — no `commitState` or RPC mutations
 
 ### Every error produces structured JSON and correct exit code
 
-- **Test file:** candidate — not yet written
-- **Verifies:** For each error code path (validation, state, data, internal), the output matches `{ error: { code, message } }` shape and exit code is 1 (internal), 2 (validation), or 3 (state machine)
+- **Test file:** `tests/fitness/structured-errors.test.ts`
+- **Verifies:** For each error code path (validation, state, data, internal), the output matches `{ error: { code, message } }` shape and exit code is 1 (internal), 2 (validation), or 3 (state machine). Static: every GoodplanErrorCode has a valid exit code mapping. Dynamic: spawns the binary to trigger each error category and verifies structured JSON output.

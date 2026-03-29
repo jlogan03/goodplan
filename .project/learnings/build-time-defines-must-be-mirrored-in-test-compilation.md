@@ -1,0 +1,1 @@
+`--define __GOODPLAN_VERSION__` was missing from `tests/global-setup.ts`, breaking all integration tests that touch version parsing. Any build-time define in `package.json` scripts must also appear in the test binary compilation path.

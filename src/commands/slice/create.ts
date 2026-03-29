@@ -39,7 +39,7 @@ export const sliceCreateCommand = defineCommand({
 		const result = await begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: input.name },
+			{ type: "slice", name: input.name, epic: input.epic },
 			{
 				name: input.name,
 				goal: input.goal,

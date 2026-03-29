@@ -1,8 +1,8 @@
 {
-	"created": "2026-03-26T14:12:13.645Z",
-	"goal": "When the LLM provides sourcePaths during migration, the CLI should scan for sibling files/directories not mentioned and ask the LLM whether they should be included — guarding against incomplete migration of LLM-generated content.",
+	"created": "2026-03-28T00:06:46.961Z",
+	"goal": "Add sibling check validation during migration.",
 	"name": "migration-sibling-check",
 	"refinement": null,
 	"status": "abandoned",
-	"updated": "2026-03-26T14:23:13.005Z"
+	"updated": "2026-03-29T16:57:40.151Z"
 }

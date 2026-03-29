@@ -5,7 +5,8 @@ import { resolveProjectDir } from "../../core/data/project.js";
 import { getJson } from "../../core/tree.js";
 import type { Overview } from "../../schemas/entities/overview.js";
 import { output } from "../../util/output.js";
-import { globalArgs } from "../global-args.js";
+import { applyPagination, formatPaginationFooter } from "../../util/pagination.js";
+import { globalArgs, listArgs } from "../global-args.js";
 
 /**
  * `goodplan quest:list` — list all quests.
@@ -20,6 +21,7 @@ export const questListCommand = defineCommand({
 	},
 	args: {
 		...globalArgs,
+		...listArgs,
 	},
 	setup() {},
 	async run({ args }) {
@@ -28,20 +30,25 @@ export const questListCommand = defineCommand({
 
 		// Treat missing overview.json as empty list (supports projects with no quests yet)
 		const overview = getJson<Overview>(state, "quests/overview.json") ?? { items: [] };
-
-		const items = overview.items;
+		const paginated = applyPagination(overview.items, args);
 
 		if (args.json || args.query) {
-			output({ items }, args);
+			output(paginated, args);
 		} else if (!args.quiet) {
-			if (items.length === 0) {
+			if (paginated.total === 0) {
 				output("No quests found.", args);
 			} else {
 				const lines: string[] = [];
-				for (const item of items) {
-					const completedStr =
-						item.completed !== null ? ` (completed ${item.completed})` : "";
+				if (paginated.items.length === 0) {
+					lines.push("No quests in this range.");
+				}
+				for (const item of paginated.items) {
+					const completedStr = item.completed !== null ? ` (completed ${item.completed})` : "";
 					lines.push(`  ${pc.bold(item.name)}  ${item.status}${completedStr}`);
+				}
+				const footer = formatPaginationFooter(paginated);
+				if (footer !== undefined) {
+					lines.push(footer);
 				}
 				output(lines.join("\n"), args);
 			}

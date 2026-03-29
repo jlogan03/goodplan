@@ -1,0 +1,1 @@
+citty's `CommandDef<ArgsDef>` + `exactOptionalPropertyTypes: true` causes contravariance errors in `runCommand`/`showUsage` calls. Requires `as unknown as CommandDef` casts. Re-check on citty upgrades.

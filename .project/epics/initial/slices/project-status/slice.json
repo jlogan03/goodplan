@@ -1,0 +1,10 @@
+{
+	"created": "2026-03-28T00:06:46.961Z",
+	"deferred": [],
+	"epic": "initial",
+	"goal": "A skill that reads .project/ state and orients any session.",
+	"name": "project-status",
+	"refinement": null,
+	"status": "completed",
+	"updated": "2026-03-28T00:06:46.961Z"
+}

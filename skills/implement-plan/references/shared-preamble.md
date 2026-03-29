@@ -25,6 +25,12 @@ Read listed files if they would inform your evaluation. Do not read files outsid
 
 {team_defaults}
 
+## Subsystem Maturity
+
+{maturity_summary}
+
+{maturity_legend}
+
 ## Codebase Exploration
 
 Explore the actual codebase beyond the diff — code changes that look correct in isolation often conflict with existing patterns, miss reuse opportunities, or introduce inconsistencies. Reviewing without exploration leads to false positives and missed issues.

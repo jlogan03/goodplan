@@ -10,23 +10,9 @@ import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assembleState } from "../../src/core/data/assemble.js";
 import { commitState } from "../../src/core/data/commit.js";
+import { collectFiles } from "./helpers.js";
 
 const FIXTURES_DIR = path.resolve(import.meta.dirname, "../fixtures");
-
-/** Recursively collect all files under a directory, returning relative paths. */
-function collectFiles(dir: string, base?: string): string[] {
-	const root = base ?? dir;
-	const results: string[] = [];
-	for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-		const full = path.join(dir, entry.name);
-		if (entry.isDirectory()) {
-			results.push(...collectFiles(full, root));
-		} else if (entry.isFile()) {
-			results.push(path.relative(root, full));
-		}
-	}
-	return results.sort();
-}
 
 /** Read all files in a directory into a map of relativePath -> content. */
 function snapshotFiles(dir: string): Map<string, string> {

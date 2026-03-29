@@ -18,6 +18,7 @@ import { serializeStateTree } from "../../core/data/serialize.js";
 import { GoodplanError } from "../../util/errors.js";
 import { deterministicStringify } from "../../util/json.js";
 import { exitCodeForError, outputError, outputUnexpectedError } from "../../util/output.js";
+import { parseNonNegativeInt } from "../../util/pagination.js";
 import { applyQuery } from "../../util/query.js";
 import { globalArgs, parseInlineBudget } from "../global-args.js";
 
@@ -34,6 +35,10 @@ export const stateCommand = defineCommand({
 			description: "Include markdown content in state tree",
 			required: false,
 		},
+		// state defines its own offset/limit with state-specific descriptions
+		// (e.g. "requires --query") rather than using listArgs, because state's
+		// pagination semantics differ: it paginates jq query results, not a
+		// known items array. Do not remove these "redundant" declarations.
 		offset: {
 			type: "string",
 			description: "Skip N entries when result is an array (requires --query)",
@@ -104,21 +109,3 @@ export const stateCommand = defineCommand({
 		}
 	},
 });
-
-/**
- * Parse a string flag value as a non-negative integer.
- * Uses parseInt (not Number()) because Number("") returns 0 instead of NaN.
- * Returns undefined if the value is undefined/empty.
- * Throws VALIDATION_INVALID_INPUT if the value is not a valid non-negative integer.
- */
-function parseNonNegativeInt(value: string | undefined, name: string): number | undefined {
-	if (value === undefined || value === "") return undefined;
-	const parsed = Number.parseInt(value, 10);
-	if (!Number.isFinite(parsed) || parsed < 0 || String(parsed) !== value) {
-		throw new GoodplanError(
-			"VALIDATION_INVALID_INPUT",
-			`--${name} must be a non-negative integer, got: ${value}`,
-		);
-	}
-	return parsed;
-}

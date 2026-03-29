@@ -1,0 +1,1 @@
+Multiple fitness tests need to recursively collect .ts files under src/. A shared tests/fitness/helpers.ts was created. Future fitness functions should import from it rather than reimplementing.

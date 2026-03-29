@@ -122,7 +122,7 @@ describe("collectMarkdownEntries", () => {
 // ── resolveContentSource ─────────────────────────────────────
 
 describe("resolveContentSource", () => {
-	const rt: ResolvedTarget = { target: { type: "slice", name: "01-data-layer" }, activeEpic: "my-epic" };
+	const rt: ResolvedTarget = { target: { type: "slice", name: "01-data-layer", epic: "my-epic" }, activeEpic: "my-epic" };
 
 	it("resolves a markdown source to a single entry", () => {
 		const source: ContentSource = { key: "conventions", path: "conventions.md", sourceType: "markdown" };

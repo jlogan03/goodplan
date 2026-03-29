@@ -1,0 +1,1 @@
+Every migrated skill runs a dedicated `goodplan --version --json` check at startup. If all `--json` responses included a `version` field, skills could verify compatibility from any CLI call — eliminating the separate version check step. Future CLI enhancement candidate.

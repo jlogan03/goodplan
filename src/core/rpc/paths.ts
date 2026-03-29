@@ -74,6 +74,9 @@ function mapToBeginPhase(phase: BeginPhase | SubmitPhase | "complete"): BeginPha
 		// BeginPhase values pass through
 		case "create":
 		case "create-decision":
+		case "create-task":
+		case "drop-task":
+		case "convert-task":
 		case "define-architecture":
 		case "define-slices":
 		case "activate":
@@ -119,6 +122,9 @@ function resolveForBeginPhase(entityDir: string, phase: BeginPhase | "complete")
 		// Lifecycle phases — no specific artifact paths
 		case "create":
 		case "create-decision":
+		case "create-task":
+		case "drop-task":
+		case "convert-task":
 		case "activate":
 		case "abandon":
 		case "add-verification":
@@ -141,9 +147,11 @@ function resolveEntityDir(projectDir: string, target: Target): string | undefine
 		case "epic":
 			return nodePath.join(projectDir, "epics", target.name);
 		case "slice":
-			return nodePath.join(projectDir, "slices", target.name);
+			return nodePath.join(projectDir, "epics", target.epic, "slices", target.name);
 		case "quest":
 			return nodePath.join(projectDir, "quests", target.name);
+		case "task":
+			return nodePath.join(projectDir, "tasks", target.name);
 		// These target types have no entity directory — return undefined to yield empty paths.
 		case "project":
 		case "decision":

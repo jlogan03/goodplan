@@ -39,12 +39,12 @@ export function handleCompletePlan(
 	state: ProjectState,
 	event: CompletePlanEvent,
 ): ProjectState | StateError {
-	const slice = getSlice(state, event.slice);
-	const sliceOrErr = guardSliceStatus(slice, event.slice, "planning", "COMPLETE_PLAN");
+	const slice = getSlice(state, event.epic, event.slice);
+	const sliceOrErr = guardSliceStatus(slice, event.slice, "planning", "COMPLETE_PLAN", event.epic);
 	if (isStateError(sliceOrErr)) return sliceOrErr;
 
 	// Guard: plan.md must exist
-	if (!hasChild(state, `slices/${event.slice}`, "plan.md")) {
+	if (!hasChild(state, `epics/${event.epic}/slices/${event.slice}`, "plan.md")) {
 		return {
 			code: "STATE_CONTENT_MISSING",
 			message: `Cannot complete plan for slice "${event.slice}" — plan.md not found`,
@@ -52,12 +52,12 @@ export function handleCompletePlan(
 		};
 	}
 
-	let tree = setSliceStatus(state, event.slice, sliceOrErr, "plan-created", event.ts);
+	let tree = setSliceStatus(state, event.epic, event.slice, sliceOrErr, "plan-created", event.ts);
 	tree = appendActivityLog(
 		tree,
 		event.ts,
 		"complete-plan",
-		`slices/${event.slice}`,
+		`epics/${event.epic}/slices/${event.slice}`,
 		`Slice "${event.slice}" plan completed`,
 	);
 	return tree;
@@ -67,13 +67,14 @@ export function handleCompleteRefinementRound(
 	state: ProjectState,
 	event: CompleteRefinementRoundEvent,
 ): ProjectState | StateError {
-	const slice = getSlice(state, event.slice);
+	const slice = getSlice(state, event.epic, event.slice);
 	// Two valid from-statuses: plan-created (skip/first round) and refining (normal)
 	const sliceOrErr = guardSliceStatus(
 		slice,
 		event.slice,
 		["plan-created", "refining"],
 		"COMPLETE_REFINEMENT_ROUND",
+		event.epic,
 	);
 	if (isStateError(sliceOrErr)) return sliceOrErr;
 
@@ -99,6 +100,7 @@ export function handleCompleteRefinementRound(
 
 		let tree = setSliceStatus(
 			state,
+			event.epic,
 			event.slice,
 			{ ...sliceOrErr, refinement: finalRefinement },
 			"plan-refined",
@@ -108,7 +110,7 @@ export function handleCompleteRefinementRound(
 			tree,
 			event.ts,
 			"complete-refinement",
-			`slices/${event.slice}`,
+			`epics/${event.epic}/slices/${event.slice}`,
 			`Slice "${event.slice}" plan refined`,
 		);
 		return tree;
@@ -117,6 +119,7 @@ export function handleCompleteRefinementRound(
 	// Stay in refining
 	let tree = setSliceStatus(
 		state,
+		event.epic,
 		event.slice,
 		{ ...sliceOrErr, refinement: outcome.newRefinement },
 		"refining",
@@ -126,7 +129,7 @@ export function handleCompleteRefinementRound(
 		tree,
 		event.ts,
 		"refinement-round",
-		`slices/${event.slice}`,
+		`epics/${event.epic}/slices/${event.slice}`,
 		`Slice "${event.slice}" refinement round ${outcome.newRefinement.round - 1} completed`,
 	);
 	return tree;
@@ -136,21 +139,22 @@ export function handleCompleteImplementation(
 	state: ProjectState,
 	event: CompleteImplementationEvent,
 ): ProjectState | StateError {
-	const slice = getSlice(state, event.slice);
+	const slice = getSlice(state, event.epic, event.slice);
 	const sliceOrErr = guardSliceStatus(
 		slice,
 		event.slice,
 		"implementing",
 		"COMPLETE_IMPLEMENTATION",
+		event.epic,
 	);
 	if (isStateError(sliceOrErr)) return sliceOrErr;
 
-	let tree = setSliceStatus(state, event.slice, sliceOrErr, "implementation-complete", event.ts);
+	let tree = setSliceStatus(state, event.epic, event.slice, sliceOrErr, "implementation-complete", event.ts);
 	tree = appendActivityLog(
 		tree,
 		event.ts,
 		"complete-implementation",
-		`slices/${event.slice}`,
+		`epics/${event.epic}/slices/${event.slice}`,
 		`Slice "${event.slice}" implementation completed`,
 	);
 	return tree;

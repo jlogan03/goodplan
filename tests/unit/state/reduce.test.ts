@@ -39,17 +39,12 @@ describe("reduce — INIT_PROJECT", () => {
 		expect(epicsOverview).toBeDefined();
 		expect(epicsOverview!.items).toEqual([]);
 
-		const slicesOverview = getJson<{ items: unknown[] }>(state, "slices/overview.json");
-		expect(slicesOverview).toBeDefined();
-		expect(slicesOverview!.items).toEqual([]);
-
 		const questsOverview = getJson<{ items: unknown[] }>(state, "quests/overview.json");
 		expect(questsOverview).toBeDefined();
 		expect(questsOverview!.items).toEqual([]);
 
 		// Collection directories exist
 		expect(getDir(state, "epics")).toBeDefined();
-		expect(getDir(state, "slices")).toBeDefined();
 		expect(getDir(state, "quests")).toBeDefined();
 
 		// JSONL files exist

@@ -1,0 +1,1 @@
+The existing audit-architecture skill uses direct filesystem writes for side quest creation, which predates the CLI. New audit skills should use the CLI-native quest:create mechanism. This divergence is tracked as side quest audit-arch-quest-create.

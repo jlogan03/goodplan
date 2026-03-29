@@ -78,9 +78,11 @@ Read all relevant project state:
 - For epic-scoped: the epic's `goal.md` and `architecture/` (target architecture)
 - `.project/conventions.md`
 - `.project/decisions/` (following Loading Protocol)
-- `.project/learnings.md`
+- Learnings via `goodplan learning:list --json`
 - `$SLICES_ROOT/sequencing.md`
 - All `$SLICES_ROOT/*/goal.md` files (excluding side quests)
+
+Also load `.project/architecture/_overview.md` and extract the `## Subsystem Maturity` table. If no maturity table exists, set `{maturity_summary}` to empty. Also read `../_shared/references/maturity-legend.md` and store its content as `{maturity_legend}`. If maturity data was found, display which slices have `## Maturity Note` sections in their goal.md and which may be missing them — this gives the user early visibility before the review loop starts. When filling shared preamble placeholders for reviewer sub-agents (Step 3), include `{maturity_summary}` and `{maturity_legend}`. When `{maturity_summary}` is empty, omit the `## Subsystem Maturity` section from the shared preamble entirely.
 
 ### Step 1: Verify Goal Clarity
 
@@ -145,6 +147,22 @@ Only stop and ask when you encounter:
 - Fundamental sequencing questions (e.g., "should we build X before Y?") where the trade-off isn't clear
 
 Do NOT ask for permission to continue between iterations.
+
+## Output Templates
+
+### Iteration Summary Template
+
+Use the shared Iteration Summary from `../_shared/references/output-templates.md` with `{scope_prefix}` = empty (omit).
+
+### Completion Summary Template
+
+Display at the end of Step 5 when the refinement loop exits. Use the Completion Summary Template from `../_shared/references/output-templates.md` with these skill-specific values:
+
+- `{completion_heading}`: `Refinement Complete`
+- `{score_label}`: `score`
+- `{skill_specific_header_fields}`: none
+- `{issues_resolved_variant}`: omit variant label — use total count: `**Total**: {N} issues ({breakdown by severity})`
+- `{skill_specific_extension_sections}`: `### Slices Modified` table (`Slice | Change`)
 
 ## References
 

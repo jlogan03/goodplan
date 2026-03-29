@@ -22,13 +22,14 @@ export function handleBeginRefinement(
 	state: ProjectState,
 	event: BeginRefinementEvent,
 ): ProjectState | StateError {
-	const slice = getSlice(state, event.slice);
-	const sliceOrErr = guardSliceStatus(slice, event.slice, "plan-created", "BEGIN_REFINEMENT");
+	const slice = getSlice(state, event.epic, event.slice);
+	const sliceOrErr = guardSliceStatus(slice, event.slice, "plan-created", "BEGIN_REFINEMENT", event.epic);
 	if (isStateError(sliceOrErr)) return sliceOrErr;
 
 	// Initialize refinement state and set status + sync overview
 	let tree = setSliceStatus(
 		state,
+		event.epic,
 		event.slice,
 		{
 			...sliceOrErr,
@@ -43,7 +44,7 @@ export function handleBeginRefinement(
 		tree,
 		event.ts,
 		"begin-refinement",
-		`slices/${event.slice}`,
+		`epics/${event.epic}/slices/${event.slice}`,
 		`Slice "${event.slice}" refinement started`,
 	);
 
@@ -54,12 +55,12 @@ export function handleBeginImplementation(
 	state: ProjectState,
 	event: BeginImplementationEvent,
 ): ProjectState | StateError {
-	const slice = getSlice(state, event.slice);
-	const sliceOrErr = guardSliceStatus(slice, event.slice, "plan-refined", "BEGIN_IMPLEMENTATION");
+	const slice = getSlice(state, event.epic, event.slice);
+	const sliceOrErr = guardSliceStatus(slice, event.slice, "plan-refined", "BEGIN_IMPLEMENTATION", event.epic);
 	if (isStateError(sliceOrErr)) return sliceOrErr;
 
 	// Guard: plan-refined.md must exist
-	if (!hasChild(state, `slices/${event.slice}`, "plan-refined.md")) {
+	if (!hasChild(state, `epics/${event.epic}/slices/${event.slice}`, "plan-refined.md")) {
 		return {
 			code: "STATE_CONTENT_MISSING",
 			message: `Cannot begin implementation for slice "${event.slice}" — plan-refined.md not found`,
@@ -68,14 +69,14 @@ export function handleBeginImplementation(
 	}
 
 	// Set status to implementing + sync overview
-	let tree = setSliceStatus(state, event.slice, sliceOrErr, "implementing", event.ts);
+	let tree = setSliceStatus(state, event.epic, event.slice, sliceOrErr, "implementing", event.ts);
 
 	// Append activity log
 	tree = appendActivityLog(
 		tree,
 		event.ts,
 		"begin-implementation",
-		`slices/${event.slice}`,
+		`epics/${event.epic}/slices/${event.slice}`,
 		`Slice "${event.slice}" implementation started`,
 	);
 

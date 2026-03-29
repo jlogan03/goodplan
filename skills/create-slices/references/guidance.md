@@ -89,11 +89,10 @@ See SKILL.md Step 4b for the Three-Lens Evaluation criteria.
 2. <Concrete and testable>
 3. <Happy path and key edge cases>
 
-## Success Criteria
+## Verification
 - [ ] <What to run> — <expected outcome>
 - [ ] <What to run> — <expected outcome>
 
-## Verification
 <Minimum live end-to-end verification the implementing agent must perform.
 Describe what to run, what to interact with, and what to check — as if
 explaining to a human tester. Include happy path + at least one edge case.

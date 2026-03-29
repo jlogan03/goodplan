@@ -1,0 +1,1 @@
+Plan-invented error codes and imprecise command sequences were caught in refinement but would have cost implementation cycles. Grep `src/commands/main.ts` and `src/util/errors.ts` during `/create-plan` when the plan references CLI commands.

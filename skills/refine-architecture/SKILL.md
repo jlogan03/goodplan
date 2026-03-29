@@ -265,65 +265,17 @@ Do NOT ask for permission to continue between iterations.
 
 ### Iteration Summary Template
 
-Display after every iteration.
-
-```
----
-
-### Iteration {N} Review
-
-**Reviewers**: {reviewer1} ({score}/10), {reviewer2} ({score}/10), ...
-
-| # | Severity | Issue | Source | Resolution |
-|---|----------|-------|--------|------------|
-| 1 | CRITICAL | {brief issue description} | {Reviewer name(s)} | {DIRECTLY_ACTIONABLE / USER_INPUT / RESEARCH_NEEDED / CODEBASE_EXPLORATION} |
-| 2 | IMPORTANT | {brief issue description} | {Reviewer} | {resolution} |
-| ... | ... | ... | ... | ... |
-
-**Contradictions**: {N resolved, N unresolved — or "None"}
-**USER_INPUT needed**: {brief list — or "None"}
-**RESEARCH_NEEDED**: {brief list — or "None"}
-
-**Actions**: {what will be done next}
-
----
-```
+Use the shared Iteration Summary from `../_shared/references/output-templates.md` with `{scope_prefix}` = empty (omit).
 
 ### Completion Summary Template
 
-Display at the end of Step 4.
+Display at the end of Step 4. Use the Completion Summary Template from `../_shared/references/output-templates.md` with these skill-specific values:
 
-```
----
-
-## Architecture Refinement Complete
-
-**Final score**: {min score across all reviewers}/10
-**Iterations**: {N}
-**Architecture files**: $ARCH_DIR/
-
-### Score Progression
-
-| Iteration | {Reviewer1} | {Reviewer2} | ... |
-|-----------|-------------|-------------|-----|
-| 1         | {score}     | {score}     |     |
-| ...       |             |             |     |
-
-### Changes Summary
-
-{List of substantive changes: added/removed/modified subsystems, boundary shifts, new patterns}
-
-### Issues Resolved Per Iteration
-
-**Iteration 1** ({N} issues: {breakdown by severity})
-...
-
-### Remaining Issues
-
-{List any unresolved MINOR issues, or "None — all issues resolved."}
-
----
-```
+- `{completion_heading}`: `Architecture Refinement Complete`
+- `{score_label}`: `score`
+- `{skill_specific_header_fields}`: `**Architecture files**: $ARCH_DIR/`
+- `{issues_resolved_variant}`: `Per Iteration` — use per-iteration tables
+- `{skill_specific_extension_sections}`: `### Changes Summary` — list substantive changes (added/removed/modified subsystems, boundary shifts, new patterns)
 
 ## References
 

@@ -1,0 +1,1 @@
+After a long interactive session, reference files loaded early may have been pushed out of effective context. Re-load key references at the step that uses them (e.g., guidance.md before CLAUDE.md update).

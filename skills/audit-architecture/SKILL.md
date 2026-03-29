@@ -66,7 +66,7 @@ If the marker is present, warn the user: "Top-level architecture is a scaffold p
 
 3. **Load maturity conventions**: Read `../_shared/references/maturity-conventions.md` for maturity level definitions, promotion criteria, invariant format, and fitness function format. This is the authoritative source — audit-architecture's `references/guidance.md` provides audit-specific strategies that build on these conventions.
 
-4. **Load learnings and conventions**: Read `.project/learnings.md` and `.project/conventions.md` (if they exist).
+4. **Load learnings and conventions**: Load learnings via `goodplan learning:list --json`. Read `.project/conventions.md` (if it exists).
 
 5. **Load recent activity-log**: Query recent activity filtered to the scope being audited:
 
@@ -113,7 +113,7 @@ Present the reconciled findings to the user before proceeding.
 
 ## Step 3 — Architecture Reassessment
 
-Based on reconciled gap findings + `learnings.md` + decisions + the conversation, evaluate:
+Based on reconciled gap findings + learnings (from `goodplan learning:list --json`) + decisions + the conversation, evaluate:
 
 - **Boundary placement**: Are any architectural boundaries in the wrong place? (evidence: high cross-boundary coupling, frequent violations in the same direction)
 - **Missing abstractions**: Are there abstractions that implementation revealed? (evidence: duplicated patterns across modules that should be centralized)
@@ -179,16 +179,18 @@ Draft a side quest `goal.md` with `type: gap`:
 1. Propose specific architecture file edits. Get user approval.
 2. Write a decision to `.project/decisions/` (with user confirmation — see decisions format reference).
 3. Apply approved edits to `$ARCH_DIR/` files.
-4. Draft a side quest `goal.md` with `type: improvement`:
+4. Draft a side quest goal with `type: improvement`:
    - What changed in the architecture
    - Which code needs to follow
    - Estimated scope
    - Improvement quests should run `/refine-architecture` first, then `/create-plan`
 
-Write approved side quests to `.project/side-quests/<name>/goal.md`:
+Create approved side quests via the CLI:
 ```bash
-mkdir -p ".project/side-quests/<name>"
+echo '{"name":"<descriptive-kebab-case-name>","goal":"<specific goal with affected files, scope, and verification criteria>"}' | goodplan quest:create --json
 ```
+
+Capture the output to extract the created quest name for inclusion in the audit report's "Side Quests Created" section.
 
 ## Step 5 — Write Audit Report
 

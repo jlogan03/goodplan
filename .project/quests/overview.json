@@ -1,136 +1,184 @@
 {
 	"items": [
 		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "architecture-quality",
 			"status": "completed"
 		},
 		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "archived-prefix-migration",
 			"status": "completed"
 		},
 		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
+			"completed": null,
+			"created": "2026-03-28T00:06:46.961Z",
+			"name": "audit-docs-and-tests",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "complete-rename",
 			"status": "completed"
 		},
 		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
+			"completed": null,
+			"created": "2026-03-28T00:06:46.961Z",
+			"name": "consistent-skill-output",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "decisions-and-expertise",
 			"status": "completed"
 		},
 		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "initiatives-infrastructure",
-			"status": "completed"
-		},
-		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "maturity-invariants-fitness",
-			"status": "completed"
-		},
-		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "onboarding-and-refactors",
-			"status": "completed"
-		},
-		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "refactor-intelligence",
-			"status": "completed"
-		},
-		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "refine-plan-shared-loop",
-			"status": "completed"
-		},
-		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "slice-quality-and-health",
-			"status": "completed"
-		},
-		{
-			"completed": "2026-03-26T05:53:50.853Z",
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "workflow-v2",
-			"status": "completed"
-		},
-		{
-			"completed": null,
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "audit-docs-and-tests",
-			"status": "created"
-		},
-		{
-			"completed": null,
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "maturity-context-loading",
-			"status": "created"
-		},
-		{
-			"completed": null,
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "migrate-to-cli",
-			"status": "completed"
-		},
-		{
-			"completed": null,
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "onboard-repo",
-			"status": "created"
-		},
-		{
-			"completed": null,
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "side-quest-interruption-lifecycle",
-			"status": "created"
-		},
-		{
-			"completed": null,
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "skill-workflow-bugs",
-			"status": "created"
-		},
-		{
-			"completed": null,
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "task-capture",
-			"status": "created"
-		},
-		{
-			"completed": null,
-			"created": "2026-03-26T05:53:50.853Z",
-			"name": "upgrade-workflow",
-			"status": "created"
-		},
-		{
-			"completed": null,
-			"created": "2026-03-26T05:53:50.853Z",
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "dogfood-harness",
 			"status": "completed"
 		},
 		{
 			"completed": null,
-			"created": "2026-03-26T13:57:32.257Z",
-			"name": "consistent-skill-output",
-			"status": "created"
+			"created": "2026-03-28T00:06:46.961Z",
+			"name": "entity-path-and-learnings-cleanup",
+			"status": "abandoned"
+		},
+		{
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
+			"name": "initiatives-infrastructure",
+			"status": "completed"
 		},
 		{
 			"completed": null,
-			"created": "2026-03-26T14:12:13.645Z",
+			"created": "2026-03-28T00:06:46.961Z",
+			"name": "learnings-directory-pattern",
+			"status": "completed"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-28T00:06:46.961Z",
+			"name": "list-pagination",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
+			"name": "maturity-context-loading",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
+			"name": "maturity-invariants-fitness",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
+			"name": "migrate-to-cli",
+			"status": "completed"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-28T00:06:46.961Z",
 			"name": "migration-sibling-check",
 			"status": "abandoned"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-28T00:06:46.961Z",
+			"name": "onboard-repo",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
+			"name": "onboarding-and-refactors",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
+			"name": "refactor-intelligence",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
+			"name": "refine-plan-shared-loop",
+			"status": "completed"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-28T00:06:46.961Z",
+			"name": "side-quest-interruption-lifecycle",
+			"status": "abandoned"
+		},
+		{
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
+			"name": "skill-workflow-bugs",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
+			"name": "slice-quality-and-health",
+			"status": "completed"
+		},
+		{
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
+			"name": "task-capture",
+			"status": "completed"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-28T00:06:46.961Z",
+			"name": "upgrade-workflow",
+			"status": "abandoned"
+		},
+		{
+			"completed": "2026-03-28T00:06:46.961Z",
+			"created": "2026-03-28T00:06:46.961Z",
+			"name": "workflow-v2",
+			"status": "completed"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-28T02:47:45.332Z",
+			"name": "audit-arch-quest-create",
+			"status": "completed"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-28T03:00:55.637Z",
+			"name": "update-architecture-docs-for-tasks-and-paths",
+			"status": "completed"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-28T03:10:18.906Z",
+			"name": "improve-test-coverage-and-quality",
+			"status": "completed"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-28T15:05:29.784Z",
+			"name": "test-infrastructure-polish",
+			"status": "completed"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-28T21:54:33.391Z",
+			"name": "rpc-api-doc-drift",
+			"status": "completed"
 		}
 	]
 }

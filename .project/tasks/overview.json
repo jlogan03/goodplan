@@ -1,0 +1,18 @@
+{
+	"items": [
+		{
+			"completed": "2026-03-28T16:11:15.827Z",
+			"created": "2026-03-28T14:46:18.389Z",
+			"name": "self-verifying-error-codes",
+			"status": "dropped",
+			"title": "Make ALL_ERROR_CODES self-verifying via source extraction"
+		},
+		{
+			"completed": "2026-03-28T16:11:16.021Z",
+			"created": "2026-03-28T14:46:19.474Z",
+			"name": "dedup-fitness-collect-ts",
+			"status": "dropped",
+			"title": "Deduplicate collectTsFiles() across fitness tests"
+		}
+	]
+}

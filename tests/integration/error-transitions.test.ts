@@ -116,7 +116,7 @@ describe("error: invalid state transitions", () => {
 			// Verify on-disk status
 			const sliceJson = JSON.parse(
 				fs.readFileSync(
-					path.join(env.GOODPLAN_DIR, "slices", "test-slice", "slice.json"),
+					path.join(env.GOODPLAN_DIR, "epics", "test-epic", "slices", "test-slice", "slice.json"),
 					"utf-8",
 				),
 			) as Record<string, unknown>;

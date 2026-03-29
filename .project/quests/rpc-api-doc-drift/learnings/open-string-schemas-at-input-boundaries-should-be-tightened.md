@@ -1,0 +1,1 @@
+LearningInput.rollupTo used z.array(z.string()) while only epic and project were supported. Tightening to z.enum() at the input boundary was safe and aligned code with the documented contract. Pattern: constrain inputs, tolerate outputs.

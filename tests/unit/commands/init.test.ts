@@ -79,7 +79,6 @@ describe("init command", () => {
 
 		// Overview files
 		expect(fs.existsSync(path.join(projectDir, "epics", "overview.json"))).toBe(true);
-		expect(fs.existsSync(path.join(projectDir, "slices", "overview.json"))).toBe(true);
 		expect(fs.existsSync(path.join(projectDir, "quests", "overview.json"))).toBe(true);
 
 		// JSONL files

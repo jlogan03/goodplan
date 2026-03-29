@@ -1,0 +1,85 @@
+{
+	"created": "2026-01-01T00:00:00.000Z",
+	"deferred": [],
+	"epic": "test-epic",
+	"goal": "Test slice goal",
+	"name": "test-slice",
+	"refinement": {
+		"maxRounds": 10,
+		"round": 10,
+		"scoreHistory": [
+			{
+				"round": 1,
+				"scores": {
+					"completeness": 5,
+					"correctness": 5
+				}
+			},
+			{
+				"round": 2,
+				"scores": {
+					"completeness": 5,
+					"correctness": 5
+				}
+			},
+			{
+				"round": 3,
+				"scores": {
+					"completeness": 5,
+					"correctness": 5
+				}
+			},
+			{
+				"round": 4,
+				"scores": {
+					"completeness": 5,
+					"correctness": 5
+				}
+			},
+			{
+				"round": 5,
+				"scores": {
+					"completeness": 5,
+					"correctness": 5
+				}
+			},
+			{
+				"round": 6,
+				"scores": {
+					"completeness": 5,
+					"correctness": 5
+				}
+			},
+			{
+				"round": 7,
+				"scores": {
+					"completeness": 5,
+					"correctness": 5
+				}
+			},
+			{
+				"round": 8,
+				"scores": {
+					"completeness": 5,
+					"correctness": 5
+				}
+			},
+			{
+				"round": 9,
+				"scores": {
+					"completeness": 5,
+					"correctness": 5
+				}
+			},
+			{
+				"round": 10,
+				"scores": {
+					"completeness": 5,
+					"correctness": 5
+				}
+			}
+		]
+	},
+	"status": "refining",
+	"updated": "2026-01-01T00:00:00.000Z"
+}

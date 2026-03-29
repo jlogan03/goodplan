@@ -59,4 +59,19 @@ describe("validateInput", () => {
 		);
 		expect(result).toEqual({ name: "test" });
 	});
+
+	it("strips force global flag before validation", () => {
+		const strictSchema = z.object({ name: z.string() }).strict();
+		const result = validateInput(strictSchema, { name: "test", json: true, force: false }, {});
+		expect(result).toEqual({ name: "test" });
+	});
+
+	it("does not strip limit and offset (list-only args, not global flags)", () => {
+		const strictSchema = z.object({ name: z.string() }).strict();
+		// limit/offset are no longer global flags — they are list-only args.
+		// validateInput should NOT strip them, so strict schema rejects them.
+		expect(() =>
+			validateInput(strictSchema, { name: "test", limit: "5", offset: "10" }, {}),
+		).toThrow(expect.objectContaining({ code: "VALIDATION_INVALID_INPUT" }));
+	});
 });

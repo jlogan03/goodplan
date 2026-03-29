@@ -1,0 +1,1 @@
+Split reference material into focused, purpose-specific files rather than one large reference. SKILL.md loads only what it needs at each step. This also enables lazy loading (e.g., formats.md deferred to the state write-back step).

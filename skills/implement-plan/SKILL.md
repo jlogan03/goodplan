@@ -75,9 +75,17 @@ If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill 
    - **Derive plan slug**: Kebab-case, 2-4 words (e.g., `user-auth`, `api-refactor`). **CRITICAL: Use this exact slug for ALL commits throughout the plan.**
    - **Derive scope directory**: `scope_dir=$(dirname "<plan_path>")` — the directory containing the plan file (or plan directory). All research and implementation artifacts are stored here.
    - **Derive plan URL**: GitHub URL if remote exists, otherwise absolute local path.
-   - Present summary: plan type, slug, total phases, completed vs remaining.
+   - Present summary using this template:
+
+     ```
+     **Plan**: {plan type} — `{slug}`
+     **Phases**: {total} total, {completed} complete, {remaining} remaining
+     **Scope**: {scope_dir}
+     ```
 
 Also load `.project/conventions.md` if it exists — project conventions inform implementation decisions.
+
+Also load `.project/architecture/_overview.md` and extract the `## Subsystem Maturity` table. If no maturity table exists, set `{maturity_summary}` to empty and skip maturity-aware behavior. Also read `../_shared/references/maturity-legend.md` and store its content as `{maturity_legend}`. If maturity data was found, display: "**Maturity context**: [list of subsystems at Maturing or Foundational, or 'All subsystems at Developing or below']".
 
 ### Step 2: Pre-Implementation Research
 
@@ -133,7 +141,7 @@ Before implementation, execute the red half of the red-green cycle.
 
 #### 3.2: Implementation-Review Cycle (max 12 iterations)
 
-Read the sub-agent prompt templates from `references/sub-agent-prompts.md` and fill in the `{placeholders}` with actual values.
+Read the sub-agent prompt templates from `references/sub-agent-prompts.md` and fill in the `{placeholders}` with actual values. This includes `{maturity_summary}` (the extracted maturity table from Step 1, or empty if none found) and `{maturity_legend}` (the content of `skills/_shared/references/maturity-legend.md`). When `{maturity_summary}` is empty, omit the `## Subsystem Maturity` section from the shared preamble entirely.
 
 **Every sub-agent Task tool call MUST include `model: "opus"`.**
 
@@ -264,11 +272,28 @@ Verify the commit exists with `git log --oneline -1`.
 
 #### 3.6: Progress Report
 
-Output:
-- `"Phase {X} of {Y} complete: {phase_name}"`
-- Brief summary, iteration count, plan modifications, commit hash
+Display after every phase completion:
 
-Every 3 phases: overall progress, completed summary, upcoming preview.
+```
+**Phase {X} of {Y} complete**: {phase_name}
+**Iterations**: {N}
+**Commit**: {short hash}
+**Plan modifications**: {list of changes, or "None"}
+```
+
+Every 3 phases, append an extended summary:
+
+```
+### Overall Progress
+
+**Completed**: {N} of {M} phases
+| Phase | Name | Iterations | Commit |
+|-------|------|------------|--------|
+| 1 | {name} | {N} | {hash} |
+| ... | | | |
+
+**Upcoming**: {next 1-2 phase names and objectives}
+```
 
 #### 3.7: Continue to Next Phase
 
@@ -366,75 +391,21 @@ Display these templates exactly as shown (with actual values substituted). These
 
 ### Iteration Summary Template
 
-Display after every review iteration within a phase, immediately after synthesizing feedback and before applying fixes.
-
-```
----
-
-### Phase {X} — Iteration {N} Review
-
-**Reviewers**: {reviewer1} ({score}/10), {reviewer2} ({score}/10), ...
-
-| # | Severity | Issue | Source | Resolution |
-|---|----------|-------|--------|------------|
-| 1 | CRITICAL | {brief issue description} | {Reviewer name(s)} | {DIRECTLY_ACTIONABLE / USER_INPUT / RESEARCH_NEEDED / CODEBASE_EXPLORATION} |
-| 2 | IMPORTANT | {brief issue description} | {Reviewer} | {resolution} |
-| ... | ... | ... | ... | ... |
-
-**Contradictions**: {N resolved, N unresolved — or "None"}
-**USER_INPUT needed**: {brief list — or "None"}
-**RESEARCH_NEEDED**: {brief list of topics to research — or "None"}
-
-**Actions**: {what will be done — e.g., "Researching 2 topics, then passing 4 IMPORTANT and 3 MINOR issues as feedback to next implementation iteration."}
-
----
-```
-
-Notes:
-- List ALL issues, not just a summary count. Users want to see what was found.
-- Order by severity (CRITICAL first, then IMPORTANT, then MINOR).
-- Keep issue descriptions to one line — enough to identify the issue, not the full explanation.
-- The "Source" column shows which reviewer(s) flagged the issue. If multiple reviewers flagged the same issue (deduplicated), list all of them (e.g., "Generalist, Backend").
+Use the shared Iteration Summary from `../_shared/references/output-templates.md` with `{scope_prefix}` = `Phase {X} — `.
 
 ### Completion Summary Template
 
-Display at the end of Step 4 when all phases are complete.
+Display at the end of Step 4 when all phases are complete. Use the Completion Summary Template from `../_shared/references/output-templates.md` with these skill-specific values:
 
-```
----
-
-## Implementation Complete
-
-**Plan**: {plan name}
-**Phases completed**: {N}
-**Total iterations**: {sum across all phases}
-
-### Phase Summary
-
-| Phase | Name | Iterations | Final Score | Commit |
-|-------|------|------------|-------------|--------|
-| 1 | {name} | {N} | {min score}/10 | {short hash} |
-| 2 | {name} | {N} | {min score}/10 | {short hash} |
-| ... | | | | |
-
-### Verification Evidence
-
-All phases completed RED-GREEN verification cycle. Phases requiring extra iterations:
-- {Phase N: name — brief note on what failed and how it was resolved, if any}
-
-**User-verified checks** (if any):
-- Phase {N}, check "{description}": User confirmed {result} on {date}
-
-### Key Decisions
-
-- {Any deviations from the plan, significant choices made, or plan modifications}
-
-### Follow-up Recommendations
-
-- Non-verification concerns only — remaining MINOR code quality issues, areas flagged during early exit, suggestions for future work. Verification is complete, not recommended.
-
----
-```
+- `{completion_heading}`: `Implementation Complete`
+- `{score_label}`: omit (replaced by Phase Summary table)
+- `{skill_specific_header_fields}`: `**Plan**: {plan name}`, `**Phases completed**: {N}`, `**Total iterations**: {sum across all phases}`
+- `{issues_resolved_variant}`: omit (covered by Phase Summary)
+- `{skill_specific_extension_sections}`:
+  - `### Phase Summary` — table: `Phase | Name | Iterations | Final Score | Commit`
+  - `### Verification Evidence` — RED-GREEN cycle summary, user-verified checks
+  - `### Key Decisions` — deviations from plan, significant choices
+  - `### Follow-up Recommendations` — remaining MINOR issues, early exit flags, future work suggestions (not verification items)
 
 ## References
 

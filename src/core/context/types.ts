@@ -34,6 +34,7 @@ export interface LearningSummary {
 	summary: string;
 	tags: string[];
 	source: string;
+	file: string;
 }
 
 // ── Content source definition ───────────────────────────────

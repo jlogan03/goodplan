@@ -27,11 +27,9 @@ Project initialization goes through the state machine like any other transition.
 4. RPC calls State Machine: `reduce(zeroState, { type: 'INIT_PROJECT', name: 'my-project' })`
 5. State Machine:
    - Validates no project exists in state (guard: `project.json` key absent)
-   - Returns new state with `project.json` populated (name, version, timestamps, null active pointers), `epics/overview.json`, `slices/overview.json`, `quests/overview.json` (all empty collections), and `activity-log.jsonl` with init entry
-6. Data Layer: `commitState(zeroState, newState)` — for each new key, creates parent directories and writes files. This creates `.project/`, `.project/epics/`, `.project/slices/`, `.project/quests/`, and all initial JSON/JSONL files.
+   - Returns new state with `project.json` populated (name, version, timestamps, null active pointers), `epics/overview.json`, `quests/overview.json`, `tasks/overview.json` (all empty collections), and `activity-log.jsonl` with init entry
+6. Data Layer: `commitState(zeroState, newState)` — for each new key, creates parent directories and writes files. This creates `.project/`, `.project/epics/`, `.project/quests/`, `.project/tasks/`, and all initial JSON/JSONL files.
 7. Commands outputs result
-
-**Note**: The tracer bullet's `init` implementation writes `project.json` directly (bypassing state machine and RPC). This is refactored in slice 03/04 when the state machine is available. The data layer (slice 02) prepares for this by implementing `assembleState()` zero-state behavior and `commitState()` directory creation.
 
 ## `goodplan slice:plan --slice 01-auth --json`
 
@@ -39,7 +37,7 @@ Project initialization goes through the state machine like any other transition.
 2. RPC loads unified state (cache or full assembly)
 3. RPC calls State Machine: `reduce(state, { type: 'BEGIN_PLAN', slice: '01-auth' })`
 4. State Machine:
-   - Reads `slices/01-auth/slice.json` from state → status is `created`
+   - Reads `epics/goodplan-cli/slices/01-auth/slice.json` from state → status is `created`
    - Checks guard: previous slice completed/abandoned or this is the first slice
    - Returns new state with `slice.json` status → `planning`, activity log entry appended
 5. RPC diffs: `slice.json` changed, `activity-log.jsonl` has new entry → writes both, updates cache
@@ -68,7 +66,7 @@ The completion flow has a defined ordering. The state machine enforces it via gu
    - **Verification guard**: checks `input.verificationPassed === true`. If false, returns error — slice stays in `implementation-complete`, response indicates more work needed. Note: `verificationPassed` is a human/orchestrator assertion — the caller (orchestrator skill or user) reviews implementation results and decides whether verification criteria are met, then asserts the result in the `slice:complete` stdin payload. The CLI does not automatically determine verification.
    - Updates `slice.json` status → `complete`
    - Appends deferred items to target slice's `slice.json` deferred array
-   - Appends learnings to `slices/01-auth/learnings.jsonl`
+   - Appends learnings to `epics/goodplan-cli/slices/01-auth/learnings.jsonl`
    - If any learnings have non-empty `rollupTo`, appends to the specified scope-level `learnings.jsonl` files
    - Appends activity log entry
    - **Implicit transition check**: scans all slices for the epic — if all complete, adds a note to the response (does not auto-transition the epic)
@@ -118,11 +116,11 @@ This shows the full two-actor sequence for a plan phase. Other sub-agent phases 
    - Commands → RPC → `startContext('plan', { type: 'slice', name: '01-auth' }, { inlineContext: true })`
    - Read-only: assembles context bundle (slice goal, architecture, conventions, decisions, learnings) inlined up to budget
    - Returns: `{ inline: { "slice-goal": "...", "architecture-overview": "...", ... }, references: [...], decisions: [...] }`
-4. **Sub-agent** writes plan markdown directly to `.project/slices/01-auth/plan.md`
+4. **Sub-agent** writes plan markdown directly to `.project/epics/goodplan-cli/slices/01-auth/plan.md`
 5. **Sub-agent** calls `goodplan submit-plan --slice 01-auth` (with optional learnings via stdin)
    - Commands → RPC → `submit('plan', { type: 'slice', name: '01-auth' }, { phase: 'plan' }, {})`
    - State machine: `reduce(state, { type: 'COMPLETE_PLAN', slice: '01-auth' })`
-   - Guard checks `hasChild(state, "slices/01-auth", "plan.md")` — plan.md must exist in the state tree
+   - Guard checks `hasChild(state, "epics/goodplan-cli/slices/01-auth", "plan.md")` — plan.md must exist in the state tree
    - Slice transitions to `plan-created`
 6. **Orchestrator** receives sub-agent completion, continues workflow (e.g., `slice:refine-plan`)
 
@@ -131,11 +129,11 @@ Key points:
 - `start-plan` is read-only; `submit-plan` is the state transition trigger
 - The sub-agent writes content to the filesystem; `submit-plan` carries no content payload
 
-## Learnings Rollup (`goodplan learning:rollup --from slices/01-auth --to project`)
+## Learnings Rollup (`goodplan learning:rollup --from epics/goodplan-cli/slices/01-auth --to project`)
 
 1. Commands parses flags
 2. RPC loads unified state
-3. RPC calls State Machine: `reduce(state, { type: 'ROLLUP_LEARNINGS', from: 'slices/01-auth', to: 'project' })`
+3. RPC calls State Machine: `reduce(state, { type: 'ROLLUP_LEARNINGS', from: 'epics/goodplan-cli/slices/01-auth', to: 'project' })`
 4. State Machine:
    - Reads source `learnings.jsonl` from state
    - Filters entries where `rollupTo` includes the target scope

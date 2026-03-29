@@ -1,0 +1,1 @@
+Build the recursive tree state model end-to-end: ProjectState types, entity schemas, assembleState/commitState I/O, state machine with INIT_PROJECT, then wire init+status commands through the full load→reduce→commit cycle — replacing tracer bullet's direct I/O.

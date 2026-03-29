@@ -49,26 +49,30 @@ type StateEvent =
   | { type: 'ACTIVATE_EPIC'; epic: string; ts: string }
   | { type: 'ABANDON_EPIC'; epic: string; ts: string; reason: string }
   | { type: 'COMPLETE_EPIC'; epic: string; ts: string; verificationResults: VerificationResult[] }
-  // Slice lifecycle
+  // Slice lifecycle — all slice events carry `epic: string` for nested path construction
   | { type: 'CREATE_SLICE'; name: string; epic: string; goal: string; ts: string }
-  | { type: 'BEGIN_PLAN'; slice: string; ts: string }
-  | { type: 'COMPLETE_PLAN'; slice: string; ts: string }
-  | { type: 'BEGIN_REFINEMENT'; slice: string; ts: string }
-  | { type: 'COMPLETE_REFINEMENT_ROUND'; slice: string; ts: string; scores: Record<string, number>; override?: boolean }
-  | { type: 'BEGIN_IMPLEMENTATION'; slice: string; ts: string }
-  | { type: 'COMPLETE_IMPLEMENTATION'; slice: string; ts: string }
-  | { type: 'COMPLETE_SLICE'; slice: string; ts: string; verificationPassed: boolean; deferred: DeferredItem[]; learnings: LearningInput[]; architectureDelta: ArchitectureDeltaInput[] }
-  | { type: 'ABANDON_SLICE'; slice: string; ts: string; reason: string }
+  | { type: 'BEGIN_PLAN'; epic: string; slice: string; ts: string }
+  | { type: 'COMPLETE_PLAN'; epic: string; slice: string; ts: string }
+  | { type: 'BEGIN_REFINEMENT'; epic: string; slice: string; ts: string }
+  | { type: 'COMPLETE_REFINEMENT_ROUND'; epic: string; slice: string; ts: string; scores: Record<string, number>; override?: boolean }
+  | { type: 'BEGIN_IMPLEMENTATION'; epic: string; slice: string; ts: string }
+  | { type: 'COMPLETE_IMPLEMENTATION'; epic: string; slice: string; ts: string }
+  | { type: 'COMPLETE_SLICE'; epic: string; slice: string; ts: string; verificationPassed: boolean; deferred: DeferredItem[]; learnings: LearningEventEntry[]; architectureDelta: ArchitectureDeltaInput[] }
+  | { type: 'ABANDON_SLICE'; epic: string; slice: string; ts: string; reason: string }
   // Quest lifecycle
-  | { type: 'CREATE_QUEST'; name: string; ts: string }
+  | { type: 'CREATE_QUEST'; name: string; goal: string; ts: string }
   | { type: 'BEGIN_QUEST_PLAN'; quest: string; ts: string }
   | { type: 'COMPLETE_QUEST_PLAN'; quest: string; ts: string }
   | { type: 'BEGIN_QUEST_REFINEMENT'; quest: string; ts: string }
   | { type: 'COMPLETE_QUEST_REFINEMENT_ROUND'; quest: string; ts: string; scores: Record<string, number>; override?: boolean }
   | { type: 'BEGIN_QUEST_IMPLEMENTATION'; quest: string; ts: string }
   | { type: 'COMPLETE_QUEST_IMPLEMENTATION'; quest: string; ts: string }
-  | { type: 'COMPLETE_QUEST'; quest: string; ts: string; verificationPassed: boolean; learnings: Learning[]; architectureDelta: ArchitectureDelta[] }
+  | { type: 'COMPLETE_QUEST'; quest: string; ts: string; verificationPassed: boolean; learnings: LearningEventEntry[]; architectureDelta: ArchitectureDeltaInput[] }
   | { type: 'ABANDON_QUEST'; quest: string; ts: string; reason: string }
+  // Task lifecycle
+  | { type: 'CREATE_TASK'; name: string; title: string; description?: string; context?: TaskContext; ts: string }
+  | { type: 'DROP_TASK'; name: string; reason: string; ts: string }
+  | { type: 'CONVERT_TASK'; name: string; to: 'quest' | 'epic'; convertedName: string; convertedGoal?: string; ts: string }
   // Cross-cutting
   | { type: 'ROLLUP_LEARNINGS'; from: string; to: string; ts: string }
   | { type: 'CREATE_DECISION'; id: string; domain: string; title: string; summary: string; ts: string }
@@ -87,6 +91,7 @@ These types are used in `StateEvent` payloads, `CompleteInput`, and JSONL record
 interface DeferredItem {
   description: string;        // what was deferred
   targetSlice: string;        // name of the slice this should be routed to
+  targetEpic?: string;        // optional — defaults to completing slice's epic for same-epic routing
 }
 
 interface Verification {
@@ -232,12 +237,12 @@ All paths below are `resolve()` paths into the `ProjectState` tree.
 | `BEGIN_ARCHITECTURE` | `epics/<name>/epic.json`, `epics/overview.json` | `epics/<name>/epic.json`, `epics/overview.json`, `activity-log.jsonl` |
 | `COMPLETE_ARCHITECTURE` | `epics/<name>/epic.json`, `epics/<name>/architecture/`, `epics/overview.json` | `epics/<name>/epic.json`, `epics/overview.json`, `activity-log.jsonl` |
 | `ACTIVATE_EPIC` | `project.json`, `epics/<name>/epic.json`, `epics/overview.json` | `project.json`, `epics/<name>/epic.json`, `epics/overview.json`, `activity-log.jsonl` |
-| `CREATE_SLICE` | `epics/<name>/epic.json`, `slices/overview.json` | `slices/<name>/slice.json`, `slices/overview.json`, `epics/<name>/epic.json` |
-| `BEGIN_PLAN` | `project.json`, `slices/<name>/slice.json`, `slices/overview.json` | `project.json`, `slices/<name>/slice.json`, `activity-log.jsonl` |
-| `COMPLETE_PLAN` | `slices/<name>/slice.json`, `slices/<name>/` | `slices/<name>/slice.json`, `activity-log.jsonl` |
-| `COMPLETE_REFINEMENT_ROUND` | `slices/<name>/slice.json` | `slices/<name>/slice.json`, `activity-log.jsonl` |
-| `COMPLETE_SLICE` | `project.json`, `slices/<name>/slice.json`, `slices/overview.json`, `epics/<epic>/epic.json` | `project.json`, `slices/<name>/slice.json`, `slices/overview.json`, `slices/<name>/learnings.jsonl`, `slices/<name>/architecture-deltas.jsonl`, `learnings.jsonl`, `activity-log.jsonl` |
-| `COMPLETE_EPIC` | `epics/<name>/epic.json`, `project.json`, `slices/overview.json` | `epics/<name>/epic.json`, `project.json`, `activity-log.jsonl` |
+| `CREATE_SLICE` | `epics/<epic>/epic.json` | `epics/<epic>/slices/<name>/slice.json`, `epics/<epic>/epic.json` |
+| `BEGIN_PLAN` | `project.json`, `epics/<epic>/slices/<name>/slice.json` | `project.json`, `epics/<epic>/slices/<name>/slice.json`, `activity-log.jsonl` |
+| `COMPLETE_PLAN` | `epics/<epic>/slices/<name>/slice.json`, `epics/<epic>/slices/<name>/` | `epics/<epic>/slices/<name>/slice.json`, `activity-log.jsonl` |
+| `COMPLETE_REFINEMENT_ROUND` | `epics/<epic>/slices/<name>/slice.json` | `epics/<epic>/slices/<name>/slice.json`, `activity-log.jsonl` |
+| `COMPLETE_SLICE` | `project.json`, `epics/<epic>/slices/<name>/slice.json`, `epics/<epic>/epic.json` | `project.json`, `epics/<epic>/slices/<name>/slice.json`, `epics/<epic>/epic.json`, `epics/<epic>/slices/<name>/learnings.jsonl`, `epics/<epic>/slices/<name>/architecture-deltas.jsonl`, `learnings.jsonl`, `activity-log.jsonl` |
+| `COMPLETE_EPIC` | `epics/<name>/epic.json`, `project.json` | `epics/<name>/epic.json`, `project.json`, `activity-log.jsonl` |
 | `CREATE_DECISION` | `decisions.jsonl` | `decisions.jsonl`, `activity-log.jsonl` |
 | `UPDATE_DECISION` | `decisions.jsonl` | `decisions.jsonl`, `activity-log.jsonl` |
 | `ROLLUP_LEARNINGS` | source `learnings.jsonl` | target `learnings.jsonl`, `activity-log.jsonl` |
@@ -259,10 +264,29 @@ Other events follow the same pattern: they read the target entity's JSON plus an
 Content existence checks use `hasChild(state, dirPath, childName)` to navigate the recursive `DirectoryEntry.contents` tree. The state machine reads directory entries to validate content prerequisites — it never modifies them.
 
 Key guards:
-- `hasChild(state, "slices/<name>", "plan.md")` — guards `COMPLETE_PLAN`
-- `hasChild(state, "slices/<name>", "plan-refined.md")` — guards `BEGIN_IMPLEMENTATION`
+- `hasChild(state, "epics/<epic>/slices/<name>", "plan.md")` — guards `COMPLETE_PLAN`
+- `hasChild(state, "epics/<epic>/slices/<name>", "plan-refined.md")` — guards `BEGIN_IMPLEMENTATION`
 
 These guards are defined in transition-tables.md (source of truth). Only guards listed there are implemented.
+
+### Shared Transition Helpers
+
+```typescript
+// Learnings processing — shared between COMPLETE_SLICE and COMPLETE_QUEST handlers.
+// Writes learnings to the source scope's JSONL and rolls up to target scopes.
+// `availableTargets` makes the slice/quest distinction explicit:
+// - Slices pass Set(["epic", "project"]) — roll up to both
+// - Quests pass Set(["project"]) — skip epic, roll up to project only
+function processLearnings(
+  tree: ProjectTree,
+  learnings: LearningEventEntry[],
+  source: string,
+  availableTargets: Set<string>,
+  epicName?: string
+): ProjectState;
+```
+
+Follows the same pattern as `appendActivityLog` — a shared helper called by multiple transition handlers to avoid duplication.
 
 ## Dependencies
 
@@ -274,15 +298,15 @@ Priority: 1 (implement first — per _overview.md subsystem maturity)
 
 ### State machine has no I/O imports
 
-- **Test file:** candidate — not yet written
+- **Test file:** `tests/fitness/state-machine-purity.test.ts`
 - **Verifies:** AST or import scan of all files in `src/core/state/` confirming no `fs`, `path` (for file ops), or network imports
 
 ### Every (status, event) pair is handled
 
-- **Test file:** candidate — not yet written
+- **Test file:** `tests/fitness/transition-completeness.test.ts`
 - **Verifies:** For each entity type, enumerates all status × event combinations and confirms the reducer either returns a valid new state or a `STATE_INVALID_TRANSITION` error — no unhandled cases
 
 ### Reducer is pure — same inputs produce same outputs
 
-- **Test file:** candidate — not yet written
+- **Test file:** `tests/fitness/state-machine-purity.test.ts`
 - **Verifies:** Property-based test: for random valid (state, event) pairs, calling reduce twice with identical inputs produces identical outputs

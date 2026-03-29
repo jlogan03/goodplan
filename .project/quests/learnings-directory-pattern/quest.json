@@ -1,0 +1,8 @@
+{
+	"created": "2026-03-28T00:06:46.961Z",
+	"goal": "Unify learnings storage: JSONL index + per-learning .md files in learnings/ directory, retiring monolithic learnings.md.",
+	"name": "learnings-directory-pattern",
+	"refinement": null,
+	"status": "completed",
+	"updated": "2026-03-28T00:17:58.776Z"
+}

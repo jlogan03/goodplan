@@ -195,8 +195,9 @@ describe("rpcMigrate — Confirmation round", () => {
 		// .project/project.json should exist (state committed)
 		expect(fs.existsSync(path.join(projectDir, "project.json"))).toBe(true);
 
-		// .project-old/ should exist (renamed)
-		expect(fs.existsSync(path.join(tmpDir, ".project-old"))).toBe(true);
+		// .project-old-<timestamp>/ should exist (renamed)
+		const backupDirs = fs.readdirSync(tmpDir).filter((d) => d.startsWith(".project-old-"));
+		expect(backupDirs).toHaveLength(1);
 
 		// .migration-in-progress.json should be cleaned up
 		expect(fs.existsSync(path.join(tmpDir, ".migration-in-progress.json"))).toBe(false);
@@ -211,12 +212,11 @@ describe("rpcMigrate — Confirmation round", () => {
 
 		// Verify overview files
 		expect(fs.existsSync(path.join(projectDir, "epics", "overview.json"))).toBe(true);
-		expect(fs.existsSync(path.join(projectDir, "slices", "overview.json"))).toBe(true);
 		expect(fs.existsSync(path.join(projectDir, "quests", "overview.json"))).toBe(true);
 
 		// Verify entity directories
 		expect(fs.existsSync(path.join(projectDir, "epics", "my-epic", "epic.json"))).toBe(true);
-		expect(fs.existsSync(path.join(projectDir, "slices", "slice-one", "slice.json"))).toBe(true);
+		expect(fs.existsSync(path.join(projectDir, "epics", "my-epic", "slices", "slice-one", "slice.json"))).toBe(true);
 		expect(fs.existsSync(path.join(projectDir, "quests", "my-quest", "quest.json"))).toBe(true);
 
 		// Verify activity log

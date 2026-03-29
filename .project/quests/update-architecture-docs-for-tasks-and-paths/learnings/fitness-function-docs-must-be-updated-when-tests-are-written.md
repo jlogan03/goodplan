@@ -1,0 +1,1 @@
+All 9 fitness function tests existed but per-API docs still said candidate. The _overview.md had correct paths, creating inconsistency. Future fitness function work should update both per-API doc and _overview.md in the same commit.

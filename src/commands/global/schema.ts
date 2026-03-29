@@ -23,9 +23,10 @@ import {
 	submitRefinementInputSchema,
 	submitSlicesInputSchema,
 } from "../../schemas/commands/submit.js";
+import { taskCreateInputSchema } from "../../schemas/commands/task.js";
 import { GoodplanError } from "../../util/errors.js";
 import { output } from "../../util/output.js";
-import { globalArgs } from "../global-args.js";
+import { globalArgs, listArgs } from "../global-args.js";
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -57,6 +58,7 @@ export const stdinSchemaRegistry: Record<string, z.ZodType> = {
 	"slice:complete": completeSliceInputSchema,
 	"quest:create": createQuestInputSchema,
 	"quest:complete": completeQuestInputSchema,
+	"task:create": taskCreateInputSchema,
 	"decision:create": createDecisionInputSchema,
 	"decision:update": updateDecisionInputSchema,
 	"submit-plan": submitPlanInputSchema,
@@ -98,6 +100,17 @@ const globalArgDefs: Record<string, ArgDefinition> = Object.fromEntries(
 		};
 		if ("required" in def && def.required !== undefined) argDef.required = def.required;
 		if ("default" in def && def.default !== undefined) argDef.default = def.default;
+		return [key, argDef];
+	}),
+);
+
+const listArgDefs: Record<string, ArgDefinition> = Object.fromEntries(
+	Object.entries(listArgs).map(([key, def]) => {
+		const argDef: ArgDefinition = {
+			type: def.type,
+			description: def.description,
+		};
+		if ("required" in def && def.required !== undefined) argDef.required = def.required;
 		return [key, argDef];
 	}),
 );
@@ -155,6 +168,7 @@ registerCommand(
 	"List all epics with name, status, created, and completed timestamps.",
 	{
 		...globalArgDefs,
+		...listArgDefs,
 	},
 );
 registerCommand("epic:show", "Show details for a specific epic.", {
@@ -219,11 +233,14 @@ registerCommand("slice:create", "Create a new slice. Stdin: {name, goal}.", {
 });
 registerCommand("slice:list", "List all slices.", {
 	...globalArgDefs,
+	...listArgDefs,
 	epic: { type: "string", description: "Filter by epic name" },
+	all: { type: "boolean", description: "Show slices from all epics" },
 });
 registerCommand("slice:show", "Show details for a specific slice.", {
 	...globalArgDefs,
 	slice: { type: "string", description: "Slice name", required: true },
+	epic: { type: "string", description: "Epic name (defaults to active epic)" },
 });
 registerCommand("slice:plan", "Begin planning for a slice.", {
 	...globalArgDefs,
@@ -257,6 +274,7 @@ registerCommand("quest:create", "Create a new quest. Stdin: {name, goal}.", {
 });
 registerCommand("quest:list", "List all quests.", {
 	...globalArgDefs,
+	...listArgDefs,
 });
 registerCommand("quest:show", "Show details for a specific quest.", {
 	...globalArgDefs,
@@ -288,12 +306,55 @@ registerCommand("quest:abandon", "Abandon a quest.", {
 	reason: { type: "string", description: "Reason for abandoning", required: true },
 });
 
+// Task commands
+registerCommand(
+	"task:create",
+	"Create a new task. Stdin: {name, title, description?, context?}. Transitions to 'open' status.",
+	{
+		...globalArgDefs,
+	},
+);
+registerCommand(
+	"task:list",
+	"List tasks. Defaults to open tasks only; use --all to include converted/dropped. JSON includes filter field.",
+	{
+		...globalArgDefs,
+		...listArgDefs,
+		all: { type: "boolean", description: "Include converted and dropped tasks", default: false },
+	},
+);
+registerCommand("task:show", "Show full task entity details.", {
+	...globalArgDefs,
+	task: { type: "string", description: "Task name", required: true },
+});
+registerCommand(
+	"task:drop",
+	"Drop a task with a reason. Requires --task and --reason flags. Transition: open -> dropped.",
+	{
+		...globalArgDefs,
+		task: { type: "string", description: "Task name", required: true },
+		reason: { type: "string", description: "Reason for dropping", required: true },
+	},
+);
+registerCommand(
+	"task:convert",
+	"Convert a task to a quest or epic. Requires --task and --to flags. Optional --name and --goal overrides. Transition: open -> converted.",
+	{
+		...globalArgDefs,
+		task: { type: "string", description: "Task name", required: true },
+		to: { type: "string", description: 'Target entity type: "quest" or "epic"', required: true },
+		name: { type: "string", description: "Override name for created entity" },
+		goal: { type: "string", description: "Override goal for created entity" },
+	},
+);
+
 // Decision commands
 registerCommand("decision:create", "Create a new decision. Stdin: {id, domain, title, summary}.", {
 	...globalArgDefs,
 });
 registerCommand("decision:list", "List all decisions.", {
 	...globalArgDefs,
+	...listArgDefs,
 });
 registerCommand("decision:show", "Show details for a specific decision.", {
 	...globalArgDefs,
@@ -311,6 +372,7 @@ registerCommand(
 // Learning commands
 registerCommand("learning:list", "List learnings.", {
 	...globalArgDefs,
+	...listArgDefs,
 	source: { type: "string", description: "Filter by source scope" },
 });
 registerCommand("learning:rollup", "Roll up learnings from one scope to another.", {

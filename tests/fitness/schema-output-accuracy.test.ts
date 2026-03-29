@@ -7,6 +7,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { globalArgs } from "../../src/commands/global-args.js";
 import { buildBinary, runCommand } from "../integration/helpers.js";
 
 describe("INV-006: Schema output accuracy", () => {
@@ -33,7 +34,7 @@ describe("INV-006: Schema output accuracy", () => {
 		};
 
 		for (const cmd of schema.commands) {
-			expect(typeof cmd.name, `command should have string name`).toBe("string");
+			expect(typeof cmd.name, "command should have string name").toBe("string");
 			expect(cmd.name.length).toBeGreaterThan(0);
 			expect(typeof cmd.description, `${cmd.name} should have string description`).toBe("string");
 			expect(typeof cmd.args, `${cmd.name} should have args object`).toBe("object");
@@ -49,7 +50,7 @@ describe("INV-006: Schema output accuracy", () => {
 			}>;
 		};
 
-		const globalArgNames = ["json", "quiet", "query", "verbose"];
+		const globalArgNames = Object.keys(globalArgs);
 
 		for (const cmd of schema.commands) {
 			for (const globalArg of globalArgNames) {
@@ -94,11 +95,7 @@ describe("INV-006: Schema output accuracy", () => {
 		];
 
 		for (const cmdName of stdinCommands) {
-			const result = runCommand(bin, [
-				"schema",
-				"--json",
-				`--command=${cmdName}`,
-			]);
+			const result = runCommand(bin, ["schema", "--json", `--command=${cmdName}`]);
 			expect(result.exitCode, `schema --command=${cmdName} should exit 0`).toBe(0);
 			expect(result.json).toBeDefined();
 
@@ -107,10 +104,7 @@ describe("INV-006: Schema output accuracy", () => {
 				stdinSchema?: Record<string, unknown>;
 			};
 			expect(detail.name).toBe(cmdName);
-			expect(
-				detail.stdinSchema,
-				`${cmdName} should have stdinSchema in detail view`,
-			).toBeDefined();
+			expect(detail.stdinSchema, `${cmdName} should have stdinSchema in detail view`).toBeDefined();
 		}
 	});
 
@@ -130,11 +124,7 @@ describe("INV-006: Schema output accuracy", () => {
 			const listCmd = schema.commands.find((c) => c.name === cmdName);
 			if (listCmd === undefined) continue;
 
-			const detailResult = runCommand(bin, [
-				"schema",
-				"--json",
-				`--command=${cmdName}`,
-			]);
+			const detailResult = runCommand(bin, ["schema", "--json", `--command=${cmdName}`]);
 			expect(detailResult.exitCode).toBe(0);
 
 			const detail = detailResult.json as {
@@ -145,10 +135,7 @@ describe("INV-006: Schema output accuracy", () => {
 			// Arg keys should match
 			const listArgKeys = Object.keys(listCmd.args).sort();
 			const detailArgKeys = Object.keys(detail.args).sort();
-			expect(
-				detailArgKeys,
-				`${cmdName}: detail args should match list args`,
-			).toEqual(listArgKeys);
+			expect(detailArgKeys, `${cmdName}: detail args should match list args`).toEqual(listArgKeys);
 		}
 	});
 });

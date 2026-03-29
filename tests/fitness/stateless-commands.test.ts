@@ -6,10 +6,11 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { globalArgs } from "../../src/commands/global-args.js";
 import { buildBinary, runCommand } from "../integration/helpers.js";
 
-/** Global args that are not entity-identifying. */
-const GLOBAL_ARG_NAMES = new Set(["json", "quiet", "query", "verbose"]);
+/** Global args that are not entity-identifying — derived from globalArgs source of truth. */
+const GLOBAL_ARG_NAMES = new Set(Object.keys(globalArgs));
 
 /** Read-only commands that don't need entity-identifying flags. */
 const READ_ONLY_COMMANDS = new Set([
@@ -22,18 +23,27 @@ const READ_ONLY_COMMANDS = new Set([
 	"quest:list",
 	"decision:list",
 	"learning:list",
+	"task:list",
+	"task:show",
 ]);
 
 /**
  * Entity-identifying arg names. At least one of these (or a stdin schema
  * with a required name/id field) must be present on mutation commands.
  */
-const ENTITY_ARGS = new Set(["epic", "slice", "quest", "id", "from", "to"]);
+const ENTITY_ARGS = new Set(["epic", "slice", "quest", "task", "id", "from", "to"]);
+
+/**
+ * Commands that operate on the entire project rather than targeting a specific entity.
+ * Note: `init` is also project-scoped but lives in `READ_ONLY_COMMANDS`.
+ */
+const ENTITY_EXEMPT_COMMANDS = new Set(["migrate"]);
 
 /** Commands that accept stdin with required entity-identifying fields. */
 const STDIN_ENTITY_COMMANDS = new Set([
-	"epic:create",     // stdin has required 'name'
-	"quest:create",    // stdin has required 'name'
+	"epic:create", // stdin has required 'name'
+	"quest:create", // stdin has required 'name'
+	"task:create", // stdin has required 'name'
 	"decision:create", // stdin has required 'id'
 ]);
 
@@ -66,10 +76,11 @@ describe("INV-004: Stateless commands — entity-identifying flags required", ()
 			// Skip commands that accept stdin with required entity fields
 			if (STDIN_ENTITY_COMMANDS.has(cmd.name)) continue;
 
+			// Skip commands that operate on the entire project (no entity target)
+			if (ENTITY_EXEMPT_COMMANDS.has(cmd.name)) continue;
+
 			// Check if any non-global arg is entity-identifying
-			const commandArgs = Object.keys(cmd.args).filter(
-				(a) => !GLOBAL_ARG_NAMES.has(a),
-			);
+			const commandArgs = Object.keys(cmd.args).filter((a) => !GLOBAL_ARG_NAMES.has(a));
 			const hasEntityArg = commandArgs.some((a) => ENTITY_ARGS.has(a));
 
 			if (!hasEntityArg) {
@@ -80,9 +91,7 @@ describe("INV-004: Stateless commands — entity-identifying flags required", ()
 		}
 
 		if (violations.length > 0) {
-			expect.fail(
-				`Commands missing entity-identifying flags:\n${violations.join("\n")}`,
-			);
+			throw new Error(`Commands missing entity-identifying flags:\n${violations.join("\n")}`);
 		}
 	});
 });

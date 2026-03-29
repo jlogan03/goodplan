@@ -33,6 +33,9 @@ mkdir -p "$SKILLS_DST"
 SKILL_DIRS=(
   _shared
   audit-architecture
+  audit-docs
+  audit-tests
+  capture
   complete
   create-architecture
   create-epic
@@ -41,6 +44,7 @@ SKILL_DIRS=(
   explore
   implement-plan
   migrate
+  onboard-repo
   project-status
   refine-architecture
   refine-plan

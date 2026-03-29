@@ -19,6 +19,9 @@ skills/                   # source of truth for goodplan workflow skills
 ├── _shared/
 │   └── references/
 ├── audit-architecture/
+├── audit-docs/
+├── audit-tests/
+├── capture/
 ├── complete/
 ├── create-architecture/
 ├── create-epic/
@@ -48,29 +51,30 @@ src/
 │   │                       # slice:implement, slice:complete, slice:abandon
 │   ├── quest/              # quest:create, quest:list, quest:show, quest:plan, quest:refine-plan,
 │   │                       # quest:implement, quest:complete, quest:abandon
+│   ├── task/               # task:create, task:list, task:show, task:drop, task:convert
 │   ├── decision/           # decision:create, decision:update, decision:list, decision:show
 │   ├── learning/           # learning:rollup, learning:list
-│   ├── activity/
 │   └── global/
 ├── core/
 │   ├── state/
 │   │   └── transitions/    # per-event transition handlers (epic-create, epic-phase, epic-refine,
 │   │                       # epic-lifecycle, epic-verify, slice-create, slice-plan, slice-submit,
 │   │                       # slice-implement, slice-complete, slice-abandon, quest-create,
-│   │                       # quest-plan, quest-implement, quest-complete, quest-abandon)
+│   │                       # quest-plan, quest-implement, quest-complete, quest-abandon,
+│   │                       # task-create, task-lifecycle)
 │   ├── data/               # assemble/commit/load state tree, tree types, schema registry
 │   ├── rpc/                # workflow orchestration: init, begin, complete, submit, status, types
-│   ├── context/            # context bundling: startContext, priorities, budget, collect, decisions, learnings
-│   └── workflow/
+│   └── context/            # context bundling: startContext, priorities, budget, collect, decisions, learnings
 ├── schemas/
-│   ├── commands/           # Zod schemas for CLI input validation (epic.ts, slice.ts, quest.ts, submit.ts, decision.ts, status.ts)
-│   ├── entities/           # Zod schemas for JSON entities (project, epic, slice, quest, overview)
+│   ├── commands/           # Zod schemas for CLI input validation (epic.ts, slice.ts, quest.ts, task.ts, submit.ts, decision.ts, status.ts)
+│   ├── entities/           # Zod schemas for JSON entities (project, epic, slice, quest, task, overview)
 │   └── records/            # Zod schemas for JSONL records (activity-log, decision, learning, architecture-delta)
 ├── util/                   # output, errors, validate, query (applyQuery jq helper)
 └── index.ts
 tests/
 ├── unit/
 ├── integration/
+├── fitness/
 └── fixtures/
 ```
 

@@ -1,0 +1,1 @@
+When a review skill operates on scattered files across directories (not a single file/directory), define a file-matching protocol: filename prefixes on reviewer issues, editor inference fallback for missing prefixes, and a manifest listing all working copy paths. The iteration loop's single-file/directory convention doesn't cover this natively.

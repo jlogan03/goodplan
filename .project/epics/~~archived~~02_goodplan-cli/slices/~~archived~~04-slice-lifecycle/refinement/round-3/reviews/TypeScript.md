@@ -1,0 +1,34 @@
+## Issues
+
+**[IMPORTANT]** Phase 1 `learningInputSchema` category field should use `z.enum()` not `z.string()` to match the architecture spec
+Phase 1 task 2(a) says `learningInputSchema` includes a "category enum". The existing `learningEntrySchema` uses `z.string().min(1)` with the comment "intentionally open string for forward-compatibility; RPC layer enforces specific enum". The architecture spec (`rpc-layer-api.md` Learning interface) defines `category: 'domain' | 'worked' | 'didnt-work' | 'do-differently'`. Since `learningInputSchema` is the RPC/CLI boundary schema (user-facing input), it should use `z.enum(["domain", "worked", "didnt-work", "do-differently"])` to validate at input time, per INV-005 (schema validation on every read and write) and INV-007 (no silent errors). The storage schema (`learningEntrySchema`) can remain an open string for forward-compatibility, but the input schema should be strict. Without this, invalid categories pass through the CLI boundary and reach the state machine unchecked. Phase 1 should specify `z.enum(...)` for category in `learningInputSchema`.
+Resolution: DIRECTLY_ACTIONABLE
+
+**[IMPORTANT]** Phase 3 `CompleteResult` extension uses structurally incorrect `deferredRouted` type
+Phase 3 task 5 defines `deferredRouted?: { item: DeferredItem; target: string }[]`. This matches `rpc-layer-api.md`. However, `DeferredItem` already contains `targetSlice: string` (see `src/schemas/entities/slice.ts` line 19-21), so `target` in the result object is redundant with `item.targetSlice`. The architecture spec defines this shape, so the plan should follow it. But the plan should note that `target` is the resolved/confirmed target (the slice that actually received the item), while `item.targetSlice` is the user-requested target. If they always match, the plan should simplify to `deferredRouted?: DeferredItem[]` or document the distinction. As written, implementers may set `target = item.targetSlice` without understanding the intent.
+Resolution: DIRECTLY_ACTIONABLE
+
+**[MINOR]** Phase 2 `guardSliceStatus` return type should be `Slice | StateError` but callers in `slice-submit.ts` refactor use `isStateError()` narrowing
+Phase 2 task 7 says the new shared `guardSliceStatus` returns `Slice | StateError` (matching `guardEpicStatus`), and task 8 says the `slice-submit.ts` refactor will update callers to use `isStateError()` narrowing instead of `!== null`. This is correct. However, the plan should note that `handleCompletePlan` and other existing handlers currently use non-null assertion (`slice!`) after the guard check (see `slice-submit.ts` lines 111, 129, etc.). With the new `Slice | StateError` pattern, the guard's return value IS the narrowed slice, eliminating all `!` assertions. The plan should explicitly state that the refactored callers should use the guard return value directly (e.g., `const sliceOrErr = guardSliceStatus(...); if (isStateError(sliceOrErr)) return sliceOrErr; const slice = sliceOrErr;`) to eliminate all non-null assertions. This is the main type-safety benefit of the pattern migration.
+Resolution: DIRECTLY_ACTIONABLE
+
+**[MINOR]** Phase 2 `overviewItemSchema` `epic` field added in Phase 1 but referenced in Phase 2 without cross-reference
+Phase 2 task 1 says "Note: `overviewItemSchema` in `src/schemas/overview.ts` needs an optional `epic?: string` field added (Phase 1 scope, since it's a schema change)." Phase 1 task 4 covers this addition. This is consistent, but `overviewItemSchema` is currently not exported (line 4 of `overview.ts`: `const overviewItemSchema`). Phase 1 should note that the schema needs to be exported (or the type needs to be exported) so that Phase 2 handlers and Phase 4 commands can reference the `epic` field in a type-safe way when filtering. Currently, `Overview` is exported but the individual item type is not. The implementer should either export `overviewItemSchema` or add `export type OverviewItem = z.infer<typeof overviewItemSchema>`.
+Resolution: DIRECTLY_ACTIONABLE
+
+**[MINOR]** Phase 4 `createSliceInput` schema should not include `epic` as optional
+Phase 4 task 9 says "`createSliceInput` should have `epic` as optional in the schema (since the `--epic` flag provides it and `validateInput` merges flags into the input object)". Looking at the existing `createEpicInputSchema` (no flag merge -- it takes `name` and `goal` from stdin only), this follows a different pattern. The epic create command has no `--epic` flag because the epic name comes from stdin. For slice create, `--epic` is a required flag (per commands-api.md and INV-004), and `name`/`goal` come from stdin. The `validateInput` merge means the flag value gets added to the validated object. The schema should have `epic` as `z.string().min(1)` (required in the merged result, not optional), because after merge the field must be present. If `epic` is optional in the schema, a missing `--epic` flag would silently produce undefined. Check the `validateInput` implementation to confirm merge behavior, but based on INV-004 (target flags required), `epic` should be required in the final validated shape.
+Resolution: DIRECTLY_ACTIONABLE
+
+**[MINOR]** Phase 3 `architectureDeltaInputSchema` omits `ts` but Phase 2 state machine expects `ts` on each delta
+Phase 1 task 2(b) says `architectureDeltaInputSchema` "omits `ts` field (injected by RPC)". Phase 3 task 2 says "Inject `ts` on each ArchitectureDelta entry." Phase 2 task 4 step 4 says "Inject `ts` from event.ts on each delta." But the state machine is pure (INV-003) and receives the event with `architectureDelta` already populated. If the state machine injects `ts` on each delta, the delta must arrive without `ts`. If the RPC layer injects `ts` before building the event, the state machine receives deltas with `ts` already set. The plan has both Phase 2 and Phase 3 claiming to inject `ts`. Clarify: the RPC layer (Phase 3) should inject `ts` on each `ArchitectureDeltaInput` when building the `COMPLETE_SLICE` event, so the state machine receives full `ArchitectureDelta` objects with `ts`. Phase 2 should just write them as-is (they arrive with `ts` on the event payload).
+Resolution: DIRECTLY_ACTIONABLE
+
+## Score: 9/10
+
+All previous IMPORTANT issues from round 2 are resolved. The plan now correctly places count derivation in the RPC layer, handles JSONL undefined with `?? []`, keeps `goal` optional in `BeginPayloadMap`, and documents the `rollup` derivation. The remaining issues are one IMPORTANT (input schema validation strictness for learning category) and several MINOR clarifications around type exports, non-null assertion elimination, and ts injection ownership. Fixing the category enum validation and clarifying the ts injection ownership would bring this to 9.5+.
+
+## Summary
+- Critical: 0
+- Important: 2
+- Minor: 4

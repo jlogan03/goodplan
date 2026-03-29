@@ -35,7 +35,6 @@ Per-epic metadata. Located at `.project/epics/<name>/epic.json`.
       "modifiedDuring": null
     }
   ],
-  "sliceSequence": ["01-data-layer", "02-state-machine", "03-rpc", "04-commands"],
   "created": "2026-03-20T00:00:00Z",
   "activated": "2026-03-20T12:00:00Z",
   "updated": "2026-03-20T12:00:00Z"
@@ -44,7 +43,7 @@ Per-epic metadata. Located at `.project/epics/<name>/epic.json`.
 
 ### slice.json
 
-Per-slice metadata. Located at `.project/slices/<name>/slice.json`.
+Per-slice metadata. Located at `.project/epics/<epic>/slices/<name>/slice.json`.
 
 ```json
 {
@@ -91,9 +90,32 @@ Per-quest metadata. Located at `.project/quests/<name>/quest.json`. Quests are p
 
 The `refinement` field in `quest.json` has the same structure and semantics as in `slice.json`. It is populated when the quest enters a refining state, tracks round counts and score history for the circuit breaker, and is `null` or absent when refinement has not started.
 
+### task.json
+
+Per-task metadata. Located at `.project/tasks/<name>/task.json`. Tasks are lightweight capture items — a "junk drawer" for thoughts, bugs, and ideas noticed during work. They can be converted to quests or epics via `task:convert`.
+
+```json
+{
+  "name": "fix-error-handling",
+  "title": "Fix error handling in migrate.ts",
+  "status": "open",
+  "created": "2026-03-26T00:00:00Z",
+  "context": {
+    "activeSlice": "01-data-layer",
+    "activeQuest": null,
+    "activeEpic": "goodplan-cli",
+    "gitBranch": "feat/migrate",
+    "capturedDuring": "implementing slice 01-data-layer"
+  },
+  "description": "migrate.ts has wrong error codes for validation failures"
+}
+```
+
+Fields: `name` (kebab-case identifier), `title` (human-readable), `status` (open/converted/dropped), `context` (structured snapshot of what the user was doing when captured), `description` (optional detail), `convertedTo` (set when converted: `{ type: "quest"|"epic", name: string }`), `droppedReason` (set when dropped). Terminal states: `converted` and `dropped`.
+
 ### overview.json
 
-Index file per collection. Located at `.project/epics/overview.json`, `.project/slices/overview.json`, `.project/quests/overview.json`.
+Index file per collection. Located at `.project/epics/overview.json`, `.project/quests/overview.json`, `.project/tasks/overview.json`. Slice overviews are embedded within `epics/overview.json` (no separate `slices/overview.json` file) — each epic's entry in `epics/overview.json` contains its `slices` array. Array order defines slice sequencing.
 
 ```json
 {
@@ -128,17 +150,27 @@ Project-level decisions. One JSON object per line.
 
 ### learnings.jsonl
 
-Exists at project level (`.project/learnings.jsonl`) and per-slice (`.project/slices/<name>/learnings.jsonl`).
+Exists at project level (`.project/learnings.jsonl`) and per-slice (`.project/epics/<epic>/slices/<name>/learnings.jsonl`).
 
 ```json
-{"category": "domain", "summary": "Brief actionable statement", "detail": "Longer explanation", "tags": ["auth", "testing"], "source": "slices/01-auth", "rollup": true, "rollupTo": ["epic", "project"]}
+{"category": "domain", "summary": "Brief actionable statement", "file": "learnings/brief-actionable-statement.md", "tags": ["auth", "testing"], "source": "epics/goodplan-cli/slices/01-auth", "rollup": true, "rollupTo": ["epic", "project"]}
 ```
 
-Stored fields: `source` is populated by the RPC layer from the current entity scope when persisting. `rollup: true` is set when `rollupTo` is non-empty (backward-compatible boolean for simple filtering). `rollupTo` preserves the specific targets. The canonical input type (see rpc-layer-api.md `Learning`) omits `source` — it's added during persistence.
+Stored fields: `file` is a scope-relative path to the `.md` file containing the learning detail (e.g., `learnings/<slug>.md`). The slug is derived from `summary` by the RPC layer (kebab-case, truncated at 60 chars on word boundaries, with collision detection via `Set<string>` from the state tree). `source` is populated by the RPC layer from the current entity scope when persisting. `rollup: true` is set when `rollupTo` is non-empty (backward-compatible boolean for simple filtering). `rollupTo` preserves the specific targets. The canonical input type (see rpc-layer-api.md `Learning`) uses `detail` (full text) — the RPC layer maps this to `file` by deriving a slug, writing the `.md` file, and storing the path.
+
+### learnings/ directory
+
+Per-learning `.md` files at every scope that has learnings. The CLI writes these — skills never write to `learnings/` directly. During rollup, the CLI copies `.md` files from the source scope to the target scope (e.g., `<slice>/learnings/<slug>.md` → `<project>/learnings/<slug>.md`).
+
+```
+.project/learnings/
+├── schema-first-caught-3-bugs.md
+└── api-rate-limits-at-100-rps.md
+```
 
 ### architecture-deltas.jsonl
 
-Per-slice record of architecture changes, at `.project/slices/<name>/architecture-deltas.jsonl`. Populated during `COMPLETE_SLICE` from the `architectureDelta` input. Used for audit trail and epic-level architecture reconciliation.
+Per-slice record of architecture changes, at `.project/epics/<epic>/slices/<name>/architecture-deltas.jsonl`. Populated during `COMPLETE_SLICE` from the `architectureDelta` input. Used for audit trail and epic-level architecture reconciliation.
 
 ```json
 {"subsystem": "auth", "type": "modify", "description": "Added OAuth2 token refresh flow", "ts": "2026-03-20T12:00:00Z"}
@@ -151,7 +183,7 @@ Per-slice record of architecture changes, at `.project/slices/<name>/architectur
 Append-only audit trail at `.project/activity-log.jsonl`.
 
 ```json
-{"ts": "2026-03-20T12:00:00Z", "phase": "begin-plan", "scope": "slices/01-data-layer", "status": "complete", "summary": "Plan created for data layer slice"}
+{"ts": "2026-03-20T12:00:00Z", "phase": "begin-plan", "scope": "epics/goodplan-cli/slices/01-data-layer", "status": "complete", "summary": "Plan created for data layer slice"}
 ```
 
 ## Unified State Object
@@ -229,7 +261,7 @@ function getMarkdown(state: ProjectState, path: string): string | undefined;
 function hasChild(state: ProjectState, dirPath: string, childName: string): boolean;
 ```
 
-**jq-style navigation**: Since the state tree is a plain JavaScript object, the jqjs library (already a project dependency) can be used to query it. This is useful for complex guards and for the `--query` flag on `status`. Example: `.contents.slices.contents["01-data-layer"].contents["plan.md"]` would check if a plan exists. Path-based helpers are preferred for simple lookups; jq is available for complex queries.
+**jq-style navigation**: Since the state tree is a plain JavaScript object, the jqjs library (already a project dependency) can be used to query it. This is useful for complex guards and for the `--query` flag on `status`. Example: `.contents.epics.contents["goodplan-cli"].contents.slices.contents["01-data-layer"].contents["plan.md"]` would check if a plan exists. Path-based helpers are preferred for simple lookups; jq is available for complex queries.
 
 Example state for a project with one epic and one slice:
 
@@ -261,29 +293,27 @@ const state: ProjectState = {
         "goodplan-cli": {
           type: "directory",
           contents: {
-            "epic.json": { type: "json", content: { name: "goodplan-cli", status: "activated", goal: "...", verifications: [...], sliceSequence: [...], created: "...", activated: "...", updated: "..." } },
+            "epic.json": { type: "json", content: { name: "goodplan-cli", status: "activated", goal: "...", verifications: [...], created: "...", activated: "...", updated: "..." } },
             "architecture": { type: "directory", contents: { "_overview.md": ..., "data-model.md": ... } },
             "research": { type: "directory", contents: {} },
             "brainstorm": { type: "directory", contents: {} },
             "prototypes": { type: "directory", contents: {} },
-          }
-        }
-      }
-    },
-
-    "slices": {
-      type: "directory",
-      contents: {
-        "overview.json": { type: "json", content: { items: [...] } },
-        "01-data-layer": {
-          type: "directory",
-          contents: {
-            "slice.json": { type: "json", content: { name: "01-data-layer", status: "implementing", epic: "goodplan-cli", ... } },
-            "learnings.jsonl": { type: "jsonl", content: [] },
-            "architecture-deltas.jsonl": { type: "jsonl", content: [] },
-            // LLM-written files appear as entries when they exist on disk:
-            "plan.md": { type: "markdown", content: "# Plan: Data Layer\n\n..." }
-            "plan-refined.md": { type: "markdown", content: "..." },
+            "slices": {
+              type: "directory",
+              contents: {
+                "01-data-layer": {
+                  type: "directory",
+                  contents: {
+                    "slice.json": { type: "json", content: { name: "01-data-layer", status: "implementing", epic: "goodplan-cli", ... } },
+                    "learnings.jsonl": { type: "jsonl", content: [] },
+                    "architecture-deltas.jsonl": { type: "jsonl", content: [] },
+                    // LLM-written files appear as entries when they exist on disk:
+                    "plan.md": { type: "markdown", content: "# Plan: Data Layer\n\n..." },
+                    "plan-refined.md": { type: "markdown", content: "..." },
+                  }
+                }
+              }
+            },
           }
         }
       }
@@ -306,8 +336,8 @@ const state: ProjectState = {
 Guards navigate the tree using `resolve()` and `hasChild()`:
 
 ```typescript
-// Does plan.md exist in slices/01-data-layer/?
-hasChild(state, "slices/01-data-layer", "plan.md")
+// Does plan.md exist in epics/goodplan-cli/slices/01-data-layer/?
+hasChild(state, "epics/goodplan-cli/slices/01-data-layer", "plan.md")
 
 // Does the epic have architecture content?
 const archDir = getDir(state, "epics/goodplan-cli/architecture");
@@ -325,12 +355,13 @@ epic?.status === "activated"
 ```typescript
 const schemaRegistry: Array<{ pattern: RegExp; schema: ZodSchema }> = [
   { pattern: /^project\.json$/, schema: projectSchema },
-  { pattern: /^epics\/overview\.json$/, schema: overviewSchema },
+  { pattern: /^epics\/overview\.json$/, schema: epicOverviewSchema },
   { pattern: /^epics\/[^/]+\/epic\.json$/, schema: epicSchema },
-  { pattern: /^slices\/overview\.json$/, schema: overviewSchema },
-  { pattern: /^slices\/[^/]+\/slice\.json$/, schema: sliceSchema },
+  { pattern: /^epics\/[^/]+\/slices\/[^/]+\/slice\.json$/, schema: sliceSchema },
   { pattern: /^quests\/overview\.json$/, schema: overviewSchema },
   { pattern: /^quests\/[^/]+\/quest\.json$/, schema: questSchema },
+  { pattern: /^tasks\/overview\.json$/, schema: overviewSchema },
+  { pattern: /^tasks\/[^/]+\/task\.json$/, schema: taskSchema },
   { pattern: /^activity-log\.jsonl$/, schema: activityEntrySchema },
   { pattern: /^decisions\.jsonl$/, schema: decisionEntrySchema },
   { pattern: /^learnings\.jsonl$/, schema: learningEntrySchema },
@@ -347,7 +378,7 @@ When `.project/` doesn't exist or contains no files, `assembleState()` returns a
 const zeroState: ProjectState = { type: "directory", contents: {} };
 ```
 
-This is a valid state — it represents "no project initialized." The state machine's `INIT_PROJECT` event operates on this zero state to produce the initial project structure (project.json, overview files, collection directories), which `commitState()` then materializes on the filesystem.
+This is a valid state — it represents "no project initialized." The state machine's `INIT_PROJECT` event operates on this zero state to produce the initial project structure (project.json, overview files for epics/quests/tasks, collection directories), which `commitState()` then materializes on the filesystem.
 
 ### Recursive Diff in commitState
 
@@ -407,36 +438,48 @@ The cache is valid because the CLI is the only writer of JSON/JSONL state. The o
 ├── project.json
 ├── decisions.jsonl
 ├── learnings.jsonl
+├── learnings/                 # per-learning .md files (CLI-managed)
+│   └── <slug>.md
 ├── activity-log.jsonl
 ├── idea.md
 ├── conventions.md
 ├── architecture/              # current-reality (LLM-managed, CLI-owned root path)
 ├── epics/
 │   ├── overview.json
-│   └── <name>/
+│   └── <epic>/
 │       ├── epic.json
 │       ├── architecture/      # target architecture (LLM-managed, CLI-owned root path)
 │       ├── research/          # LLM-managed, CLI-owned root path
 │       ├── brainstorm/        # LLM-managed, CLI-owned root path
-│       └── prototypes/        # LLM-managed, CLI-owned root path
-├── slices/
-│   ├── overview.json
-│   └── <name>/
-│       ├── slice.json
+│       ├── prototypes/        # LLM-managed, CLI-owned root path
 │       ├── learnings.jsonl
-│       ├── architecture-deltas.jsonl
-│       ├── plan.md            # LLM-managed, CLI-owned path — written by sub-agent during planning
-│       ├── plan-refining.md   # LLM-managed — working draft updated during each refinement round. The sub-agent creates plan-refining.md during refinement rounds. When scores pass threshold, the sub-agent writes plan-refined.md directly; the CLI does not rename files.
-│       └── plan-refined.md    # LLM-managed — final refined plan written by sub-agent when scores pass
+│       ├── learnings/         # per-learning .md files (CLI-managed)
+│       │   └── <slug>.md
+│       └── slices/
+│           └── <name>/
+│               ├── slice.json
+│               ├── learnings.jsonl
+│               ├── learnings/         # per-learning .md files (CLI-managed)
+│               │   └── <slug>.md
+│               ├── architecture-deltas.jsonl
+│               ├── plan.md            # LLM-managed, CLI-owned path — written by sub-agent during planning
+│               ├── plan-refining.md   # LLM-managed — working draft updated during each refinement round. The sub-agent creates plan-refining.md during refinement rounds. When scores pass threshold, the sub-agent writes plan-refined.md directly; the CLI does not rename files.
+│               └── plan-refined.md    # LLM-managed — final refined plan written by sub-agent when scores pass
 ├── quests/
 │   ├── overview.json
 │   └── <name>/
 │       ├── quest.json
 │       ├── learnings.jsonl
+│       ├── learnings/         # per-learning .md files (CLI-managed)
+│       │   └── <slug>.md
 │       ├── architecture-deltas.jsonl
 │       ├── plan.md
 │       ├── plan-refining.md
 │       └── plan-refined.md
+├── tasks/
+│   ├── overview.json
+│   └── <name>/
+│       └── task.json
 ├── research/                  # project-level (curated from epics)
 ├── brainstorm/
 └── prototypes/

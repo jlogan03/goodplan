@@ -55,6 +55,20 @@ Performs a recursive tree diff between `oldState` and `newState`. For each diffe
 
 Updates the state cache after all writes succeed. Write ordering: entity JSON files first, JSONL appends second, state cache last. If the process crashes mid-write, the state cache (written last) is stale, triggering a full `assembleState()` on next invocation which reconciles from the source-of-truth individual files.
 
+### Markdown File I/O Helpers
+
+```typescript
+// Write markdown files to disk. Used by the RPC layer to write per-learning .md files
+// after reduce() succeeds but before commitState(). Creates directories on-demand.
+function writeMarkdownFiles(projectDir: string, files: Array<{path: string, content: string}>): void;
+
+// Copy markdown files from one scope to another. Used by the RPC layer during
+// learnings rollup to copy .md files from source to target scope.
+function copyMarkdownFiles(projectDir: string, copies: Array<{from: string, to: string}>): void;
+```
+
+These helpers preserve the architectural boundary where all filesystem I/O flows through the Data Layer, even for CLI-managed markdown files like `learnings/*.md`.
+
 ### Tree Navigation Helpers
 
 These operate on the in-memory `ProjectState` tree — no filesystem access.
@@ -103,12 +117,13 @@ Maps path patterns to Zod schemas for validation during assembly and commit:
 ```typescript
 const schemaRegistry: Array<{ pattern: RegExp; schema: ZodSchema }> = [
   { pattern: /^project\.json$/, schema: projectSchema },
-  { pattern: /^epics\/overview\.json$/, schema: overviewSchema },
+  { pattern: /^epics\/overview\.json$/, schema: epicOverviewSchema },
   { pattern: /^epics\/[^/]+\/epic\.json$/, schema: epicSchema },
-  { pattern: /^slices\/overview\.json$/, schema: overviewSchema },
-  { pattern: /^slices\/[^/]+\/slice\.json$/, schema: sliceSchema },
+  { pattern: /^epics\/[^/]+\/slices\/[^/]+\/slice\.json$/, schema: sliceSchema },
   { pattern: /^quests\/overview\.json$/, schema: overviewSchema },
   { pattern: /^quests\/[^/]+\/quest\.json$/, schema: questSchema },
+  { pattern: /^tasks\/overview\.json$/, schema: overviewSchema },
+  { pattern: /^tasks\/[^/]+\/task\.json$/, schema: taskSchema },
   { pattern: /^activity-log\.jsonl$/, schema: activityEntrySchema },
   { pattern: /^decisions\.jsonl$/, schema: decisionEntrySchema },
   { pattern: /^learnings\.jsonl$/, schema: learningEntrySchema },
@@ -139,25 +154,25 @@ Priority: 2 (implement after State Machine — per _overview.md subsystem maturi
 
 ### JSON round-trip produces deterministic output
 
-- **Test file:** candidate — not yet written
+- **Test file:** `tests/fitness/data-determinism.test.ts`
 - **Verifies:** `assembleState()` → `commitState()` on an unchanged tree produces byte-identical files (deterministic key ordering preserved through read/write cycle)
 
 ### Schema validation rejects malformed data on read and write
 
-- **Test file:** candidate — not yet written
+- **Test file:** `tests/fitness/schema-validation.test.ts`
 - **Verifies:** Manually corrupted JSON files cause `assembleState()` to throw with file path and Zod error details. State machine producing invalid content causes `commitState()` to throw before writing.
 
 ### Concurrent modification detection works
 
-- **Test file:** candidate — not yet written
+- **Test file:** `tests/fitness/concurrent-modification.test.ts`
 - **Verifies:** Modify a file on disk between `loadState()` and `commitState()` — `commitState` throws `DATA_CONCURRENT_MODIFICATION` instead of overwriting
 
 ### Atomic writes survive interruption
 
-- **Test file:** candidate — not yet written
+- **Test file:** `tests/fitness/atomic-writes.test.ts`
 - **Verifies:** A write that is interrupted leaves either the old file intact or the new file complete — never a partial write
 
 ### State assembly produces accurate tree from filesystem
 
-- **Test file:** candidate — not yet written
+- **Test file:** `tests/fitness/tree-accuracy.test.ts`
 - **Verifies:** Create a `.project/` fixture with known files/directories. `assembleState()` produces a tree whose structure matches the filesystem. Add/remove a file and reassemble — tree updates correctly. Empty `.project/` produces zero state.

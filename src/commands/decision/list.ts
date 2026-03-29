@@ -1,11 +1,12 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { resolveProjectDir } from "../../core/data/project.js";
 import { loadState } from "../../core/data/load.js";
+import { resolveProjectDir } from "../../core/data/project.js";
 import { getJsonl } from "../../core/tree.js";
 import type { DecisionEntry } from "../../schemas/records/decision.js";
 import { output } from "../../util/output.js";
-import { globalArgs } from "../global-args.js";
+import { applyPagination, formatPaginationFooter } from "../../util/pagination.js";
+import { globalArgs, listArgs } from "../global-args.js";
 
 /**
  * `goodplan decision:list` — list all decisions.
@@ -20,23 +21,32 @@ export const decisionListCommand = defineCommand({
 	},
 	args: {
 		...globalArgs,
+		...listArgs,
 	},
 	setup() {},
 	async run({ args }) {
 		const projectDir = resolveProjectDir();
 		const state = loadState(projectDir);
 
-		const items = getJsonl<DecisionEntry>(state, "decisions.jsonl") ?? [];
+		const allItems = getJsonl<DecisionEntry>(state, "decisions.jsonl") ?? [];
+		const paginated = applyPagination(allItems, args);
 
 		if (args.json || args.query) {
-			output({ items }, args);
+			output(paginated, args);
 		} else if (!args.quiet) {
-			if (items.length === 0) {
+			if (paginated.total === 0) {
 				output("No decisions found.", args);
 			} else {
 				const lines: string[] = [];
-				for (const item of items) {
+				if (paginated.items.length === 0) {
+					lines.push("No decisions in this range.");
+				}
+				for (const item of paginated.items) {
 					lines.push(`  ${pc.bold(item.id)} ${item.status} ${item.domain} ${item.title}`);
+				}
+				const footer = formatPaginationFooter(paginated);
+				if (footer !== undefined) {
+					lines.push(footer);
 				}
 				output(lines.join("\n"), args);
 			}

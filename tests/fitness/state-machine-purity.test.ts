@@ -7,6 +7,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { describe, expect, it } from "vitest";
+import { collectTsFiles } from "./helpers.js";
 
 const STATE_DIR = path.resolve(import.meta.dirname, "../../src/core/state");
 
@@ -26,23 +27,6 @@ const FORBIDDEN_MODULES = new Set([
 	"net",
 	"node:net",
 ]);
-
-/**
- * Recursively collect all .ts files under a directory.
- */
-function collectTsFiles(dir: string): string[] {
-	const results: string[] = [];
-	const entries = fs.readdirSync(dir, { withFileTypes: true });
-	for (const entry of entries) {
-		const full = path.join(dir, entry.name);
-		if (entry.isDirectory()) {
-			results.push(...collectTsFiles(full));
-		} else if (entry.isFile() && entry.name.endsWith(".ts")) {
-			results.push(full);
-		}
-	}
-	return results;
-}
 
 /**
  * Parse value imports from a TypeScript source file.
@@ -107,6 +91,48 @@ describe("INV-003: State machine purity — no I/O imports", () => {
 					.join("\n");
 				expect.fail(
 					`Found forbidden I/O imports in ${relativePath}:\n${details}`,
+				);
+			}
+		});
+	}
+});
+
+describe("INV-003: State machine purity — no non-deterministic calls", () => {
+	const files = collectTsFiles(STATE_DIR);
+
+	/** Patterns that make the state machine non-deterministic. */
+	const FORBIDDEN_CALLS = [
+		{ pattern: /\bnew Date\b/, name: "new Date()" },
+		{ pattern: /\bDate\.now\b/, name: "Date.now()" },
+		{ pattern: /\bMath\.random\b/, name: "Math.random()" },
+		{ pattern: /\bcrypto\.randomUUID\b/, name: "crypto.randomUUID()" },
+	];
+
+	for (const file of files) {
+		const relativePath = path.relative(
+			path.resolve(import.meta.dirname, "../.."),
+			file,
+		);
+
+		it(`${relativePath} has no non-deterministic calls`, () => {
+			const source = fs.readFileSync(file, "utf-8");
+			const lines = source.split("\n");
+			const violations: string[] = [];
+
+			for (let i = 0; i < lines.length; i++) {
+				const line = lines[i]!;
+				// Skip comments
+				if (line.trim().startsWith("//") || line.trim().startsWith("*")) continue;
+				for (const { pattern, name } of FORBIDDEN_CALLS) {
+					if (pattern.test(line)) {
+						violations.push(`  line ${i + 1}: ${name}`);
+					}
+				}
+			}
+
+			if (violations.length > 0) {
+				expect.fail(
+					`Found non-deterministic calls in ${relativePath}:\n${violations.join("\n")}\nTimestamps must come from event.ts, not generated inside the reducer.`,
 				);
 			}
 		});

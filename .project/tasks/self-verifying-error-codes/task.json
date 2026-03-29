@@ -1,0 +1,9 @@
+{
+	"context": {},
+	"created": "2026-03-28T14:46:18.389Z",
+	"description": "Replace manual EXPECTED_ERROR_CODE_COUNT with regex or AST extraction of GoodplanErrorCode union members from src/util/errors.ts. Middle ground: regex-extract (no new deps). Full: TypeScript compiler API.",
+	"droppedReason": "Completed as part of quest test-infrastructure-polish",
+	"name": "self-verifying-error-codes",
+	"status": "dropped",
+	"title": "Make ALL_ERROR_CODES self-verifying via source extraction"
+}

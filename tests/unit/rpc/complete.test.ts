@@ -114,24 +114,24 @@ function setupSliceInImplementationComplete(sliceName = "s1", epicName = "e1") {
 	begin(
 		projectDir,
 		"create",
-		{ type: "slice", name: sliceName },
+		{ type: "slice", name: sliceName, epic: epicName },
 		{
 			name: sliceName,
 			goal: "First slice goal",
 			epic: epicName,
 		},
 	);
-	begin(projectDir, "plan", { type: "slice", name: sliceName }, {});
+	begin(projectDir, "plan", { type: "slice", name: sliceName, epic: epicName }, {});
 	// Write plan.md (required by COMPLETE_PLAN guard) — simulates sub-agent write
-	const sliceDir = path.join(projectDir, "slices", sliceName);
+	const sliceDir = path.join(projectDir, "epics", epicName, "slices", sliceName);
 	fs.writeFileSync(path.join(sliceDir, "plan.md"), "# Plan\nDo stuff");
 	invalidateCache();
-	submit(projectDir, "plan", { type: "slice", name: sliceName }, { phase: "plan" });
+	submit(projectDir, "plan", { type: "slice", name: sliceName, epic: epicName }, { phase: "plan" });
 	// Skip refinement via high scores (advances to plan-refined)
 	submit(
 		projectDir,
 		"refinement",
-		{ type: "slice", name: sliceName },
+		{ type: "slice", name: sliceName, epic: epicName },
 		{
 			phase: "refinement",
 			scores: { q: 10 },
@@ -140,11 +140,11 @@ function setupSliceInImplementationComplete(sliceName = "s1", epicName = "e1") {
 	// Write plan-refined.md (required by BEGIN_IMPLEMENTATION guard) — simulates sub-agent write
 	fs.writeFileSync(path.join(sliceDir, "plan-refined.md"), "# Refined Plan\nDo stuff better");
 	invalidateCache();
-	begin(projectDir, "implement", { type: "slice", name: sliceName }, {});
+	begin(projectDir, "implement", { type: "slice", name: sliceName, epic: epicName }, {});
 	submit(
 		projectDir,
 		"implementation",
-		{ type: "slice", name: sliceName },
+		{ type: "slice", name: sliceName, epic: epicName },
 		{ phase: "implementation" },
 	);
 }
@@ -155,7 +155,7 @@ describe("complete — COMPLETE_SLICE", () => {
 
 		const result = complete(
 			projectDir,
-			{ type: "slice", name: "s1" },
+			{ type: "slice", name: "s1", epic: "e1" },
 			{ type: "slice", verificationPassed: true },
 		);
 
@@ -170,7 +170,7 @@ describe("complete — COMPLETE_SLICE", () => {
 		expect(() =>
 			complete(
 				projectDir,
-				{ type: "slice", name: "s1" },
+				{ type: "slice", name: "s1", epic: "e1" },
 				{ type: "slice", verificationPassed: false },
 			),
 		).toThrow(GoodplanError);
@@ -178,7 +178,7 @@ describe("complete — COMPLETE_SLICE", () => {
 		try {
 			complete(
 				projectDir,
-				{ type: "slice", name: "s1" },
+				{ type: "slice", name: "s1", epic: "e1" },
 				{ type: "slice", verificationPassed: false },
 			);
 		} catch (err) {
@@ -192,7 +192,7 @@ describe("complete — COMPLETE_SLICE", () => {
 		begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "s2" },
+			{ type: "slice", name: "s2", epic: "e1" },
 			{
 				name: "s2",
 				goal: "Second slice",
@@ -202,7 +202,7 @@ describe("complete — COMPLETE_SLICE", () => {
 
 		const result = complete(
 			projectDir,
-			{ type: "slice", name: "s1" },
+			{ type: "slice", name: "s1", epic: "e1" },
 			{
 				type: "slice",
 				verificationPassed: true,
@@ -242,7 +242,7 @@ describe("complete — COMPLETE_SLICE", () => {
 
 		// Verify deferred item was actually routed to s2 on disk
 		const s2Json = JSON.parse(
-			fs.readFileSync(path.join(projectDir, "slices", "s2", "slice.json"), "utf-8"),
+			fs.readFileSync(path.join(projectDir, "epics", "e1", "slices", "s2", "slice.json"), "utf-8"),
 		);
 		expect(s2Json.deferred).toHaveLength(1);
 		expect(s2Json.deferred[0].description).toBe("Handle edge case");
@@ -253,7 +253,7 @@ describe("complete — COMPLETE_SLICE", () => {
 
 		const result = complete(
 			projectDir,
-			{ type: "slice", name: "s1" },
+			{ type: "slice", name: "s1", epic: "e1" },
 			{ type: "slice", verificationPassed: true },
 		);
 
@@ -267,7 +267,7 @@ describe("complete — COMPLETE_SLICE", () => {
 		begin(
 			projectDir,
 			"create",
-			{ type: "slice", name: "s2" },
+			{ type: "slice", name: "s2", epic: "e1" },
 			{
 				name: "s2",
 				goal: "Second slice",
@@ -277,7 +277,7 @@ describe("complete — COMPLETE_SLICE", () => {
 
 		const result = complete(
 			projectDir,
-			{ type: "slice", name: "s1" },
+			{ type: "slice", name: "s1", epic: "e1" },
 			{ type: "slice", verificationPassed: true },
 		);
 
@@ -289,7 +289,7 @@ describe("complete — COMPLETE_SLICE", () => {
 
 		const result = complete(
 			projectDir,
-			{ type: "slice", name: "s1" },
+			{ type: "slice", name: "s1", epic: "e1" },
 			{
 				type: "slice",
 				verificationPassed: true,
@@ -308,7 +308,7 @@ describe("complete — COMPLETE_SLICE", () => {
 		// Passing no optional arrays — should not throw
 		const result = complete(
 			projectDir,
-			{ type: "slice", name: "s1" },
+			{ type: "slice", name: "s1", epic: "e1" },
 			{ type: "slice", verificationPassed: true },
 		);
 
@@ -322,7 +322,7 @@ describe("complete — paths field", () => {
 
 		const result = complete(
 			projectDir,
-			{ type: "slice", name: "s1" },
+			{ type: "slice", name: "s1", epic: "e1" },
 			{ type: "slice", verificationPassed: true },
 		);
 
@@ -354,7 +354,7 @@ describe("complete — error cases", () => {
 		expect(() =>
 			complete(
 				projectDir,
-				{ type: "slice", name: "s1" },
+				{ type: "slice", name: "s1", epic: "e1" },
 				{ type: "slice", verificationPassed: true },
 			),
 		).toThrow(GoodplanError);

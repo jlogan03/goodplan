@@ -1,0 +1,2 @@
+{"description":"Fixed 10 doc-code divergences in rpc-layer-api.md: signatures, types, module locations, stale notes","subsystem":"RPC Layer","ts":"2026-03-28T22:55:19.949Z","type":"modify"}
+{"description":"LearningInput.rollupTo tightened from z.array(z.string()) to z.array(z.enum([\"epic\", \"project\"]))","subsystem":"Data Layer","ts":"2026-03-28T22:55:19.949Z","type":"modify"}

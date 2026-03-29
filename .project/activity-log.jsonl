@@ -1,8 +1,70 @@
-{"detail":"3 epics, 21 slices, 20 quests","phase":"migration","scope":"project","status":"complete","summary":"Migrated from pre-CLI .project/ format","ts":"2026-03-26T05:53:50.853Z"}
-{"phase":"create-quest","scope":"quests/consistent-skill-output","status":"complete","summary":"Quest \"consistent-skill-output\" created","ts":"2026-03-26T13:57:32.257Z"}
-{"phase":"complete-quest-implementation","scope":"quests/migrate-to-cli","status":"complete","summary":"Quest \"migrate-to-cli\" implementation completed","ts":"2026-03-26T14:06:34.318Z"}
-{"phase":"complete-quest","scope":"quests/migrate-to-cli","status":"complete","summary":"Quest \"migrate-to-cli\" completed","ts":"2026-03-26T14:12:08.790Z"}
-{"phase":"create-quest","scope":"quests/migration-sibling-check","status":"complete","summary":"Quest \"migration-sibling-check\" created","ts":"2026-03-26T14:12:13.645Z"}
-{"phase":"complete-quest-implementation","scope":"quests/dogfood-harness","status":"complete","summary":"Quest \"dogfood-harness\" implementation completed","ts":"2026-03-26T14:22:09.849Z"}
-{"phase":"complete-quest","scope":"quests/dogfood-harness","status":"complete","summary":"Quest \"dogfood-harness\" completed","ts":"2026-03-26T14:22:46.535Z"}
-{"phase":"abandon-quest","scope":"quests/migration-sibling-check","status":"complete","summary":"Quest \"migration-sibling-check\" abandoned: Consolidated into skill-workflow-bugs quest as bug #5","ts":"2026-03-26T14:23:13.005Z"}
+{"detail":"4 epics, 26 slices, 25 quests","phase":"migration","scope":"project","status":"complete","summary":"Migrated from pre-CLI .project/ format","ts":"2026-03-28T00:06:46.961Z"}
+{"phase":"complete-quest","scope":"quests/learnings-directory-pattern","status":"complete","summary":"Quest \"learnings-directory-pattern\" completed","ts":"2026-03-28T00:17:58.776Z"}
+{"phase":"abandon-quest","scope":"quests/entity-path-and-learnings-cleanup","status":"complete","summary":"Quest \"entity-path-and-learnings-cleanup\" abandoned: Superseded: entity paths cleaned up by entity-restructuring epic, learnings cleanup done by learnings-directory-pattern quest","ts":"2026-03-28T00:45:57.494Z"}
+{"phase":"begin-quest-plan","scope":"quests/audit-docs-and-tests","status":"complete","summary":"Quest \"audit-docs-and-tests\" planning started","ts":"2026-03-28T00:54:42.054Z"}
+{"phase":"complete-quest-plan","scope":"quests/audit-docs-and-tests","status":"complete","summary":"Quest \"audit-docs-and-tests\" plan completed","ts":"2026-03-28T00:54:46.354Z"}
+{"phase":"complete-quest-refinement","scope":"quests/audit-docs-and-tests","status":"complete","summary":"Quest \"audit-docs-and-tests\" plan refined","ts":"2026-03-28T01:25:57.541Z"}
+{"phase":"begin-quest-implementation","scope":"quests/audit-docs-and-tests","status":"complete","summary":"Quest \"audit-docs-and-tests\" implementation started","ts":"2026-03-28T02:19:59.778Z"}
+{"phase":"complete-quest-implementation","scope":"quests/audit-docs-and-tests","status":"complete","summary":"Quest \"audit-docs-and-tests\" implementation completed","ts":"2026-03-28T02:40:34.399Z"}
+{"phase":"create-quest","scope":"quests/audit-arch-quest-create","status":"complete","summary":"Quest \"audit-arch-quest-create\" created","ts":"2026-03-28T02:47:45.332Z"}
+{"phase":"create-quest","scope":"quests/update-architecture-docs-for-tasks-and-paths","status":"complete","summary":"Quest \"update-architecture-docs-for-tasks-and-paths\" created","ts":"2026-03-28T03:00:55.637Z"}
+{"phase":"create-quest","scope":"quests/improve-test-coverage-and-quality","status":"complete","summary":"Quest \"improve-test-coverage-and-quality\" created","ts":"2026-03-28T03:10:18.906Z"}
+{"phase":"complete-quest","scope":"quests/audit-docs-and-tests","status":"complete","summary":"Quest \"audit-docs-and-tests\" completed","ts":"2026-03-28T03:13:15.136Z"}
+{"phase":"begin-quest-plan","scope":"quests/update-architecture-docs-for-tasks-and-paths","status":"complete","summary":"Quest \"update-architecture-docs-for-tasks-and-paths\" planning started","ts":"2026-03-28T03:20:30.096Z"}
+{"phase":"complete-quest-plan","scope":"quests/update-architecture-docs-for-tasks-and-paths","status":"complete","summary":"Quest \"update-architecture-docs-for-tasks-and-paths\" plan completed","ts":"2026-03-28T03:21:19.992Z"}
+{"phase":"complete-quest-refinement","scope":"quests/update-architecture-docs-for-tasks-and-paths","status":"complete","summary":"Quest \"update-architecture-docs-for-tasks-and-paths\" plan refined","ts":"2026-03-28T03:35:17.648Z"}
+{"phase":"begin-quest-implementation","scope":"quests/update-architecture-docs-for-tasks-and-paths","status":"complete","summary":"Quest \"update-architecture-docs-for-tasks-and-paths\" implementation started","ts":"2026-03-28T03:44:13.576Z"}
+{"phase":"complete-quest-implementation","scope":"quests/update-architecture-docs-for-tasks-and-paths","status":"complete","summary":"Quest \"update-architecture-docs-for-tasks-and-paths\" implementation completed","ts":"2026-03-28T03:51:40.003Z"}
+{"phase":"complete-quest","scope":"quests/update-architecture-docs-for-tasks-and-paths","status":"complete","summary":"Quest \"update-architecture-docs-for-tasks-and-paths\" completed","ts":"2026-03-28T04:44:18.584Z"}
+{"phase":"begin-quest-plan","scope":"quests/improve-test-coverage-and-quality","status":"complete","summary":"Quest \"improve-test-coverage-and-quality\" planning started","ts":"2026-03-28T04:47:20.991Z"}
+{"phase":"complete-quest-plan","scope":"quests/improve-test-coverage-and-quality","status":"complete","summary":"Quest \"improve-test-coverage-and-quality\" plan completed","ts":"2026-03-28T04:48:15.392Z"}
+{"phase":"complete-quest-refinement","scope":"quests/improve-test-coverage-and-quality","status":"complete","summary":"Quest \"improve-test-coverage-and-quality\" plan refined","ts":"2026-03-28T05:09:46.972Z"}
+{"phase":"begin-quest-implementation","scope":"quests/improve-test-coverage-and-quality","status":"complete","summary":"Quest \"improve-test-coverage-and-quality\" implementation started","ts":"2026-03-28T05:12:41.094Z"}
+{"phase":"complete-quest-implementation","scope":"quests/improve-test-coverage-and-quality","status":"complete","summary":"Quest \"improve-test-coverage-and-quality\" implementation completed","ts":"2026-03-28T05:42:50.751Z"}
+{"phase":"create-task","scope":"tasks/self-verifying-error-codes","status":"complete","summary":"Task \"self-verifying-error-codes\" created: Make ALL_ERROR_CODES self-verifying via source extraction","ts":"2026-03-28T14:46:18.389Z"}
+{"phase":"create-task","scope":"tasks/dedup-fitness-collect-ts","status":"complete","summary":"Task \"dedup-fitness-collect-ts\" created: Deduplicate collectTsFiles() across fitness tests","ts":"2026-03-28T14:46:19.474Z"}
+{"phase":"complete-quest","scope":"quests/improve-test-coverage-and-quality","status":"complete","summary":"Quest \"improve-test-coverage-and-quality\" completed","ts":"2026-03-28T14:53:05.279Z"}
+{"phase":"create-quest","scope":"quests/test-infrastructure-polish","status":"complete","summary":"Quest \"test-infrastructure-polish\" created","ts":"2026-03-28T15:05:29.784Z"}
+{"phase":"begin-quest-plan","scope":"quests/test-infrastructure-polish","status":"complete","summary":"Quest \"test-infrastructure-polish\" planning started","ts":"2026-03-28T15:53:35.670Z"}
+{"phase":"complete-quest-plan","scope":"quests/test-infrastructure-polish","status":"complete","summary":"Quest \"test-infrastructure-polish\" plan completed","ts":"2026-03-28T15:54:23.800Z"}
+{"phase":"complete-quest-refinement","scope":"quests/test-infrastructure-polish","status":"complete","summary":"Quest \"test-infrastructure-polish\" plan refined","ts":"2026-03-28T15:59:47.175Z"}
+{"phase":"begin-quest-implementation","scope":"quests/test-infrastructure-polish","status":"complete","summary":"Quest \"test-infrastructure-polish\" implementation started","ts":"2026-03-28T16:01:06.490Z"}
+{"phase":"complete-quest-implementation","scope":"quests/test-infrastructure-polish","status":"complete","summary":"Quest \"test-infrastructure-polish\" implementation completed","ts":"2026-03-28T16:05:07.721Z"}
+{"phase":"complete-quest","scope":"quests/test-infrastructure-polish","status":"complete","summary":"Quest \"test-infrastructure-polish\" completed","ts":"2026-03-28T16:09:00.903Z"}
+{"phase":"drop-task","scope":"tasks/self-verifying-error-codes","status":"complete","summary":"Task \"self-verifying-error-codes\" dropped: Completed as part of quest test-infrastructure-polish","ts":"2026-03-28T16:11:15.827Z"}
+{"phase":"drop-task","scope":"tasks/dedup-fitness-collect-ts","status":"complete","summary":"Task \"dedup-fitness-collect-ts\" dropped: Completed as part of quest test-infrastructure-polish","ts":"2026-03-28T16:11:16.021Z"}
+{"phase":"create-quest","scope":"quests/rpc-api-doc-drift","status":"complete","summary":"Quest \"rpc-api-doc-drift\" created","ts":"2026-03-28T21:54:33.391Z"}
+{"phase":"begin-quest-plan","scope":"quests/rpc-api-doc-drift","status":"complete","summary":"Quest \"rpc-api-doc-drift\" planning started","ts":"2026-03-28T21:56:36.094Z"}
+{"phase":"complete-quest-plan","scope":"quests/rpc-api-doc-drift","status":"complete","summary":"Quest \"rpc-api-doc-drift\" plan completed","ts":"2026-03-28T21:57:22.822Z"}
+{"phase":"complete-quest-refinement","scope":"quests/rpc-api-doc-drift","status":"complete","summary":"Quest \"rpc-api-doc-drift\" plan refined","ts":"2026-03-28T22:21:05.363Z"}
+{"phase":"begin-quest-implementation","scope":"quests/rpc-api-doc-drift","status":"complete","summary":"Quest \"rpc-api-doc-drift\" implementation started","ts":"2026-03-28T22:32:45.336Z"}
+{"phase":"complete-quest-implementation","scope":"quests/rpc-api-doc-drift","status":"complete","summary":"Quest \"rpc-api-doc-drift\" implementation completed","ts":"2026-03-28T22:32:49.035Z"}
+{"phase":"complete-quest","scope":"quests/rpc-api-doc-drift","status":"complete","summary":"Quest \"rpc-api-doc-drift\" completed","ts":"2026-03-28T22:55:19.949Z"}
+{"phase":"begin-quest-plan","scope":"quests/consistent-skill-output","status":"complete","summary":"Quest \"consistent-skill-output\" planning started","ts":"2026-03-28T23:03:31.887Z"}
+{"phase":"complete-quest-plan","scope":"quests/consistent-skill-output","status":"complete","summary":"Quest \"consistent-skill-output\" plan completed","ts":"2026-03-28T23:23:30.870Z"}
+{"phase":"complete-quest-refinement","scope":"quests/consistent-skill-output","status":"complete","summary":"Quest \"consistent-skill-output\" plan refined","ts":"2026-03-28T23:37:08.326Z"}
+{"phase":"begin-quest-implementation","scope":"quests/consistent-skill-output","status":"complete","summary":"Quest \"consistent-skill-output\" implementation started","ts":"2026-03-28T23:37:56.089Z"}
+{"phase":"complete-quest-implementation","scope":"quests/consistent-skill-output","status":"complete","summary":"Quest \"consistent-skill-output\" implementation completed","ts":"2026-03-28T23:47:49.510Z"}
+{"phase":"complete-quest","scope":"quests/consistent-skill-output","status":"complete","summary":"Quest \"consistent-skill-output\" completed","ts":"2026-03-28T23:52:02.189Z"}
+{"phase":"abandon-quest","scope":"quests/upgrade-workflow","status":"complete","summary":"Quest \"upgrade-workflow\" abandoned: Already implemented — the /migrate skill covers this functionality. Built as part of migrate-to-cli.","ts":"2026-03-28T23:54:52.271Z"}
+{"phase":"begin-quest-plan","scope":"quests/onboard-repo","status":"complete","summary":"Quest \"onboard-repo\" planning started","ts":"2026-03-28T23:55:20.213Z"}
+{"phase":"complete-quest-plan","scope":"quests/onboard-repo","status":"complete","summary":"Quest \"onboard-repo\" plan completed","ts":"2026-03-29T00:03:39.881Z"}
+{"phase":"complete-quest-refinement","scope":"quests/onboard-repo","status":"complete","summary":"Quest \"onboard-repo\" plan refined","ts":"2026-03-29T02:15:19.267Z"}
+{"phase":"begin-quest-implementation","scope":"quests/onboard-repo","status":"complete","summary":"Quest \"onboard-repo\" implementation started","ts":"2026-03-29T02:59:27.460Z"}
+{"phase":"complete-quest-implementation","scope":"quests/onboard-repo","status":"complete","summary":"Quest \"onboard-repo\" implementation completed","ts":"2026-03-29T02:59:31.001Z"}
+{"phase":"complete-quest","scope":"quests/onboard-repo","status":"complete","summary":"Quest \"onboard-repo\" completed","ts":"2026-03-29T05:15:59.464Z"}
+{"phase":"begin-quest-plan","scope":"quests/list-pagination","status":"complete","summary":"Quest \"list-pagination\" planning started","ts":"2026-03-29T05:28:31.412Z"}
+{"phase":"complete-quest-plan","scope":"quests/list-pagination","status":"complete","summary":"Quest \"list-pagination\" plan completed","ts":"2026-03-29T05:28:35.983Z"}
+{"phase":"complete-quest-refinement","scope":"quests/list-pagination","status":"complete","summary":"Quest \"list-pagination\" plan refined","ts":"2026-03-29T06:24:10.650Z"}
+{"phase":"begin-quest-implementation","scope":"quests/list-pagination","status":"complete","summary":"Quest \"list-pagination\" implementation started","ts":"2026-03-29T14:34:03.857Z"}
+{"phase":"complete-quest-implementation","scope":"quests/list-pagination","status":"complete","summary":"Quest \"list-pagination\" implementation completed","ts":"2026-03-29T15:10:19.562Z"}
+{"phase":"abandon-quest","scope":"quests/migration-sibling-check","status":"complete","summary":"Quest \"migration-sibling-check\" abandoned: Investigated in skill-workflow-bugs quest — file copying already works correctly. Non-issue.","ts":"2026-03-29T16:57:40.151Z"}
+{"phase":"abandon-quest","scope":"quests/side-quest-interruption-lifecycle","status":"complete","summary":"Quest \"side-quest-interruption-lifecycle\" abandoned: Work stack mechanics replaced by 2026-03-20 architecture decision (three-pointer model). Interrupted/abandoned file writing better addressed as part of state machine flexibility work in the workflow evolution program.","ts":"2026-03-29T16:57:41.247Z"}
+{"phase":"complete-quest","scope":"quests/list-pagination","status":"complete","summary":"Quest \"list-pagination\" completed","ts":"2026-03-29T16:58:40.169Z"}
+{"phase":"begin-quest-plan","scope":"quests/audit-arch-quest-create","status":"complete","summary":"Quest \"audit-arch-quest-create\" planning started","ts":"2026-03-29T17:01:34.924Z"}
+{"phase":"complete-quest-plan","scope":"quests/audit-arch-quest-create","status":"complete","summary":"Quest \"audit-arch-quest-create\" plan completed","ts":"2026-03-29T17:01:58.149Z"}
+{"phase":"begin-quest-refinement","scope":"quests/audit-arch-quest-create","status":"complete","summary":"Quest \"audit-arch-quest-create\" refinement started","ts":"2026-03-29T17:02:02.245Z"}
+{"phase":"complete-quest-refinement","scope":"quests/audit-arch-quest-create","status":"complete","summary":"Quest \"audit-arch-quest-create\" plan refined","ts":"2026-03-29T17:02:16.191Z"}
+{"phase":"begin-quest-implementation","scope":"quests/audit-arch-quest-create","status":"complete","summary":"Quest \"audit-arch-quest-create\" implementation started","ts":"2026-03-29T17:02:23.262Z"}
+{"phase":"complete-quest-implementation","scope":"quests/audit-arch-quest-create","status":"complete","summary":"Quest \"audit-arch-quest-create\" implementation completed","ts":"2026-03-29T17:02:28.781Z"}
+{"phase":"complete-quest","scope":"quests/audit-arch-quest-create","status":"complete","summary":"Quest \"audit-arch-quest-create\" completed","ts":"2026-03-29T17:02:34.810Z"}

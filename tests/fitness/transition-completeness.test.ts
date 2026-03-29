@@ -10,13 +10,10 @@ import * as path from "node:path";
 import { describe, expect, it } from "vitest";
 import { handlerRecord } from "../../src/core/state/reduce.js";
 import { reduce } from "../../src/core/state/reduce.js";
-import { isStateError } from "../../src/schemas/state-events.js";
 import { ZERO_STATE } from "../../src/core/tree.js";
+import { isStateError } from "../../src/schemas/state-events.js";
 
-const STATE_EVENTS_PATH = path.resolve(
-	import.meta.dirname,
-	"../../src/schemas/state-events.ts",
-);
+const STATE_EVENTS_PATH = path.resolve(import.meta.dirname, "../../src/schemas/state-events.ts");
 
 /**
  * Parse the StateEvent union from source to count member types.
@@ -48,18 +45,14 @@ describe("Transition completeness", () => {
 	it("should have a handler for every StateEvent type", () => {
 		const missing = eventTypes.filter((t) => !handlerKeys.includes(t));
 		if (missing.length > 0) {
-			expect.fail(
-				`Missing handlers for event types: ${missing.join(", ")}`,
-			);
+			expect.fail(`Missing handlers for event types: ${missing.join(", ")}`);
 		}
 	});
 
 	it("should not have handlers for non-existent event types", () => {
 		const extra = handlerKeys.filter((k) => !eventTypes.includes(k));
 		if (extra.length > 0) {
-			expect.fail(
-				`Handlers exist for unknown event types: ${extra.join(", ")}`,
-			);
+			expect.fail(`Handlers exist for unknown event types: ${extra.join(", ")}`);
 		}
 	});
 
@@ -76,35 +69,93 @@ describe("Transition completeness", () => {
 			BEGIN_ARCHITECTURE: { type: "BEGIN_ARCHITECTURE", epic: "e1", ts },
 			COMPLETE_ARCHITECTURE: { type: "COMPLETE_ARCHITECTURE", epic: "e1", ts },
 			BEGIN_REFINE_ARCHITECTURE: { type: "BEGIN_REFINE_ARCHITECTURE", epic: "e1", ts },
-			COMPLETE_REFINE_ARCHITECTURE: { type: "COMPLETE_REFINE_ARCHITECTURE", epic: "e1", ts, scores: { quality: 8 } },
+			COMPLETE_REFINE_ARCHITECTURE: {
+				type: "COMPLETE_REFINE_ARCHITECTURE",
+				epic: "e1",
+				ts,
+				scores: { quality: 8 },
+			},
 			BEGIN_SLICING: { type: "BEGIN_SLICING", epic: "e1", ts },
 			COMPLETE_SLICING: { type: "COMPLETE_SLICING", epic: "e1", ts },
 			BEGIN_REFINE_SLICES: { type: "BEGIN_REFINE_SLICES", epic: "e1", ts },
-			COMPLETE_REFINE_SLICES: { type: "COMPLETE_REFINE_SLICES", epic: "e1", ts, scores: { quality: 8 } },
+			COMPLETE_REFINE_SLICES: {
+				type: "COMPLETE_REFINE_SLICES",
+				epic: "e1",
+				ts,
+				scores: { quality: 8 },
+			},
 			ACTIVATE_EPIC: { type: "ACTIVATE_EPIC", epic: "e1", ts },
 			COMPLETE_EPIC: { type: "COMPLETE_EPIC", epic: "e1", ts, verificationResults: [] },
 			ABANDON_EPIC: { type: "ABANDON_EPIC", epic: "e1", ts, reason: "test" },
-			ADD_VERIFICATION: { type: "ADD_VERIFICATION", epic: "e1", ts, verification: { criterion: "test", description: "test" } },
-			UPDATE_VERIFICATION: { type: "UPDATE_VERIFICATION", epic: "e1", ts, index: 0, verification: { criterion: "test", description: "test" } },
+			ADD_VERIFICATION: {
+				type: "ADD_VERIFICATION",
+				epic: "e1",
+				ts,
+				verification: { criterion: "test", description: "test" },
+			},
+			UPDATE_VERIFICATION: {
+				type: "UPDATE_VERIFICATION",
+				epic: "e1",
+				ts,
+				index: 0,
+				verification: { criterion: "test", description: "test" },
+			},
 			CREATE_SLICE: { type: "CREATE_SLICE", name: "s1", epic: "e1", goal: "g", ts },
-			BEGIN_PLAN: { type: "BEGIN_PLAN", slice: "s1", ts },
-			COMPLETE_PLAN: { type: "COMPLETE_PLAN", slice: "s1", ts },
-			BEGIN_REFINEMENT: { type: "BEGIN_REFINEMENT", slice: "s1", ts },
-			COMPLETE_REFINEMENT_ROUND: { type: "COMPLETE_REFINEMENT_ROUND", slice: "s1", ts, scores: { quality: 8 } },
-			BEGIN_IMPLEMENTATION: { type: "BEGIN_IMPLEMENTATION", slice: "s1", ts },
-			COMPLETE_IMPLEMENTATION: { type: "COMPLETE_IMPLEMENTATION", slice: "s1", ts },
-			COMPLETE_SLICE: { type: "COMPLETE_SLICE", slice: "s1", ts, verificationPassed: true, deferred: [], learnings: [], architectureDelta: [] },
-			ABANDON_SLICE: { type: "ABANDON_SLICE", slice: "s1", ts, reason: "test" },
+			BEGIN_PLAN: { type: "BEGIN_PLAN", epic: "e1", slice: "s1", ts },
+			COMPLETE_PLAN: { type: "COMPLETE_PLAN", epic: "e1", slice: "s1", ts },
+			BEGIN_REFINEMENT: { type: "BEGIN_REFINEMENT", epic: "e1", slice: "s1", ts },
+			COMPLETE_REFINEMENT_ROUND: {
+				type: "COMPLETE_REFINEMENT_ROUND",
+				epic: "e1",
+				slice: "s1",
+				ts,
+				scores: { quality: 8 },
+			},
+			BEGIN_IMPLEMENTATION: { type: "BEGIN_IMPLEMENTATION", epic: "e1", slice: "s1", ts },
+			COMPLETE_IMPLEMENTATION: { type: "COMPLETE_IMPLEMENTATION", epic: "e1", slice: "s1", ts },
+			COMPLETE_SLICE: {
+				type: "COMPLETE_SLICE",
+				epic: "e1",
+				slice: "s1",
+				ts,
+				verificationPassed: true,
+				deferred: [],
+				learnings: [],
+				architectureDelta: [],
+			},
+			ABANDON_SLICE: { type: "ABANDON_SLICE", epic: "e1", slice: "s1", ts, reason: "test" },
 			CREATE_QUEST: { type: "CREATE_QUEST", name: "q1", goal: "g", ts },
 			BEGIN_QUEST_PLAN: { type: "BEGIN_QUEST_PLAN", quest: "q1", ts },
 			COMPLETE_QUEST_PLAN: { type: "COMPLETE_QUEST_PLAN", quest: "q1", ts },
 			BEGIN_QUEST_REFINEMENT: { type: "BEGIN_QUEST_REFINEMENT", quest: "q1", ts },
-			COMPLETE_QUEST_REFINEMENT_ROUND: { type: "COMPLETE_QUEST_REFINEMENT_ROUND", quest: "q1", ts, scores: { quality: 8 } },
+			COMPLETE_QUEST_REFINEMENT_ROUND: {
+				type: "COMPLETE_QUEST_REFINEMENT_ROUND",
+				quest: "q1",
+				ts,
+				scores: { quality: 8 },
+			},
 			BEGIN_QUEST_IMPLEMENTATION: { type: "BEGIN_QUEST_IMPLEMENTATION", quest: "q1", ts },
 			COMPLETE_QUEST_IMPLEMENTATION: { type: "COMPLETE_QUEST_IMPLEMENTATION", quest: "q1", ts },
-			COMPLETE_QUEST: { type: "COMPLETE_QUEST", quest: "q1", ts, verificationPassed: true, learnings: [], architectureDelta: [] },
+			COMPLETE_QUEST: {
+				type: "COMPLETE_QUEST",
+				quest: "q1",
+				ts,
+				verificationPassed: true,
+				learnings: [],
+				architectureDelta: [],
+			},
 			ABANDON_QUEST: { type: "ABANDON_QUEST", quest: "q1", ts, reason: "test" },
-			CREATE_DECISION: { type: "CREATE_DECISION", id: "d1", domain: "test", title: "t", summary: "s", ts },
+			CREATE_TASK: { type: "CREATE_TASK", name: "t1", title: "Test task", ts },
+			DROP_TASK: { type: "DROP_TASK", name: "t1", reason: "not needed", ts },
+			CONVERT_TASK: { type: "CONVERT_TASK", name: "t1", to: "quest", convertedName: "q1", ts },
+			CREATE_DECISION: {
+				type: "CREATE_DECISION",
+				id: "d1",
+				domain: "test",
+				title: "t",
+				summary: "s",
+				ts,
+			},
 			UPDATE_DECISION: { type: "UPDATE_DECISION", id: "d1", changes: { title: "new" }, ts },
 			ROLLUP_LEARNINGS: { type: "ROLLUP_LEARNINGS", from: "slice/s1", to: "project", ts },
 		};

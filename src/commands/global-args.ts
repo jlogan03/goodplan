@@ -35,6 +35,25 @@ export const globalArgs = {
 } as const;
 
 /**
+ * Pagination flags for list commands only.
+ * Spread into list command args alongside globalArgs.
+ * NOT included in globalArgs to avoid leaking --limit/--offset
+ * onto mutation commands where they have no meaning.
+ */
+export const listArgs = {
+	limit: {
+		type: "string" as const,
+		description: "Maximum number of items to return",
+		required: false,
+	},
+	offset: {
+		type: "string" as const,
+		description: "Number of items to skip",
+		required: false,
+	},
+} as const;
+
+/**
  * Parse the --inline flag value for start-* commands.
  *
  * citty delivers:

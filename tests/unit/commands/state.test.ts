@@ -82,7 +82,7 @@ function createPopulatedProject() {
 
 	// Learnings
 	writeJsonl(projectDir, "learnings.jsonl", [
-		{ category: "worked", summary: "Zod is great", detail: "Detail", tags: ["zod"], source: "slices/01-auth", rollup: true, rollupTo: ["project"] },
+		{ category: "worked", summary: "Zod is great", file: "learnings/zod-is-great.md", tags: ["zod"], source: "slices/01-auth", rollup: true, rollupTo: ["project"] },
 	]);
 
 	// Activity log with 5+ entries for pagination testing

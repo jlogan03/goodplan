@@ -4,7 +4,7 @@
 
 ### Well-tested areas
 - Skill file structure (SKILL.md frontmatter, step numbering, reference paths): verified across 4 skill files during slice-quality-and-health implementation with 28-point checklist
-- goodplan CLI: 941 tests (unit + integration + fitness). Unit tests cover tree types, schemas, I/O, state machine, RPC (including paths, version-stamp), context, commands (including state, show artifacts, status file arrays). Integration tests spawn compiled binary covering init, epic/slice/quest lifecycle, error transitions, circuit breaker, runner modes, show artifacts, result paths, version compatibility. 9 fitness functions verify all architectural invariants. Type-clean against `tsc --noEmit`.
+- goodplan CLI: 1378 tests across 98 files, integration + fitness tests. Unit tests cover tree types, schemas, I/O, state machine (including task entity and nested epic paths), RPC (including paths, version-stamp, deferred routing with cross-epic support, migration re-run), context (resolveScope, entityDir with epic paths), commands (including status with embedded overview, slice:list with --all, slice:show with --epic), state transition helpers (evaluateRefinement, guard functions, processLearnings, status setters), data serialization (serialize.ts), and markdown file operations (writeMarkdownFiles, copyMarkdownFiles). Integration tests spawn compiled binary and cover migration with nested paths. Fitness functions verify all architectural invariants including ENTITY_EXEMPT_COMMANDS, structured error responses (INV-007), and mutation-through-state-machine (INV-001). Type-clean against `tsc --noEmit`.
 - goodplan CLI main runner (`src/index.ts`): integration tests cover unknown commands, --help, --version, --json error mode, NO_COLOR, stdin validation, version compatibility checking (4 variants), --quiet suppression of warnings.
 
 ### Undertested areas
@@ -22,13 +22,13 @@
 - epic-conventions.md is consumed by 12+ skills: changes require updating all consumers
 - citty + `exactOptionalPropertyTypes`: requires `as unknown as CommandDef` casts in `src/index.ts`. May break on citty upgrade.
 
-<!-- Last updated by: complete for 05-planning-execution-skills, 2026-03-24 -->
+<!-- Last updated by: complete for improve-test-coverage-and-quality, 2026-03-28 -->
 
 ## Performance Characteristics
 
-- Full test suite (941 tests, 84 files): ~6.5s total including binary compilation (~1s)
+- Full test suite (1378 tests, 98 files): ~3.7s total including binary compilation (~50ms cached)
 - Integration tests (~50 tests): ~10s (dominated by binary spawning)
-- Fitness tests (92 tests): ~3s (mix of source parsing and module imports)
+- Fitness tests (~350 tests): ~4s (mix of source parsing, module imports, and binary spawning)
 
 <!-- Last updated by: complete for epics/__active__skills-cli-integration/slices/02-show-status-enrichment, 2026-03-24 -->
 
@@ -59,7 +59,7 @@
 - `setEpicStatus` helper in `helpers.ts` is defined but unused — handlers use `setEpicJson` directly for more control. Dead code candidate.
 - loadState cache detects new/removed files but not content changes to existing JSON files. Bounded by commitState always writing fresh cache.
 - Quest submit handlers (`handleCompleteQuestPlan`, `handleCompleteQuestRefinementRound`, `handleCompleteQuestImplementation`) remain co-located in `slice-submit.ts` — splitting to `quest-submit.ts` deferred. File is now 304 lines covering two entity types.
-- Overview `completed` timestamp never set by status-changing handlers — permanently `null` for all entities.
+- Overview `completed` timestamp now set for task terminal transitions (dropped/converted) but still not set for other entity types (epic, slice, quest) — partially addressed.
 - Bidirectional `import type` between `context/types.ts` and `rpc/types.ts` — works but violates independent-modules principle.
 - `decision:update` stdin schema accepts optional `id` that is silently ignored (command uses `--id` flag). Vestige of pre-review design.
 - Schema command human-readable mode uses `process.stdout.write` directly, bypassing `output()` — `--quiet` not respected in human mode.
@@ -72,8 +72,8 @@
 
 ## Recent Changes
 
-- **05-planning-execution-skills** (2026-03-24): Migrated 6 skills (create-plan, create-slices, refine-plan, implement-plan, refine-slices, migrate) to goodplan CLI. Fixed complete skill's mkdir to use quest:create. All direct state.md/activity-log access eliminated. 941 tests (no new — skill-only changes).
-- **02-show-status-enrichment** (2026-03-24): `artifacts` boolean flags on `show --json`, `status --json` file arrays (`{ count, files }`), `paths?` on RPC result types, semver compatibility checking, version bump to 1.0.0, deleted dead `files.ts`. 941 tests (+91 new).
-- **01-state-command-convention-doc-tracer** (2026-03-23): `goodplan state --json --query --offset --limit` command, `--version --json`, `serializeStateTree` with exhaustive type switching, convention doc (`cli-interaction.md` with 12 sections), project-status skill rewrite as CLI tracer bullet. 850 tests.
+- **onboard-repo** (2026-03-29): New `/onboard-repo` skill (SKILL.md + 5 reference files, 613+lines). Fixture generation script, Claude SDK test harness. Updated install script and expertise-tracking.md consumer list. Skills-only changes — no CLI modifications.
+- **consistent-skill-output** (2026-03-28): Consolidated 3 duplicated output template groups into shared output-templates.md. Updated 10 consuming skills to reference shared templates. 11 files changed (net -8 lines from deduplication).
+- **rpc-api-doc-drift** (2026-03-28): Fixed 10 doc-code divergences in rpc-layer-api.md (signatures, types, module locations). Tightened LearningInput.rollupTo schema from open string[] to z.enum(["epic", "project"]). 2 files changed.
 
-<!-- Last updated by: complete for 05-planning-execution-skills, 2026-03-24 -->
+<!-- Last updated by: complete for onboard-repo, 2026-03-29 -->

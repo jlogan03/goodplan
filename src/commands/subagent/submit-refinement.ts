@@ -8,6 +8,7 @@ import { output } from "../../util/output.js";
 import { readStdin } from "../../util/stdin.js";
 import { validateInput } from "../../util/validate.js";
 import { globalArgs } from "../global-args.js";
+import { requireActiveEpic } from "../slice/utils.js";
 
 /**
  * `goodplan submit-refinement --slice <name>|--quest <name> [--override]` — complete refinement round.
@@ -42,12 +43,12 @@ export const submitRefinementCommand = defineCommand({
 		const stdin = await readStdin();
 		const input = validateInput(submitRefinementInputSchema, args, stdin);
 
+		const projectDir = resolveProjectDir();
 		const target: Target = input.slice !== undefined
-			? { type: "slice", name: input.slice }
+			? { type: "slice", name: input.slice, epic: requireActiveEpic(projectDir) }
 			: { type: "quest", name: input.quest! };
 
 		const options: WorkflowOptions = args.override ? { override: true } : {};
-		const projectDir = resolveProjectDir();
 		const result = submit(projectDir, "refinement", target, { phase: "refinement", scores: input.scores }, options);
 
 		if (args.json || args.query) {

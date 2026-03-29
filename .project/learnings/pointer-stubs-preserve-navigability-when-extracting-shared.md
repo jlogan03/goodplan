@@ -1,0 +1,1 @@
+When refactoring a skill to reference shared infrastructure, keep removed sub-steps as 1-sentence pointer stubs rather than deleting them entirely. This preserves lettering continuity (a-m) and top-to-bottom scannability. Fully removing steps creates confusing gaps that break the reader's mental model.
