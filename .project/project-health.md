@@ -72,8 +72,8 @@
 
 ## Recent Changes
 
+- **onboard-repo** (2026-03-29): New `/onboard-repo` skill (SKILL.md + 5 reference files, 613+lines). Fixture generation script, Claude SDK test harness. Updated install script and expertise-tracking.md consumer list. Skills-only changes — no CLI modifications.
 - **consistent-skill-output** (2026-03-28): Consolidated 3 duplicated output template groups into shared output-templates.md. Updated 10 consuming skills to reference shared templates. 11 files changed (net -8 lines from deduplication).
 - **rpc-api-doc-drift** (2026-03-28): Fixed 10 doc-code divergences in rpc-layer-api.md (signatures, types, module locations). Tightened LearningInput.rollupTo schema from open string[] to z.enum(["epic", "project"]). 2 files changed.
-- **test-infrastructure-polish** (2026-03-28): Replaced manual EXPECTED_ERROR_CODE_COUNT with regex-based set-equality verification against source type definitions. Moved collectFiles() from data-determinism.test.ts to shared fitness helpers. Removed dead export from errors.ts. 3 files changed.
 
-<!-- Last updated by: complete for consistent-skill-output, 2026-03-28 -->
+<!-- Last updated by: complete for onboard-repo, 2026-03-29 -->

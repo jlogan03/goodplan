@@ -1,0 +1,1 @@
+The reviews field from gh pr list/view --json contains top-level review verdicts only, not inline code comments. Inline review comments require gh api repos/{owner}/{repo}/pulls/{number}/comments. Skills that analyze PR comments need this three-tier access pattern: list then view then API.

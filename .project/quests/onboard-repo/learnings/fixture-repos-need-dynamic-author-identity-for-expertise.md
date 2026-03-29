@@ -1,0 +1,1 @@
+Hardcoded fixture commit authors make expertise profiling tests meaningless because the test user is not among the authors. Fixture generation scripts should read git config user.name and user.email and use the actual user as one of the commit authors.

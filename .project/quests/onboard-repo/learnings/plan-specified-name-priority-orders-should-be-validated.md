@@ -1,0 +1,1 @@
+The plan specified project name priority as directory name then manifest name then README title. During implementation review, this was flagged as inverted — other skills (create-epic) use manifest name as primary. Plans for new skills should cross-reference existing skill conventions during refinement, not just during implementation.
