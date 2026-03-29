@@ -44,6 +44,7 @@ SKILL_DIRS=(
   explore
   implement-plan
   migrate
+  onboard-repo
   project-status
   refine-architecture
   refine-plan

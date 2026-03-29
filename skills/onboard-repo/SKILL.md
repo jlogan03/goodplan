@@ -1,0 +1,206 @@
+---
+name: onboard-repo
+description: >
+  Scan an existing repo with code but no .project/ directory and scaffold a
+  complete goodplan project. Extracts conventions, architecture, subsystem
+  maturity, migrations, tech debt, and expertise from repo artifacts (README,
+  git history, config files, gh CLI). Only asks about things that can't be
+  inferred. Not for repos that already have .project/ (use /migrate) or new
+  projects without code (use /create-epic).
+requires: goodplan >= 1.0.0
+---
+
+# Onboard Repo
+
+Scans an existing codebase and scaffolds a complete goodplan project by extracting conventions, architecture, subsystem structure, and tech debt from repo artifacts. Designed for repos that have code but no `.project/` directory.
+
+**When this skill triggers:** User says "onboard this repo", "set up goodplan for this project", "scan this codebase", or invokes `/onboard-repo` in a repo with code but no `.project/`. Use when joining an existing codebase, taking over a project, or wanting to understand a repo's architecture.
+
+## Step 0 — Version Check
+
+```bash
+goodplan --version --json
+```
+
+If the command fails (not found, non-zero exit), stop: "The `goodplan` CLI is required (>= 1.0.0) but was not found or is incompatible. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
+
+If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop with version mismatch message.
+
+Read `../_shared/references/cli-interaction.md` — needed throughout for CLI error handling patterns (section 10: Error Handling). Key points: exit code 1 = internal/unexpected error (present to user and stop), exit code 2 = validation/usage error (fix invocation — likely a skill bug), exit code 3 = state machine error (parse error code from JSON, apply recovery pattern).
+
+Note: `../_shared/references/expertise-tracking.md` is deferred to Step 10. `../_shared/references/output-templates.md` is deferred to Step 12.
+
+## Step 1 — Pre-Flight Checks
+
+### Existing project check
+
+```bash
+ls -d .project/ 2>/dev/null
+```
+
+If `.project/` exists, run `goodplan status --json` to determine project state:
+
+- **Fully onboarded** (has `idea.md` + `conventions.md` + architecture files): Stop with advisory message: "This repo already has a fully onboarded `.project/` directory. Use `/project-status` to see current state, or `/migrate` if it needs updating to a newer CLI version." Do NOT crash or exit with an error code — this is a normal advisory stop.
+- **Bare/partial** (just `project.json`, no markdown artifacts like `idea.md`): Inform the user: "Found a partial `.project/` from a previous incomplete run. Continuing onboarding from where it left off." Continue to Step 2 — the re-entry guards in Steps 3 and 4 will handle skipping already-completed work.
+
+If `.project/` does not exist, continue normally.
+
+### Confirm intent
+
+Ask the user: "Ready to scan this repo and set up goodplan? This will create a `.project/` directory with project metadata inferred from the codebase."
+
+### Shallow clone check
+
+```bash
+git rev-parse --is-shallow-repository
+```
+
+If `true`, warn: "This is a shallow clone. Git history analysis will be limited. Consider running `git fetch --unshallow` first for better results." Continue regardless — shallow data is still useful.
+
+### GitHub CLI availability
+
+```bash
+gh auth status 2>&1
+```
+
+Set `{gh_available}` flag:
+- **true** if `gh auth status` succeeds — PR data, issue labels, and contributor stats will be available.
+- **false** if it fails — skip GitHub-specific scanning in later steps. Inform: "GitHub CLI not authenticated — skipping PR/issue analysis. Run `gh auth login` to enable."
+
+## Step 2 — Repo Scanning
+
+Read `references/repo-scanning.md` (relative to this skill's directory) for scanning heuristics.
+
+Scan in priority order, storing findings in working memory for subsequent steps:
+
+### 2a. README
+
+```bash
+ls README* readme* 2>/dev/null
+```
+
+Read the first match. Extract: project name, description, tech stack mentions, setup instructions, architectural clues.
+
+### 2b. Package Manifest
+
+Look for (in order): `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, `pom.xml`, `build.gradle`. Read the first match. Extract: project name, dependencies, scripts/commands, language version constraints.
+
+### 2c. Directory Structure
+
+```bash
+ls -d src/*/ lib/*/ app/*/ cmd/*/ internal/*/ packages/*/ 2>/dev/null
+```
+
+Map top-level source directories to potential subsystems.
+
+### 2d. Config Files
+
+Read if present: `tsconfig.json`, `.eslintrc*`, `biome.json`, `.prettierrc*`, `jest.config*`, `vitest.config*`, `.env.example`.
+
+### 2e. CI Configuration
+
+```bash
+ls .github/workflows/*.yml .github/workflows/*.yaml .gitlab-ci.yml Jenkinsfile .circleci/config.yml 2>/dev/null
+```
+
+Read CI files for build/test/deploy pipeline details.
+
+## Step 3 — Initialize Project
+
+Infer project name using this priority order:
+1. `package.json` / manifest `name` field
+2. README title (first `#` heading)
+3. Repo directory name (basename of cwd)
+
+Sanitize to kebab-case: lowercase, replace spaces and underscores with hyphens, strip npm scope prefix (`@scope/`), truncate to 50 characters.
+
+**Re-entry:** If `.project/` exists from a previous partial run, skip init.
+
+```bash
+goodplan init --name <sanitized-name> --json
+```
+
+Handle errors per `cli-interaction.md` section 10.
+
+## Step 4 — Generate idea.md
+
+Write `.project/idea.md` directly using the Write tool. Content structure:
+
+```markdown
+# <Project Name>
+
+## Description
+
+<1-2 paragraph description inferred from README and package manifest>
+
+## Goals
+
+<Bulleted list of goals inferred from README, CI setup, and project structure>
+
+## Tech Stack
+
+<Bulleted list: language, framework, build tool, test framework, etc.>
+
+## Constraints
+
+<Any constraints visible from config: Node version, TypeScript strictness, etc.>
+```
+
+**Re-entry:** If `idea.md` exists and has content (more than just a heading), ask the user: "Found existing `.project/idea.md`. Regenerate from scan results, or keep the current version?" Respect their choice.
+
+## Step 5 — Convention Detection
+
+*Placeholder — implemented in Phase 2.*
+
+Read `references/convention-heuristics.md` for the dispatch table mapping config files to conventions.
+
+Detect coding conventions from config files (linting rules, formatting settings, TypeScript strictness, import style) and write `.project/conventions.md`.
+
+## Step 6 — Architecture Extraction
+
+*Placeholder — implemented in Phase 3.*
+
+Read `references/architecture-extraction.md` for extraction patterns.
+
+Analyze directory structure, imports, and module boundaries to draft initial architecture files.
+
+## Step 7 — Architecture Interview
+
+*Placeholder — implemented in Phase 3.*
+
+Ask targeted questions about architectural decisions that cannot be inferred from code (e.g., deployment topology, scaling strategy, data flow ownership).
+
+## Step 8 — Migration Detection
+
+*Placeholder — implemented in Phase 4.*
+
+Read `references/migration-detection.md` for detection patterns.
+
+Scan for in-progress migrations, version upgrade markers, and deprecated patterns to create migration-tracking side quests.
+
+## Step 9 — Side Quest Creation
+
+*Placeholder — implemented in Phase 4.*
+
+Create side quests for detected tech debt, migration work, and documentation gaps discovered during scanning.
+
+## Step 10 — Expertise Profiling
+
+*Placeholder — implemented in Phase 5.*
+
+Load `../_shared/references/expertise-tracking.md` here. Calibrate user expertise based on the project's tech stack domains and update expertise tracking.
+
+## Step 11 — Hot Spot Analysis
+
+*Placeholder — implemented in Phase 5.*
+
+Analyze git history for change frequency, churn hotspots, and contributor patterns to inform subsystem maturity and risk assessment.
+
+## Step 12 — CLAUDE.md Update + Summary
+
+*Placeholder — implemented in Phase 5.*
+
+Load `../_shared/references/output-templates.md` here. Two sub-activities:
+
+1. **CLAUDE.md update** — Add or update `.project/` path references and project context in CLAUDE.md.
+2. **Summary** — Present a structured onboarding summary: what was discovered, what was created, and recommended next steps.
