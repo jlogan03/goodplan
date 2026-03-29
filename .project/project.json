@@ -1,9 +1,9 @@
 {
 	"activeEpic": null,
-	"activeQuest": null,
+	"activeQuest": "onboard-repo",
 	"activeSlice": null,
 	"created": "2026-03-28T00:06:46.961Z",
 	"name": "goodplan",
-	"updated": "2026-03-28T23:52:02.189Z",
+	"updated": "2026-03-28T23:55:20.213Z",
 	"version": "1.0.0"
 }

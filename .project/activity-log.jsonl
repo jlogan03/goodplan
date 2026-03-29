@@ -47,3 +47,5 @@
 {"phase":"complete-quest-implementation","scope":"quests/consistent-skill-output","status":"complete","summary":"Quest \"consistent-skill-output\" implementation completed","ts":"2026-03-28T23:47:49.510Z"}
 {"phase":"complete-quest","scope":"quests/consistent-skill-output","status":"complete","summary":"Quest \"consistent-skill-output\" completed","ts":"2026-03-28T23:52:02.189Z"}
 {"phase":"abandon-quest","scope":"quests/upgrade-workflow","status":"complete","summary":"Quest \"upgrade-workflow\" abandoned: Already implemented — the /migrate skill covers this functionality. Built as part of migrate-to-cli.","ts":"2026-03-28T23:54:52.271Z"}
+{"phase":"begin-quest-plan","scope":"quests/onboard-repo","status":"complete","summary":"Quest \"onboard-repo\" planning started","ts":"2026-03-28T23:55:20.213Z"}
+{"phase":"complete-quest-plan","scope":"quests/onboard-repo","status":"complete","summary":"Quest \"onboard-repo\" plan completed","ts":"2026-03-29T00:03:39.881Z"}
