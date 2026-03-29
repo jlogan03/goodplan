@@ -3,6 +3,6 @@
 	"goal": "Add pagination support to list commands.",
 	"name": "list-pagination",
 	"refinement": null,
-	"status": "plan-created",
-	"updated": "2026-03-29T05:28:35.983Z"
+	"status": "plan-refined",
+	"updated": "2026-03-29T06:24:10.650Z"
 }

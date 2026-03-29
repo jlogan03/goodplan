@@ -1,9 +1,9 @@
 {
 	"activeEpic": null,
-	"activeQuest": null,
+	"activeQuest": "list-pagination",
 	"activeSlice": null,
 	"created": "2026-03-28T00:06:46.961Z",
 	"name": "goodplan",
-	"updated": "2026-03-29T05:15:59.464Z",
+	"updated": "2026-03-29T05:28:31.412Z",
 	"version": "1.0.0"
 }
