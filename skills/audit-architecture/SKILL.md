@@ -179,16 +179,18 @@ Draft a side quest `goal.md` with `type: gap`:
 1. Propose specific architecture file edits. Get user approval.
 2. Write a decision to `.project/decisions/` (with user confirmation — see decisions format reference).
 3. Apply approved edits to `$ARCH_DIR/` files.
-4. Draft a side quest `goal.md` with `type: improvement`:
+4. Draft a side quest goal with `type: improvement`:
    - What changed in the architecture
    - Which code needs to follow
    - Estimated scope
    - Improvement quests should run `/refine-architecture` first, then `/create-plan`
 
-Write approved side quests to `.project/side-quests/<name>/goal.md`:
+Create approved side quests via the CLI:
 ```bash
-mkdir -p ".project/side-quests/<name>"
+echo '{"name":"<descriptive-kebab-case-name>","goal":"<specific goal with affected files, scope, and verification criteria>"}' | goodplan quest:create --json
 ```
+
+Capture the output to extract the created quest name for inclusion in the audit report's "Side Quests Created" section.
 
 ## Step 5 — Write Audit Report
 

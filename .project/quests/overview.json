@@ -64,7 +64,7 @@
 			"completed": null,
 			"created": "2026-03-28T00:06:46.961Z",
 			"name": "list-pagination",
-			"status": "implementation-complete"
+			"status": "completed"
 		},
 		{
 			"completed": "2026-03-28T00:06:46.961Z",
@@ -88,7 +88,7 @@
 			"completed": null,
 			"created": "2026-03-28T00:06:46.961Z",
 			"name": "migration-sibling-check",
-			"status": "created"
+			"status": "abandoned"
 		},
 		{
 			"completed": null,
@@ -118,7 +118,7 @@
 			"completed": null,
 			"created": "2026-03-28T00:06:46.961Z",
 			"name": "side-quest-interruption-lifecycle",
-			"status": "created"
+			"status": "abandoned"
 		},
 		{
 			"completed": "2026-03-28T00:06:46.961Z",
@@ -154,7 +154,7 @@
 			"completed": null,
 			"created": "2026-03-28T02:47:45.332Z",
 			"name": "audit-arch-quest-create",
-			"status": "created"
+			"status": "completed"
 		},
 		{
 			"completed": null,
