@@ -308,6 +308,17 @@ Available on every command:
 | `--query` | string | jq filter on JSON output |
 | `--verbose` | boolean | Enable diagnostic output on stderr |
 
+### List Flags
+
+Available on all `list` commands (`epic:list`, `slice:list`, `quest:list`, `task:list`, `decision:list`, `learning:list`):
+
+| Flag | Type | Description |
+|---|---|---|
+| `--limit` | string (parsed as non-negative integer) | Maximum number of items to return |
+| `--offset` | string (parsed as non-negative integer) | Number of items to skip |
+
+When either flag is provided, both `offset` and `limit` appear in JSON output alongside `total`. When neither flag is used, only `total` is present. Pagination is applied to the items array before `--query` (paginate-then-query). This differs from the `state` command, which applies pagination after `--query` (query-then-paginate) — both semantics are correct for their context.
+
 ### Common Workflow Flags
 
 These flags are meaningful only on workflow and sub-agent commands. Passing them to read-only commands (`list`, `show`), `status`, `schema`, or `init` has no effect — they are silently ignored.

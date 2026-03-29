@@ -168,6 +168,7 @@ registerCommand(
 	"List all epics with name, status, created, and completed timestamps.",
 	{
 		...globalArgDefs,
+		...listArgDefs,
 	},
 );
 registerCommand("epic:show", "Show details for a specific epic.", {
@@ -232,6 +233,7 @@ registerCommand("slice:create", "Create a new slice. Stdin: {name, goal}.", {
 });
 registerCommand("slice:list", "List all slices.", {
 	...globalArgDefs,
+	...listArgDefs,
 	epic: { type: "string", description: "Filter by epic name" },
 	all: { type: "boolean", description: "Show slices from all epics" },
 });
@@ -272,6 +274,7 @@ registerCommand("quest:create", "Create a new quest. Stdin: {name, goal}.", {
 });
 registerCommand("quest:list", "List all quests.", {
 	...globalArgDefs,
+	...listArgDefs,
 });
 registerCommand("quest:show", "Show details for a specific quest.", {
 	...globalArgDefs,
@@ -316,6 +319,7 @@ registerCommand(
 	"List tasks. Defaults to open tasks only; use --all to include converted/dropped. JSON includes filter field.",
 	{
 		...globalArgDefs,
+		...listArgDefs,
 		all: { type: "boolean", description: "Include converted and dropped tasks", default: false },
 	},
 );
@@ -350,6 +354,7 @@ registerCommand("decision:create", "Create a new decision. Stdin: {id, domain, t
 });
 registerCommand("decision:list", "List all decisions.", {
 	...globalArgDefs,
+	...listArgDefs,
 });
 registerCommand("decision:show", "Show details for a specific decision.", {
 	...globalArgDefs,

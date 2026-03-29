@@ -6,7 +6,8 @@ import { getJson } from "../../core/tree.js";
 import type { EpicOverview, SliceOverviewItem } from "../../schemas/entities/overview.js";
 import type { Project } from "../../schemas/entities/project.js";
 import { output } from "../../util/output.js";
-import { globalArgs } from "../global-args.js";
+import { applyPagination, formatPaginationFooter } from "../../util/pagination.js";
+import { globalArgs, listArgs } from "../global-args.js";
 
 type SliceWithEpic = SliceOverviewItem & { epic: string };
 
@@ -25,6 +26,7 @@ export const sliceListCommand = defineCommand({
 	},
 	args: {
 		...globalArgs,
+		...listArgs,
 		epic: {
 			type: "string",
 			description: "Filter by epic name",
@@ -42,13 +44,13 @@ export const sliceListCommand = defineCommand({
 
 		const epicOverview = getJson<EpicOverview>(state, "epics/overview.json") ?? { items: [] };
 
-		let items: SliceWithEpic[] = [];
+		const allItems: SliceWithEpic[] = [];
 
 		if (args.all) {
 			// Flatten all epics' slices
 			for (const epicItem of epicOverview.items) {
 				for (const slice of epicItem.slices) {
-					items.push({ ...slice, epic: epicItem.name });
+					allItems.push({ ...slice, epic: epicItem.name });
 				}
 			}
 		} else {
@@ -63,21 +65,31 @@ export const sliceListCommand = defineCommand({
 				const epicEntry = epicOverview.items.find((e) => e.name === epicName);
 				if (epicEntry !== undefined) {
 					for (const slice of epicEntry.slices) {
-						items.push({ ...slice, epic: epicName });
+						allItems.push({ ...slice, epic: epicName });
 					}
 				}
 			}
 		}
 
+		const paginated = applyPagination(allItems, args);
+
 		if (args.json || args.query) {
-			output({ items }, args);
+			output(paginated, args);
 		} else if (!args.quiet) {
-			if (items.length === 0) {
+			if (paginated.total === 0) {
 				output("No slices found.", args);
+			} else if (paginated.items.length === 0) {
+				const lines: string[] = ["No slices in this range."];
+				const footer = formatPaginationFooter(paginated);
+				if (footer !== undefined) {
+					lines.push(footer);
+				}
+				output(lines.join("\n"), args);
 			} else if (args.all) {
-				// Group by epic
+				// Group by epic — derive headers from the paginated subset.
+				// Note: epic groups may be partial when paginated (expected behavior).
 				const byEpic = new Map<string, SliceWithEpic[]>();
-				for (const item of items) {
+				for (const item of paginated.items) {
 					const group = byEpic.get(item.epic) ?? [];
 					group.push(item);
 					byEpic.set(item.epic, group);
@@ -90,12 +102,20 @@ export const sliceListCommand = defineCommand({
 						lines.push(`  ${pc.bold(item.name)}  ${item.status}${completedStr}`);
 					}
 				}
+				const footer = formatPaginationFooter(paginated);
+				if (footer !== undefined) {
+					lines.push(footer);
+				}
 				output(lines.join("\n"), args);
 			} else {
 				const lines: string[] = [];
-				for (const item of items) {
+				for (const item of paginated.items) {
 					const completedStr = item.completed !== null ? ` (completed ${item.completed})` : "";
 					lines.push(`  ${pc.bold(item.name)}  ${item.status}${completedStr}`);
+				}
+				const footer = formatPaginationFooter(paginated);
+				if (footer !== undefined) {
+					lines.push(footer);
 				}
 				output(lines.join("\n"), args);
 			}

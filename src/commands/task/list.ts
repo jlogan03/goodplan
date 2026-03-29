@@ -5,7 +5,8 @@ import { resolveProjectDir } from "../../core/data/project.js";
 import { getJson } from "../../core/tree.js";
 import type { Overview, OverviewItem } from "../../schemas/entities/overview.js";
 import { output } from "../../util/output.js";
-import { globalArgs } from "../global-args.js";
+import { applyPagination, formatPaginationFooter } from "../../util/pagination.js";
+import { globalArgs, listArgs } from "../global-args.js";
 
 /**
  * `goodplan task:list [--all]` — list tasks.
@@ -22,6 +23,7 @@ export const taskListCommand = defineCommand({
 	},
 	args: {
 		...globalArgs,
+		...listArgs,
 		all: {
 			type: "boolean",
 			description: "Include converted and dropped tasks (default: open only)",
@@ -37,13 +39,14 @@ export const taskListCommand = defineCommand({
 
 		const allItems = overview.items;
 		const filter = args.all ? "all" : "open";
-		const items: OverviewItem[] =
+		const filtered: OverviewItem[] =
 			filter === "open" ? allItems.filter((item) => item.status === "open") : allItems;
+		const paginated = applyPagination(filtered, args);
 
 		if (args.json || args.query) {
-			output({ items, filter }, args);
+			output({ ...paginated, filter }, args);
 		} else if (!args.quiet) {
-			if (items.length === 0) {
+			if (paginated.total === 0) {
 				if (filter === "open" && allItems.length > 0) {
 					output(`No open tasks (use --all to show all ${allItems.length})`, args);
 				} else {
@@ -51,16 +54,24 @@ export const taskListCommand = defineCommand({
 				}
 			} else {
 				const lines: string[] = [];
-				for (const item of items) {
+				if (paginated.items.length === 0) {
+					lines.push("No tasks in this range.");
+				}
+				for (const item of paginated.items) {
 					const titleStr = item.title !== undefined ? `  ${item.title}` : "";
 					const statusStr = item.status !== "open" ? `  ${pc.dim(item.status)}` : "";
 					const createdStr = `  ${pc.dim(`(${item.created})`)}`;
 					lines.push(`  ${pc.bold(item.name)}${titleStr}${statusStr}${createdStr}`);
 				}
-				if (filter === "open" && allItems.length > items.length) {
+				const footer = formatPaginationFooter(paginated);
+				if (filter === "open" && allItems.length > filtered.length && footer === undefined) {
+					// Only show summary when pagination footer is absent (footer already conveys count)
 					lines.push(
-						`\n${pc.dim(`${items.length} open tasks (use --all to show all ${allItems.length})`)}`,
+						`\n${pc.dim(`${paginated.total} open tasks (use --all to show all ${allItems.length})`)}`,
 					);
+				}
+				if (footer !== undefined) {
+					lines.push(footer);
 				}
 				output(lines.join("\n"), args);
 			}

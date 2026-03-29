@@ -98,21 +98,21 @@ Wire pagination into the remaining 5 list commands and add integration test cove
 
 ### Tasks
 
-- [ ] **Wire pagination into `epic:list`** (`src/commands/epic/list.ts`): wrap items with `applyPagination()`, update JSON and human output paths.
+- [x] **Wire pagination into `epic:list`** (`src/commands/epic/list.ts`): wrap items with `applyPagination()`, update JSON and human output paths.
 
-- [ ] **Wire pagination into `quest:list`** (`src/commands/quest/list.ts`): same pattern.
+- [x] **Wire pagination into `quest:list`** (`src/commands/quest/list.ts`): same pattern.
 
-- [ ] **Wire pagination into `slice:list`** (`src/commands/slice/list.ts`): same pattern. Note: `slice:list --all` aggregates across epics with grouped headers in human mode. Pagination applies to the flat items array; partial epic groups may appear (e.g., last 2 slices of one epic, first 3 of next). This is intentional — the footer ("Showing X-Y of Z") makes truncation clear. Derive epic headers from the paginated subset.
+- [x] **Wire pagination into `slice:list`** (`src/commands/slice/list.ts`): same pattern. Note: `slice:list --all` aggregates across epics with grouped headers in human mode. Pagination applies to the flat items array; partial epic groups may appear (e.g., last 2 slices of one epic, first 3 of next). This is intentional — the footer ("Showing X-Y of Z") makes truncation clear. Derive epic headers from the paginated subset.
 
-- [ ] **Wire pagination into `task:list`** (`src/commands/task/list.ts`): same pattern. Note: task:list already has `--all` flag filtering — pagination applies after filtering. `total` is the count of filtered items (post-`--all` filter), not all tasks in the overview — this falls naturally from `applyPagination(items, args)` where `items` is already filtered. Preserve the existing `filter` field in JSON output: spread `applyPagination()` result with `{ filter }`, e.g., `output({ ...applyPagination(items, args), filter }, args)`.
+- [x] **Wire pagination into `task:list`** (`src/commands/task/list.ts`): same pattern. Note: task:list already has `--all` flag filtering — pagination applies after filtering. `total` is the count of filtered items (post-`--all` filter), not all tasks in the overview — this falls naturally from `applyPagination(items, args)` where `items` is already filtered. Preserve the existing `filter` field in JSON output: spread `applyPagination()` result with `{ filter }`, e.g., `output({ ...applyPagination(items, args), filter }, args)`.
 
-- [ ] **Wire pagination into `decision:list`** (`src/commands/decision/list.ts`): same pattern.
+- [x] **Wire pagination into `decision:list`** (`src/commands/decision/list.ts`): same pattern.
 
-- [ ] **Add integration tests** for at least `slice:list` and `quest:list` pagination using the `pagination` fixture from Phase 1. Test `--limit`, `--offset`, `--offset` alone (without `--limit`), JSON shape, human footer, `--quiet` mode with pagination, and `--query` combined with pagination. Add an integration test for invalid `--limit`/`--offset` values producing exit code 2.
+- [x] **Add integration tests** for at least `slice:list` and `quest:list` pagination using the `pagination` fixture from Phase 1. Test `--limit`, `--offset`, `--offset` alone (without `--limit`), JSON shape, human footer, `--quiet` mode with pagination, and `--query` combined with pagination. Add an integration test for invalid `--limit`/`--offset` values producing exit code 2.
 
-- [ ] **Verify all 6 commands end-to-end** on this repo: run each with `--limit 3 --json` and confirm output shape.
+- [x] **Verify all 6 commands end-to-end** on this repo: run each with `--limit 3 --json` and confirm output shape.
 
-- [ ] **Update `commands-api.md`** (`.project/architecture/commands-api.md`): add `--limit` and `--offset` to the Global Flags table (they apply to all list commands). Note their interaction with `--query` (paginate-then-query for list commands). Scope this update to `--limit`/`--offset` only — other stale entries (e.g., missing `--force`) are out of scope for this quest. Out of scope: `--force` flag gap in the Global Flags table — consider a future docs-audit task to sweep all missing flag entries.
+- [x] **Update `commands-api.md`** (`.project/architecture/commands-api.md`): add `--limit` and `--offset` to the Global Flags table (they apply to all list commands). Note their interaction with `--query` (paginate-then-query for list commands). Scope this update to `--limit`/`--offset` only — other stale entries (e.g., missing `--force`) are out of scope for this quest. Out of scope: `--force` flag gap in the Global Flags table — consider a future docs-audit task to sweep all missing flag entries.
 
 ### Verification
 
