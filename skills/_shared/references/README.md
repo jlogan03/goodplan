@@ -18,7 +18,7 @@ Consolidation criterion: only move a file here if it is expected to stay unified
 | `iteration-loop.md` | Shared orchestration skeleton for iterative review-and-edit skills (refine-plan, refine-architecture, etc.) |
 | `output-templates.md` | Rigid templates for structured user-facing output: iteration summaries, context load, completion, and done summaries |
 | `maturity-conventions.md` | Conventions for maturity levels, invariants, and fitness functions in architecture files |
-| `project-health-format.md` | Canonical structure for `.project/project-health.md`, a living document of system-level observations |
+| `project-health-format.md` | Canonical structure for `.goodplan/project-health.md`, a living document of system-level observations |
 | `reviewers-cross-cutting.md` | Cross-cutting reviewer prompts spanning multiple domains, with fillable placeholders |
 | `state-and-activity-formats.md` | Canonical formats for `state.md` and `activity-log.jsonl` entries |
 | `team-defaults.md` | Default team preferences applied based on codebase context |

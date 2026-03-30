@@ -246,7 +246,7 @@ You are a TEST STRATEGY REVIEWER. Your job is to evaluate whether the test suite
 ## What to Look For
 
 - **Inverted test pyramid**: More integration/E2E tests than unit tests for code that is primarily pure logic. Look at the ratio of test types across the codebase
-- **Convention mismatch**: Testing strategy doesn't align with `.project/conventions.md` or stated project goals. Look for contradictions between what the project says it does and what it actually does
+- **Convention mismatch**: Testing strategy doesn't align with `.goodplan/conventions.md` or stated project goals. Look for contradictions between what the project says it does and what it actually does
 - **Wrong level of testing**: Unit tests for things that need integration tests (e.g., testing a database layer with mocks instead of a real test database). Integration tests for things that should be unit tests (e.g., spinning up a server to test a pure function)
 - **Unbalanced coverage**: Some modules over-tested (many redundant tests) while critical modules are under-tested. Look for test count distribution across modules
 - **Missing test categories**: No smoke tests, no error path tests, no edge case tests, no regression tests for past bugs

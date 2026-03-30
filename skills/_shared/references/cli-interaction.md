@@ -1,6 +1,6 @@
 # CLI Interaction Conventions
 
-Shared reference for all goodplan workflow skills. Defines how skills detect, invoke, and parse the `goodplan` CLI. Skills MUST follow these conventions — direct `.project/` file access for structured state is prohibited.
+Shared reference for all goodplan workflow skills. Defines how skills detect, invoke, and parse the `gp` CLI. Skills MUST follow these conventions — direct `.goodplan/` file access for structured state is prohibited.
 
 ## Table of Contents
 
@@ -23,25 +23,25 @@ Shared reference for all goodplan workflow skills. Defines how skills detect, in
 At the start of any skill that uses the CLI, verify it is available and compatible:
 
 ```bash
-goodplan --version --json
+gp --version --json
 # Returns: { "version": "1.0.0" }
 ```
 
 **If the command fails** (not found, non-zero exit):
 
-> The `goodplan` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH.
+> The `gp` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH.
 
 **Do not fall back to direct file access.** Stop the skill.
 
 **If the version doesn't satisfy the skill's `requires` constraint** (declared in SKILL.md frontmatter):
 
-> This skill requires goodplan >= X.Y.Z but found A.B.C. Upgrade the CLI.
+> This skill requires gp >= X.Y.Z but found A.B.C. Upgrade the CLI.
 
 Stop the skill.
 
 ### CLI Version Checking
 
-The CLI automatically checks `project.json.version` against its own version on every command that reads `.project/`. Behavior:
+The CLI automatically checks `project.json.version` against its own version on every command that reads `.goodplan/`. Behavior:
 
 | Condition | Behavior |
 |-----------|----------|
@@ -50,7 +50,7 @@ The CLI automatically checks `project.json.version` against its own version on e
 | CLI major > data major | Warn on stderr: "Version mismatch..." Proceed with best effort. |
 | CLI major < data major | Error: exit code 2 (`VALIDATION_VERSION_MAJOR_MISMATCH`). |
 
-Warnings are suppressed in `--json` and `--quiet` modes. The `init`, `--version`, and `--help` commands skip the check naturally (no `.project/` required).
+Warnings are suppressed in `--json` and `--quiet` modes. The `init`, `--version`, and `--help` commands skip the check naturally (no `.goodplan/` required).
 
 On every RPC mutation (`begin`, `submit`, `complete`), the CLI stamps `project.json.version` with the CLI's current version if it is higher — ensuring the data version reflects the highest feature level used.
 
@@ -62,7 +62,7 @@ Every skill that uses the CLI declares its minimum version:
 ---
 name: project-status
 description: Query project state via the goodplan CLI
-requires: goodplan >= 1.0.0
+requires: gp >= 1.0.0
 ---
 ```
 
@@ -70,7 +70,7 @@ The `requires` field is agent-behavioral — there is no runtime validation. The
 
 ## 2. Data Ownership
 
-Two categories of files in `.project/`:
+Two categories of files in `.goodplan/`:
 
 | Category | Owned by | Skills may |
 |----------|----------|------------|
@@ -80,17 +80,17 @@ Two categories of files in `.project/`:
 
 ## 3. What Skills Must NOT Do
 
-- Read `.project/*.json`, `.project/*.jsonl`, or any entity JSON files directly
+- Read `.goodplan/*.json`, `.goodplan/*.jsonl`, or any entity JSON files directly
 - Write or edit any JSON/JSONL file
 - Append to `activity-log.jsonl` (CLI handles this on mutations)
 - Maintain or read `state.md` (eliminated — see section 6)
 - Use `ls` or file-existence checks to infer entity status
-- Use `mkdir` to create `.project/` subdirectories (CLI creates them via mutations)
+- Use `mkdir` to create `.goodplan/` subdirectories (CLI creates them via mutations)
 
 ### What Skills MAY Still Do Directly
 
-- Read reference files outside `.project/` (source code, config files, etc.) via the Read tool
-- Read LLM-owned markdown files within `.project/` via the Read tool (architecture docs, research, plans)
+- Read reference files outside `.goodplan/` (source code, config files, etc.) via the Read tool
+- Read LLM-owned markdown files within `.goodplan/` via the Read tool (architecture docs, research, plans)
 - Write LLM-owned markdown files into paths returned by CLI command responses
 
 ## 4. Invocation Patterns
@@ -100,9 +100,9 @@ Two categories of files in `.project/`:
 All CLI queries from skills must use `--json` for structured, parseable output:
 
 ```bash
-goodplan status --json
-goodplan slice:show --slice my-slice --json
-goodplan epic:list --json
+gp status --json
+gp slice:show --slice my-slice --json
+gp epic:list --json
 ```
 
 **Exception:** `start-*` commands always return JSON — the `--json` flag is accepted but has no effect. You should still include `--json` for consistency, but output is JSON regardless.
@@ -129,20 +129,20 @@ On non-zero exit with `--json`, stdout contains structured error:
 Commands that accept structured input read from stdin:
 
 ```bash
-echo '{"name": "my-slice"}' | goodplan slice:create --epic my-epic --json
+echo '{"name": "my-slice"}' | gp slice:create --epic my-epic --json
 ```
 
 **IMPORTANT — always pipe stdin:** The compiled binary reads stdin and will block if nothing is piped. For commands with no payload, pipe empty stdin:
 
 ```bash
-stdin: "" | goodplan slice:plan --slice my-slice --json
+stdin: "" | gp slice:plan --slice my-slice --json
 ```
 
-> **Syntax note:** `stdin: ""` is Claude Code's Bash tool API syntax — a named parameter, not valid shell. Skills invoke commands through Claude Code's Bash tool where `stdin` is a tool parameter that feeds data to the command's standard input. In a regular shell, the equivalent would be `echo '' | goodplan ...` or `echo -n '' | goodplan ...`.
+> **Syntax note:** `stdin: ""` is Claude Code's Bash tool API syntax — a named parameter, not valid shell. Skills invoke commands through Claude Code's Bash tool where `stdin` is a tool parameter that feeds data to the command's standard input. In a regular shell, the equivalent would be `echo '' | gp ...` or `echo -n '' | gp ...`.
 
 ### `start-*` always return JSON
 
-The `start-*` sub-agent commands (including but not limited to `start-plan`, `start-refinement`, `start-implementation`, `start-explore`, `start-architecture`, `start-slices`, `start-refine-architecture`, `start-refine-slices`) always return JSON output. The `--json` flag is accepted but has no effect. Use `goodplan schema --json` for the authoritative list.
+The `start-*` sub-agent commands (including but not limited to `start-plan`, `start-refinement`, `start-implementation`, `start-explore`, `start-architecture`, `start-slices`, `start-refine-architecture`, `start-refine-slices`) always return JSON output. The `--json` flag is accepted but has no effect. Use `gp schema --json` for the authoritative list.
 
 **Important:** `start-complete` does not exist as a command. Completion is handled by `slice:complete` and `quest:complete` which accept stdin payloads (see section 9).
 
@@ -159,24 +159,24 @@ Skills that coordinate workflow phases: `/create-epic`, `/explore`, `/create-arc
 **Read state:**
 
 ```bash
-goodplan status --json                    # project overview, active entities, recommendations
-goodplan epic:show --epic X --json        # entity details
-goodplan slice:list --json                # all slices with statuses
-goodplan state --json --query '.["activity-log.jsonl"] | .[-5:]'  # recent activity
+gp status --json                    # project overview, active entities, recommendations
+gp epic:show --epic X --json        # entity details
+gp slice:list --json                # all slices with statuses
+gp state --json --query '.["activity-log.jsonl"] | .[-5:]'  # recent activity
 ```
 
 **Initialize project (if needed):**
 
 ```bash
-goodplan init --name my-project --json
+gp init --name my-project --json
 ```
 
 **Mutate state:**
 
 ```bash
-echo '{"name":"my-epic","goal":"..."}' | goodplan epic:create --json
-stdin: "" | goodplan slice:plan --slice my-slice --json
-echo '{"verificationPassed":true,"learnings":[...]}' | goodplan slice:complete --slice my-slice --json
+echo '{"name":"my-epic","goal":"..."}' | gp epic:create --json
+stdin: "" | gp slice:plan --slice my-slice --json
+echo '{"verificationPassed":true,"learnings":[...]}' | gp slice:complete --slice my-slice --json
 ```
 
 **Use response paths:** Mutation responses include `paths` — a `Record<string, string>` mapping logical names to absolute filesystem paths. Write markdown content into these paths:
@@ -186,8 +186,8 @@ echo '{"verificationPassed":true,"learnings":[...]}' | goodplan slice:complete -
   "entity": "my-slice",
   "newStatus": "planning",
   "paths": {
-    "plan": "/abs/path/to/.project/epics/my-epic/slices/my-slice/",
-    "research": "/abs/path/to/.project/epics/my-epic/slices/my-slice/research/"
+    "plan": "/abs/path/to/.goodplan/epics/my-epic/slices/my-slice/",
+    "research": "/abs/path/to/.goodplan/epics/my-epic/slices/my-slice/research/"
   }
 }
 ```
@@ -199,7 +199,7 @@ Skills that produce content within a workflow phase: plan writers, implementatio
 **Get context:**
 
 ```bash
-goodplan start-plan --slice my-slice --inline --json
+gp start-plan --slice my-slice --inline --json
 ```
 
 Response includes `context` bundle (inline content, file references, decisions, learnings) and `paths` for where to write.
@@ -208,13 +208,13 @@ Response includes `context` bundle (inline content, file references, decisions, 
 
 ```bash
 # submit-plan: no content payload — sub-agent already wrote plan to filesystem.
-stdin: "" | goodplan submit-plan --slice my-slice --json
+stdin: "" | gp submit-plan --slice my-slice --json
 
 # submit-refinement: requires scores payload for the circuit breaker.
-echo '{"scores":{"correctness":9,"completeness":8}}' | goodplan submit-refinement --slice my-slice --json
+echo '{"scores":{"correctness":9,"completeness":8}}' | gp submit-refinement --slice my-slice --json
 
 # submit-implementation: no content payload.
-stdin: "" | goodplan submit-implementation --slice my-slice --json
+stdin: "" | gp submit-implementation --slice my-slice --json
 ```
 
 ### Interactive Orchestrator Skills
@@ -230,18 +230,18 @@ Skills that do interactive user work between state transitions: `/create-epic`, 
 
 ```bash
 # 1. Begin the phase
-stdin: "" | goodplan epic:explore --epic my-epic --json
+stdin: "" | gp epic:explore --epic my-epic --json
 # Returns: { entity, phase, previousStatus, newStatus }
 
 # 2. Get deep context
-goodplan start-explore --epic my-epic --inline --json
+gp start-explore --epic my-epic --inline --json
 # Returns: { context: { inline: {...}, references: [...], decisions: [...] }, paths: {...} }
 
 # 3. Interactive work happens here (user research, brainstorming, etc.)
 # LLM writes content to paths from start-explore response
 
 # 4. Submit to advance state
-stdin: "" | goodplan submit-explore --epic my-epic --json
+stdin: "" | gp submit-explore --epic my-epic --json
 ```
 
 ### Read-Only Skills
@@ -259,14 +259,14 @@ Present what you're doing for visibility. Do not ask permission for actions the 
 When a skill starts and needs to understand the current project state:
 
 ```bash
-goodplan status --json
+gp status --json
 ```
 
 Returns active entities, their statuses, artifact counts with file listings, recommendations (suggested next actions), and warnings (stale entities). **This replaces reading `state.md`.**
 
 ### `status --json` Artifact Shape
 
-Changed in 1.0.0: the `architecture`, `research`, `brainstorm`, and `prototypes` fields are now `{ count, files }` objects instead of plain numbers. Files arrays use state-tree-relative paths (relative to `.project/`), aggregating from both project-level and active epic directories. `decisions`, `learnings`, `completedSlices`, `totalSlices` remain plain numbers.
+Changed in 1.0.0: the `architecture`, `research`, `brainstorm`, and `prototypes` fields are now `{ count, files }` objects instead of plain numbers. Files arrays use state-tree-relative paths (relative to `.goodplan/`), aggregating from both project-level and active epic directories. `decisions`, `learnings`, `completedSlices`, `totalSlices` remain plain numbers.
 
 ```json
 {
@@ -296,11 +296,11 @@ Skills previously read `state.md` for several purposes. CLI equivalents:
 
 | Previous `state.md` usage | CLI equivalent |
 |---|---|
-| **Active slice detection** (for fast resume) | `goodplan status --json` → `.activeSlice` |
-| **Current phase detection** | `goodplan slice:show --slice X --json` → `.status` |
-| **Concurrent work warnings** (is another slice active?) | `goodplan status --json` → `.activeSlice` (non-null = something is active) |
-| **Next step hints** | `goodplan status --json` → `.recommendations[]` |
-| **Active quest detection** | `goodplan status --json` → `.activeQuest` |
+| **Active slice detection** (for fast resume) | `gp status --json` → `.activeSlice` |
+| **Current phase detection** | `gp slice:show --slice X --json` → `.status` |
+| **Concurrent work warnings** (is another slice active?) | `gp status --json` → `.activeSlice` (non-null = something is active) |
+| **Next step hints** | `gp status --json` → `.recommendations[]` |
+| **Active quest detection** | `gp status --json` → `.activeQuest` |
 
 > **Deprecation:** The `state.md` format documented in `skills/_shared/references/state-and-activity-formats.md` is now obsolete. Skills should use the CLI commands above instead.
 
@@ -309,14 +309,14 @@ Skills previously read `state.md` for several purposes. CLI equivalents:
 To access accumulated learnings (across all completed slices and quests):
 
 ```bash
-goodplan learning:list --json
+gp learning:list --json
 ```
 
-Returns `{ "items": [...] }` where each item has `category`, `summary`, `tags`, `source`, `rollup`, `rollupTo`, and either `detail` (legacy) or `file` (new format, scope-relative path to `.md` file in `learnings/` directory). Skills should use this command instead of reading `.project/learnings.md` or `.project/learnings/` directly.
+Returns `{ "items": [...] }` where each item has `category`, `summary`, `tags`, `source`, `rollup`, `rollupTo`, and either `detail` (legacy) or `file` (new format, scope-relative path to `.md` file in `learnings/` directory). Skills should use this command instead of reading `.goodplan/learnings.md` or `.goodplan/learnings/` directly.
 
 Filter by source scope:
 ```bash
-goodplan learning:list --json --source <scope-path>
+gp learning:list --json --source <scope-path>
 ```
 
 Human-readable output (no `--json`): displays `{category} {summary} ({source})` per entry — file paths are omitted from human output.
@@ -344,10 +344,10 @@ The `status` field gives the entity's current state. The `artifacts` object conf
 
 ## 8. Deep Dives — Full State Access
 
-When a skill needs access to any data in `.project/` beyond what `status`/`show`/`list` provide:
+When a skill needs access to any data in `.goodplan/` beyond what `status`/`show`/`list` provide:
 
 ```bash
-goodplan state --json --query '<jq expression>'
+gp state --json --query '<jq expression>'
 ```
 
 This dumps the full `assembleState()` tree — every JSON file parsed, every JSONL array, every directory as a nested object. The `--query` flag applies a jq expression server-side, so only the selected data is returned.
@@ -360,28 +360,28 @@ This dumps the full `assembleState()` tree — every JSON file parsed, every JSO
 
 ```bash
 # All activity log entries
-goodplan state --json --query '.["activity-log.jsonl"]'
+gp state --json --query '.["activity-log.jsonl"]'
 
 # Last 5 activity entries
-goodplan state --json --query '.["activity-log.jsonl"] | .[-5:]'
+gp state --json --query '.["activity-log.jsonl"] | .[-5:]'
 
 # Page through entries (entries 20-39)
-goodplan state --json --query '.["activity-log.jsonl"]' --offset 20 --limit 20
+gp state --json --query '.["activity-log.jsonl"]' --offset 20 --limit 20
 
 # A specific slice's learnings
-goodplan state --json --query '.slices["my-slice"]["learnings.jsonl"]'
+gp state --json --query '.slices["my-slice"]["learnings.jsonl"]'
 
 # All architecture file names
-goodplan state --json --query '.architecture | keys'
+gp state --json --query '.architecture | keys'
 
 # Check if a file exists in a scope
-goodplan state --json --query '.slices["my-slice"] | has("plan-refined.md")'
+gp state --json --query '.slices["my-slice"] | has("plan-refined.md")'
 
 # Project-level learnings filtered by source
-goodplan state --json --query '[.["learnings.jsonl"][] | select(.source == "04-slice-lifecycle")]'
+gp state --json --query '[.["learnings.jsonl"][] | select(.source == "04-slice-lifecycle")]'
 
 # Everything about the active epic
-goodplan state --json --query '.epics[.["project.json"].activeEpic]'
+gp state --json --query '.epics[.["project.json"].activeEpic]'
 ```
 
 ### `--offset` / `--limit` Semantics
@@ -394,10 +394,10 @@ When `--query` returns an array, `--offset N --limit N` pages through it. These 
 
 ```bash
 # First 10 learnings
-goodplan state --json --query '.["learnings.jsonl"]' --limit 10
+gp state --json --query '.["learnings.jsonl"]' --limit 10
 
 # Next 10
-goodplan state --json --query '.["learnings.jsonl"]' --offset 10 --limit 10
+gp state --json --query '.["learnings.jsonl"]' --offset 10 --limit 10
 ```
 
 ### `--inline` and Markdown Content
@@ -408,11 +408,11 @@ By default, the `state` command serializes markdown entries as `true` (a boolean
 
 ```bash
 # Without --inline: returns true (boolean)
-goodplan state --json --query '.architecture["_overview.md"]'
+gp state --json --query '.architecture["_overview.md"]'
 # Output: true
 
 # With --inline: returns the full markdown content (string)
-goodplan state --json --query '.architecture["_overview.md"]' --inline
+gp state --json --query '.architecture["_overview.md"]' --inline
 # Output: "# Architecture Overview\n\nThe system is organized into..."
 ```
 
@@ -422,14 +422,14 @@ Skills must not cache or compare state tree outputs across calls with different 
 
 ## 9. Completion Command Payloads
 
-Skills that complete entities need to construct stdin payloads. Use `goodplan schema --json --command <cmd>` to discover the exact shapes at runtime.
+Skills that complete entities need to construct stdin payloads. Use `gp schema --json --command <cmd>` to discover the exact shapes at runtime.
 
 **Important:** There is no `start-complete` command. Completion is a single-step operation via `slice:complete` or `quest:complete`.
 
 ### `slice:complete`
 
 ```bash
-echo '<payload>' | goodplan slice:complete --slice my-slice --json
+echo '<payload>' | gp slice:complete --slice my-slice --json
 ```
 
 Required fields:
@@ -445,7 +445,7 @@ Optional fields:
 Example:
 
 ```bash
-echo '{"verificationPassed":true,"learnings":[{"category":"worked","summary":"Schema-first caught 3 bugs","detail":"Defining schemas before code forced explicit handling of optionals","tags":["zod"],"rollupTo":["epic"]}],"architectureDelta":[{"subsystem":"data-layer","type":"modify","description":"Added atomic writes"}]}' | goodplan slice:complete --slice my-slice --json
+echo '{"verificationPassed":true,"learnings":[{"category":"worked","summary":"Schema-first caught 3 bugs","detail":"Defining schemas before code forced explicit handling of optionals","tags":["zod"],"rollupTo":["epic"]}],"architectureDelta":[{"subsystem":"data-layer","type":"modify","description":"Added atomic writes"}]}' | gp slice:complete --slice my-slice --json
 ```
 
 ### `quest:complete`
@@ -453,7 +453,7 @@ echo '{"verificationPassed":true,"learnings":[{"category":"worked","summary":"Sc
 Same shape as `slice:complete` but without `deferred` (quests don't route deferred work to slices):
 
 ```bash
-echo '<payload>' | goodplan quest:complete --quest fix-logging --json
+echo '<payload>' | gp quest:complete --quest fix-logging --json
 ```
 
 Required fields:
@@ -482,14 +482,14 @@ The `verificationPassed` boolean is a human/orchestrator assertion. The orchestr
 
 | Error code | Exit | Meaning | Recovery |
 |------------|------|---------|----------|
-| `DATA_NO_PROJECT` | 1 | No `.project/` directory found | Tell user to run `goodplan init` or navigate to a project directory |
-| `VALIDATION_UNKNOWN_COMMAND` | 2 | Command not recognized | Check spelling; use `goodplan schema --json` to list available commands |
-| `VALIDATION_INVALID_INPUT` | 2 | Bad flags or stdin payload | Use `goodplan schema --command <cmd> --json` to check expected input shape |
+| `DATA_NO_PROJECT` | 1 | No `.goodplan/` directory found | Tell user to run `gp init` or navigate to a project directory |
+| `VALIDATION_UNKNOWN_COMMAND` | 2 | Command not recognized | Check spelling; use `gp schema --json` to list available commands |
+| `VALIDATION_INVALID_INPUT` | 2 | Bad flags or stdin payload | Use `gp schema --command <cmd> --json` to check expected input shape |
 | `VALIDATION_INVALID_QUERY` | 2 | Invalid jq expression in `--query` | Fix the jq syntax |
 | `VALIDATION_STDIN_TOO_LARGE` | 2 | Stdin exceeds 1 MB | Reduce payload size |
 | `STATE_INVALID_TRANSITION` | 3 | Requested transition not valid from current state | Check `show --json` for current status; entity may already be past the requested phase |
 | `STATE_QUEST_ALREADY_ACTIVE` | 3 | Another quest is active | Ask user whether to abandon the existing quest first |
-| `STATE_ALREADY_INITIALIZED` | 3 | `.project/` already exists | Project is already initialized; proceed with other commands |
+| `STATE_ALREADY_INITIALIZED` | 3 | `.goodplan/` already exists | Project is already initialized; proceed with other commands |
 | `DATA_CONCURRENT_MODIFICATION` | 1 | File changed during write | Retry once |
 
 ### Error Recovery Patterns
@@ -500,18 +500,18 @@ The entity is already past the requested phase. This is often success — the wo
 
 ```bash
 # Skill tries to begin planning, but slice is already past that phase
-stdin: "" | goodplan slice:plan --slice my-slice --json
+stdin: "" | gp slice:plan --slice my-slice --json
 # Exit 3: STATE_INVALID_TRANSITION — slice is in 'plan-created'
 
 # Recovery: check current status
-goodplan slice:show --slice my-slice --json
+gp slice:show --slice my-slice --json
 # → status: "plan-created" — plan phase already completed. Proceed to refinement.
 ```
 
 **`STATE_QUEST_ALREADY_ACTIVE` (exit 3):**
 
 ```bash
-stdin: "" | goodplan quest:plan --quest fix-logging --json
+stdin: "" | gp quest:plan --quest fix-logging --json
 # Exit 3: STATE_QUEST_ALREADY_ACTIVE — "fix-perf" is active
 
 # Recovery: ask user whether to abandon fix-perf first
@@ -521,7 +521,7 @@ stdin: "" | goodplan quest:plan --quest fix-logging --json
 
 ```bash
 # Discover expected input shape
-goodplan schema --command slice:complete --json
+gp schema --command slice:complete --json
 # Returns: { "name": "slice:complete", "stdinSchema": {...}, "args": {...} }
 # Use stdinSchema to construct the correct payload and retry.
 ```
@@ -533,7 +533,7 @@ goodplan schema --command slice:complete --json
 If a skill needs to discover available commands or verify flag names at runtime:
 
 ```bash
-goodplan schema --json
+gp schema --json
 ```
 
 Returns the full command tree with input/output schemas. Use as a fallback when this convention doc doesn't cover an edge case.
@@ -541,12 +541,12 @@ Returns the full command tree with input/output schemas. Use as a fallback when 
 To inspect a single command:
 
 ```bash
-goodplan schema --command slice:complete --json
+gp schema --command slice:complete --json
 ```
 
 Returns that command's flags, stdin schema, and description.
 
-Note: `--version --json` is handled pre-dispatch and does not appear in `goodplan schema --json` output. This is a known limitation.
+Note: `--version --json` is handled pre-dispatch and does not appear in `gp schema --json` output. This is a known limitation.
 
 ## 12. Migration Example
 
@@ -554,28 +554,28 @@ Note: `--version --json` is handled pre-dispatch and does not appear in `goodpla
 
 ```
 # Read project state
-Read .project/project.json → check activeEpic
-Read .project/epics/overview.json → check for name collision
+Read .goodplan/project.json → check activeEpic
+Read .goodplan/epics/overview.json → check for name collision
 
 # Create the epic
-mkdir .project/epics/my-epic/
-mkdir .project/epics/my-epic/architecture/
-mkdir .project/epics/my-epic/research/
-mkdir .project/epics/my-epic/brainstorm/
-Write .project/epics/my-epic/epic.json → { name, status: "created", goal, ... }
-Read + write .project/epics/overview.json → append to items array
-Append .project/activity-log.jsonl → { phase: "create", scope: "epics/my-epic", ... }
+mkdir .goodplan/epics/my-epic/
+mkdir .goodplan/epics/my-epic/architecture/
+mkdir .goodplan/epics/my-epic/research/
+mkdir .goodplan/epics/my-epic/brainstorm/
+Write .goodplan/epics/my-epic/epic.json → { name, status: "created", goal, ... }
+Read + write .goodplan/epics/overview.json → append to items array
+Append .goodplan/activity-log.jsonl → { phase: "create", scope: "epics/my-epic", ... }
 ```
 
 ### After (CLI commands)
 
 ```bash
 # Create the epic — one command handles all state writes
-echo '{"name":"my-epic","goal":"Build the feature..."}' | goodplan epic:create --json
+echo '{"name":"my-epic","goal":"Build the feature..."}' | gp epic:create --json
 # Returns: { "entity": "my-epic", "phase": "create", "previousStatus": "none", "newStatus": "created" }
 
 # Begin exploration — single command advances state
-stdin: "" | goodplan epic:explore --epic my-epic --json
+stdin: "" | gp epic:explore --epic my-epic --json
 # Returns: { "entity": "my-epic", "phase": "explore", "previousStatus": "created", "newStatus": "exploring" }
 ```
 
@@ -614,15 +614,15 @@ Common direct-access patterns and their CLI equivalents:
 
 | Direct access pattern | CLI equivalent |
 |---|---|
-| Read `state.md` for active slice | `goodplan status --json` → `.activeSlice` |
-| Read `state.md` for current phase | `goodplan slice:show --slice X --json` → `.status` |
-| Read entity JSON for status/artifacts | `goodplan slice:show --slice X --json` → `.status`, `.artifacts` |
-| Read `activity-log.jsonl` directly | `goodplan state --json --query '.["activity-log.jsonl"]'` |
-| Read `decisions.jsonl` directly | `goodplan state --json --query '.["decisions.jsonl"]'` |
+| Read `state.md` for active slice | `gp status --json` → `.activeSlice` |
+| Read `state.md` for current phase | `gp slice:show --slice X --json` → `.status` |
+| Read entity JSON for status/artifacts | `gp slice:show --slice X --json` → `.status`, `.artifacts` |
+| Read `activity-log.jsonl` directly | `gp state --json --query '.["activity-log.jsonl"]'` |
+| Read `decisions.jsonl` directly | `gp state --json --query '.["decisions.jsonl"]'` |
 | Append to `activity-log.jsonl` | Not needed — CLI appends automatically on every mutation |
 | Write `state.md` | Not needed — eliminated; CLI manages state |
-| `mkdir -p .project/epics/<name>/...` | `echo '{"name":"..."}' \| goodplan epic:create --json` |
-| Read `overview.json` for entity list | `goodplan epic:list --json` or `goodplan slice:list --json` |
+| `mkdir -p .goodplan/epics/<name>/...` | `echo '{"name":"..."}' \| gp epic:create --json` |
+| Read `overview.json` for entity list | `gp epic:list --json` or `gp slice:list --json` |
 
 ### What Stays Direct
 
@@ -630,11 +630,11 @@ LLM-owned markdown files are still read and written directly by skills:
 
 - **Plans**: `plan.md`, `plan-refined.md`, `plan-learnings-and-feedback.md`
 - **Goals**: `goal.md` (epics, slices, quests)
-- **Architecture**: `.project/architecture/*.md`, epic `architecture/`
-- **Research and brainstorm**: `.project/research/`, `.project/brainstorm/`
-- **Project health**: `.project/project-health.md`
+- **Architecture**: `.goodplan/architecture/*.md`, epic `architecture/`
+- **Research and brainstorm**: `.goodplan/research/`, `.goodplan/brainstorm/`
+- **Project health**: `.goodplan/project-health.md`
 - **CLAUDE.md**: project root `CLAUDE.md`
-- **Idea**: `.project/idea.md`
+- **Idea**: `.goodplan/idea.md`
 - **Completion artifacts**: `completion/learnings.md`, `completion/architecture-updates.md`
 
 These are content authored by the LLM. The CLI does not manage their contents — skills read and write them with the Read, Write, and Edit tools.
@@ -644,7 +644,7 @@ These are content authored by the LLM. The CLI does not manage their contents �
 Every skill that uses the CLI declares its minimum version in SKILL.md frontmatter:
 
 ```yaml
-requires: goodplan >= 1.0.0
+requires: gp >= 1.0.0
 ```
 
-At startup, the skill runs `goodplan --version --json`, compares the version against `requires`, and stops with a clear error if incompatible. This ensures skills fail fast rather than encountering mysterious failures from changed CLI behavior.
+At startup, the skill runs `gp --version --json`, compares the version against `requires`, and stops with a clear error if incompatible. This ensures skills fail fast rather than encountering mysterious failures from changed CLI behavior.

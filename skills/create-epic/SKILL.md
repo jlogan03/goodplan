@@ -5,25 +5,25 @@ description: >
   Mode B: add a new epic to an existing project. Common triggers: 'start project',
   'new project', 'new epic', 'create epic', 'add epic', 'start fresh',
   'I have a new idea'.
-requires: goodplan >= 1.0.0
+requires: gp >= 1.0.0
 ---
 
 # Create Epic
 
 Two modes based on project state:
 
-- **Mode A** — New project: initializes `.project/` via CLI, captures idea, creates first epic with `goal.md`.
+- **Mode A** — New project: initializes `.goodplan/` via CLI, captures idea, creates first epic with `goal.md`.
 - **Mode B** — Existing project: captures a new epic goal, creates epic via CLI.
 
 ## Step 1 — Version Check
 
 ```bash
-goodplan --version --json
+gp --version --json
 ```
 
-Verify the reported version satisfies `requires: goodplan >= 1.0.0`. If the CLI is not found or the version is too old:
+Verify the reported version satisfies `requires: gp >= 1.0.0`. If the CLI is not found or the version is too old:
 
-> The `goodplan` CLI is required (>= 1.0.0) but was not found or is incompatible. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH.
+> The `gp` CLI is required (>= 1.0.0) but was not found or is incompatible. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH.
 
 **Stop the skill.** Do not fall back to direct file access.
 
@@ -32,7 +32,7 @@ For all CLI commands in this skill, follow error handling patterns in `../_share
 ## Step 2 — Detect Mode
 
 ```bash
-goodplan status --json
+gp status --json
 ```
 
 - **Success** → Mode B (existing project). Check `.activeEpic` in the response.
@@ -80,26 +80,26 @@ Follow calibration depth guidance in `../_shared/references/expertise-tracking.m
 Derive a project name from the conversation (kebab-case, 2-4 words). If unclear, ask.
 
 ```bash
-goodplan init --name <project-name> --json
+gp init --name <project-name> --json
 ```
 
-This creates `.project/`, `project.json`, and all standard directories.
+This creates `.goodplan/`, `project.json`, and all standard directories.
 
 ### Step 5 — Write idea.md
 
-Read `references/templates.md` for the idea.md template. Write `.project/idea.md` with substantive content synthesized from the conversation — never placeholder text.
+Read `references/templates.md` for the idea.md template. Write `.goodplan/idea.md` with substantive content synthesized from the conversation — never placeholder text.
 
 ### Step 6 — Create First Epic
 
 ```bash
-echo '{"name":"initial","goal":"<goal-summary>"}' | goodplan epic:create --json
+echo '{"name":"initial","goal":"<goal-summary>"}' | gp epic:create --json
 ```
 
-The response includes an `entity` field with the epic name. Use this to derive the goal.md path via the fixed convention: `.project/epics/<entity>/goal.md`.
+The response includes an `entity` field with the epic name. Use this to derive the goal.md path via the fixed convention: `.goodplan/epics/<entity>/goal.md`.
 
 ### Step 7 — Write goal.md
 
-Write `.project/epics/initial/goal.md`:
+Write `.goodplan/epics/initial/goal.md`:
 
 ```markdown
 # Epic Goal: initial
@@ -110,7 +110,7 @@ Write `.project/epics/initial/goal.md`:
 ### Step 8 — Confirm
 
 ```bash
-goodplan epic:show --epic initial --json
+gp epic:show --epic initial --json
 ```
 
 Verify the response includes `name`, `status`, and `goal` fields. Check `status === "created"`.
@@ -123,14 +123,14 @@ Read `references/templates.md` for the Project Context section format. Update `C
 
 **Case 2 — CLAUDE.md exists but no `## Project Context` section**: Append the section at the end with a blank line before the header.
 
-**Case 3 — `## Project Context` already exists**: Check if `.project/idea.md` already appears. If yes, skip. If no, add `- \`.project/idea.md\` — project goal, scope, constraints` under the section header.
+**Case 3 — `## Project Context` already exists**: Check if `.goodplan/idea.md` already appears. If yes, skip. If no, add `- \`.goodplan/idea.md\` — project goal, scope, constraints` under the section header.
 
 ### Done (Mode A)
 
 > Project planning is set up. Here's what was created:
 >
-> - `.project/idea.md` — your project idea
-> - `.project/epics/initial/goal.md` — first epic goal
+> - `.goodplan/idea.md` — your project idea
+> - `.goodplan/epics/initial/goal.md` — first epic goal
 > - `CLAUDE.md` — updated with project context
 >
 > **Next**: Run `/explore` or `/create-architecture` to begin working on the initial epic.
@@ -165,14 +165,14 @@ Auto-detect a kebab-case name (2-4 words) from the conversation. If unclear, ask
 ### Step B3 — Create Epic
 
 ```bash
-echo '{"name":"<name>","goal":"<goal-summary>"}' | goodplan epic:create --json
+echo '{"name":"<name>","goal":"<goal-summary>"}' | gp epic:create --json
 ```
 
-The response includes an `entity` field. Use the fixed convention `.project/epics/<entity>/goal.md` for the goal path.
+The response includes an `entity` field. Use the fixed convention `.goodplan/epics/<entity>/goal.md` for the goal path.
 
 ### Step B4 — Write goal.md
 
-Write `.project/epics/<name>/goal.md`:
+Write `.goodplan/epics/<name>/goal.md`:
 
 ```markdown
 # Epic Goal: <name>
@@ -183,7 +183,7 @@ Write `.project/epics/<name>/goal.md`:
 ### Step B5 — Confirm
 
 ```bash
-goodplan status --json
+gp status --json
 ```
 
 Verify the new epic appears in the response.
@@ -192,6 +192,6 @@ Verify the new epic appears in the response.
 
 > New epic created:
 >
-> - `.project/epics/<name>/goal.md` — epic goal
+> - `.goodplan/epics/<name>/goal.md` — epic goal
 >
 > **Next**: Run `/explore` to research and brainstorm, or `/create-architecture` to propose architecture changes.

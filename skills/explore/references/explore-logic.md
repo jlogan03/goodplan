@@ -4,13 +4,13 @@
 
 | Scope | research/ | brainstorm/ | prototypes/ | explore-complete.md | explore-skipped.md |
 |---|---|---|---|---|---|
-| Epic | `.project/epics/<name>/research/` | `.project/epics/<name>/brainstorm/` | `.project/epics/<name>/prototypes/<name>/` | `.project/epics/<name>/explore-complete.md` | `.project/epics/<name>/explore-skipped.md` |
-| Project | `.project/research/` | `.project/brainstorm/` | `.project/prototypes/<name>/` | `.project/explore-complete.md` | `.project/explore-skipped.md` |
-| Top-Level Slice | `.project/slices/<name>/research/` | `.project/slices/<name>/brainstorm/` | N/A | `.project/slices/<name>/explore-complete.md` | `.project/slices/<name>/explore-skipped.md` |
-| Epic Slice | `.project/epics/<epic>/slices/<name>/research/` | `.project/epics/<epic>/slices/<name>/brainstorm/` | N/A | `.project/epics/<epic>/slices/<name>/explore-complete.md` | `.project/epics/<epic>/slices/<name>/explore-skipped.md` |
-| Quest | `.project/side-quests/<name>/research/` | `.project/side-quests/<name>/brainstorm/` | N/A | `.project/side-quests/<name>/explore-complete.md` | `.project/side-quests/<name>/explore-skipped.md` |
+| Epic | `.goodplan/epics/<name>/research/` | `.goodplan/epics/<name>/brainstorm/` | `.goodplan/epics/<name>/prototypes/<name>/` | `.goodplan/epics/<name>/explore-complete.md` | `.goodplan/epics/<name>/explore-skipped.md` |
+| Project | `.goodplan/research/` | `.goodplan/brainstorm/` | `.goodplan/prototypes/<name>/` | `.goodplan/explore-complete.md` | `.goodplan/explore-skipped.md` |
+| Top-Level Slice | `.goodplan/slices/<name>/research/` | `.goodplan/slices/<name>/brainstorm/` | N/A | `.goodplan/slices/<name>/explore-complete.md` | `.goodplan/slices/<name>/explore-skipped.md` |
+| Epic Slice | `.goodplan/epics/<epic>/slices/<name>/research/` | `.goodplan/epics/<epic>/slices/<name>/brainstorm/` | N/A | `.goodplan/epics/<epic>/slices/<name>/explore-complete.md` | `.goodplan/epics/<epic>/slices/<name>/explore-skipped.md` |
+| Quest | `.goodplan/side-quests/<name>/research/` | `.goodplan/side-quests/<name>/brainstorm/` | N/A | `.goodplan/side-quests/<name>/explore-complete.md` | `.goodplan/side-quests/<name>/explore-skipped.md` |
 
-> **Note**: Epic scope supports Prototype mode (like Project scope). Per-slice exploration is not supported for epic slices — all exploration happens at the epic level. Epic paths use unprefixed names (e.g., `.project/epics/<name>/research/`) — the CLI manages active epic state via `project.json.activeEpic`, not directory prefixes.
+> **Note**: Epic scope supports Prototype mode (like Project scope). Per-slice exploration is not supported for epic slices — all exploration happens at the epic level. Epic paths use unprefixed names (e.g., `.goodplan/epics/<name>/research/`) — the CLI manages active epic state via `project.json.activeEpic`, not directory prefixes.
 
 ## explore-complete.md Template
 
@@ -53,7 +53,7 @@
 **Implementation:**
 - Cap parallel sub-agents at 5; queue rest sequentially.
 - Compute full absolute output path before spawning. Use the Agent tool to spawn a sub-agent (omit model param) with:
-  - Context: "This is a goodplan-managed project. `.project/` contains project state. You are researching a topic for `/explore`."
+  - Context: "This is a goodplan-managed project. `.goodplan/` contains project state. You are researching a topic for `/explore`."
   - Search codebase (Grep/Glob/Read) for relevant code/patterns
   - Use WebSearch for external knowledge; use Context7 MCP tools if available (resolve library ID → query docs)
   - `mkdir -p <research-path>` before writing

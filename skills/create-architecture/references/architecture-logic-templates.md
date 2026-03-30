@@ -52,7 +52,7 @@
 
 ```markdown
 # Architectural Conventions
-<!-- This file references and builds on decisions from .project/conventions.md. Synthesize project-level conventions into architectural patterns. -->
+<!-- This file references and builds on decisions from .goodplan/conventions.md. Synthesize project-level conventions into architectural patterns. -->
 
 ## Patterns and Abstractions
 <Key patterns: layered architecture, event-driven, CQRS, etc.>

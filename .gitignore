@@ -1,8 +1,11 @@
 .project/state.md
+.goodplan/state.md
 .DS_Store
 .superpowers/
 .project/epics/goodplan-cli/prototypes/jqjs-spike/jqjs-spike
 .project/epics/goodplan-cli/prototypes/jqjs-spike/node_modules/
+.goodplan/epics/goodplan-cli/prototypes/jqjs-spike/jqjs-spike
+.goodplan/epics/goodplan-cli/prototypes/jqjs-spike/node_modules/
 node_modules
 goodplan
 gp

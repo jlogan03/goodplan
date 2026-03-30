@@ -1,6 +1,6 @@
 # Migration Heuristics
 
-Reference for the `/migrate` skill. Detailed rules for inferring entity status from pre-CLI `.project/` filesystem artifacts, and conventions for directory scanning.
+Reference for the `/migrate` skill. Detailed rules for inferring entity status from pre-CLI project directory (`.project/` for legacy, `.goodplan/` for re-migration) filesystem artifacts, and conventions for directory scanning. All paths below use `$PROJ_DIR` — substitute with whichever directory exists (see SKILL.md Step 4).
 
 ## Status Inference Rules
 
@@ -25,11 +25,11 @@ Check in this order (first match wins):
 
 ### Epic Discovery
 
-Scan `.project/epics/` for subdirectories. Each subdirectory is an epic.
+Scan `$PROJ_DIR/epics/` for subdirectories. Each subdirectory is an epic.
 
 ### Quest Discovery
 
-Scan `.project/side-quests/` (NOT `.project/quests/` — the CLI uses `quests` as the entity name, but the old filesystem uses `side-quests`). Each subdirectory containing `goal.md` is a quest.
+Scan `$PROJ_DIR/side-quests/` (NOT `$PROJ_DIR/quests/` — the CLI uses `quests` as the entity name, but the old filesystem uses `side-quests`). Each subdirectory containing `goal.md` is a quest.
 
 ### Prefix Stripping
 

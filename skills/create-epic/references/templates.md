@@ -30,7 +30,7 @@ Write substantive content synthesized from the conversation — never leave plac
 
 Read these before doing any significant work in this repo:
 
-- `.project/idea.md` — project goal, scope, constraints
+- `.goodplan/idea.md` — project goal, scope, constraints
 ```
 
 Later skills append additional references under this header as those files are created.

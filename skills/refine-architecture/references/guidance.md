@@ -18,7 +18,7 @@ Architecture review has different priorities than plan review. These guide revie
 
 ### Secondary Concerns (should address, may early-exit with warnings)
 
-5. **Decision alignment**: Does the architecture respect all active decisions in `.project/decisions/`? Conflicts must be resolved — either the architecture changes or the decision is marked `revisiting`.
+5. **Decision alignment**: Does the architecture respect all active decisions in `.goodplan/decisions/`? Conflicts must be resolved — either the architecture changes or the decision is marked `revisiting`.
 
 6. **Completeness**: Does the architecture cover all capabilities described in `idea.md`? Missing coverage is acceptable only if explicitly deferred with rationale.
 
@@ -73,7 +73,7 @@ Key differences from plan refinement:
 
 | Aspect | Plan Refinement | Architecture Refinement |
 |---|---|---|
-| Files being reviewed | Plan documents | Architecture .md files in `.project/architecture/` |
+| Files being reviewed | Plan documents | Architecture .md files in `.goodplan/architecture/` |
 | Edit strategy | Working copy (`-refining`) | In-place with backup |
 | Primary quality signal | Implementation readiness | Module depth and boundary quality |
 | Fewer iterations needed | Max 12 | Max 8 (architecture files are shorter) |

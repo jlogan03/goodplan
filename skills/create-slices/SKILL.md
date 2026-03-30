@@ -4,11 +4,11 @@ description: >
   Reviews project context and interactively defines ordered slices with
   concrete, verifiable success criteria. When an active epic exists, writes
   slices within the epic's slices/ directory. Falls back to
-  .project/slices/ when no active epic. Common triggers: 'define
+  .goodplan/slices/ when no active epic. Common triggers: 'define
   slices', 'create slices', 'break this into slices', 'what should we build first', 'let's plan the
   slices', 'define slices', 'what's our build order', 'slices', 'what should
   we build', 'add a slice', 'new slice'.
-requires: goodplan >= 1.0.0
+requires: gp >= 1.0.0
 ---
 
 # Define Slices
@@ -26,30 +26,30 @@ Read `../_shared/references/cli-interaction.md` for CLI interaction conventions 
 Verify CLI availability and compatibility:
 
 ```bash
-goodplan --version --json
+gp --version --json
 ```
 
-If the command fails (not found, non-zero exit), stop: "The `goodplan` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
+If the command fails (not found, non-zero exit), stop: "The `gp` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
 
-If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill requires goodplan >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
+If the version doesn't satisfy `requires: gp >= 1.0.0`, stop: "This skill requires gp >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
 
 Also load `../_shared/references/epic-conventions.md` for epic directory structure and state machine.
 
 Detect the active epic:
 
 ```bash
-goodplan status --json
+gp status --json
 ```
 
 Check `.activeEpic` in the response. This field is `{ name: string, status: string } | undefined` — check for presence, not null.
 
 Determine the slice output path based on the result:
 
-- **Active epic found**: slices go to `.project/epics/<activeEpic.name>/slices/`. Set `$SLICES_DIR` to this path. Set `$EPIC_DIR` to `.project/epics/<activeEpic.name>/`. Set `$FLOW_SCOPE` to `"epics/<name>"`.
+- **Active epic found**: slices go to `.goodplan/epics/<activeEpic.name>/slices/`. Set `$SLICES_DIR` to this path. Set `$EPIC_DIR` to `.goodplan/epics/<activeEpic.name>/`. Set `$FLOW_SCOPE` to `"epics/<name>"`.
 
-- **No active epic**: defaults to `.project/slices/` (legacy/side-quest-only projects). Set `$SLICES_DIR` to `.project/slices/`. Set `$EPIC_DIR` to empty. Set `$FLOW_SCOPE` to `"project"`.
+- **No active epic**: defaults to `.goodplan/slices/` (legacy/side-quest-only projects). Set `$SLICES_DIR` to `.goodplan/slices/`. Set `$EPIC_DIR` to empty. Set `$FLOW_SCOPE` to `"project"`.
 
-Store these resolved paths for use throughout subsequent steps. All references to `.project/slices/` in later steps should use `$SLICES_DIR` instead.
+Store these resolved paths for use throughout subsequent steps. All references to `.goodplan/slices/` in later steps should use `$SLICES_DIR` instead.
 
 ## Step 1 — Load References
 
@@ -59,19 +59,19 @@ Also load `../_shared/references/decisions-format.md` for the decisions format a
 
 ## Step 2 — Load Context
 
-1. Read `.project/idea.md`. If absent, use AskUserQuestion to tell the user: "No idea.md found — run /create-epic first to capture your project idea." Then stop.
+1. Read `.goodplan/idea.md`. If absent, use AskUserQuestion to tell the user: "No idea.md found — run /create-epic first to capture your project idea." Then stop.
 
 2. When an active epic was detected in Step 0, read the epic's `goal.md` (`$EPIC_DIR/goal.md`). The epic goal informs how to decompose work into slices.
 
-3. Read `.project/conventions.md`. If absent, mention `/create-architecture` is recommended for richer context but proceed without it.
+3. Read `.goodplan/conventions.md`. If absent, mention `/create-architecture` is recommended for richer context but proceed without it.
 
-4. Load architecture files. When an active epic exists, read the epic's architecture first (`$EPIC_DIR/architecture/_overview.md` and other files in `$EPIC_DIR/architecture/`), then also read top-level `.project/architecture/_overview.md` for current-reality context. When no epic, read `.project/architecture/_overview.md` and other architecture files. If architecture is empty or absent, warn but proceed — ground slices in idea.md scope/constraints instead.
+4. Load architecture files. When an active epic exists, read the epic's architecture first (`$EPIC_DIR/architecture/_overview.md` and other files in `$EPIC_DIR/architecture/`), then also read top-level `.goodplan/architecture/_overview.md` for current-reality context. When no epic, read `.goodplan/architecture/_overview.md` and other architecture files. If architecture is empty or absent, warn but proceed — ground slices in idea.md scope/constraints instead.
 
 5. Extract the `## Subsystem Maturity` table from the primary architecture's `_overview.md`. If present, note which subsystems are at Maturing or Foundational maturity — these inform slice flagging in Step 6. If no maturity table exists, skip maturity-aware behavior in Step 6.
 
-6. Load learnings via CLI: `goodplan learning:list --json`. Present summaries for context.
+6. Load learnings via CLI: `gp learning:list --json`. Present summaries for context.
 
-7. Load `.project/decisions/` following the Loading Protocol in `decisions-format.md`: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions inform slice boundaries and ordering.
+7. Load `.goodplan/decisions/` following the Loading Protocol in `decisions-format.md`: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions inform slice boundaries and ordering.
 
 8. Check for existing slices by running: `ls $SLICES_DIR/sequencing.md $SLICES_DIR/*/goal.md 2>/dev/null` (using the resolved `$SLICES_DIR` from Step 0).
 
@@ -113,7 +113,7 @@ Follow calibration depth guidance in `../_shared/references/expertise-tracking.m
 Throughout Steps 4 and 6, when a durable decision emerges (see threshold in `decisions-format.md`), propose the decision text to the user and confirm via AskUserQuestion before writing. Create decisions via CLI:
 
 ```bash
-echo '{"id":"<kebab-case-id>","domain":"<topic-area>","title":"<decision-title>","summary":"<brief-summary>"}' | goodplan decision:create --json
+echo '{"id":"<kebab-case-id>","domain":"<topic-area>","title":"<decision-title>","summary":"<brief-summary>"}' | gp decision:create --json
 ```
 
 The CLI handles directory creation and state management. Track all decisions written during this run and summarize them in Step 10 (Done Summary).
@@ -171,15 +171,15 @@ If any slice names, ordering, or dependencies changed during Step 6 iteration, r
 For each slice defined in Step 6, register it as a CLI entity so that `slice:list`, `slice:show`, and downstream skills can find it:
 
 ```bash
-echo '{"name":"<NN-slice-name>","goal":"<one-line goal from goal.md>","epic":"<epic-name>"}' | goodplan slice:create --json
+echo '{"name":"<NN-slice-name>","goal":"<one-line goal from goal.md>","epic":"<epic-name>"}' | gp slice:create --json
 ```
 
 Where:
 - `<NN-slice-name>` is the directory name (e.g., `01-provider-scaffold`)
 - `<one-line goal>` is the first line of the slice's Behavior/Goal section
-- `<epic-name>` is from `goodplan status --json` → `.activeEpic.name`
+- `<epic-name>` is from `gp status --json` → `.activeEpic.name`
 
-This creates the slice entity (at `.project/epics/<epic>/slices/<name>/slice.json` for epic slices, or `.project/slices/<name>/slice.json` for top-level slices) and registers it in the overview. Without this step, `slice:list` returns empty and per-slice planning/implementation cannot proceed.
+This creates the slice entity (at `.goodplan/epics/<epic>/slices/<name>/slice.json` for epic slices, or `.goodplan/slices/<name>/slice.json` for top-level slices) and registers it in the overview. Without this step, `slice:list` returns empty and per-slice planning/implementation cannot proceed.
 
 **Note:** This step is independent of `submit-slices` (Step 9), which transitions the epic's phase. Both are required: `slice:create` registers individual entities, `submit-slices` advances the epic state machine.
 
@@ -187,19 +187,19 @@ This creates the slice entity (at `.project/epics/<epic>/slices/<name>/slice.jso
 
 Re-load `references/guidance.md` (relative to this skill's directory) for the CLAUDE.md update instructions. Also read `../create-architecture/references/guidance.md` for the full Project Context section format.
 
-Add sequencing.md reference to CLAUDE.md. **Idempotency:** first check if sequencing.md is already referenced in CLAUDE.md — if so, verify the path is correct (should point to `$SLICES_DIR/sequencing.md`). If referencing a stale path (e.g., `.project/slices/sequencing.md` when slices are now inside an epic), update the path.
+Add sequencing.md reference to CLAUDE.md. **Idempotency:** first check if sequencing.md is already referenced in CLAUDE.md — if so, verify the path is correct (should point to `$SLICES_DIR/sequencing.md`). If referencing a stale path (e.g., `.goodplan/slices/sequencing.md` when slices are now inside an epic), update the path.
 
 The line to add to the "Read these" list (using the resolved `$SLICES_DIR`):
 ```
 - `$SLICES_DIR/sequencing.md` — slice ordering and dependencies
 ```
 
-For example, when the active epic name is `initial` (from `goodplan status --json` → `.activeEpic.name`), the line would be:
+For example, when the active epic name is `initial` (from `gp status --json` → `.activeEpic.name`), the line would be:
 ```
-- `.project/epics/initial/slices/sequencing.md` — slice ordering and dependencies
+- `.goodplan/epics/initial/slices/sequencing.md` — slice ordering and dependencies
 ```
 
-**Migration note:** Existing projects may have `.project/slices/sequencing.md` or stale `__active__`-prefixed paths referenced in CLAUDE.md. When updating CLAUDE.md, check for and replace any stale references with the correct epic-scoped path using the epic name from `goodplan status --json`.
+**Migration note:** Existing projects may have `.goodplan/slices/sequencing.md` or stale `__active__`-prefixed paths referenced in CLAUDE.md. When updating CLAUDE.md, check for and replace any stale references with the correct epic-scoped path using the epic name from `gp status --json`.
 
 **Three-case logic for CLAUDE.md update:**
 
@@ -223,10 +223,10 @@ Reflect on the conversation: did it reveal new information about the user's expe
 For epic-scoped slice definition, submit the completed slices via CLI. The CLI handles state transitions and activity recording:
 
 ```bash
-stdin: "" | goodplan submit-slices --epic <name> --json
+stdin: "" | gp submit-slices --epic <name> --json
 ```
 
-Where `<name>` is the epic name from `goodplan status --json` → `.activeEpic.name`.
+Where `<name>` is the epic name from `gp status --json` → `.activeEpic.name`.
 
 For non-epic scopes, no CLI mutation is needed — the written artifacts serve as the completion record.
 

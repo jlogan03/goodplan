@@ -2,11 +2,11 @@
 
 ## No Project Detected
 
-If `goodplan status --json` returns a `DATA_NO_PROJECT` error, respond: "No `.project/` directory found — run `/create-epic` to set up structured project planning." Stop.
+If `gp status --json` returns a `DATA_NO_PROJECT` error, respond: "No `.goodplan/` directory found — run `/create-epic` to set up structured project planning." Stop.
 
 ## Scope Resolution Order
 
-Determine active scope from `goodplan status --json` response fields.
+Determine active scope from `gp status --json` response fields.
 
 1. **Active quest** — `activeQuest` field (highest priority)
 2. **Active slice** — `activeSlice` field
@@ -60,22 +60,22 @@ Epic-level state machine is defined in `../../_shared/references/epic-convention
 
 #### Active Epic Detection
 
-Use `goodplan status --json` → `activeEpic` field. At most one active epic exists at a time.
+Use `gp status --json` → `activeEpic` field. At most one active epic exists at a time.
 
 #### Epic Directory Scanning
 
-Use `goodplan epic:list --json` to get all epics with statuses. Categorize:
+Use `gp epic:list --json` to get all epics with statuses. Categorize:
 - **Completed** (`status === "completed"`): count as completed, skip further checks
 - **Active** (matches `activeEpic` from status): primary context for scope resolution
 - **Other**: non-active epics — use their status for reporting
-- For the active epic, use `goodplan slice:list --json` to get its slices
+- For the active epic, use `gp slice:list --json` to get its slices
 
 ### Project Level
 
 | Condition | State |
 |---|---|
 | `idea.md` exists, no `architecture/` | Explore or define architecture |
-| `explore-complete.md` or `explore-skipped.md` at `.project/` root | Project-level explore done |
+| `explore-complete.md` or `explore-skipped.md` at `.goodplan/` root | Project-level explore done |
 | `architecture/_overview.md` exists, no `slices/sequencing.md` | Needs slice planning |
 | `slices/sequencing.md` exists | Check individual slice statuses |
 
@@ -118,7 +118,7 @@ Load `../../_shared/references/epic-conventions.md` for the full state machine. 
 
 | State | Next Skill |
 |---|---|
-| No `.project/` directory | `/create-epic` |
+| No `.goodplan/` directory | `/create-epic` |
 | Project: `idea.md`, no architecture | `/explore` or `/create-architecture` |
 | Project: architecture done, no sequencing | `/create-slices` |
 
@@ -128,4 +128,4 @@ Directories are no longer renamed with `~~archived~~` prefixes. Completed entiti
 
 ## State Orientation (CLI)
 
-Skills no longer read or write `state.md`. Use `goodplan status --json` for active entities and phase information. See `../../_shared/references/cli-interaction.md` section 6 for the full migration reference.
+Skills no longer read or write `state.md`. Use `gp status --json` for active entities and phase information. See `../../_shared/references/cli-interaction.md` section 6 for the full migration reference.

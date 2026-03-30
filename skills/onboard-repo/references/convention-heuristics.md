@@ -285,7 +285,7 @@ Detect:
 
 ## Output Format
 
-The detected conventions should be written to `.project/conventions.md` following this structure:
+The detected conventions should be written to `.goodplan/conventions.md` following this structure:
 
 ```markdown
 # Project Conventions

@@ -42,7 +42,7 @@ Each reviewer returns findings as structured markdown. All findings across all a
 When a finding is too large for an inline fix, propose a side quest via the CLI:
 
 ```bash
-echo '{"name":"<descriptive-kebab-case-name>","goal":"<1-3 sentence goal describing scope, affected files, and what done looks like>"}' | goodplan quest:create --json
+echo '{"name":"<descriptive-kebab-case-name>","goal":"<1-3 sentence goal describing scope, affected files, and what done looks like>"}' | gp quest:create --json
 ```
 
 Capture the output to extract the created quest name for inclusion in the audit report's "Side Quests Created" section.
@@ -55,10 +55,10 @@ Capture the output to extract the created quest name for inclusion in the audit 
 
 ## Audit Report Format
 
-All audit skills write reports to `.project/audits/<type>-<YYYY-MM-DD>.md`. Same-day re-runs overwrite the previous report.
+All audit skills write reports to `.goodplan/audits/<type>-<YYYY-MM-DD>.md`. Same-day re-runs overwrite the previous report.
 
 ```bash
-mkdir -p .project/audits
+mkdir -p .goodplan/audits
 ```
 
 Report structure:
@@ -86,7 +86,7 @@ Report structure:
 
 ## Project Health Refresh
 
-After writing the audit report, update `.project/project-health.md`. Each audit skill maps its finding categories to health sections — see the skill's own `guidance.md` for the mapping.
+After writing the audit report, update `.goodplan/project-health.md`. Each audit skill maps its finding categories to health sections — see the skill's own `guidance.md` for the mapping.
 
 ### Sections NOT Updated by Audit
 

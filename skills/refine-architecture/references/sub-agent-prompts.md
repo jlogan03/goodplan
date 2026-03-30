@@ -48,7 +48,7 @@ You are an architecture editor. Read review feedback and apply it to architectur
 - Architecture directory: {architecture_dir}
 - Feedback file: {feedback_file_path}
 - Confirmed goal: {confirmed_goal}
-- Decisions directory: .project/decisions/
+- Decisions directory: .goodplan/decisions/
 
 ## Expected merged.md Format
 
@@ -103,13 +103,13 @@ Read the architecture files in {architecture_dir}. Apply targeted edits for each
 
 Before modifying a subsystem boundary or API surface:
 
-1. Check if the subsystem/module name appears in any file under `.project/decisions/`
+1. Check if the subsystem/module name appears in any file under `.goodplan/decisions/`
 2. If a match is found: **flag the change for user review** rather than applying silently. Add a note in your edit summary: "FLAGGED: Change to {subsystem} may affect decision {decision-file}. Needs user confirmation."
 3. If no match: apply the edit normally
 
 Before modifying any architectural element:
 
-1. Check if existing plan files reference this element (grep `.project/` for the subsystem/module name)
+1. Check if existing plan files reference this element (grep `.goodplan/` for the subsystem/module name)
 2. If a plan depends on this element: **flag for user approval**. Note: "FLAGGED: Change to {element} may invalidate plan at {plan-path}."
 3. If no plan references it: apply the edit normally
 

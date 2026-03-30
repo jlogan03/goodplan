@@ -8,12 +8,18 @@ REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 INSTALL_DIR="$HOME/.local/bin"
 mkdir -p "$INSTALL_DIR"
 
-echo "Building goodplan CLI..."
+echo "Building gp CLI..."
 VERSION=$(cd "$REPO_ROOT" && node -p 'require("./package.json").version')
-(cd "$REPO_ROOT" && bun build --compile src/index.ts --outfile goodplan --define "__GOODPLAN_VERSION__=\"$VERSION\"")
+(cd "$REPO_ROOT" && bun build --compile src/index.ts --outfile gp --define "__GOODPLAN_VERSION__=\"$VERSION\"")
 
-cp "$REPO_ROOT/goodplan" "$INSTALL_DIR/goodplan"
-echo "Installed goodplan binary to $INSTALL_DIR/goodplan"
+cp "$REPO_ROOT/gp" "$INSTALL_DIR/gp"
+echo "Installed gp binary to $INSTALL_DIR/gp"
+
+# Clean up old binary name
+if [ -f "$INSTALL_DIR/goodplan" ]; then
+  rm -f "$INSTALL_DIR/goodplan"
+  echo "Removed old 'goodplan' binary. Update any shell aliases or completions to use 'gp'."
+fi
 
 # Ensure ~/.local/bin is on PATH
 if ! echo "$PATH" | tr ':' '\n' | grep -qx "$INSTALL_DIR"; then

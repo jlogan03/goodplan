@@ -8,7 +8,7 @@ description: >
   architecture', 'the architecture needs work', 'architecture review', 'refine architecture',
   'make the architecture better', 'architecture could be improved', 'architecture needs
   refinement', 'let me refine the architecture'.
-requires: goodplan >= 1.0.0
+requires: gp >= 1.0.0
 ---
 
 # Refine Architecture
@@ -25,9 +25,9 @@ No arguments — resolves architecture path automatically based on active epic.
 
 ## Decisions Context
 
-Read `../_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load `.project/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions provide context for architecture review — reviewers check that the architecture respects existing decisions.
+Read `../_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load `.goodplan/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions provide context for architecture review — reviewers check that the architecture respects existing decisions.
 
-Note: sub-agents load decisions themselves via codebase exploration (`.project/decisions/` is a project directory accessible to all agents), so decisions do not need to be passed in bootstrap prompts.
+Note: sub-agents load decisions themselves via codebase exploration (`.goodplan/decisions/` is a project directory accessible to all agents), so decisions do not need to be passed in bootstrap prompts.
 
 ## Reviewer Roles
 
@@ -69,24 +69,24 @@ Read `../_shared/references/cli-interaction.md` for CLI interaction conventions 
 Verify CLI availability and compatibility:
 
 ```bash
-goodplan --version --json
+gp --version --json
 ```
 
-If the command fails, stop: "The `goodplan` CLI is required but not found." If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop with a version mismatch message.
+If the command fails, stop: "The `gp` CLI is required but not found." If the version doesn't satisfy `requires: gp >= 1.0.0`, stop with a version mismatch message.
 
 Also load `../_shared/references/epic-conventions.md` for epic directory structure.
 
 **Resolve architecture path via CLI**:
 
 ```bash
-goodplan status --json
+gp status --json
 ```
 
 Check `.activeEpic` in the response:
 - **Active epic found**: Begin the refine-architecture phase:
 
   ```bash
-  stdin: "" | goodplan epic:refine-architecture --epic <name> --json
+  stdin: "" | gp epic:refine-architecture --epic <name> --json
   ```
 
   The CLI returns `{ paths: { architecture: "<absolute-path>" } }`. Use `paths.architecture` as `$ARCH_DIR` and derive `$SCOPE_ROOT` by stripping `/architecture` from the path.
@@ -99,7 +99,7 @@ All subsequent references to architecture paths, run directories, and backup dir
 
 1. **Read architecture files**: Read all files in `$ARCH_DIR/`. If the directory does not exist or is empty, tell the user: "No architecture files found — run `/create-architecture` first." Then stop.
 
-2. **Load decisions**: Load `.project/decisions/` following the Loading Protocol above.
+2. **Load decisions**: Load `.goodplan/decisions/` following the Loading Protocol above.
 
 3. **Load maturity conventions**: Read `../_shared/references/maturity-conventions.md` for maturity level definitions and promotion criteria. The maturity table itself is already in `_overview.md` which is loaded as part of the architecture files in sub-step 1.
 
@@ -138,10 +138,10 @@ All subsequent references to architecture paths, run directories, and backup dir
 
 ### Step 1: Verify Goal
 
-1. Read `.project/idea.md` and `.project/conventions.md` (if it exists).
+1. Read `.goodplan/idea.md` and `.goodplan/conventions.md` (if it exists).
 2. State what "good architecture" means for this project — derived from the idea, conventions, and existing architecture files. Include: what the architecture should enable, what quality attributes matter most, and what constraints exist.
 3. Use AskUserQuestion to confirm with the user.
-4. Document the confirmed goal in `.project/architecture-refining/goal.md`.
+4. Document the confirmed goal in `.goodplan/architecture-refining/goal.md`.
 
 ### Step 2: Refinement Loop
 
@@ -161,7 +161,7 @@ Enter the review loop (max 8 iterations):
 
    b. **Create iteration directory**:
       ```bash
-      mkdir -p ".project/architecture-refining/round-{iteration}/reviews"
+      mkdir -p ".goodplan/architecture-refining/round-{iteration}/reviews"
       ```
 
    c. **Spawn reviewers in parallel**:
@@ -173,7 +173,7 @@ Enter the review loop (max 8 iterations):
 
       For subsequent iterations where all scores were 8+ and only MINOR issues remain, consider `model: "sonnet"`.
 
-   d. **Collect and synthesize**: After all reviewers return, capture one-line summaries. Spawn a synthesis sub-agent (`model: "opus"`) to merge feedback into `.project/architecture-refining/round-{iteration}/merged.md`. Use the synthesis template from `references/sub-agent-prompts.md`.
+   d. **Collect and synthesize**: After all reviewers return, capture one-line summaries. Spawn a synthesis sub-agent (`model: "opus"`) to merge feedback into `.goodplan/architecture-refining/round-{iteration}/merged.md`. Use the synthesis template from `references/sub-agent-prompts.md`.
 
    e. **Display iteration summary**: Use the same Iteration Summary Template as refine-plan (see "Output Templates" below).
 
@@ -199,7 +199,7 @@ Enter the review loop (max 8 iterations):
 
    h. **Handle USER_INPUT** (if any): Present all questions in a single batch via AskUserQuestion. Append answers to merged.md under `### USER_INPUT Resolved`.
 
-   i. **Perform research** (if RESEARCH_NEEDED): Spawn research sub-agents in parallel. Write results to `.project/research/`. Append paths to merged.md under `### Available Research`.
+   i. **Perform research** (if RESEARCH_NEEDED): Spawn research sub-agents in parallel. Write results to `.goodplan/research/`. Append paths to merged.md under `### Available Research`.
 
    j. **Apply feedback**: Spawn an architecture-editor sub-agent (`model: "opus"`) using the template from `references/sub-agent-prompts.md`. The editor reads merged feedback and edits architecture files in-place. Read `references/sub-agent-prompts.md` for editor guardrails.
 
@@ -228,7 +228,7 @@ After the review loop exits, check for goal drift:
 2. Complete the refine-architecture phase via CLI. Submit with the final reviewer scores:
 
    ```bash
-   echo '{"scores":{"<reviewer1>":<score>,"<reviewer2>":<score>,...}}' | goodplan submit-refine-architecture --epic <name> --json
+   echo '{"scores":{"<reviewer1>":<score>,"<reviewer2>":<score>,...}}' | gp submit-refine-architecture --epic <name> --json
    ```
 
    Scores must pass the threshold, or use `--override` if the user approves early exit with scores below threshold. This transitions the epic from `refining-architecture` to `architecture-refined` and records the activity.

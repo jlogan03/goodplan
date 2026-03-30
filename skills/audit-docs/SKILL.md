@@ -6,7 +6,7 @@ description: >
   trivial fixes for approval, confirms substantive changes, and proposes side
   quests for gaps. Common triggers: 'audit docs', 'check documentation',
   'are the docs up to date', 'documentation audit', 'review docs'.
-requires: goodplan >= 1.0.0
+requires: gp >= 1.0.0
 ---
 
 # Audit Docs
@@ -28,26 +28,26 @@ Read `../_shared/references/cli-interaction.md` for CLI interaction conventions 
 Verify CLI availability and compatibility:
 
 ```bash
-goodplan --version --json
+gp --version --json
 ```
 
-If the command fails (not found, non-zero exit), stop: "The `goodplan` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
+If the command fails (not found, non-zero exit), stop: "The `gp` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
 
-If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill requires goodplan >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
+If the version doesn't satisfy `requires: gp >= 1.0.0`, stop: "This skill requires gp >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
 
 ## Step 1 — Load Context
 
-**1a. Load learnings and conventions**: Load learnings via `goodplan learning:list --json`. Read `.project/conventions.md` (if it exists).
+**1a. Load learnings and conventions**: Load learnings via `gp learning:list --json`. Read `.goodplan/conventions.md` (if it exists).
 
 **1b. Load recent activity-log**: Query recent activity for project context:
 
 ```bash
-goodplan state --json --query '[.["activity-log.jsonl"][]] | .[-20:]'
+gp state --json --query '[.["activity-log.jsonl"][]] | .[-20:]'
 ```
 
 **1c. Expertise check (load)**: Read `## Expertise` section from `~/.claude/CLAUDE.md` to calibrate communication depth.
 
-**1d. Resume detection**: Glob `.project/audits/docs-*.md` and read the most recent. If it contains a `<!-- partial — interrupted` marker, present the partial report and ask: resume from where it left off, or start fresh?
+**1d. Resume detection**: Glob `.goodplan/audits/docs-*.md` and read the most recent. If it contains a `<!-- partial — interrupted` marker, present the partial report and ask: resume from where it left off, or start fresh?
 
 **1e. Read guidance**: Read `references/guidance.md` for severity levels, reviewer output format, and side quest template.
 
@@ -56,20 +56,20 @@ goodplan state --json --query '[.["activity-log.jsonl"][]] | .[-20:]'
 **2a. Resolve epic scope**: Detect the active epic via CLI:
 
 ```bash
-goodplan status --json
+gp status --json
 ```
 
-Check the `.activeEpic` field. If an active epic exists, include `.project/epics/<activeEpic.name>/` documentation in scope alongside project-level docs. Epic subdirectories to include: `architecture/`, `slices/` (goal and plan files). Epic subdirectories to exclude: `research/`, `brainstorm/`, `prototypes/` (scratch/exploratory content, not authoritative docs).
+Check the `.activeEpic` field. If an active epic exists, include `.goodplan/epics/<activeEpic.name>/` documentation in scope alongside project-level docs. Epic subdirectories to include: `architecture/`, `slices/` (goal and plan files). Epic subdirectories to exclude: `research/`, `brainstorm/`, `prototypes/` (scratch/exploratory content, not authoritative docs).
 
 **2b. Discover documentation files**: Scan the following sources using Glob and Read:
 
-- **Project workflow docs**: `.project/architecture/**/*.md`, `.project/conventions.md`, `.project/idea.md`
-- **Learnings**: `.project/learnings/*.md`
+- **Project workflow docs**: `.goodplan/architecture/**/*.md`, `.goodplan/conventions.md`, `.goodplan/idea.md`
+- **Learnings**: `.goodplan/learnings/*.md`
 - **CLAUDE.md files**: `CLAUDE.md`, `.claude/CLAUDE.md` (repo-level), `~/.claude/CLAUDE.md` (user-level — read-only, don't audit content but check if references are valid)
 - **README files**: `README.md`, `**/README.md`
 - **Docs directories**: `docs/**/*.md`, `documentation/**/*.md`
 - **Inline documentation**: Scan TypeScript source files for JSDoc comments and module-purpose comments (`/** @module */`, file-level `/**` blocks). Focus on `src/**/*.ts` files with significant JSDoc presence
-- **CLI help text**: Run `goodplan --help` and `goodplan <command> --help` for each top-level command to capture CLI documentation surface
+- **CLI help text**: Run `gp --help` and `gp <command> --help` for each top-level command to capture CLI documentation surface
 
 Record what was found — build a list of all documentation sources with their paths and a brief summary of what each covers.
 
@@ -128,7 +128,7 @@ Present each substantive fix individually with a diff preview. Use AskUserQuesti
 Propose as a side quest:
 
 ```bash
-echo '{"name":"<descriptive-name>","goal":"<specific goal with files and scope>"}' | goodplan quest:create --json
+echo '{"name":"<descriptive-name>","goal":"<specific goal with files and scope>"}' | gp quest:create --json
 ```
 
 Capture the output to extract the created quest name for inclusion in the audit report's "Side Quests Created" section.
@@ -138,10 +138,10 @@ Capture the output to extract the created quest name for inclusion in the audit 
 ## Step 6 — Write Audit Report
 
 ```bash
-mkdir -p .project/audits
+mkdir -p .goodplan/audits
 ```
 
-Write findings to `.project/audits/docs-<YYYY-MM-DD>.md`. Same-day re-runs overwrite the previous report.
+Write findings to `.goodplan/audits/docs-<YYYY-MM-DD>.md`. Same-day re-runs overwrite the previous report.
 
 Report format:
 
@@ -176,11 +176,11 @@ Report format:
 
 ## Step 7 — Refresh Project Health
 
-Update `.project/project-health.md` with findings from this audit.
+Update `.goodplan/project-health.md` with findings from this audit.
 
-1. **Read**: Read `.project/project-health.md` (if it exists) and `../_shared/references/project-health-format.md` for the canonical format.
+1. **Read**: Read `.goodplan/project-health.md` (if it exists) and `../_shared/references/project-health-format.md` for the canonical format.
 
-2. **If missing**: Create `.project/project-health.md` using the format from `project-health-format.md`, populating initial content derived from audit findings:
+2. **If missing**: Create `.goodplan/project-health.md` using the format from `project-health-format.md`, populating initial content derived from audit findings:
    - **Health**: Areas where documentation is stale or missing indicate maintenance gaps
    - **Technical Debt**: Documentation drift is documentation debt — docs that should match code but don't
    - **Extensibility**: Gap findings about undocumented APIs indicate onboarding friction

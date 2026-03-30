@@ -4,18 +4,18 @@ description: >
   Compare intended architecture against actual code, evaluate whether the target
   architecture should evolve, and propose side quests for gaps and improvements.
   When an active epic exists, audits the epic's architecture directory.
-  Falls back to `.project/architecture/` for side quests and project-level work.
+  Falls back to `.goodplan/architecture/` for side quests and project-level work.
   Common triggers: 'audit the architecture', 'check for architecture drift',
   'compare architecture vs code', 'is the code matching the architecture',
   'architecture audit', 'audit architecture', 'how does the code compare to the
   architecture', 'check architecture alignment', 'has the code drifted from the
   architecture', 'architecture gap analysis'.
-requires: goodplan >= 1.0.0
+requires: gp >= 1.0.0
 ---
 
 # Audit Architecture
 
-Compare architecture files against the actual codebase. When an active epic exists, audits the epic's architecture; otherwise falls back to `.project/architecture/`. Two functions:
+Compare architecture files against the actual codebase. When an active epic exists, audits the epic's architecture; otherwise falls back to `.goodplan/architecture/`. Two functions:
 
 1. **Gap analysis** — where does code not match architecture? (implementation drift)
 2. **Architecture reassessment** — given what we've learned from building, should the target architecture itself change?
@@ -33,52 +33,52 @@ Read `../_shared/references/cli-interaction.md` for CLI interaction conventions 
 Verify CLI availability and compatibility:
 
 ```bash
-goodplan --version --json
+gp --version --json
 ```
 
-If the command fails (not found, non-zero exit), stop: "The `goodplan` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
+If the command fails (not found, non-zero exit), stop: "The `gp` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
 
-If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill requires goodplan >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
+If the version doesn't satisfy `requires: gp >= 1.0.0`, stop: "This skill requires gp >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
 
 ## Step 1 — Load Context
 
 **1a. Resolve architecture path**: Read `../_shared/references/epic-conventions.md` for epic directory structure. Detect the active epic via CLI:
 
 ```bash
-goodplan status --json
+gp status --json
 ```
 
 Check the `.activeEpic` field in the response. Resolve paths based on result:
-- **Active epic found** (`.activeEpic` is not null): `$ARCH_DIR` = `.project/epics/<activeEpic.name>/architecture/`, `$FLOW_SCOPE` = `"epics/<activeEpic.name>"`
-- **No active epic** (`.activeEpic` is null): `$ARCH_DIR` = `.project/architecture/`, `$FLOW_SCOPE` = `"project"`
+- **Active epic found** (`.activeEpic` is not null): `$ARCH_DIR` = `.goodplan/epics/<activeEpic.name>/architecture/`, `$FLOW_SCOPE` = `"epics/<activeEpic.name>"`
+- **No active epic** (`.activeEpic` is null): `$ARCH_DIR` = `.goodplan/architecture/`, `$FLOW_SCOPE` = `"project"`
 
-**1b. Scaffold detection**: When falling back to `.project/architecture/` (no active epic), check whether `_overview.md` contains the `<!-- scaffold -->` marker:
+**1b. Scaffold detection**: When falling back to `.goodplan/architecture/` (no active epic), check whether `_overview.md` contains the `<!-- scaffold -->` marker:
 
 ```bash
-head -5 .project/architecture/_overview.md 2>/dev/null
+head -5 .goodplan/architecture/_overview.md 2>/dev/null
 ```
 
 If the marker is present, warn the user: "Top-level architecture is a scaffold pointing to the active epic's architecture. Run `/create-architecture` first or operate on the epic architecture directly." Then stop. Do not treat the scaffold as real architecture — auditing it would produce misleading gap analysis.
 
 1. **Read architecture files**: Glob `$ARCH_DIR/**/*.md`. If the directory does not exist or is empty, tell the user: "No architecture files found — run `/create-architecture` first." Then stop.
 
-2. **Load decisions**: Read `../_shared/references/decisions-format.md` for the Loading Protocol. Glob `.project/decisions/*.md`, skip superseded, flag any `revisiting` to the user.
+2. **Load decisions**: Read `../_shared/references/decisions-format.md` for the Loading Protocol. Glob `.goodplan/decisions/*.md`, skip superseded, flag any `revisiting` to the user.
 
 3. **Load maturity conventions**: Read `../_shared/references/maturity-conventions.md` for maturity level definitions, promotion criteria, invariant format, and fitness function format. This is the authoritative source — audit-architecture's `references/guidance.md` provides audit-specific strategies that build on these conventions.
 
-4. **Load learnings and conventions**: Load learnings via `goodplan learning:list --json`. Read `.project/conventions.md` (if it exists).
+4. **Load learnings and conventions**: Load learnings via `gp learning:list --json`. Read `.goodplan/conventions.md` (if it exists).
 
 5. **Load recent activity-log**: Query recent activity filtered to the scope being audited:
 
    ```bash
-   goodplan state --json --query '[.["activity-log.jsonl"][] | select(.scope | startswith("'"$FLOW_SCOPE"'"))] | .[-20:]'
+   gp state --json --query '[.["activity-log.jsonl"][] | select(.scope | startswith("'"$FLOW_SCOPE"'"))] | .[-20:]'
    ```
 
    (Where `$FLOW_SCOPE` is the scope resolved in Step 1a, e.g., `"epics/my-epic"` or `"project"`.)
 
 6. **Expertise check (load)**: Read `## Expertise` section from `~/.claude/CLAUDE.md` to calibrate communication depth.
 
-7. **Resume detection**: Glob `.project/audits/architecture-*.md` and read the most recent. If it contains a `<!-- partial — interrupted` marker, present the partial report and ask: resume from where it left off, or start fresh?
+7. **Resume detection**: Glob `.goodplan/audits/architecture-*.md` and read the most recent. If it contains a `<!-- partial — interrupted` marker, present the partial report and ask: resume from where it left off, or start fresh?
 
 8. **Read guidance**: Read `references/guidance.md` for exploration strategy, severity levels, and side quest proposal format.
 
@@ -113,7 +113,7 @@ Present the reconciled findings to the user before proceeding.
 
 ## Step 3 — Architecture Reassessment
 
-Based on reconciled gap findings + learnings (from `goodplan learning:list --json`) + decisions + the conversation, evaluate:
+Based on reconciled gap findings + learnings (from `gp learning:list --json`) + decisions + the conversation, evaluate:
 
 - **Boundary placement**: Are any architectural boundaries in the wrong place? (evidence: high cross-boundary coupling, frequent violations in the same direction)
 - **Missing abstractions**: Are there abstractions that implementation revealed? (evidence: duplicated patterns across modules that should be centralized)
@@ -160,7 +160,7 @@ Based on all findings (gap analysis from Step 2, reassessment from Step 3, fitne
 Present as recommendations with evidence — the user decides. If approved:
 
 1. Update the maturity table in `$ARCH_DIR/_overview.md`
-2. Write a decision record to `.project/decisions/` using the format from `../_shared/references/decisions-format.md`, documenting the maturity change with rationale
+2. Write a decision record to `.goodplan/decisions/` using the format from `../_shared/references/decisions-format.md`, documenting the maturity change with rationale
 
 ## Step 4 — Propose Side Quests
 
@@ -177,7 +177,7 @@ Draft a side quest `goal.md` with `type: gap`:
 ### For architecture improvements (target should change)
 
 1. Propose specific architecture file edits. Get user approval.
-2. Write a decision to `.project/decisions/` (with user confirmation — see decisions format reference).
+2. Write a decision to `.goodplan/decisions/` (with user confirmation — see decisions format reference).
 3. Apply approved edits to `$ARCH_DIR/` files.
 4. Draft a side quest goal with `type: improvement`:
    - What changed in the architecture
@@ -187,16 +187,16 @@ Draft a side quest `goal.md` with `type: gap`:
 
 Create approved side quests via the CLI:
 ```bash
-echo '{"name":"<descriptive-kebab-case-name>","goal":"<specific goal with affected files, scope, and verification criteria>"}' | goodplan quest:create --json
+echo '{"name":"<descriptive-kebab-case-name>","goal":"<specific goal with affected files, scope, and verification criteria>"}' | gp quest:create --json
 ```
 
 Capture the output to extract the created quest name for inclusion in the audit report's "Side Quests Created" section.
 
 ## Step 5 — Write Audit Report
 
-Write findings to `.project/audits/architecture-<date>.md`:
+Write findings to `.goodplan/audits/architecture-<date>.md`:
 ```bash
-mkdir -p .project/audits
+mkdir -p .goodplan/audits
 ```
 
 Report format:
@@ -233,15 +233,15 @@ Report format:
 <findings user chose not to address now, with rationale>
 ```
 
-Audit reports are operational artifacts — NOT canonical design. They live in `.project/audits/`, not `architecture/`. Old reports accumulate as historical record. Skills read `architecture/`, not `audits/`.
+Audit reports are operational artifacts — NOT canonical design. They live in `.goodplan/audits/`, not `architecture/`. Old reports accumulate as historical record. Skills read `architecture/`, not `audits/`.
 
 ## Step 5b — Refresh Project Health
 
-Update `.project/project-health.md` with findings from this audit.
+Update `.goodplan/project-health.md` with findings from this audit.
 
-1. **Read**: Read `.project/project-health.md` (if it exists) and `../_shared/references/project-health-format.md` for the canonical format.
+1. **Read**: Read `.goodplan/project-health.md` (if it exists) and `../_shared/references/project-health-format.md` for the canonical format.
 
-2. **If missing**: Create `.project/project-health.md` using the format from `project-health-format.md`, populating initial content derived from audit findings:
+2. **If missing**: Create `.goodplan/project-health.md` using the format from `project-health-format.md`, populating initial content derived from audit findings:
    - **Health**: Areas where code drifts from architecture indicate fragility
    - **Technical Debt**: Gap findings (drift = debt) and reassessment findings (architecture needing change = design debt)
    - **Extensibility**: Reassessment findings about module depth and boundary quality
@@ -296,7 +296,7 @@ Reflect on the conversation: did it reveal new information about the user's expe
 - **If yes**: Read `../_shared/references/expertise-tracking.md` for the recording protocol. Update `## Expertise` section in `~/.claude/CLAUDE.md` and write/update relevant `expertise_<domain>.md` memory file.
 - **If no**: Skip silently.
 
-> **Note:** Audit is a read-only analysis skill — it does not trigger CLI state mutations. The audit report files in `.project/audits/` serve as the provenance record.
+> **Note:** Audit is a read-only analysis skill — it does not trigger CLI state mutations. The audit report files in `.goodplan/audits/` serve as the provenance record.
 
 ## When to Ask the User
 

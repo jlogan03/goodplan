@@ -54,9 +54,9 @@ Work in priority order:
 
 ## Step 2b: Read Architecture Files
 
-Read all `.md` files in `.project/architecture/` (starting with `_overview.md` if it exists). This gives you the current system architecture to compare your changes against.
+Read all `.md` files in `.goodplan/architecture/` (starting with `_overview.md` if it exists). This gives you the current system architecture to compare your changes against.
 
-Also check for an active epic by running `goodplan status --json` and checking `.activeEpic`. If an active epic exists, read `.project/epics/<activeEpic.name>/architecture/` as the target architecture. The epic architecture represents where the codebase is headed — use it alongside top-level architecture when evaluating your changes.
+Also check for an active epic by running `gp status --json` and checking `.activeEpic`. If an active epic exists, read `.goodplan/epics/<activeEpic.name>/architecture/` as the target architecture. The epic architecture represents where the codebase is headed — use it alongside top-level architecture when evaluating your changes.
 
 Pay attention to the `## Subsystem Maturity` table in `_overview.md`. When implementing changes that touch a subsystem:
 

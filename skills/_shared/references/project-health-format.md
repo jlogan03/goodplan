@@ -1,6 +1,6 @@
 # Project Health Format
 
-Canonical structure for `.project/project-health.md`. This is a living document that accumulates system-level observations across slices.
+Canonical structure for `.goodplan/project-health.md`. This is a living document that accumulates system-level observations across slices.
 
 ## Ownership
 

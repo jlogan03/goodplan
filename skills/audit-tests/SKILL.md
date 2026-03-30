@@ -6,7 +6,7 @@ description: >
   misalignment. Proposes side quests for improvements. Common triggers: 'audit
   tests', 'check test coverage', 'are the tests good', 'test quality',
   'audit testing', 'review test strategy'.
-requires: goodplan >= 1.0.0
+requires: gp >= 1.0.0
 ---
 
 # Audit Tests
@@ -29,26 +29,26 @@ Read `../_shared/references/cli-interaction.md` for CLI interaction conventions 
 Verify CLI availability and compatibility:
 
 ```bash
-goodplan --version --json
+gp --version --json
 ```
 
-If the command fails (not found, non-zero exit), stop: "The `goodplan` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
+If the command fails (not found, non-zero exit), stop: "The `gp` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
 
-If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill requires goodplan >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
+If the version doesn't satisfy `requires: gp >= 1.0.0`, stop: "This skill requires gp >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
 
 ## Step 1 — Load Context
 
-**1a. Load learnings and conventions**: Load learnings via `goodplan learning:list --json`. Read `.project/conventions.md` (if it exists) — pay particular attention to any stated testing strategy or conventions.
+**1a. Load learnings and conventions**: Load learnings via `gp learning:list --json`. Read `.goodplan/conventions.md` (if it exists) — pay particular attention to any stated testing strategy or conventions.
 
 **1b. Load recent activity-log**: Query recent activity for project context:
 
 ```bash
-goodplan state --json --query '[.["activity-log.jsonl"][]] | .[-20:]'
+gp state --json --query '[.["activity-log.jsonl"][]] | .[-20:]'
 ```
 
 **1c. Expertise check (load)**: Read `## Expertise` section from `~/.claude/CLAUDE.md` to calibrate communication depth.
 
-**1d. Resume detection**: Glob `.project/audits/tests-*.md` and read the most recent. If it contains a `<!-- partial — interrupted` marker, present the partial report and ask: resume from where it left off, or start fresh?
+**1d. Resume detection**: Glob `.goodplan/audits/tests-*.md` and read the most recent. If it contains a `<!-- partial — interrupted` marker, present the partial report and ask: resume from where it left off, or start fresh?
 
 **1e. Read guidance**: Read `references/guidance.md` for severity levels, reviewer output format, and side quest template.
 
@@ -57,7 +57,7 @@ goodplan state --json --query '[.["activity-log.jsonl"][]] | .[-20:]'
 **2a. Resolve epic scope**: Detect the active epic via CLI:
 
 ```bash
-goodplan status --json
+gp status --json
 ```
 
 Check the `.activeEpic` field. If an active epic exists, include epic-scoped test directories in scope alongside project-level tests.
@@ -110,7 +110,7 @@ Spawn four parallel reviewers (model: `"opus"`):
 
 Each reviewer returns findings inline in their agent response (not written to disk). The orchestrator (this skill) synthesizes all findings in Step 5.
 
-**Placeholder mapping**: Fill `{coverage_map}` with the prose coverage map built in Step 3. Fill `{source_file_list}` with the source file inventory from Step 3a. Fill `{test_file_list}` with the test file inventory from Step 2b. Fill `{test_infrastructure_summary}` with the infrastructure discovered in Step 2. Fill `{conventions_summary}` with any testing conventions from `.project/conventions.md` loaded in Step 1a.
+**Placeholder mapping**: Fill `{coverage_map}` with the prose coverage map built in Step 3. Fill `{source_file_list}` with the source file inventory from Step 3a. Fill `{test_file_list}` with the test file inventory from Step 2b. Fill `{test_infrastructure_summary}` with the infrastructure discovered in Step 2. Fill `{conventions_summary}` with any testing conventions from `.goodplan/conventions.md` loaded in Step 1a.
 
 **Graceful stop marker for this step**: `<!-- partial — interrupted during reviewer spawning. Reviewers launched: {list}. Reviewers not launched: {list}. -->`
 
@@ -132,7 +132,7 @@ Present the synthesized findings to the user with counts by severity and categor
 If actionable improvements exist (any CRITICAL or IMPORTANT findings), draft a side quest:
 
 ```bash
-echo '{"name":"<descriptive-name>","goal":"<specific goal with files to add/update/remove, strategy adjustments, and verification criteria>"}' | goodplan quest:create --json
+echo '{"name":"<descriptive-name>","goal":"<specific goal with files to add/update/remove, strategy adjustments, and verification criteria>"}' | gp quest:create --json
 ```
 
 Capture the output to extract the created quest name for inclusion in the audit report's "Side Quests Created" section.
@@ -151,10 +151,10 @@ If no actionable improvements exist (all findings are MINOR or INFO), skip quest
 ## Step 7 — Write Audit Report
 
 ```bash
-mkdir -p .project/audits
+mkdir -p .goodplan/audits
 ```
 
-Write findings to `.project/audits/tests-<YYYY-MM-DD>.md`. Same-day re-runs overwrite the previous report.
+Write findings to `.goodplan/audits/tests-<YYYY-MM-DD>.md`. Same-day re-runs overwrite the previous report.
 
 Report format:
 
@@ -192,11 +192,11 @@ Report format:
 
 ## Step 8 — Refresh Project Health
 
-Update `.project/project-health.md` with findings from this audit.
+Update `.goodplan/project-health.md` with findings from this audit.
 
-1. **Read**: Read `.project/project-health.md` (if it exists) and `../_shared/references/project-health-format.md` for the canonical format.
+1. **Read**: Read `.goodplan/project-health.md` (if it exists) and `../_shared/references/project-health-format.md` for the canonical format.
 
-2. **If missing**: Create `.project/project-health.md` using the format from `project-health-format.md`, populating initial content derived from audit findings:
+2. **If missing**: Create `.goodplan/project-health.md` using the format from `project-health-format.md`, populating initial content derived from audit findings:
    - **Health**: Areas with stale or missing tests indicate maintenance gaps
    - **Technical Debt**: Coverage gaps and quality issues are testing debt
    - **Extensibility**: Missing tests for public APIs indicate fragility risk for future changes

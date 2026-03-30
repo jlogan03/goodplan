@@ -8,7 +8,7 @@ description: >
   Common triggers: 'I need to research X', 'let's brainstorm', 'what are my options for...',
   'let's explore', 'what should I use for...', 'compare X vs Y', 'help me decide between...',
   'I'm not sure which approach...', 'skip exploration'.
-requires: goodplan >= 1.0.0
+requires: gp >= 1.0.0
 ---
 
 # Explore
@@ -22,12 +22,12 @@ Read `../_shared/references/cli-interaction.md` for CLI interaction conventions 
 Verify CLI availability and compatibility:
 
 ```bash
-goodplan --version --json
+gp --version --json
 ```
 
-If the command fails (not found, non-zero exit), stop: "The `goodplan` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
+If the command fails (not found, non-zero exit), stop: "The `gp` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
 
-If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill requires goodplan >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
+If the version doesn't satisfy `requires: gp >= 1.0.0`, stop: "This skill requires gp >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
 
 Also load `../_shared/references/epic-conventions.md` for epic directory structure.
 
@@ -35,7 +35,7 @@ Also load `../_shared/references/epic-conventions.md` for epic directory structu
 
 Use the Read tool to load `references/explore-logic.md` (relative to this skill's directory). Use the scope path mapping, output templates, and mode behaviors from this file throughout all subsequent steps.
 
-Also load `../_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load `.project/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions provide context for exploration.
+Also load `../_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load `.goodplan/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions provide context for exploration.
 
 ## Step 2 — Determine Scope
 
@@ -44,31 +44,31 @@ Also load `../_shared/references/decisions-format.md` for the decisions format a
 Normalize the argument:
 
 1. Strip trailing slashes.
-2. If it is a full path starting with `.project/` (e.g. `.project/slices/03-explore` or `.project/epics/entity-restructuring/slices/02-rpc`), use as-is.
-3. If it is a relative path like `slices/03-explore`, `side-quests/foo`, or `epics/foo`, prepend `.project/`.
+2. If it is a full path starting with `.goodplan/` (e.g. `.goodplan/slices/03-explore` or `.goodplan/epics/entity-restructuring/slices/02-rpc`), use as-is.
+3. If it is a relative path like `slices/03-explore`, `side-quests/foo`, or `epics/foo`, prepend `.goodplan/`.
 4. If it is a short name (e.g. `03-explore`), search for a match:
 
 ```bash
-ls -d .project/slices/*"$SHORT_NAME"* .project/epics/*/slices/*"$SHORT_NAME"* .project/side-quests/*"$SHORT_NAME"* .project/epics/*"$SHORT_NAME"* 2>/dev/null
+ls -d .goodplan/slices/*"$SHORT_NAME"* .goodplan/epics/*/slices/*"$SHORT_NAME"* .goodplan/side-quests/*"$SHORT_NAME"* .goodplan/epics/*"$SHORT_NAME"* 2>/dev/null
 ```
 
 If exactly one match, use it. If multiple, list them and ask the user to pick. If none, tell the user and ask for a valid scope.
 
-**Reject epic slice paths**: If the resolved path matches `epics/*/slices/*` (e.g., `.project/epics/foo/slices/02-bar`), tell the user: "Per-slice exploration is not supported for epic slices — all exploration happens at the epic level. Run `/explore` at the epic scope instead (e.g., `/explore epics/foo`)." Then stop.
+**Reject epic slice paths**: If the resolved path matches `epics/*/slices/*` (e.g., `.goodplan/epics/foo/slices/02-bar`), tell the user: "Per-slice exploration is not supported for epic slices — all exploration happens at the epic level. Run `/explore` at the epic scope instead (e.g., `/explore epics/foo`)." Then stop.
 
 ### If no argument was passed
 
 Query current project state for scope resolution:
 
 ```bash
-goodplan status --json
+gp status --json
 ```
 
 Determine scope using resolution order (check fields in the status response):
 
-1. **Active Slice** — if `.activeSlice` is present (not `undefined`/absent): if `.activeEpic` also exists, use `.project/epics/<activeEpic.name>/slices/<activeSlice.name>/` as scope; otherwise use `.project/slices/<activeSlice.name>/` as scope.
-2. **Active Quest** — if `.activeQuest` is present, use `.project/side-quests/<activeQuest.name>/` as scope.
-3. **Active Epic** — if `.activeEpic` is present, use `.project/epics/<activeEpic.name>/` as scope. If the epic's status is `created` or `exploring`, it is ready for exploration.
+1. **Active Slice** — if `.activeSlice` is present (not `undefined`/absent): if `.activeEpic` also exists, use `.goodplan/epics/<activeEpic.name>/slices/<activeSlice.name>/` as scope; otherwise use `.goodplan/slices/<activeSlice.name>/` as scope.
+2. **Active Quest** — if `.activeQuest` is present, use `.goodplan/side-quests/<activeQuest.name>/` as scope.
+3. **Active Epic** — if `.activeEpic` is present, use `.goodplan/epics/<activeEpic.name>/` as scope. If the epic's status is `created` or `exploring`, it is ready for exploration.
 4. **Project level** — if no active entities, scope is project-level.
 
 > **Note:** These fields are `{ name: string, status: string } | undefined` — check for presence, not null.
@@ -84,7 +84,7 @@ ls -d <scope-directory> 2>/dev/null
 If it does not exist, list available scopes and prompt the user:
 
 ```bash
-ls .project/slices/ .project/epics/*/slices/ .project/side-quests/ .project/epics/ 2>/dev/null
+ls .goodplan/slices/ .goodplan/epics/*/slices/ .goodplan/side-quests/ .goodplan/epics/ 2>/dev/null
 ```
 
 ### Check for pre-existing exploration
@@ -122,7 +122,7 @@ If the user explicitly requests to skip exploration (e.g., replies "skip", "I al
 3. **For epic scope**: Complete the exploration phase via CLI. The `submit-explore` command handles both skip (from `created` state — without ever calling `epic:explore`) and normal completion (from `exploring`). The state machine guard accepts both statuses: `["created", "exploring"]`.
 
    ```bash
-   stdin: "" | goodplan submit-explore --epic <name> --json
+   stdin: "" | gp submit-explore --epic <name> --json
    ```
 
    This transitions the epic to `explored` status and records the activity.
@@ -165,7 +165,7 @@ During any mode (Research, Brainstorm, Prototype), if a durable decision emerges
 Create decisions via CLI — construct the payload from user responses and pipe to:
 
 ```bash
-echo '{"id":"<kebab-case-id>","domain":"<topic-area>","title":"<decision-title>","summary":"<brief-summary>"}' | goodplan decision:create --json
+echo '{"id":"<kebab-case-id>","domain":"<topic-area>","title":"<decision-title>","summary":"<brief-summary>"}' | gp decision:create --json
 ```
 
 The `id` is derived from kebab-casing the title, `domain` from the topic area of the decision. The CLI handles directory creation and state management.
@@ -213,7 +213,7 @@ Reflect on the conversation: did it reveal new information about the user's expe
 If the exploration was not already begun via `epic:explore` in this session, begin it now (this may already have been done if the user started exploration explicitly):
 
 ```bash
-stdin: "" | goodplan epic:explore --epic <name> --json
+stdin: "" | gp epic:explore --epic <name> --json
 ```
 
 If this returns `STATE_INVALID_TRANSITION` (exit 3), the epic is already past the `created` state — check `epic:show --json` for current status and proceed.
@@ -221,7 +221,7 @@ If this returns `STATE_INVALID_TRANSITION` (exit 3), the epic is already past th
 **CRITICAL — Do this BEFORE the Done Summary.** Complete the exploration phase:
 
 ```bash
-stdin: "" | goodplan submit-explore --epic <name> --json
+stdin: "" | gp submit-explore --epic <name> --json
 ```
 
 This transitions the epic to `explored` and records the activity. If this step is skipped, the epic will be stuck in `exploring` and downstream skills cannot proceed. The skill writes `explore-complete.md` (Step 5); this command transitions state only.

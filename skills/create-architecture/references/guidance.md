@@ -9,23 +9,23 @@ When writing/updating CLAUDE.md, use this format for the Project Context section
 
 Read these before doing any significant work in this repo:
 
-- `.project/idea.md` — project goal, scope, constraints
-- `.project/conventions.md` — tech stack, repo structure, coding style
-- `.project/architecture/_overview.md` — system architecture
-- `.project/architecture/conventions.md` — architectural patterns
+- `.goodplan/idea.md` — project goal, scope, constraints
+- `.goodplan/conventions.md` — tech stack, repo structure, coding style
+- `.goodplan/architecture/_overview.md` — system architecture
+- `.goodplan/architecture/conventions.md` — architectural patterns
 <!-- Add a line for each architecture file actually written (e.g. data-model.md, flows.md, ui-ux.md, invariants.md) -->
 <!-- Add learnings/ directory line only if that directory exists and contains files (written by CLI during slice/quest completion) -->
 <!-- Add sequencing.md line only if that file exists (written by /create-slices, not this skill) -->
 
 Also check if relevant to your task:
 <!-- Add lines below only for directories that exist AND contain files -->
-- `.project/brainstorm/` — project-level brainstorming output
-- `.project/research/` — project-level research findings
-- `.project/prototypes/` — exploratory prototypes
-- `.project/side-quests/` — deferred and in-progress side quests
+- `.goodplan/brainstorm/` — project-level brainstorming output
+- `.goodplan/research/` — project-level research findings
+- `.goodplan/prototypes/` — exploratory prototypes
+- `.goodplan/side-quests/` — deferred and in-progress side quests
 ```
 
-Only include files/directories that actually exist. For each architecture file written, add a reference line with a brief description (e.g., `- .project/architecture/data-model.md — entities, relationships, storage`).
+Only include files/directories that actually exist. For each architecture file written, add a reference line with a brief description (e.g., `- .goodplan/architecture/data-model.md — entities, relationships, storage`).
 
 ## Conversation Guidance
 
@@ -47,7 +47,7 @@ Only include files/directories that actually exist. For each architecture file w
 - For each architecture file, present a draft first. Ask "What needs correcting or adding?" Iterate until user says it's good.
 - Write each file with the Write tool before moving to the next area — do not batch writes.
 - After writing each file, show progress: "Written 3 architecture files so far: _overview.md, conventions.md, data-model.md. Next: flows.md."
-- Distinguish the two conventions files when presenting drafts: `.project/conventions.md` is project-level (tech stack, style); `.project/architecture/conventions.md` is architectural (patterns, boundaries).
+- Distinguish the two conventions files when presenting drafts: `.goodplan/conventions.md` is project-level (tech stack, style); `.goodplan/architecture/conventions.md` is architectural (patterns, boundaries).
 
 ### Early Stop
 

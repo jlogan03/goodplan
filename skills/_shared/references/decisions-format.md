@@ -4,7 +4,7 @@ Shared reference for recording durable project decisions.
 
 ## Directory
 
-`.project/decisions/` — created on first write. Skills must `mkdir -p` before writing.
+`.goodplan/decisions/` — created on first write. Skills must `mkdir -p` before writing.
 
 ## File Naming
 
@@ -60,14 +60,14 @@ A "durable decision" is one worth recording. The test:
 
 ## Loading Protocol
 
-1. Glob `.project/decisions/*.md`
+1. Glob `.goodplan/decisions/*.md`
 2. Skip files with `Status: superseded` (follow the link to the replacement instead)
 3. Flag files with `Status: revisiting` to the user
 4. Load remaining active decisions as context alongside architecture files
 
 ## Confirmation Requirement
 
-Agent must always propose decision text and get user confirmation before writing to `.project/decisions/`. Never auto-write decisions.
+Agent must always propose decision text and get user confirmation before writing to `.goodplan/decisions/`. Never auto-write decisions.
 
 ## Extension Policy
 

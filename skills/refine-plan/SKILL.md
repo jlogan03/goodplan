@@ -6,7 +6,7 @@ description: >
   two-layer architecture (current + epic target) for context-aware review. Applies
   to any domain: web dev, ML/data science, scientific computing, systems programming,
   CLI tools, agent skills, MCP servers. Accepts a path to a plan file or directory.
-requires: goodplan >= 1.0.0
+requires: gp >= 1.0.0
 ---
 
 # Refine Plan
@@ -24,9 +24,9 @@ Path can be a single markdown file or a directory containing `_overview.md` + ph
 
 ## Decisions Context
 
-Read `../_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load `.project/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions provide context for plan review — reviewers should check that the plan respects existing decisions.
+Read `../_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load `.goodplan/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions provide context for plan review — reviewers should check that the plan respects existing decisions.
 
-Note: sub-agents load decisions themselves via codebase exploration (`.project/decisions/` is a project directory accessible to all agents), so decisions do not need to be passed in bootstrap prompts.
+Note: sub-agents load decisions themselves via codebase exploration (`.goodplan/decisions/` is a project directory accessible to all agents), so decisions do not need to be passed in bootstrap prompts.
 
 ## Reviewer Roles
 
@@ -66,12 +66,12 @@ Read `../_shared/references/cli-interaction.md` for CLI interaction conventions 
 Verify CLI availability and compatibility:
 
 ```bash
-goodplan --version --json
+gp --version --json
 ```
 
-If the command fails (not found, non-zero exit), stop: "The `goodplan` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
+If the command fails (not found, non-zero exit), stop: "The `gp` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
 
-If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill requires goodplan >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
+If the version doesn't satisfy `requires: gp >= 1.0.0`, stop: "This skill requires gp >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
 
 ### Step 0b: Load Plan and Prepare Working Copy
 
@@ -109,11 +109,11 @@ Read and follow `../_shared/references/codebase-context-discovery.md`. Delegate 
 
 **Stale assumption detection**: Follow the Stale Assumption Detection Algorithm in `../_shared/references/epic-conventions.md`. When staleness is detected in refine-plan: include in the codebase context summary: "Architecture file <file> has changed since this goal was written — reviewers should verify the plan still aligns with current architecture."
 
-**Epic architecture awareness**: Query `goodplan status --json` and check `.activeEpic`. If an active epic exists, read `.project/epics/<activeEpic.name>/architecture/` alongside top-level architecture. Flag any conflicts between the plan and the active epic's target architecture in the codebase context summary.
+**Epic architecture awareness**: Query `gp status --json` and check `.activeEpic`. If an active epic exists, read `.goodplan/epics/<activeEpic.name>/architecture/` alongside top-level architecture. Flag any conflicts between the plan and the active epic's target architecture in the codebase context summary.
 
-Also load `.project/conventions.md` if it exists — project conventions provide context for reviewers evaluating the plan.
+Also load `.goodplan/conventions.md` if it exists — project conventions provide context for reviewers evaluating the plan.
 
-Also load `.project/architecture/_overview.md` and extract the `## Subsystem Maturity` table. If no maturity table exists, set `{maturity_summary}` to empty. Also read `../_shared/references/maturity-legend.md` and store its content as `{maturity_legend}`. If maturity data was found, display: "**Maturity context**: [list of subsystems at Maturing or Foundational, or 'All subsystems at Developing or below']". When filling shared preamble placeholders for reviewer sub-agents, include `{maturity_summary}` and `{maturity_legend}`. When `{maturity_summary}` is empty, omit the `## Subsystem Maturity` section from the shared preamble entirely.
+Also load `.goodplan/architecture/_overview.md` and extract the `## Subsystem Maturity` table. If no maturity table exists, set `{maturity_summary}` to empty. Also read `../_shared/references/maturity-legend.md` and store its content as `{maturity_legend}`. If maturity data was found, display: "**Maturity context**: [list of subsystems at Maturing or Foundational, or 'All subsystems at Developing or below']". When filling shared preamble placeholders for reviewer sub-agents, include `{maturity_summary}` and `{maturity_legend}`. When `{maturity_summary}` is empty, omit the `## Subsystem Maturity` section from the shared preamble entirely.
 
 ### Step 3: Refinement Loop
 
@@ -197,19 +197,19 @@ After the review loop exits (score 9+, no critical/important issues), perform a 
 
 ### Step 5: Completion
 
-1. **Submit refinement via CLI**: If the plan is under `.project/` and belongs to a slice or quest scope, use the appropriate CLI submit command. The CLI handles activity recording and state transitions.
+1. **Submit refinement via CLI**: If the plan is under `.goodplan/` and belongs to a slice or quest scope, use the appropriate CLI submit command. The CLI handles activity recording and state transitions.
 
    For slice scope:
    ```bash
-   echo '{"scores":{"overall":<min_score>}}' | goodplan submit-refinement --slice <name> --json
+   echo '{"scores":{"overall":<min_score>}}' | gp submit-refinement --slice <name> --json
    ```
 
    For quest scope:
    ```bash
-   echo '{"scores":{"overall":<min_score>}}' | goodplan submit-refinement --quest <name> --json
+   echo '{"scores":{"overall":<min_score>}}' | gp submit-refinement --quest <name> --json
    ```
 
-   If the plan is standalone (not under `.project/`), skip CLI mutation.
+   If the plan is standalone (not under `.goodplan/`), skip CLI mutation.
 
 2. **Display summary**: Display the Completion Summary Template (see "Output Templates" below).
 

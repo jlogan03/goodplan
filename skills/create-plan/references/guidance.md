@@ -2,15 +2,15 @@
 
 ## Scope Resolution
 
-1. **Argument**: resolve path (parent dir = scope) or name. Use `goodplan status --json` → `.activeEpic` to find the epic name, then match in `.project/epics/<name>/slices/`, `.project/slices/`, or `.project/side-quests/`.
-2. **No argument**: query `goodplan status --json`. Check `.activeSlice` for the active slice, `.activeQuest` for the active quest. If `.activeSlice` is present and `.activeEpic` exists, use `.project/epics/<activeEpic.name>/slices/<activeSlice.name>/`; if `.activeSlice` is present but no `.activeEpic`, use `.project/slices/<activeSlice.name>/`. If `.activeQuest` is present, use `.project/side-quests/<activeQuest.name>/`.
-3. **Auto-detect**: use `goodplan status --json` → `.activeEpic` to determine the epic name (if any). If an active epic exists, scan `.project/epics/<name>/slices/` for the first dir with `goal.md` + (`explore-complete.md` or `explore-skipped.md`) but no `plan.md`/`plan/`. If no active epic, scan `.project/slices/`. This is the explore-gate.
+1. **Argument**: resolve path (parent dir = scope) or name. Use `gp status --json` → `.activeEpic` to find the epic name, then match in `.goodplan/epics/<name>/slices/`, `.goodplan/slices/`, or `.goodplan/side-quests/`.
+2. **No argument**: query `gp status --json`. Check `.activeSlice` for the active slice, `.activeQuest` for the active quest. If `.activeSlice` is present and `.activeEpic` exists, use `.goodplan/epics/<activeEpic.name>/slices/<activeSlice.name>/`; if `.activeSlice` is present but no `.activeEpic`, use `.goodplan/slices/<activeSlice.name>/`. If `.activeQuest` is present, use `.goodplan/side-quests/<activeQuest.name>/`.
+3. **Auto-detect**: use `gp status --json` → `.activeEpic` to determine the epic name (if any). If an active epic exists, scan `.goodplan/epics/<name>/slices/` for the first dir with `goal.md` + (`explore-complete.md` or `explore-skipped.md`) but no `plan.md`/`plan/`. If no active epic, scan `.goodplan/slices/`. This is the explore-gate.
 4. **Fallback**: slices with `goal.md` but no explore marker — use AskUserQuestion to confirm planning without exploration.
 5. **Ambiguous**: use AskUserQuestion to choose slice/quest.
 
 ## Context Loading
 
-Read (skip missing): `.project/idea.md`, `conventions.md`, `architecture/` (`_overview.md` first; if >8 files, full read only `_overview.md` + `conventions.md`, 30 lines of rest), learnings via `goodplan learning:list --json`, `.project/decisions/` (follow Loading Protocol from `decisions-format.md`: glob `*.md`, skip superseded, flag `revisiting` to user), sequencing.md (for epic slices, load from `.project/epics/<epicName>/slices/sequencing.md` where `<epicName>` comes from `goodplan status --json` → `.activeEpic.name`; if no active epic, load `.project/slices/sequencing.md`), other slice `goal.md` files, `.project/research/` + scope's `research/`, scope's `brainstorm/`.
+Read (skip missing): `.goodplan/idea.md`, `conventions.md`, `architecture/` (`_overview.md` first; if >8 files, full read only `_overview.md` + `conventions.md`, 30 lines of rest), learnings via `gp learning:list --json`, `.goodplan/decisions/` (follow Loading Protocol from `decisions-format.md`: glob `*.md`, skip superseded, flag `revisiting` to user), sequencing.md (for epic slices, load from `.goodplan/epics/<epicName>/slices/sequencing.md` where `<epicName>` comes from `gp status --json` → `.activeEpic.name`; if no active epic, load `.goodplan/slices/sequencing.md`), other slice `goal.md` files, `.goodplan/research/` + scope's `research/`, scope's `brainstorm/`.
 
 Follow SKILL.md Step 3 sub-step 4 for maturity table extraction and Maturity Note loading.
 
@@ -39,7 +39,7 @@ Follow SKILL.md Step 4c2 for maturity escalation rules.
 
 ## Research Integration
 
-1. Check `.project/research/` and scope's `research/` first.
+1. Check `.goodplan/research/` and scope's `research/` first.
 2. Only research what's new or stale.
 3. Spawn sub-agents (Agent tool, model: "opus") per topic — use WebSearch and Context7 MCP tools.
 4. Save to scope's `research/` with header: `# <Topic>\n\nResearched: <date> | Source: <tool>\n\n---`
@@ -91,16 +91,16 @@ Architecture lives in two layers (see `../../_shared/references/epic-conventions
 
 | Layer | Location | Represents |
 |---|---|---|
-| **Top-level** | `.project/architecture/` | Current reality — what the repo looks like now |
+| **Top-level** | `.goodplan/architecture/` | Current reality — what the repo looks like now |
 | **Epic** | `epics/<name>/architecture/` | Target state — where the active epic is headed |
 
 **Which layer to plan against depends on scope**:
 
 - **Epic slices**: Plan against the epic's `architecture/` (target state). Use top-level as secondary context for current reality.
-- **Side quests**: Plan against top-level `.project/architecture/` (current reality). Detect the active epic via `goodplan status --json` → `.activeEpic`. If an active epic exists, read its `_overview.md` at `.project/epics/<activeEpic.name>/architecture/_overview.md` and note what it's targeting — check that the side quest plan is compatible and won't conflict with the epic's direction.
+- **Side quests**: Plan against top-level `.goodplan/architecture/` (current reality). Detect the active epic via `gp status --json` → `.activeEpic`. If an active epic exists, read its `_overview.md` at `.goodplan/epics/<activeEpic.name>/architecture/_overview.md` and note what it's targeting — check that the side quest plan is compatible and won't conflict with the epic's direction.
 - **No active epic**: Only top-level exists; plan against it.
 
-**Compatibility check for side quests**: When an active epic has architecture files (detected via `goodplan status --json` → `.activeEpic`), present: "Planning against current architecture. Active epic [name] is targeting [summary] — check for compatibility." Flag any conflicts between the side quest plan and the epic's target.
+**Compatibility check for side quests**: When an active epic has architecture files (detected via `gp status --json` → `.activeEpic`), present: "Planning against current architecture. Active epic [name] is targeting [summary] — check for compatibility." Flag any conflicts between the side quest plan and the epic's target.
 
 ## CLAUDE.md
 

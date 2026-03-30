@@ -26,7 +26,7 @@ Use the Read tool to load:
 Normalize the argument:
 
 1. Strip trailing slashes.
-2. If it starts with `.project/epics/`, strip that prefix to get the epic name.
+2. If it starts with `.goodplan/epics/`, strip that prefix to get the epic name.
 3. If it starts with `epics/`, strip that prefix.
 4. Otherwise, use the argument as the epic name directly.
 5. If the resulting name starts with `__active__` or equals `initial`, tell the user: "That epic is already active — `/start-epic` is for activating subsequent epics that haven't been started yet." **Stop.**
@@ -34,13 +34,13 @@ Normalize the argument:
 Validate the epic exists:
 
 ```bash
-ls -d .project/epics/"$NAME"/ 2>/dev/null
+ls -d .goodplan/epics/"$NAME"/ 2>/dev/null
 ```
 
 If the directory does not exist, list available epics and ask the user to pick:
 
 ```bash
-ls .project/epics/ 2>/dev/null
+ls .goodplan/epics/ 2>/dev/null
 ```
 
 ### If no argument was passed
@@ -48,7 +48,7 @@ ls .project/epics/ 2>/dev/null
 Scan for epics in `proposal-pending` state (have `architecture-proposal/` but no `approved.md`):
 
 ```bash
-for dir in .project/epics/*/; do
+for dir in .goodplan/epics/*/; do
   name=$(basename "$dir")
   # Skip __active__ prefixed directories
   [[ "$name" == __active__* ]] && continue
@@ -62,7 +62,7 @@ done
 Also scan for epics in `needs-architecture-proposal` state (have `explore-complete.md` or `explore-skipped.md`, no `architecture-proposal/`, no `architecture-proposal-skipped.md`):
 
 ```bash
-for dir in .project/epics/*/; do
+for dir in .goodplan/epics/*/; do
   name=$(basename "$dir")
   [[ "$name" == __active__* ]] && continue
   if { [ -f "$dir/explore-complete.md" ] || [ -f "$dir/explore-skipped.md" ]; } &&
@@ -82,7 +82,7 @@ done
 ## Step 1b — Check for Active Epic (Fail-Fast)
 
 ```bash
-ls -d .project/epics/__active__*/ 2>/dev/null
+ls -d .goodplan/epics/__active__*/ 2>/dev/null
 ```
 
 If an `__active__` directory is found, extract the epic name (strip `__active__` prefix) and tell the user:
@@ -96,7 +96,7 @@ If an `__active__` directory is found, extract the epic name (strip `__active__`
 Check if `approved.md` already exists but the directory has not been renamed to `__active__`:
 
 ```bash
-test -f .project/epics/<name>/approved.md && echo "approved"
+test -f .goodplan/epics/<name>/approved.md && echo "approved"
 ```
 
 If approved.md exists, the skill was previously interrupted after approval but before activation. Tell the user:
@@ -109,11 +109,11 @@ Skip to Step 5c (Create Architecture Directory).
 
 Read the epic's files:
 
-1. Read `.project/epics/<name>/goal.md`.
+1. Read `.goodplan/epics/<name>/goal.md`.
 2. Check for `architecture-proposal/` directory:
 
 ```bash
-ls .project/epics/<name>/architecture-proposal/ 2>/dev/null
+ls .goodplan/epics/<name>/architecture-proposal/ 2>/dev/null
 ```
 
 3. If `architecture-proposal/` exists, read all files in it (especially `_overview.md` first, then remaining files).
@@ -154,7 +154,7 @@ Options:
 
 **If "Run /create-architecture"**: Tell the user to run `/create-architecture epics/<name>` and stop.
 
-**If "Skip architecture changes"**: Write `.project/epics/<name>/architecture-proposal-skipped.md`:
+**If "Skip architecture changes"**: Write `.goodplan/epics/<name>/architecture-proposal-skipped.md`:
 
 ```markdown
 # Architecture Proposal Skipped
@@ -168,14 +168,14 @@ Then proceed directly to Step 5b (skip the proposal review, go straight to activ
 
 ## Step 5 — Present Architecture Proposal
 
-Read all files in `.project/epics/<name>/architecture-proposal/`. Present a structured summary to the user:
+Read all files in `.goodplan/epics/<name>/architecture-proposal/`. Present a structured summary to the user:
 
 1. **Epic goal** — one-line summary from `goal.md`.
 2. **Proposed architecture changes** — summarize each file in the proposal:
    - For `_overview.md`: key changes at a glance
    - For `<subsystem>-changes.md` files: what changes in each subsystem
    - For `new-<subsystem>.md` files: what new subsystems are introduced
-3. **Relationship to current architecture** — if `.project/architecture/` exists, briefly note how the proposal relates to (extends, modifies, or replaces parts of) the current architecture.
+3. **Relationship to current architecture** — if `.goodplan/architecture/` exists, briefly note how the proposal relates to (extends, modifies, or replaces parts of) the current architecture.
 
 Then use the AskUserQuestion tool:
 
@@ -200,7 +200,7 @@ Tell the user:
 
 > Proposal not approved. The architecture proposal files remain in place for reference. Run `/explore epics/<name>` to continue researching, or `/create-architecture epics/<name>` to revise the proposal.
 
-Update `.project/state.md` Next Step to: `Run /explore epics/<name> or /create-architecture epics/<name> to revise the proposal.`
+Update `.goodplan/state.md` Next Step to: `Run /explore epics/<name> or /create-architecture epics/<name> to revise the proposal.`
 
 **Stop.**
 
@@ -214,7 +214,7 @@ This step is reached from two paths:
 - **Proposal path** (Step 5 "Approve and activate"): Rationale draws from the user's confirmation and the proposal content. Architecture Proposal Files lists proposal contents.
 - **Skip path** (Step 4 "Skip architecture changes"): Rationale draws from the user's confirmation and the epic goal only. Architecture Proposal Files is "N/A — architecture proposal skipped."
 
-Write `.project/epics/<name>/approved.md`:
+Write `.goodplan/epics/<name>/approved.md`:
 
 ```markdown
 # Epic Approved
@@ -229,7 +229,7 @@ Approved for activation.
 <bulleted list of all files in architecture-proposal/, or "N/A — architecture proposal skipped" if reached via skip path>
 
 ## Notes
-- Top-level `.project/architecture/` is NOT updated at this point — it reflects current reality
+- Top-level `.goodplan/architecture/` is NOT updated at this point — it reflects current reality
 - Epic architecture is the target state; top-level is updated incrementally by `/complete` as slices land
 ```
 
@@ -242,30 +242,30 @@ This step creates the epic's `architecture/` directory — the target architectu
 1. Create the `architecture/` directory:
 
 ```bash
-mkdir -p .project/epics/<name>/architecture/
+mkdir -p .goodplan/epics/<name>/architecture/
 ```
 
 2. Copy `_overview.md` from the proposal:
 
 ```bash
-cp .project/epics/<name>/architecture-proposal/_overview.md .project/epics/<name>/architecture/_overview.md
+cp .goodplan/epics/<name>/architecture-proposal/_overview.md .goodplan/epics/<name>/architecture/_overview.md
 ```
 
-3. For each `<subsystem>-changes.md` file in the proposal: read it and the corresponding top-level `.project/architecture/<subsystem>-*.md` file (if it exists). Merge the proposed changes into the top-level file's structure to produce the target state, and write it to `architecture/<subsystem>-*.md` in the epic. If no top-level file exists, transform the changes file into a standalone architecture file.
+3. For each `<subsystem>-changes.md` file in the proposal: read it and the corresponding top-level `.goodplan/architecture/<subsystem>-*.md` file (if it exists). Merge the proposed changes into the top-level file's structure to produce the target state, and write it to `architecture/<subsystem>-*.md` in the epic. If no top-level file exists, transform the changes file into a standalone architecture file.
 
 4. For each `new-<subsystem>.md` file in the proposal: copy it to `architecture/<subsystem>.md` (strip the `new-` prefix) as-is — these are new subsystems that don't exist in top-level yet.
 
-5. Copy any remaining top-level architecture files from `.project/architecture/` that are NOT being modified by the proposal (i.e., no corresponding `-changes.md` in the proposal). This ensures the epic architecture is complete, not just the delta.
+5. Copy any remaining top-level architecture files from `.goodplan/architecture/` that are NOT being modified by the proposal (i.e., no corresponding `-changes.md` in the proposal). This ensures the epic architecture is complete, not just the delta.
 
 ### Skip path (architecture-proposal-skipped.md exists)
 
 Copy the entire top-level architecture as the baseline — this epic doesn't change the architecture, but downstream skills still need the target files to read from:
 
 ```bash
-cp -R .project/architecture/* .project/epics/<name>/architecture/ 2>/dev/null
+cp -R .goodplan/architecture/* .goodplan/epics/<name>/architecture/ 2>/dev/null
 ```
 
-If `.project/architecture/` doesn't exist or is empty, create a minimal `architecture/_overview.md`:
+If `.goodplan/architecture/` doesn't exist or is empty, create a minimal `architecture/_overview.md`:
 
 ```markdown
 # Architecture Overview
@@ -276,7 +276,7 @@ This epic does not introduce architecture changes. Architecture files will be po
 ### Verify
 
 ```bash
-ls .project/epics/<name>/architecture/
+ls .goodplan/epics/<name>/architecture/
 ```
 
 At minimum, `_overview.md` must exist. If the directory is empty or missing, report the error and stop.
@@ -286,13 +286,13 @@ At minimum, `_overview.md` must exist. If the directory is empty or missing, rep
 Rename the epic directory to add the `__active__` prefix:
 
 ```bash
-mv .project/epics/<name> .project/epics/__active__<name>
+mv .goodplan/epics/<name> .goodplan/epics/__active__<name>
 ```
 
 Verify the rename succeeded:
 
 ```bash
-ls -d .project/epics/__active__<name>/ 2>/dev/null
+ls -d .goodplan/epics/__active__<name>/ 2>/dev/null
 ```
 
 If the rename fails, report the error and stop.
@@ -305,17 +305,17 @@ Generate a UTC timestamp:
 date -u +%Y-%m-%dT%H:%M:%SZ
 ```
 
-Update `.project/state.md` using the 4-section format:
+Update `.goodplan/state.md` using the 4-section format:
 
 - **Current Phase**: `start-epic complete — <name> approved and activated`
 - **Active Slice**: `epics/<name>`
 - **Work Stack**: unchanged
 - **Next Step**: `Run /create-slices to break the epic into slices.`
 
-Append to `.project/activity-log.jsonl`:
+Append to `.goodplan/activity-log.jsonl`:
 
 ```bash
-echo '{"ts":"<timestamp>","phase":"start-epic","scope":"epics/<name>","status":"complete","summary":"Epic <name> approved and activated"}' >> .project/activity-log.jsonl
+echo '{"ts":"<timestamp>","phase":"start-epic","scope":"epics/<name>","status":"complete","summary":"Epic <name> approved and activated"}' >> .goodplan/activity-log.jsonl
 ```
 
 ## Done
@@ -324,10 +324,10 @@ Tell the user:
 
 > Epic '<name>' is now active.
 >
-> - `.project/epics/__active__<name>/approved.md` — approval record
-> - `.project/epics/__active__<name>/architecture/` — target architecture for this epic
-> - `.project/state.md` — updated
-> - `.project/activity-log.jsonl` — updated
+> - `.goodplan/epics/__active__<name>/approved.md` — approval record
+> - `.goodplan/epics/__active__<name>/architecture/` — target architecture for this epic
+> - `.goodplan/state.md` — updated
+> - `.goodplan/activity-log.jsonl` — updated
 >
 > **Next**: Run `/create-slices` to break the epic into slices.
 

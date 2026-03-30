@@ -4,27 +4,27 @@
 
 Read these before doing any significant work in this repo:
 
-- `.project/idea.md` — project goal, scope, constraints
-- `.project/conventions.md` — tech stack, repo structure, coding style
-- `.project/learnings/` — per-learning `.md` files (CLI-managed; query via `goodplan learning:list --json`)
-- `.project/architecture/_overview.md` — system architecture (4-layer stack, subsystem maturity)
-- `.project/architecture/conventions.md` — architectural patterns
-- `.project/architecture/data-model.md` — entities, JSON/JSONL, unified state object
-- `.project/architecture/flows.md` — key workflows and state transition patterns
-- `.project/architecture/state-machine-api.md` — pure reducer API
-- `.project/architecture/data-layer-api.md` — filesystem I/O API
-- `.project/architecture/rpc-layer-api.md` — workflow orchestration API
-- `.project/architecture/commands-api.md` — CLI command surface
-- `.project/architecture/invariants.md` — system-wide constraints (INV-001 through INV-007)
-- `.project/architecture/transition-tables.md` — complete state transition spec (source of truth)
+- `.goodplan/idea.md` — project goal, scope, constraints
+- `.goodplan/conventions.md` — tech stack, repo structure, coding style
+- `.goodplan/learnings/` — per-learning `.md` files (CLI-managed; query via `gp learning:list --json`)
+- `.goodplan/architecture/_overview.md` — system architecture (4-layer stack, subsystem maturity)
+- `.goodplan/architecture/conventions.md` — architectural patterns
+- `.goodplan/architecture/data-model.md` — entities, JSON/JSONL, unified state object
+- `.goodplan/architecture/flows.md` — key workflows and state transition patterns
+- `.goodplan/architecture/state-machine-api.md` — pure reducer API
+- `.goodplan/architecture/data-layer-api.md` — filesystem I/O API
+- `.goodplan/architecture/rpc-layer-api.md` — workflow orchestration API
+- `.goodplan/architecture/commands-api.md` — CLI command surface
+- `.goodplan/architecture/invariants.md` — system-wide constraints (INV-001 through INV-007)
+- `.goodplan/architecture/transition-tables.md` — complete state transition spec (source of truth)
 
 Also check if relevant to your task:
-- `.project/epics/plugin-distribution/architecture/` — plugin distribution epic target architecture (plugin packaging, CLI rename, nextCommands, HMAC signatures)
-- `.project/epics/plugin-distribution/slices/sequencing.md` — plugin distribution slice ordering and dependencies
-- `.project/epics/entity-restructuring/architecture/` — entity restructuring epic target architecture (nested slice paths, consolidated overview, affected APIs)
-- `.project/research/` — tech stack and library research
-- `.project/brainstorm/` — architecture brainstorming output
-- `.project/decisions/` — active architectural decisions
+- `.goodplan/epics/plugin-distribution/architecture/` — plugin distribution epic target architecture (plugin packaging, CLI rename, nextCommands, HMAC signatures)
+- `.goodplan/epics/plugin-distribution/slices/sequencing.md` — plugin distribution slice ordering and dependencies
+- `.goodplan/epics/entity-restructuring/architecture/` — entity restructuring epic target architecture (nested slice paths, consolidated overview, affected APIs)
+- `.goodplan/research/` — tech stack and library research
+- `.goodplan/brainstorm/` — architecture brainstorming output
+- `.goodplan/decisions/` — active architectural decisions
 - `docs/superpowers/specs/2026-03-20-goodplan-cli-and-skill-consolidation-design.md` — original design spec
 
 ## Workflow Evolution Program

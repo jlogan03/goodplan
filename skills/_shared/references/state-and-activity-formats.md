@@ -35,7 +35,7 @@ One JSON object per line. Required fields:
 | `status` | Activity-log values: `complete`, `started`, `failed`, or `abandoned` |
 | `summary` | One sentence describing what happened |
 
-Optional: `detail` — path to file in `.project/activity-log/` for notable events. Naming: `activity-log/<phase>-<scope-slug>-<YYYYMMDDTHHmmss>.md`. Routine completions need no detail file.
+Optional: `detail` — path to file in `.goodplan/activity-log/` for notable events. Naming: `activity-log/<phase>-<scope-slug>-<YYYYMMDDTHHmmss>.md`. Routine completions need no detail file.
 
 Example:
 

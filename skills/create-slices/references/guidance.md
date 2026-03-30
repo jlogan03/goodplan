@@ -25,7 +25,7 @@ Three modes when existing slices detected:
 
 ## CLAUDE.md Update
 
-Add sequencing.md to Project Context. **Idempotency:** skip if already referenced with the correct path. If referencing a stale path (e.g., `.project/slices/sequencing.md` when slices are now inside an epic), update the path.
+Add sequencing.md to Project Context. **Idempotency:** skip if already referenced with the correct path. If referencing a stale path (e.g., `.goodplan/slices/sequencing.md` when slices are now inside an epic), update the path.
 
 Read `../../create-architecture/references/guidance.md` for full Project Context format and the three cases (no CLAUDE.md / no section / existing section).
 
@@ -34,7 +34,7 @@ Add this line to the "Read these" list (using the resolved `$SLICES_DIR`):
 - `$SLICES_DIR/sequencing.md` — slice ordering and dependencies
 ```
 
-**Migration:** Check for and replace any stale `.project/slices/sequencing.md` reference with the epic-scoped path.
+**Migration:** Check for and replace any stale `.goodplan/slices/sequencing.md` reference with the epic-scoped path.
 
 ## Graceful Stop
 

@@ -1,30 +1,30 @@
 ---
 name: onboard-repo
 description: >
-  Scan an existing repo with code but no .project/ directory and scaffold a
+  Scan an existing repo with code but no .goodplan/ directory and scaffold a
   complete goodplan project. Extracts conventions, architecture, subsystem
   maturity, migrations, tech debt, and expertise from repo artifacts (README,
   git history, config files, gh CLI). Only asks about things that can't be
-  inferred. Not for repos that already have .project/ (use /migrate) or new
+  inferred. Not for repos that already have .goodplan/ (use /migrate) or new
   projects without code (use /create-epic).
-requires: goodplan >= 1.0.0
+requires: gp >= 1.0.0
 ---
 
 # Onboard Repo
 
-Scans an existing codebase and scaffolds a complete goodplan project by extracting conventions, architecture, subsystem structure, and tech debt from repo artifacts. Designed for repos that have code but no `.project/` directory.
+Scans an existing codebase and scaffolds a complete goodplan project by extracting conventions, architecture, subsystem structure, and tech debt from repo artifacts. Designed for repos that have code but no `.goodplan/` directory.
 
-**When this skill triggers:** User says "onboard this repo", "set up goodplan for this project", "scan this codebase", or invokes `/onboard-repo` in a repo with code but no `.project/`. Use when joining an existing codebase, taking over a project, or wanting to understand a repo's architecture.
+**When this skill triggers:** User says "onboard this repo", "set up goodplan for this project", "scan this codebase", or invokes `/onboard-repo` in a repo with code but no `.goodplan/`. Use when joining an existing codebase, taking over a project, or wanting to understand a repo's architecture.
 
 ## Step 0 — Version Check
 
 ```bash
-goodplan --version --json
+gp --version --json
 ```
 
-If the command fails (not found, non-zero exit), stop: "The `goodplan` CLI is required (>= 1.0.0) but was not found or is incompatible. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
+If the command fails (not found, non-zero exit), stop: "The `gp` CLI is required (>= 1.0.0) but was not found or is incompatible. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
 
-If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop with version mismatch message.
+If the version doesn't satisfy `requires: gp >= 1.0.0`, stop with version mismatch message.
 
 Read `../_shared/references/cli-interaction.md` — needed throughout for CLI error handling patterns (section 10: Error Handling). Key points: exit code 1 = internal/unexpected error (present to user and stop), exit code 2 = validation/usage error (fix invocation — likely a skill bug), exit code 3 = state machine error (parse error code from JSON, apply recovery pattern).
 
@@ -35,19 +35,19 @@ Note: `../_shared/references/expertise-tracking.md` is deferred to Step 10. `../
 ### Existing project check
 
 ```bash
-ls -d .project/ 2>/dev/null
+ls -d .goodplan/ 2>/dev/null
 ```
 
-If `.project/` exists, run `goodplan status --json` to determine project state:
+If `.goodplan/` exists, run `gp status --json` to determine project state:
 
-- **Fully onboarded** (has `idea.md` + `conventions.md` + architecture files): Stop with advisory message: "This repo already has a fully onboarded `.project/` directory. Use `/project-status` to see current state, or `/migrate` if it needs updating to a newer CLI version." Do NOT crash or exit with an error code — this is a normal advisory stop.
-- **Bare/partial** (just `project.json`, no markdown artifacts like `idea.md`): Inform the user: "Found a partial `.project/` from a previous incomplete run. Continuing onboarding from where it left off." Continue to Step 2 — the re-entry guards in Steps 3 and 4 will handle skipping already-completed work.
+- **Fully onboarded** (has `idea.md` + `conventions.md` + architecture files): Stop with advisory message: "This repo already has a fully onboarded `.goodplan/` directory. Use `/project-status` to see current state, or `/migrate` if it needs updating to a newer CLI version." Do NOT crash or exit with an error code — this is a normal advisory stop.
+- **Bare/partial** (just `project.json`, no markdown artifacts like `idea.md`): Inform the user: "Found a partial `.goodplan/` from a previous incomplete run. Continuing onboarding from where it left off." Continue to Step 2 — the re-entry guards in Steps 3 and 4 will handle skipping already-completed work.
 
-If `.project/` does not exist, continue normally.
+If `.goodplan/` does not exist, continue normally.
 
 ### Confirm intent
 
-Ask the user: "Ready to scan this repo and set up goodplan? This will create a `.project/` directory with project metadata inferred from the codebase."
+Ask the user: "Ready to scan this repo and set up goodplan? This will create a `.goodplan/` directory with project metadata inferred from the codebase."
 
 ### Shallow clone check
 
@@ -114,17 +114,17 @@ Infer project name using this priority order:
 
 Sanitize to kebab-case: lowercase, replace spaces and underscores with hyphens, strip npm scope prefix (`@scope/`), truncate to 50 characters.
 
-**Re-entry:** If `.project/` exists from a previous partial run, skip init.
+**Re-entry:** If `.goodplan/` exists from a previous partial run, skip init.
 
 ```bash
-goodplan init --name <sanitized-name> --json
+gp init --name <sanitized-name> --json
 ```
 
 Handle errors per `cli-interaction.md` section 10.
 
 ## Step 4 — Generate idea.md
 
-Write `.project/idea.md` directly using the Write tool. Content structure:
+Write `.goodplan/idea.md` directly using the Write tool. Content structure:
 
 ```markdown
 # <Project Name>
@@ -146,7 +146,7 @@ Write `.project/idea.md` directly using the Write tool. Content structure:
 <Any constraints visible from config: Node version, TypeScript strictness, etc.>
 ```
 
-**Re-entry:** If `idea.md` exists and has content (more than just a heading), ask the user: "Found existing `.project/idea.md`. Regenerate from scan results, or keep the current version?" Respect their choice.
+**Re-entry:** If `idea.md` exists and has content (more than just a heading), ask the user: "Found existing `.goodplan/idea.md`. Regenerate from scan results, or keep the current version?" Respect their choice.
 
 ## Step 5 — Convention Detection
 
@@ -154,7 +154,7 @@ Read `references/convention-heuristics.md` (relative to this skill's directory) 
 
 ### Re-entry
 
-If `.project/conventions.md` already exists and has content (more than just a heading), ask the user: "Found existing `.project/conventions.md`. Re-detect conventions from the codebase, or keep the current version?" Respect their choice. If they choose to keep, skip to Step 6.
+If `.goodplan/conventions.md` already exists and has content (more than just a heading), ask the user: "Found existing `.goodplan/conventions.md`. Re-detect conventions from the codebase, or keep the current version?" Respect their choice. If they choose to keep, skip to Step 6.
 
 ### 5a. Project type dispatch
 
@@ -192,7 +192,7 @@ Accept corrections in a single round — apply the user's changes, then proceed.
 
 ### 5d. Write conventions.md
 
-Write `.project/conventions.md` directly using the Write tool. Follow the output format documented in `convention-heuristics.md`:
+Write `.goodplan/conventions.md` directly using the Write tool. Follow the output format documented in `convention-heuristics.md`:
 
 - **Tech Stack** — language, runtime, frameworks, test framework, significant deps
 - **Repo Structure** — abbreviated directory tree of key directories
@@ -209,12 +209,12 @@ Read `references/architecture-extraction.md` (relative to this skill's directory
 
 ### Re-entry
 
-Check if `.project/architecture/_overview.md` already exists and has content (more than just headings). If so, ask: "Found existing architecture files. Re-extract from the codebase, or keep the current version?" Respect their choice. If they choose to keep, skip to Step 7.
+Check if `.goodplan/architecture/_overview.md` already exists and has content (more than just headings). If so, ask: "Found existing architecture files. Re-extract from the codebase, or keep the current version?" Respect their choice. If they choose to keep, skip to Step 7.
 
 ### 6a. Create architecture directory
 
 ```bash
-mkdir -p .project/architecture/
+mkdir -p .goodplan/architecture/
 ```
 
 Note: `architecture/` is an LLM-owned content directory — the CLI creates entity directories (epics/, slices/, quests/) but `architecture/` is created by skills that write free-form markdown. `mkdir -p` is appropriate here; the "no mkdir" rule in `cli-interaction.md` applies only to entity directories managed by the state machine.
@@ -316,13 +316,13 @@ Ask: "Do these maturity levels match your understanding? Any corrections?"
 
 ### 7c. Incorporate corrections and confirm
 
-Apply any user corrections from 7a and 7b. If the user made changes, briefly restate the final version: "Updated architecture: [summary of changes]. Writing to `.project/architecture/_overview.md`."
+Apply any user corrections from 7a and 7b. If the user made changes, briefly restate the final version: "Updated architecture: [summary of changes]. Writing to `.goodplan/architecture/_overview.md`."
 
 If no corrections, proceed directly.
 
 ### 7d. Write architecture overview
 
-Write `.project/architecture/_overview.md` directly using the Write tool. Follow the output format in `architecture-extraction.md` section 6:
+Write `.goodplan/architecture/_overview.md` directly using the Write tool. Follow the output format in `architecture-extraction.md` section 6:
 
 - **System Summary** — 2-3 paragraphs
 - **Subsystems** — one `###` section per subsystem with description and dependencies
@@ -341,7 +341,7 @@ Read `references/migration-detection.md` (relative to this skill's directory) fo
 Before running detection, check if quests already exist for detected items:
 
 ```bash
-goodplan quest:list --json
+gp quest:list --json
 ```
 
 Parse quest names and goals. If a quest already covers a detected migration or debt item (fuzzy match on keywords like "esm", "cjs", "migration", "todo", "test coverage"), note "Quest already exists: `<quest-name>`" and skip that item.
@@ -400,7 +400,7 @@ Collect all triage decisions before proceeding to Step 9. Items triaged as "Crea
 For each item the user triaged as "Create side quest" in Step 8c, create a quest via the CLI:
 
 ```bash
-echo '{"name":"<kebab-case-name>","goal":"<goal-text>"}' | goodplan quest:create --json
+echo '{"name":"<kebab-case-name>","goal":"<goal-text>"}' | gp quest:create --json
 ```
 
 ### Quest naming
@@ -562,14 +562,14 @@ Write or update the repo's `CLAUDE.md` with a `## Project Context` section refer
 
 Read these before doing any significant work in this repo:
 
-- `.project/idea.md` — project goal, scope, constraints
-- `.project/conventions.md` — tech stack, repo structure, coding style
-- `.project/architecture/_overview.md` — system architecture, subsystem maturity
+- `.goodplan/idea.md` — project goal, scope, constraints
+- `.goodplan/conventions.md` — tech stack, repo structure, coding style
+- `.goodplan/architecture/_overview.md` — system architecture, subsystem maturity
 ```
 
 **Case 2 — CLAUDE.md exists but no `## Project Context` section**: Append the section at the end with a blank line before the `## Project Context` header.
 
-**Case 3 — `## Project Context` already exists**: Check if the three files (`.project/idea.md`, `.project/conventions.md`, `.project/architecture/_overview.md`) already appear. Add any that are missing. Do not duplicate entries that are already present.
+**Case 3 — `## Project Context` already exists**: Check if the three files (`.goodplan/idea.md`, `.goodplan/conventions.md`, `.goodplan/architecture/_overview.md`) already appear. Add any that are missing. Do not duplicate entries that are already present.
 
 ### 12b. End-of-run expertise check
 
@@ -586,9 +586,9 @@ Present a Variant B (loose checklist) done summary per `output-templates.md`. Th
 > **Onboarding complete.**
 >
 > **Artifacts written:**
-> - `.project/idea.md` — project description and goals
-> - `.project/conventions.md` — N conventions detected
-> - `.project/architecture/_overview.md` — N subsystems identified
+> - `.goodplan/idea.md` — project description and goals
+> - `.goodplan/conventions.md` — N conventions detected
+> - `.goodplan/architecture/_overview.md` — N subsystems identified
 > - `CLAUDE.md` — updated with project context
 >
 > **Migrations detected**: N (M quests created, K deferred)
@@ -605,9 +605,9 @@ Offer: "Would you like to create an initial epic for the first development direc
 If the user approves, gather a name and goal, then create via:
 
 ```bash
-echo '{"name":"<kebab-case-name>","goal":"<goal-text>"}' | goodplan epic:create --json
+echo '{"name":"<kebab-case-name>","goal":"<goal-text>"}' | gp epic:create --json
 ```
 
 The epic goal should incorporate relevant quests from Step 9 if any were created. Handle errors per `cli-interaction.md` section 10.
 
-Note: `epic:create` works on zero-epic projects after `goodplan init` — the only guards are name uniqueness and `epics/overview.json` existence (both satisfied by init).
+Note: `epic:create` works on zero-epic projects after `gp init` — the only guards are name uniqueness and `epics/overview.json` existence (both satisfied by init).

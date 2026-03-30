@@ -1,6 +1,6 @@
 ---
 name: capture
-requires: goodplan >= 1.0.0
+requires: gp >= 1.0.0
 description: >
   Quick capture of a bug, idea, or improvement noticed during current work —
   creates a lightweight task without breaking flow. For quick lightweight notes
@@ -16,12 +16,12 @@ Quickly capture a thought, bug, or idea as a task without breaking your current 
 ## Step 0 — Version Check
 
 ```bash
-goodplan --version --json
+gp --version --json
 ```
 
-If the command fails: "The `goodplan` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
+If the command fails: "The `gp` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
 
-If the version doesn't satisfy `>= 1.0.0`: "This skill requires goodplan >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
+If the version doesn't satisfy `>= 1.0.0`: "This skill requires gp >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
 
 ## Step 1 — Load References
 
@@ -32,7 +32,7 @@ Read `../_shared/references/cli-interaction.md` (relative to this skill's direct
 Gather context automatically — do not ask the user for any of this:
 
 ```bash
-goodplan status --json
+gp status --json
 ```
 
 Extract from the response:
@@ -68,7 +68,7 @@ If the user said something like "/capture the error handling in migrate.ts needs
    ```
 4. **Create immediately**:
    ```bash
-   echo '{"name":"<slug>","title":"<title>","description":"<user's original text>","context":{...}}' | goodplan task:create --json
+   echo '{"name":"<slug>","title":"<title>","description":"<user's original text>","context":{...}}' | gp task:create --json
    ```
 5. **Present result**: One-liner summary:
    > Captured: **<title>** (while working on <active entity>, branch: <branch>)

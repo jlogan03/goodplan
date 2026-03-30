@@ -97,7 +97,7 @@ Tests that exist but have reliability or design problems:
 Test distribution that doesn't match project needs:
 
 - **Inverted test pyramid**: More integration/E2E tests than unit tests for pure logic
-- **Convention mismatch**: Testing strategy doesn't align with `.project/conventions.md` or stated project goals
+- **Convention mismatch**: Testing strategy doesn't align with `.goodplan/conventions.md` or stated project goals
 - **Wrong level of testing**: Unit tests for things that need integration tests (or vice versa)
 - **Unbalanced coverage**: Some modules over-tested while critical modules are under-tested
 

@@ -176,7 +176,7 @@ I found these tech debt signals:
 Before running detection, check if quests already exist that match detected items:
 
 ```bash
-goodplan quest:list --json
+gp quest:list --json
 ```
 
 Parse quest names and goals. If a quest already covers a detected migration or debt item (fuzzy match on name keywords like "esm", "cjs", "migration", "todo", "test"), skip that item and note: "Quest already exists: `<quest-name>`".

@@ -1,14 +1,14 @@
 ---
 name: create-architecture
 description: >
-  Drives architecture decisions through structured Q&A, writing `.project/conventions.md`
+  Drives architecture decisions through structured Q&A, writing `.goodplan/conventions.md`
   and architecture files. When an active epic exists, writes to the epic's
   architecture directory (first epic: `architecture/`, subsequent: `architecture-proposal/`).
-  Falls back to `.project/architecture/` when no active epic. Common triggers: 'let's
+  Falls back to `.goodplan/architecture/` when no active epic. Common triggers: 'let's
   define the architecture', 'what's our tech stack', 'I want to start on architecture',
   'define architecture', 'create architecture', 'set up conventions', 'help me set up project conventions', 'what
   coding standards should we use', 'define project conventions'.
-requires: goodplan >= 1.0.0
+requires: gp >= 1.0.0
 ---
 
 # Define Architecture
@@ -24,10 +24,10 @@ Read `../_shared/references/cli-interaction.md` for CLI interaction conventions 
 Verify CLI availability and compatibility:
 
 ```bash
-goodplan --version --json
+gp --version --json
 ```
 
-If the command fails, stop: "The `goodplan` CLI is required but not found." If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop with a version mismatch message.
+If the command fails, stop: "The `gp` CLI is required but not found." If the version doesn't satisfy `requires: gp >= 1.0.0`, stop with a version mismatch message.
 
 Also load `../_shared/references/epic-conventions.md` for epic directory structure.
 
@@ -36,7 +36,7 @@ Also load `../_shared/references/epic-conventions.md` for epic directory structu
 Query current state:
 
 ```bash
-goodplan status --json
+gp status --json
 ```
 
 Check `.activeEpic` in the response to determine the architecture output path:
@@ -44,10 +44,10 @@ Check `.activeEpic` in the response to determine the architecture output path:
 - **Active epic with name `initial`** (first epic): Begin the architecture phase via CLI:
 
   ```bash
-  stdin: "" | goodplan epic:define-architecture --epic initial --json
+  stdin: "" | gp epic:define-architecture --epic initial --json
   ```
 
-  Use `paths.architecture` from the response as `$ARCH_DIR`. Also create a top-level scaffold at `.project/architecture/_overview.md` containing:
+  Use `paths.architecture` from the response as `$ARCH_DIR`. Also create a top-level scaffold at `.goodplan/architecture/_overview.md` containing:
   ```markdown
   <!-- scaffold -->
   # Architecture Overview
@@ -59,17 +59,17 @@ Check `.activeEpic` in the response to determine the architecture output path:
   | Subsystem | Maturity | Dependents | Fitness Functions | Notes |
   |---|---|---|---|---|
   ```
-  Run `mkdir -p .project/architecture/` before writing the scaffold (skill-owned LLM artifact directory). No maturity data is populated until the first slice completes via `/complete`.
+  Run `mkdir -p .goodplan/architecture/` before writing the scaffold (skill-owned LLM artifact directory). No maturity data is populated until the first slice completes via `/complete`.
 
 - **Active epic with a different name** (subsequent epic): Begin the architecture phase:
 
   ```bash
-  stdin: "" | goodplan epic:define-architecture --epic <name> --json
+  stdin: "" | gp epic:define-architecture --epic <name> --json
   ```
 
   Use `paths.architecture` from the response as `$ARCH_DIR`. This writes to the epic's `architecture-proposal/` directory.
 
-- **No active epic**: defaults to `.project/architecture/` (legacy/side-quest-only projects). No CLI phase transition — no epic to transition.
+- **No active epic**: defaults to `.goodplan/architecture/` (legacy/side-quest-only projects). No CLI phase transition — no epic to transition.
 
 If `epic:define-architecture` returns `STATE_INVALID_TRANSITION` (exit 3), check `epic:show --json` for current status. If the epic is already in `defining-architecture` or later, this is a re-entry — proceed with the existing architecture path.
 
@@ -82,7 +82,7 @@ Note: `start-architecture` exists as a CLI command but no sub-agents in create-a
 Check for exploration artifacts at the epic level when applicable:
 
 ```bash
-ls .project/epics/<epic-name>/brainstorm/ .project/epics/<epic-name>/research/ .project/epics/<epic-name>/prototypes/ 2>/dev/null
+ls .goodplan/epics/<epic-name>/brainstorm/ .goodplan/epics/<epic-name>/research/ .goodplan/epics/<epic-name>/prototypes/ 2>/dev/null
 ```
 
 ## Step 1 — Load References
@@ -104,17 +104,17 @@ Use the applicability table (from architecture-logic.md) to decide which files t
 
 Read the following project files to understand what exists:
 
-1. Read `.project/idea.md`. If it does not exist, use the AskUserQuestion tool to tell the user: "No idea.md found -- run /create-epic first to capture your project idea." Then stop. If idea.md exists but is thin (fewer than 3 substantive sections or reads as a stub), ask the user a few targeted questions to fill gaps before drafting any files. Suggest running `/create-epic` to flesh it out, but do not require it -- proceed if the user provides enough context inline.
+1. Read `.goodplan/idea.md`. If it does not exist, use the AskUserQuestion tool to tell the user: "No idea.md found -- run /create-epic first to capture your project idea." Then stop. If idea.md exists but is thin (fewer than 3 substantive sections or reads as a stub), ask the user a few targeted questions to fill gaps before drafting any files. Suggest running `/create-epic` to flesh it out, but do not require it -- proceed if the user provides enough context inline.
 
 2. Check for exploration output. When an active epic was detected in Step 0, check the epic's exploration directories first:
    ```bash
    ls $EPIC_DIR/brainstorm/ $EPIC_DIR/research/ $EPIC_DIR/prototypes/ 2>/dev/null
    ```
-   Also check project-level: `ls .project/brainstorm/ .project/research/ .project/prototypes/ 2>/dev/null`. Use `$EPIC_DIR` as resolved from `paths.architecture` in Step 0 (stripping the `/architecture` suffix gives the epic directory). If any exist, read the relevant `explore-complete.md` (or `explore-skipped.md`) first as the summary. Then read individual exploration files only if the summary references something needing more detail. If there are more than 5 files across those directories, read only the first 50 lines of each.
+   Also check project-level: `ls .goodplan/brainstorm/ .goodplan/research/ .goodplan/prototypes/ 2>/dev/null`. Use `$EPIC_DIR` as resolved from `paths.architecture` in Step 0 (stripping the `/architecture` suffix gives the epic directory). If any exist, read the relevant `explore-complete.md` (or `explore-skipped.md`) first as the summary. Then read individual exploration files only if the summary references something needing more detail. If there are more than 5 files across those directories, read only the first 50 lines of each.
 
-3. Check for existing architecture files by running: `ls .project/conventions.md $ARCH_DIR/ 2>/dev/null` (where `$ARCH_DIR` is the resolved path from Step 0).
+3. Check for existing architecture files by running: `ls .goodplan/conventions.md $ARCH_DIR/ 2>/dev/null` (where `$ARCH_DIR` is the resolved path from Step 0).
 
-4. Load `.project/decisions/` following the Loading Protocol in `decisions-format.md`: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions inform architecture choices.
+4. Load `.goodplan/decisions/` following the Loading Protocol in `decisions-format.md`: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions inform architecture choices.
 
 Present a one-line summary to the user: "Found: idea.md [+ N brainstorm files, M research files, K active decisions]. Existing architecture files: [list or 'none']."
 
@@ -136,7 +136,7 @@ Follow calibration depth guidance in `../_shared/references/expertise-tracking.m
 
 ## Step 4 — Conventions Phase
 
-Goal: produce `.project/conventions.md`. Skip this step if conventions.md already exists and the user chose "Continue" in Step 3.
+Goal: produce `.goodplan/conventions.md`. Skip this step if conventions.md already exists and the user chose "Continue" in Step 3.
 
 1. Before drafting, identify the candidate tools, libraries, frameworks, and runtimes the project will likely use (from idea.md, exploration output, and your own knowledge). Spawn a sub-agent using the Agent tool to research current versions and recommendations. The sub-agent prompt should include the candidate list and instruct it to use WebSearch to verify for each item: (a) the latest stable version number, (b) whether it has been superseded by a better-maintained or more popular alternative for this use case, and (c) any recent breaking changes or deprecations worth noting. Wait for the sub-agent to return before proceeding.
 
@@ -148,7 +148,7 @@ Goal: produce `.project/conventions.md`. Skip this step if conventions.md alread
 
 5. When the draft is ready, present it for final approval using the AskUserQuestion tool with two options: "Looks good -- write it" and "I have more corrections".
    - If the user picks "I have more corrections", apply corrections and re-present. Then ask again with the same AskUserQuestion.
-   - If the user picks "Looks good -- write it" (or gives corrections AND approval in the same message), apply any final corrections, re-present the changed sections, then write `.project/conventions.md` using the Write tool. No additional confirmation needed.
+   - If the user picks "Looks good -- write it" (or gives corrections AND approval in the same message), apply any final corrections, re-present the changed sections, then write `.goodplan/conventions.md` using the Write tool. No additional confirmation needed.
 
 Distinguish this file from `architecture/conventions.md`: this file is project-level (tech stack, repo structure, coding style). The architecture one covers architectural patterns and boundaries.
 
@@ -159,7 +159,7 @@ Throughout Steps 4 through 8, when a durable decision emerges (see threshold in 
 Create decisions via CLI:
 
 ```bash
-echo '{"id":"<kebab-case-id>","domain":"<topic-area>","title":"<decision-title>","summary":"<brief-summary>"}' | goodplan decision:create --json
+echo '{"id":"<kebab-case-id>","domain":"<topic-area>","title":"<decision-title>","summary":"<brief-summary>"}' | gp decision:create --json
 ```
 
 The CLI handles directory creation and state management. Track all decisions written during this run and summarize them in Step 11 (Done Summary).
@@ -174,7 +174,7 @@ Goal: surface enough architectural structure for design-it-twice to generate mea
 2. **Depth-first Q&A** — ask one question at a time; pursue follow-ups immediately before moving to the next branch.
 3. **Track progress** — maintain in-memory resolved/open/deferred status; show progress table periodically (see protocol in reference file).
 4. **Calibrate depth** — match explanation detail to user expertise level.
-5. **Write decisions** — when a durable decision emerges, propose and write to `.project/decisions/` (check for deduplication per reference file).
+5. **Write decisions** — when a durable decision emerges, propose and write to `.goodplan/decisions/` (check for deduplication per reference file).
 6. **Check stopping criteria** — stop when subsystem boundaries, communication patterns, key constraints, and data ownership are all resolved.
 7. **Summarize for design-it-twice** — "Here's what we've established: [summary]. These are the major architectural areas where we have choices: [list]. Next: I'll generate multiple design options for each."
 
@@ -213,7 +213,7 @@ Before writing any files, run: `mkdir -p $ARCH_DIR/` (using the resolved archite
 For each file:
 
 1. Skip if the file already exists and the user chose "Continue" in Step 3. Offer to revisit if relevant.
-2. Draft content based on idea.md, exploration output, and conventions decisions from Step 4. For `architecture/conventions.md` specifically, synthesize decisions from `.project/conventions.md` into architectural patterns.
+2. Draft content based on idea.md, exploration output, and conventions decisions from Step 4. For `architecture/conventions.md` specifically, synthesize decisions from `.goodplan/conventions.md` into architectural patterns.
 3. **Present file context first**: State the file name, its purpose, and what decisions informed it before showing the draft. Example: "**File: data-model.md** — Defines the core data entities and relationships based on our earlier discussion of [topic]. Here's the draft:" Then ask: "What needs correcting or adding?"
 4. Iterate until the user is satisfied.
 5. Write the file using the Write tool before moving to the next one.
@@ -299,11 +299,11 @@ Use the Read tool to re-load `references/guidance.md` (relative to this skill's 
 
 Using the Project Context section format from `references/guidance.md` (the HTML comments in the format are instructions, not content to write into CLAUDE.md):
 
-1. Check which optional files actually exist by running: `ls .project/brainstorm/ .project/research/ .project/prototypes/ .project/learnings/ .project/sequencing.md 2>/dev/null`. Also check epic-level files if applicable: `ls $EPIC_DIR/research/ $EPIC_DIR/brainstorm/ 2>/dev/null`. Note: `sequencing.md` is written by later skills -- only reference it if it already exists. The `learnings/` directory is written by the CLI during slice/quest completion -- only reference it if it already exists and contains files. For first epic, add references to the epic architecture directory. For subsequent epics, note that the architecture is a proposal pending approval.
+1. Check which optional files actually exist by running: `ls .goodplan/brainstorm/ .goodplan/research/ .goodplan/prototypes/ .goodplan/learnings/ .goodplan/sequencing.md 2>/dev/null`. Also check epic-level files if applicable: `ls $EPIC_DIR/research/ $EPIC_DIR/brainstorm/ 2>/dev/null`. Note: `sequencing.md` is written by later skills -- only reference it if it already exists. The `learnings/` directory is written by the CLI during slice/quest completion -- only reference it if it already exists and contains files. For first epic, add references to the epic architecture directory. For subsequent epics, note that the architecture is a proposal pending approval.
 
 2. For "Also check" entries, only include directories that exist AND contain files (not empty directories).
 
-3. Build the Project Context section content, including only entries for files that exist. For each architecture file written in Step 8, add a reference line under the "Read these before doing any significant work" block with a brief description (e.g., `- .project/architecture/data-model.md -- entities, relationships, storage`). Only include files that actually exist.
+3. Build the Project Context section content, including only entries for files that exist. For each architecture file written in Step 8, add a reference line under the "Read these before doing any significant work" block with a brief description (e.g., `- .goodplan/architecture/data-model.md -- entities, relationships, storage`). Only include files that actually exist.
 
 4. Use the Read tool to read CLAUDE.md (to avoid overwriting unrelated content).
 
@@ -328,14 +328,14 @@ Reflect on the conversation: did it reveal new information about the user's expe
 **CRITICAL — Do this BEFORE the Done Summary.** Complete the architecture phase via CLI (no stdin required — content is already on disk):
 
 ```bash
-stdin: "" | goodplan submit-architecture --epic <name> --json
+stdin: "" | gp submit-architecture --epic <name> --json
 ```
 
 This transitions the epic from `defining-architecture` to `architecture-defined` and records the activity. The CLI handles all state management. If this step is skipped, the epic will be stuck in `defining-architecture` and downstream skills cannot proceed.
 
 ### For non-epic scope
 
-When no active epic exists (project-level architecture), there is no CLI phase transition. The architecture files written to `.project/architecture/` serve as the completion record.
+When no active epic exists (project-level architecture), there is no CLI phase transition. The architecture files written to `.goodplan/architecture/` serve as the completion record.
 
 ## Step 11 — Done Summary
 

@@ -16,7 +16,7 @@ This review covers multiple files. Prefix each issue with the filename it applie
 ## Codebase Exploration Focus
 
 Before evaluating, use Grep, Glob, and Read tools to explore the codebase. Focus on:
-- Architecture files (`.project/architecture/`) — subsystem boundaries, dependency graph, data flow
+- Architecture files (`.goodplan/architecture/`) — subsystem boundaries, dependency graph, data flow
 - Existing subsystem definitions and their boundaries
 - How the architecture describes inter-subsystem communication
 

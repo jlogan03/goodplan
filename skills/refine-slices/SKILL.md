@@ -3,12 +3,12 @@ name: refine-slices
 description: >
   Refines slice definitions, sequencing, and goal clarity. When an active
   epic exists, operates on the epic's slices/ directory. Falls
-  back to .project/slices/ when no active epic. Runs after /create-slices
+  back to .goodplan/slices/ when no active epic. Runs after /create-slices
   to iteratively improve slice quality. Triggers include: 'review slices', 'improve
   slice goals', 'slice quality', 'are these slices good', 'refine slices', 'are my
   slices well-ordered', 'check slice dependencies', 'slice ordering review', 'improve
   slice sequencing', 'reorder slices'.
-requires: goodplan >= 1.0.0
+requires: gp >= 1.0.0
 ---
 
 # Refine Slices
@@ -24,21 +24,21 @@ Iteratively improve slice goal definitions and sequencing by spawning specialize
 | **Early exit** | All reviewers >= 8 after minimum 3 iterations |
 | **Max iterations** | 4 (expect 2-3 typically) |
 | **Sub-agent prompts** | Bootstrap and synthesis: `../refine-plan/references/sub-agent-prompts.md`. Editor only: `references/sub-agent-prompts.md` (local) |
-| **Working directory** | In-place working copies alongside originals (e.g., `$SLICES_ROOT/01-user-auth/goal-refining.md`) plus `sequencing-refining.md` alongside `sequencing.md`. A manifest lists all working copy full paths. `$SLICES_ROOT` is `.project/slices/` (top-level) or `.project/epics/<name>/slices/` (epic-scoped, where `<name>` comes from `goodplan status --json` → `.activeEpic.name`). |
+| **Working directory** | In-place working copies alongside originals (e.g., `$SLICES_ROOT/01-user-auth/goal-refining.md`) plus `sequencing-refining.md` alongside `sequencing.md`. A manifest lists all working copy full paths. `$SLICES_ROOT` is `.goodplan/slices/` (top-level) or `.goodplan/epics/<name>/slices/` (epic-scoped, where `<name>` comes from `gp status --json` → `.activeEpic.name`). |
 | **Run directory** | `$SLICES_ROOT/slices-refining/` (holding `round-N/reviews/`, `merged.md`) |
 | **review_context** | `"slice goal definitions and sequencing"` |
 
 ## Scope Resolution
 
-**Epic detection**: Before beginning, load `../_shared/references/epic-conventions.md` for epic directory structure and conventions. Query `goodplan status --json` and check `.activeEpic`. If an active epic exists, set `$SLICES_ROOT` to `.project/epics/<activeEpic.name>/slices/`. If no active epic, use `.project/slices/`. All paths below use `$SLICES_ROOT` as the base. When epic-scoped, also load the epic's `goal.md` and `architecture/` as additional context for refinement.
+**Epic detection**: Before beginning, load `../_shared/references/epic-conventions.md` for epic directory structure and conventions. Query `gp status --json` and check `.activeEpic`. If an active epic exists, set `$SLICES_ROOT` to `.goodplan/epics/<activeEpic.name>/slices/`. If no active epic, use `.goodplan/slices/`. All paths below use `$SLICES_ROOT` as the base. When epic-scoped, also load the epic's `goal.md` and `architecture/` as additional context for refinement.
 
 ## Scope Exclusion
 
-**IMPORTANT**: Side quest `goal.md` files (`.project/side-quests/*/goal.md`) are explicitly excluded from this skill. Only slice goal files under `.project/slices/` or `epics/<name>/slices/` (where `<name>` is the active epic name from `goodplan status --json`) are in scope. When discovering files, filter these out before creating working copies.
+**IMPORTANT**: Side quest `goal.md` files (`.goodplan/side-quests/*/goal.md`) are explicitly excluded from this skill. Only slice goal files under `.goodplan/slices/` or `epics/<name>/slices/` (where `<name>` is the active epic name from `gp status --json`) are in scope. When discovering files, filter these out before creating working copies.
 
 ## Decisions Context
 
-Read `../_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load `.project/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions provide context for slice review.
+Read `../_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load `.goodplan/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions provide context for slice review.
 
 ## Reviewer Roles
 
@@ -63,26 +63,26 @@ Read `../_shared/references/cli-interaction.md` for CLI interaction conventions 
 Verify CLI availability and compatibility:
 
 ```bash
-goodplan --version --json
+gp --version --json
 ```
 
-If the command fails, stop: "The `goodplan` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
+If the command fails, stop: "The `gp` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
 
-If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill requires goodplan >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
+If the version doesn't satisfy `requires: gp >= 1.0.0`, stop: "This skill requires gp >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
 
 Resolve `$SLICES_ROOT` per the Scope Resolution section above.
 
 Read all relevant project state:
-- `.project/idea.md`
-- `.project/architecture/` (all files)
+- `.goodplan/idea.md`
+- `.goodplan/architecture/` (all files)
 - For epic-scoped: the epic's `goal.md` and `architecture/` (target architecture)
-- `.project/conventions.md`
-- `.project/decisions/` (following Loading Protocol)
-- Learnings via `goodplan learning:list --json`
+- `.goodplan/conventions.md`
+- `.goodplan/decisions/` (following Loading Protocol)
+- Learnings via `gp learning:list --json`
 - `$SLICES_ROOT/sequencing.md`
 - All `$SLICES_ROOT/*/goal.md` files (excluding side quests)
 
-Also load `.project/architecture/_overview.md` and extract the `## Subsystem Maturity` table. If no maturity table exists, set `{maturity_summary}` to empty. Also read `../_shared/references/maturity-legend.md` and store its content as `{maturity_legend}`. If maturity data was found, display which slices have `## Maturity Note` sections in their goal.md and which may be missing them — this gives the user early visibility before the review loop starts. When filling shared preamble placeholders for reviewer sub-agents (Step 3), include `{maturity_summary}` and `{maturity_legend}`. When `{maturity_summary}` is empty, omit the `## Subsystem Maturity` section from the shared preamble entirely.
+Also load `.goodplan/architecture/_overview.md` and extract the `## Subsystem Maturity` table. If no maturity table exists, set `{maturity_summary}` to empty. Also read `../_shared/references/maturity-legend.md` and store its content as `{maturity_legend}`. If maturity data was found, display which slices have `## Maturity Note` sections in their goal.md and which may be missing them — this gives the user early visibility before the review loop starts. When filling shared preamble placeholders for reviewer sub-agents (Step 3), include `{maturity_summary}` and `{maturity_legend}`. When `{maturity_summary}` is empty, omit the `## Subsystem Maturity` section from the shared preamble entirely.
 
 ### Step 1: Verify Goal Clarity
 
@@ -129,7 +129,7 @@ On loop exit:
 For epic-scoped refinement, submit the completed refinement via CLI. The CLI handles state transitions and activity recording:
 
 ```bash
-echo '{"scores":{"overall":<min_score>}}' | goodplan submit-refine-slices --epic <name> --json
+echo '{"scores":{"overall":<min_score>}}' | gp submit-refine-slices --epic <name> --json
 ```
 
 For non-epic scopes, no CLI mutation is needed — the renamed artifacts serve as the completion record.

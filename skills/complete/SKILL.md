@@ -10,7 +10,7 @@ description: >
   'complete slice', 'slice is done', 'we're done with this slice',
   'complete epic', 'finish epic', 'epic is done',
   'wrap up the epic', 'close out the epic', 'epic complete'.
-requires: goodplan >= 1.0.0
+requires: gp >= 1.0.0
 ---
 
 # Complete Slice
@@ -22,18 +22,18 @@ Reflection point after implementation. Reads all slice artifacts, synthesizes le
 Resolve scope variables used throughout all subsequent steps:
 
 1. **Determine `$SCOPE_TYPE`**: one of `epic-slice`, `top-level-slice`, `side-quest`, or `epic`.
-   - Use `goodplan status --json`. Check `.activeSlice` and `.activeEpic` fields:
+   - Use `gp status --json`. Check `.activeSlice` and `.activeEpic` fields:
      - If `.activeSlice` exists and `.activeEpic` exists → `epic-slice`
      - If `.activeSlice` exists and no `.activeEpic` → `top-level-slice`
      - If no `.activeSlice` and `.activeEpic` exists → `epic` (or check argument)
      - If argument is a quest name → `side-quest`
 2. **Set `$SLICES_DIR`**:
-   - `epic-slice` → `.project/epics/<epic-name>/slices/` (slices live under their parent epic)
-   - `epic` → `.project/epics/<epic-name>/slices/` (to scan for epic's slices)
-   - `top-level-slice` → `.project/slices/`
+   - `epic-slice` → `.goodplan/epics/<epic-name>/slices/` (slices live under their parent epic)
+   - `epic` → `.goodplan/epics/<epic-name>/slices/` (to scan for epic's slices)
+   - `top-level-slice` → `.goodplan/slices/`
    - `side-quest` → N/A (no slices directory)
 3. **Set `$EPIC_DIR`** (epic-slice and epic):
-   - `.project/epics/<epic-name>/` — derive epic name from `status --json` `.activeEpic` field.
+   - `.goodplan/epics/<epic-name>/` — derive epic name from `status --json` `.activeEpic` field.
    - Load `../_shared/references/epic-conventions.md` for epic directory structure, two-layer architecture model, and (for epic scope) archive numbering and completion conventions.
 
 These variables are referenced in Steps 2–10b. Resolve them as soon as the scope is identified (Step 1, sub-step 1–3).
@@ -43,12 +43,12 @@ These variables are referenced in Steps 2–10b. Resolve them as soon as the sco
 ### Version Check
 
 ```bash
-goodplan --version --json
+gp --version --json
 ```
 
-Verify the reported version satisfies `requires: goodplan >= 1.0.0`. If the CLI is not found or the version is too old:
+Verify the reported version satisfies `requires: gp >= 1.0.0`. If the CLI is not found or the version is too old:
 
-> The `goodplan` CLI is required (>= 1.0.0) but was not found or is incompatible. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH.
+> The `gp` CLI is required (>= 1.0.0) but was not found or is incompatible. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH.
 
 **Stop the skill.** Do not fall back to direct file access.
 
@@ -61,7 +61,7 @@ Use the Read tool to load `references/guidance.md` (relative to this skill's dir
 Also load `../_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load decisions via CLI:
 
 ```bash
-goodplan state --json --query '.["decisions.jsonl"]'
+gp state --json --query '.["decisions.jsonl"]'
 ```
 
 Follow the Loading Protocol: skip superseded, flag any with `revisiting` status to the user. Active decisions provide context for architecture comparison and learnings synthesis.
@@ -69,11 +69,11 @@ Follow the Loading Protocol: skip superseded, flag any with `revisiting` status 
 ## Step 2 — Determine Scope
 
 1. **Argument passed**: resolve name (match against known entity types via `slice:show`, `quest:show`, or `epic:show`).
-2. **No argument**: use `goodplan status --json` — check `.activeSlice` field for the active slice.
-3. **Auto-detect**: use `goodplan status --json` to check active entities. If no active slice, query for implementation-complete scopes:
+2. **No argument**: use `gp status --json` — check `.activeSlice` field for the active slice.
+3. **Auto-detect**: use `gp status --json` to check active entities. If no active slice, query for implementation-complete scopes:
 
 ```bash
-goodplan state --json --query '[.slices | to_entries[] | select(.value.status == "implementation-complete")] | map(.key)'
+gp state --json --query '[.slices | to_entries[] | select(.value.status == "implementation-complete")] | map(.key)'
 ```
 
 For each candidate, check that `completion/learnings.md` does NOT exist (re-entry detection). Note: `stat` on LLM-owned `completion/` artifacts is permitted — the CLI has no `completion` field in `artifacts`, so this is the only way to detect partial completion.
@@ -84,17 +84,17 @@ stat $SLICES_DIR/<name>/completion/learnings.md
 
 If `stat` fails (file not found), the scope is eligible for fresh completion. If `stat` succeeds, the scope has partial completion — offer to resume (see re-entry check below).
 
-After scanning slices, scan for epic completion readiness: check if all slices under the epic are completed or abandoned using `goodplan slice:list --json` and checking status values.
+After scanning slices, scan for epic completion readiness: check if all slices under the epic are completed or abandoned using `gp slice:list --json` and checking status values.
 
 4. **Ambiguous**: use AskUserQuestion to choose.
 5. **Resolve Step 0 variables**: Once scope is identified, resolve `$SCOPE_TYPE`, `$SLICES_DIR`, and `$EPIC_DIR` per Step 0.
-6. **Verify implementation**: For slices/quests: use `goodplan slice:show --slice <name> --json` or `goodplan quest:show --quest <name> --json`. Check that `status` is `implementation-complete`. The `artifacts` object uses boolean flags: `{ goal, exploreComplete, plan, planRefined, implementation, abandoned }`. Confirm `planRefined === true` and `implementation === true`. If status is not `implementation-complete`, tell the user the slice doesn't appear to be implemented yet and stop.
+6. **Verify implementation**: For slices/quests: use `gp slice:show --slice <name> --json` or `gp quest:show --quest <name> --json`. Check that `status` is `implementation-complete`. The `artifacts` object uses boolean flags: `{ goal, exploreComplete, plan, planRefined, implementation, abandoned }`. Confirm `planRefined === true` and `implementation === true`. If status is not `implementation-complete`, tell the user the slice doesn't appear to be implemented yet and stop.
 7. **Re-entry check**: For slices/quests: `stat <slice-dir>/completion/learnings.md`. If it exists, use AskUserQuestion: "Revise existing learnings / Skip to architecture review / Cancel". If partial state (learnings written but architecture review pending), offer to resume from where it stopped. For epics: check for `$EPIC_DIR/completion/learnings.md` (learnings done) and `$EPIC_DIR/completion/architecture-updates.md` (reconciliation done). If learnings exist but no architecture-updates → resume at reconciliation. If both exist → resume at artifact promotion. If re-entry applies, skip the guardrail (sub-step 8) and proceed.
-8. **Epic guardrail** (first-time completion only — skipped if re-entry detected above): An epic is completion-ready ONLY if all slices are completed or abandoned. Use `goodplan slice:list --json` and verify every slice has `status === "completed"` or `status === "abandoned"`. If any non-terminal slices remain, list them and stop.
+8. **Epic guardrail** (first-time completion only — skipped if re-entry detected above): An epic is completion-ready ONLY if all slices are completed or abandoned. Use `gp slice:list --json` and verify every slice has `status === "completed"` or `status === "abandoned"`. If any non-terminal slices remain, list them and stop.
 
 ## Step 3 — Load Artifacts
 
-Also load `.project/conventions.md` if it exists — project conventions inform learnings synthesis and architecture comparison.
+Also load `.goodplan/conventions.md` if it exists — project conventions inform learnings synthesis and architecture comparison.
 
 Read all implementation artifacts for the scope (skip missing). These are LLM-owned markdown — direct reads are allowed:
 
@@ -104,22 +104,22 @@ Read all implementation artifacts for the scope (skip missing). These are LLM-ow
 4. `refinement/` — last round's `merged.md`
 5. `research/` — scan for research files
 6. `after-implementation-fixes-and-polish.md`
-7. `.project/architecture/` — current architecture for comparison
+7. `.goodplan/architecture/` — current architecture for comparison
 8. Existing decisions (already loaded in Step 1 via CLI)
 9. For epic slices: the epic's `architecture/` directory (target architecture for alignment verification)
 
 For activity-log context (e.g., recent activity, signal tracking):
 
 ```bash
-goodplan state --json --query '.["activity-log.jsonl"] | .[-10:]'
+gp state --json --query '.["activity-log.jsonl"] | .[-10:]'
 ```
 
 For entity details:
 
 ```bash
-goodplan slice:show --slice <name> --json
+gp slice:show --slice <name> --json
 # or
-goodplan epic:show --epic <name> --json
+gp epic:show --epic <name> --json
 ```
 
 Note: `slice:show` artifacts are boolean flags (`{ goal, exploreComplete, plan, planRefined, implementation, abandoned }`). `epic:show` artifacts extend this with additional fields (`{ goal, exploreComplete, architectureDefined, slicesDefined, abandoned, implementation: false, plan: false, planRefined: false }` — implementation/plan/planRefined are always `false` for epics since slices own those). Neither includes a `completion` field.
@@ -129,7 +129,7 @@ Note: `slice:show` artifacts are boolean flags (`{ goal, exploreComplete, plan, 
 - All `$EPIC_DIR/slices/*/completion/architecture-updates.md` (per-slice arch updates)
 - `$EPIC_DIR/goal.md` (epic goal)
 - `$EPIC_DIR/architecture/` (target architecture)
-- `.project/architecture/` (current reality — top-level)
+- `.goodplan/architecture/` (current reality — top-level)
 - `$EPIC_DIR/research/`, `brainstorm/`, `prototypes/` (for promotion step)
 
 Display using the Context Load Summary Template from `../_shared/references/output-templates.md`. For the `**Context**` line, use scope-dependent format: epic scope: "Epic [name]: {N} slices completed, {M} research files, {K} brainstorm files, {J} prototypes." Slice/quest scope: "Plan ({N} phases), {M} implementation reviews, {K} research files, architecture ({N} files)."
@@ -141,10 +141,10 @@ Follow calibration depth guidance in `../_shared/references/expertise-tracking.m
 First, review architecture files against what was built (quick scan for divergences — the formal propose-and-approve process is in Step 6). Note divergences found here for Step 6; reference them in the learnings draft where they affected implementation. This informs learnings. Then run `mkdir -p <scope-dir>/completion/` and draft `completion/learnings.md`. (Note: `completion/` is a skill-owned LLM artifact directory, not a CLI-managed entity directory; direct `mkdir` and `stat` operations are permitted here — the CLI has no `completion` field in `artifacts`.)
 
 The scope directory is derived from the entity name using deterministic conventions:
-- Epic slices: `.project/epics/<epic>/slices/<name>/` (nested under parent epic)
-- Top-level slices: `.project/slices/<name>/` (no-active-epic fallback)
-- Quests: `.project/quests/<name>/` (if applicable)
-- Epics: `.project/epics/<name>/`
+- Epic slices: `.goodplan/epics/<epic>/slices/<name>/` (nested under parent epic)
+- Top-level slices: `.goodplan/slices/<name>/` (no-active-epic fallback)
+- Quests: `.goodplan/quests/<name>/` (if applicable)
+- Epics: `.goodplan/epics/<name>/`
 
 Completion artifacts go to `<scope-dir>/completion/`.
 
@@ -179,27 +179,27 @@ Re-load `references/guidance.md` (relative to this skill's directory) for the le
 
 ## Step 6 — Propose Architecture Updates
 
-Re-read `.project/architecture/` files (they may have left context in a long session). Re-load `references/guidance.md` (session may be long). Check for concurrent work using:
+Re-read `.goodplan/architecture/` files (they may have left context in a long session). Re-load `references/guidance.md` (session may be long). Check for concurrent work using:
 
 ```bash
-goodplan status --json
+gp status --json
 ```
 
 If other slices/quests are active (`.activeSlice` or `.activeQuest` is non-null and different from the current scope), warn that architecture changes may conflict (informational only).
 
 **Epic slice handling**: When completing an epic slice, follow the two-layer architecture model (see `../_shared/references/epic-conventions.md`):
 - **(a) Verify alignment**: Compare the implementation against the epic's `architecture/` (the target) to verify the slice built what was intended. Surface any divergences from the target as potential issues.
-- **(b) Propose updates to top-level**: Propose updates to `.project/architecture/` (current reality) to reflect what was actually built. These are incremental per-slice updates.
+- **(b) Propose updates to top-level**: Propose updates to `.goodplan/architecture/` (current reality) to reflect what was actually built. These are incremental per-slice updates.
 - **(c) Leave epic architecture unchanged**: The epic's `architecture/` represents the target state and is not modified during slice completion. `/complete` at epic completion handles the final reconciliation.
 
 **For epic scope** (`$SCOPE_TYPE = epic`): reconcile the two architecture layers instead of the per-slice comparison:
-- Compare `$EPIC_DIR/architecture/` (target) against `.project/architecture/` (current reality)
+- Compare `$EPIC_DIR/architecture/` (target) against `.goodplan/architecture/` (current reality)
 - For each divergence: classify as (a) incomplete work, (b) intentional scope reduction, or (c) evolved understanding
 - Use AskUserQuestion for each: "Mark as incomplete work (propose side quest) / Document as intentional scope reduction / Update top-level architecture to match target / Skip"
 - Write `$EPIC_DIR/completion/architecture-updates.md` with reconciliation results
 - If "incomplete work" items exist, draft side quest `goal.md` proposals (do NOT auto-create)
 
-**For slices/quests**: Compare what was actually built (from implementation artifacts) against canonical architecture files (top-level `.project/architecture/`, and for epic slices also the epic's `architecture/`). For each divergence:
+**For slices/quests**: Compare what was actually built (from implementation artifacts) against canonical architecture files (top-level `.goodplan/architecture/`, and for epic slices also the epic's `architecture/`). For each divergence:
 
 1. Explain what changed and why
 2. Assess impact on other subsystems
@@ -208,7 +208,7 @@ If other slices/quests are active (`.activeSlice` or `.activeQuest` is non-null 
 5. For approved updates: edit the relevant architecture file, then create a decision via CLI:
 
 ```bash
-echo '{"id":"<decision-id>","domain":"<domain>","title":"<title>","summary":"<summary>"}' | goodplan decision:create --json
+echo '{"id":"<decision-id>","domain":"<domain>","title":"<title>","summary":"<summary>"}' | gp decision:create --json
 ```
 
 Use `Context: complete for <scope>` in the summary field.
@@ -223,7 +223,7 @@ If architecture updates revealed additional learnings, append to `completion/lea
 
 **Skip for epic scope** (`$SCOPE_TYPE = epic`) — epic completion is a meta-operation, not an implementation. Project-health updates happen per-slice.
 
-After architecture review, read `.project/project-health.md`. If it doesn't exist, create it using the template from `../_shared/references/project-health-format.md`. If it exists, update sections with new info (don't overwrite unrelated sections).
+After architecture review, read `.goodplan/project-health.md`. If it doesn't exist, create it using the template from `../_shared/references/project-health-format.md`. If it exists, update sections with new info (don't overwrite unrelated sections).
 
 Update each section from the current slice's artifacts:
 
@@ -250,18 +250,18 @@ Use AskUserQuestion for each finding: "Fix now (localized) / Propose side quest 
 
 Examine artifact directories for the last 3 completed slices. Discovery logic:
 
-1. **Discover completed scopes**: Scan for `.project/slices/*/completion/learnings.md`, `.project/epics/*/slices/*/completion/learnings.md`, `.project/side-quests/*/completion/learnings.md`, and `.project/quests/*/completion/learnings.md`
-2. **Derive scope values**: Strip `.project/` prefix and `/completion/learnings.md` suffix to get the scope path (e.g., `slices/my-slice`)
+1. **Discover completed scopes**: Scan for `.goodplan/slices/*/completion/learnings.md`, `.goodplan/epics/*/slices/*/completion/learnings.md`, `.goodplan/side-quests/*/completion/learnings.md`, and `.goodplan/quests/*/completion/learnings.md`
+2. **Derive scope values**: Strip `.goodplan/` prefix and `/completion/learnings.md` suffix to get the scope path (e.g., `slices/my-slice`)
 3. **Correlate with activity-log**: Use CLI to query activity-log entries:
 
 ```bash
-goodplan state --json --query '[.["activity-log.jsonl"][] | select(.phase == "complete-slice" or .phase == "complete")]'
+gp state --json --query '[.["activity-log.jsonl"][] | select(.phase == "complete-slice" or .phase == "complete")]'
 ```
 
 Match entries by `scope` field against derived scope values. Activity-log entry shape: `{ ts, phase, scope, status, summary, detail? }`.
 
 4. **Select window**: Take 3 most recent by timestamp
-5. **Count refinement effort**: Count `round-N/` directories under `<scope>/refinement/` for each scope (measures per-slice plan refinement quality). Note: rounds under `$SLICES_DIR/slices-refining/` (either `.project/slices/slices-refining/` or `.project/epics/<epic>/slices/slices-refining/`) measure slice *definition* quality (from refine-slices) — separate metric, do not mix.
+5. **Count refinement effort**: Count `round-N/` directories under `<scope>/refinement/` for each scope (measures per-slice plan refinement quality). Note: rounds under `$SLICES_DIR/slices-refining/` (either `.goodplan/slices/slices-refining/` or `.goodplan/epics/<epic>/slices/slices-refining/`) measure slice *definition* quality (from refine-slices) — separate metric, do not mix.
 
 Look for trends in:
 - **Refinement effort**: Count `round-N/` directories in `<scope>/refinement/`
@@ -275,9 +275,9 @@ If any metric is **strictly increasing** across all 3 data points (a < b < c), s
 
 1. Scan `$EPIC_DIR/research/`, `$EPIC_DIR/brainstorm/`, `$EPIC_DIR/prototypes/` for files and directories.
 2. If no artifacts exist, skip this step entirely.
-3. For each artifact, use AskUserQuestion: "Copy [artifact] to `.project/research/` (or `brainstorm/`, `prototypes/`)? / Skip"
+3. For each artifact, use AskUserQuestion: "Copy [artifact] to `.goodplan/research/` (or `brainstorm/`, `prototypes/`)? / Skip"
 4. Copy approved artifacts (not move — originals stay in the archived epic for context).
-5. Destination directories: `.project/research/`, `.project/brainstorm/`, `.project/prototypes/` — create with `mkdir -p` if they don't exist.
+5. Destination directories: `.goodplan/research/`, `.goodplan/brainstorm/`, `.goodplan/prototypes/` — create with `mkdir -p` if they don't exist.
 6. If a same-name file exists at the destination, prefix with `<epic-name>_`. If the prefixed name also exists, append a numeric suffix (`_2`, `_3`, etc.).
 
 ## Step 6f — Maturity Evaluation
@@ -286,17 +286,17 @@ If no subsystems touched by this slice/quest are at Developing, Maturing, or Fou
 
 Otherwise:
 
-1. **Re-read maturity data**: Extract the `## Subsystem Maturity` table from `.project/architecture/_overview.md`. Load `../_shared/references/maturity-conventions.md` for promotion/demotion criteria.
+1. **Re-read maturity data**: Extract the `## Subsystem Maturity` table from `.goodplan/architecture/_overview.md`. Load `../_shared/references/maturity-conventions.md` for promotion/demotion criteria.
 
 2. **For slice/side-quest scope** (`$SCOPE_TYPE != epic`): For each subsystem touched by this slice/quest:
    - **(a) Check promotion signals**: stability across recent slices, fitness functions in place, multiple dependents, generic design.
    - **(b) Check demotion signals**: new gaps discovered, fitness functions broken, confidence dropped.
    - **(c) Verify fitness functions**: extract fitness function test file paths from `plan-refined.md` tasks. For each path: verify the file exists AND contains at least one test assertion (search for common assertion keywords: `assert`, `expect`, `it`, `test`, or framework-specific equivalents like `.toBe(`, `assert_eq!`). If the file exists but appears to be a stub (no assertions), flag as partially implemented. If planned but missing entirely, the missing fitness function blocks promotion for that subsystem and is surfaced in the completion output. If no file path is extractable from the task text, search for test files matching the subsystem name in the expected test directories before concluding the file is absent.
    - **(d) Present each promotion/demotion suggestion**: show evidence, use AskUserQuestion with options `Promote to [level] / Defer / Skip` (or `Demote to [level] / Defer / Skip`).
-   - **(e) For approved changes**: update the maturity table in `.project/architecture/_overview.md`, write a decision via CLI:
+   - **(e) For approved changes**: update the maturity table in `.goodplan/architecture/_overview.md`, write a decision via CLI:
 
 ```bash
-echo '{"id":"<id>","domain":"architecture","title":"Promote/Demote <subsystem> from <old> to <new>","summary":"Evidence: ... Context: complete for <scope>"}' | goodplan decision:create --json
+echo '{"id":"<id>","domain":"architecture","title":"Promote/Demote <subsystem> from <old> to <new>","summary":"Evidence: ... Context: complete for <scope>"}' | gp decision:create --json
 ```
 
 3. **For epic scope** (`$SCOPE_TYPE = epic`): simplified evaluation — check only for promotions based on cross-slice stability. Do not check demotions (those were caught per-slice). For each subsystem touched by any epic slice, check if the subsystem has stabilized across all slices:
@@ -322,10 +322,10 @@ After updating: "Updated CLAUDE.md to reference new architecture files."
 **For slices/quests**: Discover unimplemented slices via CLI:
 
 ```bash
-goodplan slice:list --json
+gp slice:list --json
 ```
 
-Filter for slices with `status` not in `["completed", "abandoned"]`. For each, read the slice's `goal.md` directly (LLM-owned markdown) and the relevant `sequencing.md` (`.project/slices/sequencing.md` for top-level slices, or `.project/epics/<epic>/slices/sequencing.md` for epic slices). Assess:
+Filter for slices with `status` not in `["completed", "abandoned"]`. For each, read the slice's `goal.md` directly (LLM-owned markdown) and the relevant `sequencing.md` (`.goodplan/slices/sequencing.md` for top-level slices, or `.goodplan/epics/<epic>/slices/sequencing.md` for epic slices). Assess:
 
 1. Does anything we learned warrant updating this goal?
 2. Should ordering change based on what we now know?
@@ -366,7 +366,7 @@ Read back filesystem-accumulated results from `<scope-dir>/completion/` (learnin
 **For slices** (`$SCOPE_TYPE = epic-slice` or `top-level-slice`):
 
 ```bash
-echo '{"verificationPassed": true, "deferred": [<items>], "learnings": [<items>], "architectureDelta": [<items>]}' | goodplan slice:complete --slice <name> --json
+echo '{"verificationPassed": true, "deferred": [<items>], "learnings": [<items>], "architectureDelta": [<items>]}' | gp slice:complete --slice <name> --json
 ```
 
 Payload fields:
@@ -378,7 +378,7 @@ Payload fields:
 **For quests** (`$SCOPE_TYPE = side-quest`):
 
 ```bash
-echo '{"verificationPassed": true, "learnings": [<items>], "architectureDelta": [<items>]}' | goodplan quest:complete --quest <name> --json
+echo '{"verificationPassed": true, "learnings": [<items>], "architectureDelta": [<items>]}' | gp quest:complete --quest <name> --json
 ```
 
 Same as slice but no `deferred` field.
@@ -386,7 +386,7 @@ Same as slice but no `deferred` field.
 **For epics** (`$SCOPE_TYPE = epic`):
 
 ```bash
-echo '{"verificationResults": [{"index": 0, "passed": true, "notes": "..."}]}' | goodplan epic:complete --epic <name> --json
+echo '{"verificationResults": [{"index": 0, "passed": true, "notes": "..."}]}' | gp epic:complete --epic <name> --json
 ```
 
 Different shape — `epic:complete` does NOT accept `learnings` or `architectureDelta`. These must be handled before the epic completion call (Steps 4-6). The payload contains verification results only.

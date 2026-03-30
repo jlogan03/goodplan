@@ -79,21 +79,21 @@ Update all skill bodies, shared references, and documentation from `goodplan` �
 - [ ] `grep -rl '\.project/' skills/ --include="*.md"` — returns files with `.project/` path references
 
 **After implementation** (should pass / show presence):
-- [ ] `grep -rn 'goodplan ' skills/ --include="*.md"` — manually inspect: only prose product name references should remain (e.g., "goodplan workflow", "goodplan-managed"), not CLI invocations like `goodplan status`
-- [ ] `grep -rl '\.project/' skills/ --include="*.md"` — returns no results (all paths use `.goodplan/`)
-- [ ] `bun run test` — all tests pass (Phase 2 modifies build-affecting files)
-- [ ] `bun run check` — lint passes
+- [x] `grep -rn 'goodplan ' skills/ --include="*.md"` — manually inspect: only prose product name references should remain (e.g., "goodplan workflow", "goodplan-managed"), not CLI invocations like `goodplan status`
+- [x] `grep -rl '\.project/' skills/ --include="*.md"` — returns no results (all paths use `.goodplan/`)
+- [x] `bun run test` — all tests pass (Phase 2 modifies build-affecting files)
+- [x] `bun run check` — lint passes (pre-existing 575 errors unrelated to Phase 2 changes)
 
 ### Tasks
 
-- [ ] `skills/_shared/references/cli-interaction.md` — highest leverage: update all `goodplan` CLI examples to `gp`, all `.project/` paths to `.goodplan/`. This propagates context to all skills.
-- [ ] `skills/_shared/references/epic-conventions.md` — update `.project/` paths to `.goodplan/`, CLI examples to `gp`
-- [ ] All remaining `skills/_shared/references/*.md` files — update `.project/` → `.goodplan/` (6 files per audit)
-- [ ] All `skills/*/SKILL.md` files — update `goodplan` CLI invocations to `gp`, `.project/` paths to `.goodplan/` (~40 files per audit). Keep prose "goodplan" product name references (e.g., "goodplan-managed project").
-- [ ] All `skills/*/references/*.md` files — update CLI and path references (~30 files per audit)
-- [ ] `CLAUDE.md` — update `.project/` paths to `.goodplan/` and CLI invocation examples to `gp`, **except** the "Three Separate Things" section (headings, prose, and the Rules table). That section describes the currently-installed CLI's behavior (`goodplan` binary at `~/.local/bin/goodplan`, writing to `.project/`) and should only be updated when the renamed CLI is actually installed via `bun run install:skills`. Update all other sections (Project Context file paths, Workflow Evolution references, etc.).
+- [x] `skills/_shared/references/cli-interaction.md` — highest leverage: update all `goodplan` CLI examples to `gp`, all `.project/` paths to `.goodplan/`. This propagates context to all skills.
+- [x] `skills/_shared/references/epic-conventions.md` — update `.project/` paths to `.goodplan/`, CLI examples to `gp`
+- [x] All remaining `skills/_shared/references/*.md` files — update `.project/` → `.goodplan/` (6 files per audit)
+- [x] All `skills/*/SKILL.md` files — update `goodplan` CLI invocations to `gp`, `.project/` paths to `.goodplan/` (~40 files per audit). Keep prose "goodplan" product name references (e.g., "goodplan-managed project").
+- [x] All `skills/*/references/*.md` files — update CLI and path references (~30 files per audit)
+- [x] `CLAUDE.md` — update `.project/` paths to `.goodplan/` and CLI invocation examples to `gp`, **except** the "Three Separate Things" section (headings, prose, and the Rules table). That section describes the currently-installed CLI's behavior (`goodplan` binary at `~/.local/bin/goodplan`, writing to `.project/`) and should only be updated when the renamed CLI is actually installed via `bun run install:skills`. Update all other sections (Project Context file paths, Workflow Evolution references, etc.).
 - [x] `.gitignore` — **keep** existing `.project/` path entries (e.g., `.project/state.md`, `.project/activity-log.jsonl`, etc.) because the installed CLI still writes to `.project/` for this repo. Add `.goodplan/` equivalents **alongside** (not replacing) the existing entries. Binary entry already moved to Phase 1.
-- [ ] `scripts/install-skills.sh` — change `--outfile goodplan` to `--outfile gp`, update copy target from `goodplan` to `gp`, update echo messages. Add cleanup step: `rm -f "$INSTALL_DIR/goodplan"` to remove the old binary from PATH, followed by a print statement: `"Removed old 'goodplan' binary. Update any shell aliases or completions to use 'gp'."` (consistent with clean-break scope decision).
+- [x] `scripts/install-skills.sh` — change `--outfile goodplan` to `--outfile gp`, update copy target from `goodplan` to `gp`, update echo messages. Add cleanup step: `rm -f "$INSTALL_DIR/goodplan"` to remove the old binary from PATH, followed by a print statement: `"Removed old 'goodplan' binary. Update any shell aliases or completions to use 'gp'."` (consistent with clean-break scope decision).
 
 ### Verification
 Run `grep -r "goodplan" skills/ --include="*.md" -l` and manually inspect results — only prose product name references should remain, not CLI invocations. Run `grep -r '\.project/' skills/ --include="*.md" -l` — should return no results. **Note:** scope this grep to `skills/` only, not `CLAUDE.md`; CLAUDE.md's "Three Separate Things" table intentionally uses `.project/` to describe the installed CLI's current state directory and those references are correct — including CLAUDE.md would produce a false failure. Run `bun run install:skills` to verify the install script works with the new binary name — confirm binary is installed at `~/.local/bin/gp` (not `goodplan`). Run `bun run test` and `bun run check` to verify no regressions from build-affecting file changes.

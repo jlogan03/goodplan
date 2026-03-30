@@ -25,7 +25,7 @@ Do NOT rely on training data for version information — it is likely outdated.
 
 ## 3. Deduplicate
 
-Check existing `<scope_dir>/research/` and `.project/research/` files before spawning research. Skip if the file exists and its version matches the current lockfile or manifest. Re-fetch only when the version has changed or the file is missing.
+Check existing `<scope_dir>/research/` and `.goodplan/research/` files before spawning research. Skip if the file exists and its version matches the current lockfile or manifest. Re-fetch only when the version has changed or the file is missing.
 
 ## 4. Research Output
 

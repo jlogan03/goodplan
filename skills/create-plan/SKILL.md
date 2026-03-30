@@ -8,7 +8,7 @@ description: >
   Requires idea.md + goal.md for the slice.
   Common triggers: 'create a plan', 'write a plan', 'plan this slice', 'let's plan',
   'create plan', 'make a plan for'.
-requires: goodplan >= 1.0.0
+requires: gp >= 1.0.0
 ---
 
 # Create Plan
@@ -22,12 +22,12 @@ Read `../_shared/references/cli-interaction.md` for CLI interaction conventions 
 Verify CLI availability and compatibility:
 
 ```bash
-goodplan --version --json
+gp --version --json
 ```
 
-If the command fails (not found, non-zero exit), stop: "The `goodplan` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
+If the command fails (not found, non-zero exit), stop: "The `gp` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
 
-If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill requires goodplan >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
+If the version doesn't satisfy `requires: gp >= 1.0.0`, stop: "This skill requires gp >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
 
 ## Step 1 — Load References
 
@@ -39,11 +39,11 @@ Use the Read tool to load (paths relative to this skill's directory):
 
 ## Step 2 — Determine Scope
 
-1. **Argument passed**: if a path, use its parent directory as scope (works for `slices/`, `side-quests/`, and `epics/<name>/slices/`). If a name, resolve via `goodplan status --json` → `.activeEpic` to find the epic name, then check `.project/epics/<name>/slices/`, `.project/slices/`, or `.project/side-quests/`.
+1. **Argument passed**: if a path, use its parent directory as scope (works for `slices/`, `side-quests/`, and `epics/<name>/slices/`). If a name, resolve via `gp status --json` → `.activeEpic` to find the epic name, then check `.goodplan/epics/<name>/slices/`, `.goodplan/slices/`, or `.goodplan/side-quests/`.
 
-2. **No argument**: query `goodplan status --json`. Check `.activeSlice` for the active slice, `.activeQuest` for the active quest. These fields are `{ name: string, status: string } | undefined` — check for presence, not null. If `.activeSlice` is present and `.activeEpic` exists, use `.project/epics/<activeEpic.name>/slices/<activeSlice.name>/`; if `.activeSlice` is present but no `.activeEpic`, use `.project/slices/<activeSlice.name>/`. If `.activeQuest` is present, use `.project/side-quests/<activeQuest.name>/`.
+2. **No argument**: query `gp status --json`. Check `.activeSlice` for the active slice, `.activeQuest` for the active quest. These fields are `{ name: string, status: string } | undefined` — check for presence, not null. If `.activeSlice` is present and `.activeEpic` exists, use `.goodplan/epics/<activeEpic.name>/slices/<activeSlice.name>/`; if `.activeSlice` is present but no `.activeEpic`, use `.goodplan/slices/<activeSlice.name>/`. If `.activeQuest` is present, use `.goodplan/side-quests/<activeQuest.name>/`.
 
-3. **No argument and no active slice/quest**: use `goodplan status --json` → `.activeEpic` to determine the epic name (if any). If an active epic exists, scan `.project/epics/<name>/slices/` for the first directory with `goal.md` AND (`explore-complete.md` or `explore-skipped.md`) but no `plan.md`/`plan/`. If no active epic, scan `.project/slices/`. If none found, fall back to slices with `goal.md` but no explore marker — use AskUserQuestion: "This slice hasn't completed exploration — plan it anyway?" If still ambiguous, use AskUserQuestion to choose.
+3. **No argument and no active slice/quest**: use `gp status --json` → `.activeEpic` to determine the epic name (if any). If an active epic exists, scan `.goodplan/epics/<name>/slices/` for the first directory with `goal.md` AND (`explore-complete.md` or `explore-skipped.md`) but no `plan.md`/`plan/`. If no active epic, scan `.goodplan/slices/`. If none found, fall back to slices with `goal.md` but no explore marker — use AskUserQuestion: "This slice hasn't completed exploration — plan it anyway?" If still ambiguous, use AskUserQuestion to choose.
 
 4. Read the scope's `goal.md`. If absent, tell the user and stop.
 
@@ -53,18 +53,18 @@ Use the Read tool to load (paths relative to this skill's directory):
 
 Read (skip missing):
 
-1. `.project/idea.md`
-2. `.project/conventions.md`
+1. `.goodplan/idea.md`
+2. `.goodplan/conventions.md`
 3. **Load architecture** (scope-dependent):
-   - **Epic slices**: Load the epic's own `architecture/` as primary (target state), `.project/architecture/` as secondary (current reality).
-   - **Side quests**: Load `.project/architecture/` as primary. If an active epic exists (check `goodplan status --json` → `.activeEpic`), read its architecture at `.project/epics/<activeEpic.name>/architecture/_overview.md` and present: "Planning against current architecture. Active epic [name] is targeting [brief summary] — check for compatibility."
-   - **No active epic**: Load `.project/architecture/` only.
+   - **Epic slices**: Load the epic's own `architecture/` as primary (target state), `.goodplan/architecture/` as secondary (current reality).
+   - **Side quests**: Load `.goodplan/architecture/` as primary. If an active epic exists (check `gp status --json` → `.activeEpic`), read its architecture at `.goodplan/epics/<activeEpic.name>/architecture/_overview.md` and present: "Planning against current architecture. Active epic [name] is targeting [brief summary] — check for compatibility."
+   - **No active epic**: Load `.goodplan/architecture/` only.
    - For whichever architecture directory is primary: start with `_overview.md`. If more than 8 files, read `_overview.md` and `conventions.md` in full, first 30 lines of each remaining file.
 4. **Maturity extraction**: Extract the `## Subsystem Maturity` table from the primary architecture's `_overview.md`. If no maturity table exists, skip maturity-aware behavior in Step 4. Also check for a `## Maturity Note` section in the loaded `goal.md` — treat this as an additional maturity signal (written by `/create-slices` for slices touching maturing+ subsystems).
-5. Load learnings via CLI: `goodplan learning:list --json`
-6. **Sequencing**: If the scope is an epic slice, load `.project/epics/<epicName>/slices/sequencing.md` (where `<epicName>` comes from `goodplan status --json` → `.activeEpic.name`). If no active epic, load `.project/slices/sequencing.md`.
+5. Load learnings via CLI: `gp learning:list --json`
+6. **Sequencing**: If the scope is an epic slice, load `.goodplan/epics/<epicName>/slices/sequencing.md` (where `<epicName>` comes from `gp status --json` → `.activeEpic.name`). If no active epic, load `.goodplan/slices/sequencing.md`.
 7. Other slice `goal.md` files — for dependency and ordering context
-8. Existing research: `.project/research/` (project-level) and scope's `research/`
+8. Existing research: `.goodplan/research/` (project-level) and scope's `research/`
 9. Scope's `brainstorm/` directories
 10. **Test infrastructure detection**: Check for test directories (`test/`, `tests/`, `__tests__/`, `spec/`), test config files (`jest.config.*`, `vitest.config.*`, `pytest.ini`, `pyproject.toml` with `[tool.pytest]`, `.mocharc.*`, `karma.conf.*`), and test scripts in `package.json`. Record whether formal test infrastructure exists — this informs Expected Behavior guidance in Step 4.
 
@@ -100,7 +100,7 @@ For each phase:
 
    Then lead with outcome questions: "What should be observable when this phase is done that isn't true now?" and "How would you verify that right now, before any code is written?" Then ask about implementation approach, technology choices, integration points, and error handling.
 2. Follow up immediately if answers raise new questions.
-3. **Research dependencies** as they surface: check `.project/research/` and scope's `research/` first. Only research what's new or stale. Spawn sub-agents using the Agent tool (model: "opus") with WebSearch and Context7 MCP tools. Save to scope's `research/` with header: `# <Topic>\n\nResearched: <date> | Source: <tool>\n\n---`. Present findings summary before incorporating.
+3. **Research dependencies** as they surface: check `.goodplan/research/` and scope's `research/` first. Only research what's new or stale. Spawn sub-agents using the Agent tool (model: "opus") with WebSearch and Context7 MCP tools. Save to scope's `research/` with header: `# <Topic>\n\nResearched: <date> | Source: <tool>\n\n---`. Present findings summary before incorporating.
 4. After each phase, show progress using this template and offer a natural pause point:
 
    ```
@@ -126,7 +126,7 @@ Use the maturity table (and any `## Maturity Note` from goal.md) to identify sub
 Throughout Steps 4a-4c, when a durable decision emerges (see threshold in `decisions-format.md`), propose the decision text to the user and confirm via AskUserQuestion before writing. Create decisions via CLI:
 
 ```bash
-echo '{"id":"<kebab-case-id>","domain":"<topic-area>","title":"<decision-title>","summary":"<brief-summary>"}' | goodplan decision:create --json
+echo '{"id":"<kebab-case-id>","domain":"<topic-area>","title":"<decision-title>","summary":"<brief-summary>"}' | gp decision:create --json
 ```
 
 The CLI handles directory creation and state management. Track all decisions written during this run and summarize them in Step 8 (Done Summary).
@@ -167,19 +167,19 @@ Reflect on the conversation: did it reveal new information about the user's expe
 
 ## Step 7 — Submit via CLI
 
-**CRITICAL — Do this BEFORE the Done Summary.** If the plan is under `.project/` and belongs to a slice or quest scope, use the appropriate CLI submit command. The CLI handles activity recording and state transitions. If this step is skipped, the slice/quest will be stuck in `planning` and downstream skills cannot proceed.
+**CRITICAL — Do this BEFORE the Done Summary.** If the plan is under `.goodplan/` and belongs to a slice or quest scope, use the appropriate CLI submit command. The CLI handles activity recording and state transitions. If this step is skipped, the slice/quest will be stuck in `planning` and downstream skills cannot proceed.
 
 For slice scope:
 ```bash
-stdin: "" | goodplan submit-plan --slice <name> --json
+stdin: "" | gp submit-plan --slice <name> --json
 ```
 
 For quest scope:
 ```bash
-stdin: "" | goodplan submit-plan --quest <name> --json
+stdin: "" | gp submit-plan --quest <name> --json
 ```
 
-If the plan is standalone (not under `.project/`), skip CLI mutation.
+If the plan is standalone (not under `.goodplan/`), skip CLI mutation.
 
 ## Step 8 — Done Summary
 

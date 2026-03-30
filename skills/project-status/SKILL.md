@@ -1,6 +1,6 @@
 ---
 name: project-status
-requires: goodplan >= 0.0.1
+requires: gp >= 0.0.1
 description: >
   Query project state via the goodplan CLI — including epic detection, slice progress, and side quests —
   and report the current phase, recent activity, and what to do next.
@@ -10,39 +10,39 @@ description: >
 
 # Project Status
 
-Query project state via the `goodplan` CLI and present a concise status report with the current phase, recent activity, and recommended next action. This is a **read-only skill** — it never mutates state.
+Query project state via the `gp` CLI and present a concise status report with the current phase, recent activity, and recommended next action. This is a **read-only skill** — it never mutates state.
 
-## Step 1 — Detect goodplan CLI and Project
+## Step 1 — Detect gp CLI and Project
 
 Two-stage detection:
 
 **Stage A — Binary exists:**
 
 ```bash
-goodplan --version --json
+gp --version --json
 ```
 
 If the command fails (not found, non-zero exit), tell the user:
 
-> The `goodplan` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH.
+> The `gp` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH.
 
 **Stop here** — do not fall back to direct file access.
 
 If the version does not satisfy `>= 0.0.1`, tell the user:
 
-> This skill requires goodplan >= 0.0.1 but found <version>. Upgrade the CLI.
+> This skill requires gp >= 0.0.1 but found <version>. Upgrade the CLI.
 
 **Stop here.**
 
 **Stage B — Project exists:**
 
 ```bash
-goodplan status --json
+gp status --json
 ```
 
 If this returns a `DATA_NO_PROJECT` error (exit code 1), tell the user:
 
-> No `.project/` directory found — run `/create-epic` to set up structured project planning.
+> No `.goodplan/` directory found — run `/create-epic` to set up structured project planning.
 
 **Stop here** — do not continue with subsequent steps.
 
@@ -58,7 +58,7 @@ Use the Read tool to load:
 
 If the `status --json` response indicates an active epic exists, also load `../_shared/references/epic-conventions.md` — needed for epic state machine resolution, first-vs-subsequent epic disambiguation, and directory structure conventions.
 
-Load `.project/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Count active decisions and note any with `revisiting` status for the status report.
+Load `.goodplan/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Count active decisions and note any with `revisiting` status for the status report.
 
 ## Step 3 — Get Project Status
 
@@ -75,7 +75,7 @@ This replaces the previous `state.md` read — `status --json` is now the author
 Run:
 
 ```bash
-goodplan state --json --query '.["activity-log.jsonl"] | .[-5:]'
+gp state --json --query '.["activity-log.jsonl"] | .[-5:]'
 ```
 
 Parse the returned array and extract: `phase`, `scope`, `status`, and `ts` (timestamp). Format timestamps as human-readable short form (e.g., "Mar 15 16:45"). Arrange entries most recent first for the status report.
@@ -92,9 +92,9 @@ Derive the active scope from the `status --json` response:
 For Format B reporting (all slices/epics/quests with states), use:
 
 ```bash
-goodplan slice:list --json
-goodplan quest:list --json
-goodplan epic:list --json
+gp slice:list --json
+gp quest:list --json
+gp epic:list --json
 ```
 
 Note: `epic:list --json` has no `--status` filter — filtering is client-side.
@@ -102,7 +102,7 @@ Note: `epic:list --json` has no `--status` filter — filtering is client-side.
 For interrupted work detection, use:
 
 ```bash
-goodplan state --json --query '.epics | .. | .["interrupted.md"]? // empty'
+gp state --json --query '.epics | .. | .["interrupted.md"]? // empty'
 ```
 
 > Note: recursive `..` queries traverse all values (strings, arrays, objects) and may need optimization for larger state trees. A more targeted alternative: `.epics[][].slices[][] | select(has("interrupted.md")) | .["interrupted.md"]`
@@ -114,19 +114,19 @@ For sequencing order, read the relevant `sequencing.md` via the Read tool (this 
 Use `status --json` for phase derivation and entity status. For entity details, use `show --json`:
 
 ```bash
-goodplan slice:show --slice <name> --json
-goodplan epic:show --epic <name> --json
-goodplan quest:show --quest <name> --json
+gp slice:show --slice <name> --json
+gp epic:show --epic <name> --json
+gp quest:show --quest <name> --json
 ```
 
 Skills can rely on `status`, `name`, `goal` fields from entity JSON. The `artifacts` field is not yet available (deferred to slice 02).
 
-For deeper lookups where `show --json` is insufficient, use `state --json --query`. First get the active epic name from `goodplan status --json` (`.activeEpic.name`), then use it to construct the query path:
+For deeper lookups where `show --json` is insufficient, use `state --json --query`. First get the active epic name from `gp status --json` (`.activeEpic.name`), then use it to construct the query path:
 
 ```bash
 # Get the active epic name dynamically
-EPIC_NAME=$(goodplan status --json | jq -r '.activeEpic.name')
-goodplan state --json --query ".epics[\"$EPIC_NAME\"].slices | keys"
+EPIC_NAME=$(gp status --json | jq -r '.activeEpic.name')
+gp state --json --query ".epics[\"$EPIC_NAME\"].slices | keys"
 ```
 
 ### Slice / Quest State
@@ -136,8 +136,8 @@ Use the `status` field from `show --json` or `list --json` responses. The state-
 For implementation progress checking (when the status indicates implementation is in progress), use `state --json --query` to check implementation phase directories:
 
 ```bash
-EPIC_NAME=$(goodplan status --json | jq -r '.activeEpic.name')
-goodplan state --json --query ".epics[\"$EPIC_NAME\"].slices[\"<slice>\"].implementation | keys"
+EPIC_NAME=$(gp status --json | jq -r '.activeEpic.name')
+gp state --json --query ".epics[\"$EPIC_NAME\"].slices[\"<slice>\"].implementation | keys"
 ```
 
 Then check for passing reviews via the Read tool on `review.md` files (these are LLM-owned markdown).
@@ -147,7 +147,7 @@ Then check for passing reviews via the Read tool on `review.md` files (these are
 Epic scanning always runs when epics exist — needed for Format B reporting. Use `epic:list --json` to get all epics with their statuses:
 
 ```bash
-goodplan epic:list --json
+gp epic:list --json
 ```
 
 For each epic, categorize by CLI status:
@@ -160,7 +160,7 @@ For each epic, categorize by CLI status:
 Check for interrupted work using `state --json --query`:
 
 ```bash
-goodplan state --json --query '[.. | .["interrupted.md"]? | select(. != null)]'
+gp state --json --query '[.. | .["interrupted.md"]? | select(. != null)]'
 ```
 
 Also check the `status --json` response for any entities with interrupted/paused status.
@@ -208,7 +208,7 @@ Omit the **Expertise** line if no `## Expertise` section exists in `~/.claude/CL
 
 Use this when no slice or quest is currently in progress (e.g., just completed a slice, or at the very start of the project).
 
-To determine slice sequencing order, read the relevant `sequencing.md` via the Read tool. When an active epic exists, get the epic name from `goodplan status --json` (`.activeEpic.name`) and read slices under `epics/<activeEpic.name>/slices/`. Otherwise check `.project/slices/`. Use `slice:list --json` to get statuses for each.
+To determine slice sequencing order, read the relevant `sequencing.md` via the Read tool. When an active epic exists, get the epic name from `gp status --json` (`.activeEpic.name`) and read slices under `epics/<activeEpic.name>/slices/`. Otherwise check `.goodplan/slices/`. Use `slice:list --json` to get statuses for each.
 
 #### Format B with Active Epic
 
@@ -291,4 +291,4 @@ After presenting the status report, offer:
 
 > Want me to show the full activity-log or all slice statuses?
 
-Only expand if the user asks. For full activity-log, use `goodplan state --json --query '.["activity-log.jsonl"]'`. For all slice statuses, use `goodplan slice:list --json` if available, otherwise `goodplan state --json --query` for slice directories. Format B already shows an overview when between work items — do not repeat it unprompted.
+Only expand if the user asks. For full activity-log, use `gp state --json --query '.["activity-log.jsonl"]'`. For all slice statuses, use `gp slice:list --json` if available, otherwise `gp state --json --query` for slice directories. Format B already shows an overview when between work items — do not repeat it unprompted.

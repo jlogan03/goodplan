@@ -31,7 +31,7 @@ Skills that need epic awareness should read this file (`epic-conventions.md` in 
 Created by `/create-epic` as `__active__initial/` — starts active, no approval gate.
 
 ```
-.project/epics/
+.goodplan/epics/
 └── __active__initial/
     ├── goal.md
     ├── explore-complete.md          # or explore-skipped.md
@@ -76,7 +76,7 @@ Created by `/create-epic` as `__active__initial/` — starts active, no approval
 Created by `/create-epic`. Starts without `__active__` prefix. Renamed to `__active__<name>/` by `/start-epic` upon approval.
 
 ```
-.project/epics/
+.goodplan/epics/
 ├── __active__<name>/                # one active epic at a time (pre-CLI convention)
 └── <name>/                          # all epics use bare names; status via CLI
     ├── goal.md
@@ -113,7 +113,7 @@ Created by `/create-epic`. Starts without `__active__` prefix. Renamed to `__act
 - Only **one** active epic at a time.
 - First epic: created as `__active__initial/` by `/create-epic` (auto-active, no approval gate).
 - Subsequent epics: activation is handled by the `epic:activate` CLI command when the architecture proposal is approved. **Skills should not rename directories** — the CLI manages this internally.
-- The `__active__` prefix is a legacy convention that the CLI may use internally. Skills should use `goodplan status --json` (`.activeEpic`) to detect the active epic rather than relying on directory naming.
+- The `__active__` prefix is a legacy convention that the CLI may use internally. Skills should use `gp status --json` (`.activeEpic`) to detect the active epic rather than relying on directory naming.
 - Indicates the epic is approved and being built (slices defined, execution in progress).
 
 ---
@@ -205,7 +205,7 @@ Architecture lives in two places with distinct purposes:
 
 | Layer | Location | Purpose | Updated by |
 |---|---|---|---|
-| **Top-level** | `.project/architecture/` | Current reality — what the repo looks like now | `/complete` after each slice/quest |
+| **Top-level** | `.goodplan/architecture/` | Current reality — what the repo looks like now | `/complete` after each slice/quest |
 | **Epic** | `epics/<name>/architecture/` | Target state — where the epic is headed | `/create-architecture` (first init) or `/start-epic` (subsequent) |
 
 ### Who reads/writes each layer
@@ -288,4 +288,4 @@ Which skills create, read, or update epic artifacts:
 | `abandoned.md` | User action | State machine checks, `/complete` (learnings) | — |
 | `completion/` | `/complete` | `/project-status`, future epic planning | — |
 
-> **Note**: During epic completion, `/complete` may also copy artifacts from epic `research/`, `brainstorm/`, `prototypes/` to project-level directories (`.project/research/`, etc.) via the artifact promotion step. This is a copy (originals preserved in the archived epic).
+> **Note**: During epic completion, `/complete` may also copy artifacts from epic `research/`, `brainstorm/`, `prototypes/` to project-level directories (`.goodplan/research/`, etc.) via the artifact promotion step. This is a copy (originals preserved in the archived epic).

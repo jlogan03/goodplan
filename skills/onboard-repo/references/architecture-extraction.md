@@ -280,7 +280,7 @@ Include deployment context in the architecture overview under a "Deployment Mode
 
 ## 6. Output Format
 
-The output is `.project/architecture/_overview.md`. Follow this structure:
+The output is `.goodplan/architecture/_overview.md`. Follow this structure:
 
 ```markdown
 # Architecture Overview

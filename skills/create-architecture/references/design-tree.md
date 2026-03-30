@@ -57,7 +57,7 @@ Follow the user's expertise level (from `~/.claude/CLAUDE.md` `## Expertise` sec
 
 ## Decision Deduplication
 
-Before writing a new decision to `.project/decisions/`:
+Before writing a new decision to `.goodplan/decisions/`:
 
 1. Check existing decisions (loaded in Step 2) for overlap.
 2. If an existing decision covers the same area:
@@ -68,7 +68,7 @@ Before writing a new decision to `.project/decisions/`:
 ## Persistence Limitation
 
 Branch resolution state is tracked in-memory during the conversation. On context compaction or fresh session, this state is lost. The durable records are:
-- Written decisions in `.project/decisions/`
+- Written decisions in `.goodplan/decisions/`
 - The architecture files themselves (produced in Step 8)
 
 The deep pass can reconstruct context from these if interrupted and resumed.

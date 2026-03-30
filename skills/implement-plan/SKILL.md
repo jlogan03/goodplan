@@ -5,7 +5,7 @@ description: >
   has a plan file/directory ready for implementation. Applies to any domain: web dev,
   ML/data science, scientific computing, systems programming, CLI tools, agent skills,
   MCP servers. Accepts a path to a plan file or directory.
-requires: goodplan >= 1.0.0
+requires: gp >= 1.0.0
 ---
 
 # Implement Plan
@@ -38,9 +38,9 @@ implement-plan (orchestrator)
 
 ## Decisions Context
 
-Read `../_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load `.project/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions provide context for implementation — the implementing agent should respect existing decisions.
+Read `../_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load `.goodplan/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions provide context for implementation — the implementing agent should respect existing decisions.
 
-Note: sub-agents load decisions themselves via codebase exploration (`.project/decisions/` is a project directory accessible to all agents), so decisions do not need to be passed in bootstrap prompts.
+Note: sub-agents load decisions themselves via codebase exploration (`.goodplan/decisions/` is a project directory accessible to all agents), so decisions do not need to be passed in bootstrap prompts.
 
 ## Domain Specialist Reviewers
 
@@ -55,12 +55,12 @@ Read `../_shared/references/cli-interaction.md` for CLI interaction conventions 
 Verify CLI availability and compatibility:
 
 ```bash
-goodplan --version --json
+gp --version --json
 ```
 
-If the command fails (not found, non-zero exit), stop: "The `goodplan` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
+If the command fails (not found, non-zero exit), stop: "The `gp` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
 
-If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill requires goodplan >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
+If the version doesn't satisfy `requires: gp >= 1.0.0`, stop: "This skill requires gp >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
 
 ### Step 1: Load and Parse the Plan
 
@@ -83,9 +83,9 @@ If the version doesn't satisfy `requires: goodplan >= 1.0.0`, stop: "This skill 
      **Scope**: {scope_dir}
      ```
 
-Also load `.project/conventions.md` if it exists — project conventions inform implementation decisions.
+Also load `.goodplan/conventions.md` if it exists — project conventions inform implementation decisions.
 
-Also load `.project/architecture/_overview.md` and extract the `## Subsystem Maturity` table. If no maturity table exists, set `{maturity_summary}` to empty and skip maturity-aware behavior. Also read `../_shared/references/maturity-legend.md` and store its content as `{maturity_legend}`. If maturity data was found, display: "**Maturity context**: [list of subsystems at Maturing or Foundational, or 'All subsystems at Developing or below']".
+Also load `.goodplan/architecture/_overview.md` and extract the `## Subsystem Maturity` table. If no maturity table exists, set `{maturity_summary}` to empty and skip maturity-aware behavior. Also read `../_shared/references/maturity-legend.md` and store its content as `{maturity_legend}`. If maturity data was found, display: "**Maturity context**: [list of subsystems at Maturing or Foundational, or 'All subsystems at Developing or below']".
 
 ### Step 2: Pre-Implementation Research
 
@@ -333,19 +333,19 @@ Run a holistic review covering all phases together. This catches integration iss
 1. **Update plan status**: Add `Status: COMPLETE` and `Completed: YYYY-MM-DD` to the plan file (or `_overview.md`).
 2. **Move plan to completed**: If the project uses a `planning/active/` directory, move the plan to `planning/completed/`. Otherwise, leave it in place — the status marker is sufficient.
 3. **Final git commit**: If any uncommitted changes remain, commit with `[<plan-slug>] Complete implementation`.
-4. **CRITICAL — Submit implementation via CLI**: If the plan is under `.project/` and belongs to a slice or quest scope, use the appropriate CLI submit command. The CLI handles activity recording and state transitions. **This must happen before the completion summary. If skipped, the slice/quest will be stuck in `implementing` and cannot be completed.**
+4. **CRITICAL — Submit implementation via CLI**: If the plan is under `.goodplan/` and belongs to a slice or quest scope, use the appropriate CLI submit command. The CLI handles activity recording and state transitions. **This must happen before the completion summary. If skipped, the slice/quest will be stuck in `implementing` and cannot be completed.**
 
    For slice scope:
    ```bash
-   stdin: "" | goodplan submit-implementation --slice <name> --json
+   stdin: "" | gp submit-implementation --slice <name> --json
    ```
 
    For quest scope:
    ```bash
-   stdin: "" | goodplan submit-implementation --quest <name> --json
+   stdin: "" | gp submit-implementation --quest <name> --json
    ```
 
-   If the plan is standalone (not under `.project/`), skip CLI mutation.
+   If the plan is standalone (not under `.goodplan/`), skip CLI mutation.
 
 5. **Present summary**: Display the Completion Summary Template (see "Output Templates" below).
 
