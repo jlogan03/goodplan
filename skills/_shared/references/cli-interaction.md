@@ -27,7 +27,15 @@ gp --version --json
 # Returns: { "version": "1.0.0" }
 ```
 
-**If the command fails** (not found, non-zero exit):
+**If `gp` is not on PATH**, check the plugin-bundled binary:
+
+```bash
+"${CLAUDE_PLUGIN_ROOT}/binaries/macos-arm64/gp" --version --json
+```
+
+If the plugin binary exists, use its absolute path for all subsequent `gp` invocations in this skill session (e.g., set `GP_BIN="${CLAUDE_PLUGIN_ROOT}/binaries/macos-arm64/gp"` and use `$GP_BIN` instead of `gp`). The `${CLAUDE_PLUGIN_ROOT}` variable is substituted by Claude Code at skill load time.
+
+**If neither PATH nor plugin binary works** (both not found, non-zero exit):
 
 > The `gp` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH.
 
