@@ -9,6 +9,7 @@ export const projectSchema = z.object({
 	activeQuest: z.string().nullable(),
 	created: timestampSchema,
 	updated: timestampSchema,
+	stateSignature: z.string().optional(),
 });
 
 export type Project = z.infer<typeof projectSchema>;

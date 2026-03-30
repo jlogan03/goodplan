@@ -15,25 +15,25 @@ Create the HMAC signing and verification functions with deterministic serializat
 ### Expected Behavior
 
 **Before implementation** (should fail / show absence):
-- [ ] `ls src/core/data/hmac.ts` — fails: file doesn't exist
-- [ ] `grep 'stateSignature' src/schemas/entities/project.ts` — no output (field doesn't exist)
-- [ ] `bun run test -- tests/unit/data/hmac.test.ts` — fails: test file doesn't exist
+- [x] `ls src/core/data/hmac.ts` — fails: file doesn't exist
+- [x] `grep 'stateSignature' src/schemas/entities/project.ts` — no output (field doesn't exist)
+- [x] `bun run test -- tests/unit/data/hmac.test.ts` — fails: test file doesn't exist
 
 **After implementation** (should pass / show presence):
-- [ ] `ls src/core/data/hmac.ts` — file exists
-- [ ] `grep 'stateSignature' src/schemas/entities/project.ts` — shows the optional field definition
-- [ ] `bun run test -- tests/unit/data/hmac.test.ts` — all tests pass: serialization excludes markdown and stateSignature, signing produces consistent output, verification detects tampering, dev key fallback works
+- [x] `ls src/core/data/hmac.ts` — file exists
+- [x] `grep 'stateSignature' src/schemas/entities/project.ts` — shows the optional field definition
+- [x] `bun run test -- tests/unit/data/hmac.test.ts` — all tests pass: serialization excludes markdown and stateSignature, signing produces consistent output, verification detects tampering, dev key fallback works
 
 ### Tasks
 
-- [ ] Create `src/core/data/hmac.ts` (use `import type { ProjectState }` from `src/core/tree.ts` — `verbatimModuleSyntax` requires type-only imports for type annotations):
+- [x] Create `src/core/data/hmac.ts` (use `import type { ProjectState }` from `src/core/tree.ts` — `verbatimModuleSyntax` requires type-only imports for type annotations):
   1. `declare const __GP_HMAC_KEY__: string | undefined` — build-time injection, same pattern as `version.ts`
   2. `getHmacKey(): string` — uses `typeof __GP_HMAC_KEY__ !== "undefined" ? __GP_HMAC_KEY__ : DEV_KEY` (matching the exact pattern from `src/version.ts` — `typeof` guard is required because `--define` replaces the identifier textually and `=== undefined` may behave differently). Dev key constant: `"goodplan-dev-hmac-key"`
   3. `serializeForHmac(state: ProjectState): string` — calls `serializeStateTree(state, { inline: false })` (which replaces markdown with `true`), then strips `stateSignature` from the correct location: the serialized tree has a `"project.json"` node — destructure out `stateSignature` from that node and reconstruct without it (stripping at the wrong level produces a different HMAC). Then runs through `deterministicStringify()`. Canonical ordering comes from the recursive alphabetical key sorting in `deterministicStringify()`. (Note: after `serializeStateTree()` runs, the result is a plain `Record<string, unknown>` — no `StateEntry` types remain, so no exhaustive switch is needed here; that already happens inside `serializeStateTree()`.) **Add a comment on this function noting structural coupling:** the `"project.json"` key destructure assumes a stable tree layout — if the project node is relocated (e.g., entity-restructuring epic), the stripping silently stops working. Recursive stripping would be more resilient but is low priority for current Developing maturity.
   4. `signStateTree(state: ProjectState): string` — calls `serializeForHmac()`, computes HMAC-SHA256 using `new Bun.CryptoHasher("sha256", getHmacKey())`, returns hex digest
   5. `verifyStateTree(state: ProjectState, expectedSignature: string): boolean` — computes signature via `signStateTree()`, converts both hex digest strings to `Buffer` instances, then compares with `timingSafeEqual` (requires equal-length Buffer inputs). Import via `import { timingSafeEqual } from "node:crypto"` (`verbatimModuleSyntax` requires explicit named import). Note: `Bun.CryptoHasher("sha256", key)` two-arg HMAC constructor requires Bun 1.3+ — verify against `bun-types: ^1.3.11` in package.json; fallback is `import { createHmac } from "node:crypto"` with `createHmac("sha256", getHmacKey())` if the Bun API is unavailable.
-- [ ] Add `stateSignature: z.string().optional()` to `projectSchema` in `src/schemas/entities/project.ts` (use the `exactOptionalPropertyTypes`-safe pattern from the codebase). Use conditional spread `...(signature !== undefined ? { stateSignature: signature } : {})` when setting this field in Phase 2 and Phase 4.
-- [ ] Create `tests/unit/data/hmac.test.ts`:
+- [x] Add `stateSignature: z.string().optional()` to `projectSchema` in `src/schemas/entities/project.ts` (use the `exactOptionalPropertyTypes`-safe pattern from the codebase). Use conditional spread `...(signature !== undefined ? { stateSignature: signature } : {})` when setting this field in Phase 2 and Phase 4.
+- [x] Create `tests/unit/data/hmac.test.ts`:
   1. `serializeForHmac` excludes markdown entries from output
   2. `serializeForHmac` excludes `stateSignature` from project node
   3. `serializeForHmac` includes JSON and JSONL entries
