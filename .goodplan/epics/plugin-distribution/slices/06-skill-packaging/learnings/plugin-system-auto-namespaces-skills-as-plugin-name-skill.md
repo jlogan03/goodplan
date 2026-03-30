@@ -1,0 +1,1 @@
+The Claude Code plugin system correctly auto-namespaces skills as /<plugin-name>:<skill-name> based on the name field in plugin.json. The documented bug (#20994) where skills needed manual name: gp:<skill-name> in frontmatter is no longer present. Future plans should not include namespace prefixing build steps.

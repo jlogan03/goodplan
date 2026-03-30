@@ -14,7 +14,7 @@
 - Maturity/invariants/fitness workflow: Steps 8f/8g/8h in define-architecture, Steps 3b/3c/3d in audit-architecture, maturity evaluation in refine-architecture, reviewer criteria 12/13 — all untested on a real project
 - Epic completion mode in /complete: new epic scope type, architecture reconciliation, artifact promotion, archive numbering — all untested on a real epic
 - Install script (`scripts/install-skills.sh`): verified manually via `bun run install:skills` + diff; no automated test
-- Plugin build script (`scripts/build-plugin.sh`): verified manually via `bun run build:plugin` + `claude plugin validate`; no automated test
+- Plugin build script (`scripts/build-plugin.sh`): verified via `bun run build:plugin` + `claude plugin validate` + Agent SDK integration test (`tools/dogfood/test-plugin-skills.ts`) verifying skill discovery, auto-namespacing, and execution
 - Plugin hook scripts (`plugin-hooks/protect-state.sh`, `warn-bash-state.sh`): verified via manual stdin-piped tests (14 checks including edge cases), shellcheck passes; no automated test suite
 
 ### Known fragile areas
@@ -24,7 +24,7 @@
 - epic-conventions.md is consumed by 12+ skills: changes require updating all consumers
 - citty + `exactOptionalPropertyTypes`: requires `as unknown as CommandDef` casts in `src/index.ts`. May break on citty upgrade.
 
-<!-- Last updated by: complete for 05-next-commands, 2026-03-30 -->
+<!-- Last updated by: complete for 06-skill-packaging, 2026-03-30 -->
 
 ## Performance Characteristics
 
@@ -32,7 +32,7 @@
 - Integration tests (~50 tests): ~10s (dominated by binary spawning)
 - Fitness tests (~350 tests): ~4s (mix of source parsing, module imports, and binary spawning)
 
-<!-- Last updated by: complete for 05-next-commands, 2026-03-30 -->
+<!-- Last updated by: complete for 06-skill-packaging, 2026-03-30 -->
 
 ## Extensibility
 
@@ -75,8 +75,8 @@
 
 ## Recent Changes
 
+- **06-skill-packaging** (2026-03-30): Skill packaging into plugin — rsync skills into `dist/gp-plugin/skills/`, build-time assertions (frontmatter validation via awk, old CLI name regression guard, .DS_Store exclusion), Agent SDK integration test confirming auto-namespacing and skill execution. 3 new/modified files, 18 skills packaged.
 - **05-next-commands** (2026-03-30): `nextCommands` feature — `commandMappings` registry derived from transition tables, `computeNextCommands()` pure function, RPC-layer integration (begin/submit/complete). Every mutation's `--json` output includes `nextCommands` with entity/other command arrays. Prerequisite: exported declarative transition arrays from `decision.ts` and `task-lifecycle.ts`. 6 new/modified source files, 148 new tests (14 unit + 134 fitness), 1659 tests total.
 - **04-state-protection-hooks** (2026-03-30): PreToolUse hook scripts for Layer 1 state protection. `protect-state.sh` blocks Write/Edit on `.goodplan/**/*.json|jsonl`, `warn-bash-state.sh` emits `additionalContext` advisory. Both use consolidated single python3 invocations, `.goodplan-dev` sentinel bypass. Build integration copies hooks to `dist/gp-plugin/hooks/`. 3 new files, 2 modified.
-- **03-hmac-signatures** (2026-03-30): HMAC-SHA256 state integrity — signing on write, verification on read, bootstrap for pre-HMAC repos. New `gp verify` / `gp verify --fix` commands. `__GP_HMAC_KEY__` build-time define. 29 files changed, 1326 lines added, 1509 tests pass.
 
-<!-- Last updated by: complete for 05-next-commands, 2026-03-30 -->
+<!-- Last updated by: complete for 06-skill-packaging, 2026-03-30 -->
