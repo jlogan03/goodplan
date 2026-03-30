@@ -218,6 +218,7 @@ interface SubmitResult {
   previousStatus: string;
   newStatus: string;
   advanced: boolean;        // true if scores met threshold and phase advanced
+  nextCommands: NextCommands; // available commands after this mutation
   paths?: PathReferences;   // included when paths are available for the submitted phase
 }
 ```
@@ -232,6 +233,7 @@ interface BeginResult {
   phase: string;            // the phase that began
   previousStatus: string;
   newStatus: string;
+  nextCommands: NextCommands; // available commands after this mutation
   paths?: PathReferences;   // always included
 }
 
@@ -303,6 +305,7 @@ interface CompleteResult {
   entity: string;
   previousStatus: string;
   newStatus: string;
+  nextCommands: NextCommands; // available commands after this mutation
   deferredRouted?: DeferredItem[];   // items routed to existing target slices (DeferredItem already contains targetSlice)
   deferredSkipped?: number;          // count of deferred items whose targetSlice was not found
   architecturePaths?: {
@@ -387,6 +390,24 @@ interface LearningSummary {
   file: string;
 }
 ```
+
+### Next Commands
+
+Every mutation result (`BeginResult`, `SubmitResult`, `CompleteResult`) includes a `nextCommands` field computed by `computeNextCommands()` in `src/core/rpc/next-commands.ts`. This provides available CLI commands after each state transition.
+
+```typescript
+interface NextCommands {
+  entity: CommandEntry[];   // commands for the entity just acted on
+  other: CommandEntry[];    // creation commands for other entity types
+}
+
+interface CommandEntry {
+  command: string;          // interpolated CLI command (e.g., "gp epic:explore --epic my-epic")
+  description: string;      // action-oriented description
+}
+```
+
+The registry is derived at module init from transition table exports (`*Transitions` arrays in `src/core/state/transitions/`) combined with a `commandToEvent` mapping that links commands to events. Display metadata (description, template, userFacing) is the only manually-maintained part. Terminal statuses return empty entity arrays. Read-only commands (`list`, `show`, `status`) do not include `nextCommands`. `nextCommands` is an approximation — guards may prevent some listed commands from actually succeeding.
 
 ### Status
 

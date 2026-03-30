@@ -296,7 +296,7 @@ function output(data: unknown, args: { json?: boolean; quiet?: boolean; query?: 
 ```
 
 - **Default** (no flags): human-readable colored output via picocolors. Format varies per command.
-- **`--json`**: `JSON.stringify` with deterministic key ordering.
+- **`--json`**: `JSON.stringify` with deterministic key ordering. All mutation commands include `nextCommands` in their JSON output — an object with `entity` (commands for the entity just acted on) and `other` (creation commands for other entity types) arrays. Read-only commands (`list`, `show`, `status`) do not include `nextCommands`.
 - **`--quiet`**: minimal output (e.g., just the entity name or status).
 - **`--query`**: applies jqjs filter to the JSON output, then prints the result. Implies `--json` for the intermediate representation. Error behavior: invalid jq expression → exit 2 with `VALIDATION_INVALID_QUERY`; empty result (null/undefined) → exit 0, prints `null`; multiple results → prints JSON array.
 

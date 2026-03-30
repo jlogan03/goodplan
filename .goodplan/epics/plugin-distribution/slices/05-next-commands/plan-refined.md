@@ -148,18 +148,18 @@ Run a full lifecycle in a temp project verifying `nextCommands` at each step, th
 
 ### Tasks
 
-- [ ] Build the binary: `bun run build` (must be re-run after Phase 2 changes to include nextCommands in the binary). The built binary is at `./gp` in the project root.
-- [ ] Create temp project with cleanup trap: `GP_BIN="<repo-root>/gp"` (use the absolute path to the repo's built binary, e.g., `/Users/.../goodplan/gp`). Then: `mkdir -p /tmp/gp-e2e-test && cd /tmp/gp-e2e-test && trap 'rm -rf /tmp/gp-e2e-test' EXIT && "$GP_BIN" init`. All E2E commands use `$GP_BIN` since `./gp` won't resolve in the temp directory.
-- [ ] Run epic lifecycle: `epic:create` → `epic:explore` → `submit-explore` → `epic:define-architecture` → `submit-architecture` → `epic:define-slices` → `submit-slices` → `epic:activate`. At each step, capture `--json` output and verify `nextCommands` structure, interpolated names, and entity/other section contents
-- [ ] Run slice lifecycle: `slice:create` → `slice:plan` → `submit-plan` → `slice:refine-plan` → `submit-refinement`. Verify `epic` interpolation in slice commands (derived from `target.epic`)
-- [ ] Verify read-only exclusion for `show`, `list`, `status` commands
-- [ ] Verify task commands: `task:create` → verify `nextCommands` includes `task:drop` and `task:convert`
-- [ ] Verify quest creation: `quest:create` → verify `nextCommands`
-- [ ] Verify decision commands: `decision:create` → verify `nextCommands` includes `decision:update`
-- [ ] Verify `--query` works with `nextCommands`: `echo '{"name":"q-test","goal":"test"}' | $GP_BIN epic:create --json --query '.nextCommands.entity | length'` — returns a positive integer (confirms nested object traversal through `applyQuery`/`deterministicStringify`)
-- [ ] Update `architecture/rpc-layer-api.md` — document `computeNextCommands()`, the derived `commandMappings` registry, and the `commandToEvent` mapping
-- [ ] Update `architecture/commands-api.md` — document that `--json` output for all mutation commands now includes `nextCommands` with `entity` and `other` arrays
-- [ ] Clean up temp project: `rm -rf /tmp/gp-e2e-test` (also handled by trap if tasks fail mid-run)
+- [x] Build the binary: `bun run build` (must be re-run after Phase 2 changes to include nextCommands in the binary). The built binary is at `./gp` in the project root.
+- [x] Create temp project with cleanup trap: `GP_BIN="<repo-root>/gp"` (use the absolute path to the repo's built binary, e.g., `/Users/.../goodplan/gp`). Then: `mkdir -p /tmp/gp-e2e-test && cd /tmp/gp-e2e-test && trap 'rm -rf /tmp/gp-e2e-test' EXIT && "$GP_BIN" init`. All E2E commands use `$GP_BIN` since `./gp` won't resolve in the temp directory.
+- [x] Run epic lifecycle: `epic:create` → `epic:explore` → `submit-explore` → `epic:define-architecture` → `submit-architecture` → `epic:define-slices` → `submit-slices` → `epic:activate`. At each step, capture `--json` output and verify `nextCommands` structure, interpolated names, and entity/other section contents
+- [x] Run slice lifecycle: `slice:create` → `slice:plan` → `submit-plan` → `slice:refine-plan` → `submit-refinement`. Verify `epic` interpolation in slice commands (derived from `target.epic`)
+- [x] Verify read-only exclusion for `show`, `list`, `status` commands
+- [x] Verify task commands: `task:create` → verify `nextCommands` includes `task:drop` and `task:convert`
+- [x] Verify quest creation: `quest:create` → verify `nextCommands`
+- [x] Verify decision commands: `decision:create` → verify `nextCommands` includes `decision:update`
+- [x] Verify `--query` works with `nextCommands`: `echo '{"name":"q-test","goal":"test"}' | $GP_BIN epic:create --json --query '.nextCommands.entity | length'` — returns a positive integer (confirms nested object traversal through `applyQuery`/`deterministicStringify`)
+- [x] Update `architecture/rpc-layer-api.md` — document `computeNextCommands()`, the derived `commandMappings` registry, and the `commandToEvent` mapping
+- [x] Update `architecture/commands-api.md` — document that `--json` output for all mutation commands now includes `nextCommands` with `entity` and `other` arrays
+- [x] Clean up temp project: `rm -rf /tmp/gp-e2e-test` (also handled by trap if tasks fail mid-run)
 
 ### Verification
 
