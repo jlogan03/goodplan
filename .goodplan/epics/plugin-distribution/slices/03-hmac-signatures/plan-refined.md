@@ -1,5 +1,8 @@
 # Plan: HMAC Signatures
 
+Status: COMPLETE
+Completed: 2026-03-30
+
 ## Overview
 
 Implement embedded HMAC-SHA256 state integrity for the goodplan CLI. After this slice, every Data Layer write computes a signature over all JSON/JSONL state files and embeds it in `goodplan.json`. Every read verifies it — mismatch produces a hard error directing the user to `gp verify --fix`. Two new commands (`gp verify`, `gp verify --fix`) provide standalone verification and repair.

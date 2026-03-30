@@ -138,7 +138,7 @@ Files not matching any pattern are either markdown (`.md` → `MarkdownEntry`) o
 
 Every `commitState()` call computes an HMAC-SHA256 signature over the serialized state tree (JSON/JSONL files, excluding markdown) and embeds it as `stateSignature` in `project.json`. The signature is injected after `diffTree()` collects writes but before flushing, ensuring atomic inclusion. The key (`__GP_HMAC_KEY__`) is a compile-time define; dev/test builds use a well-known dev key.
 
-Every `loadState()` call verifies the HMAC on non-cache-hit paths (full `assembleState()` rebuild and `incrementalUpdate()` paths). Cache hits are trusted (mtime-based). Missing signatures (bootstrap) are skipped — the next `commitState()` embeds one. On mismatch: hard error (`DATA_INTEGRITY_CHECK_FAILED`) directing the user to `gp verify --fix`.
+Every `loadState()` call verifies the HMAC on non-cache-hit paths (full `assembleState()` rebuild and `incrementalUpdate()` paths). Cache hits (where all directory mtimes match) return cached state without HMAC reverification — the cache was populated by a `commitState()` that embedded the signature, so it is trusted. Use `gp verify` for an explicit integrity check that always reads from disk. Missing signatures (bootstrap) are skipped — the next `commitState()` embeds one. On mismatch: hard error (`DATA_INTEGRITY_CHECK_FAILED`) directing the user to `gp verify --fix`.
 
 `gp verify --fix` is an INV-001 exception: it writes `project.json` directly via `atomicWrite()`, bypassing `commitState()` and the state machine. Cache staleness is intentional — resolved on next `loadState()` via mtime invalidation.
 
