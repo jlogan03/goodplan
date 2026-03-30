@@ -1,21 +1,17 @@
+import type { EpicStatus } from "../../../schemas/entities/epic.js";
 /**
  * ADD_VERIFICATION and UPDATE_VERIFICATION handlers.
  * Pure functions, no I/O.
  */
 import type { ProjectState } from "../../tree.js";
-import type { StateEvent, StateError } from "../types.js";
-import type { EpicStatus } from "../../../schemas/entities/epic.js";
-import {
-	appendActivityLog,
-	getEpic,
-	setEpicJson,
-} from "./helpers.js";
+import type { StateError, StateEvent } from "../types.js";
+import { appendActivityLog, getEpic, setEpicJson } from "./helpers.js";
 
 type AddVerificationEvent = Extract<StateEvent, { type: "ADD_VERIFICATION" }>;
 type UpdateVerificationEvent = Extract<StateEvent, { type: "UPDATE_VERIFICATION" }>;
 
 /** Pre-activated statuses — verifications can only be modified before activation */
-const PRE_ACTIVATED_STATUSES: ReadonlySet<EpicStatus> = new Set([
+export const PRE_ACTIVATED_STATUSES: ReadonlySet<EpicStatus> = new Set([
 	"created",
 	"exploring",
 	"explored",

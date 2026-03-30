@@ -23,18 +23,18 @@ Create the derived `commandMappings` registry, `computeNextCommands()` function,
 ### Expected Behavior
 
 **Before implementation** (should fail / show absence):
-- [ ] `grep -r "commandMappings" src/` — no matches (registry doesn't exist)
-- [ ] `grep -r "computeNextCommands" src/` — no matches (function doesn't exist)
-- [ ] `grep -r "command-metadata-coverage" tests/` — no matches (fitness test doesn't exist)
+- [x] `grep -r "commandMappings" src/` — no matches (registry doesn't exist)
+- [x] `grep -r "computeNextCommands" src/` — no matches (function doesn't exist)
+- [x] `grep -r "command-metadata-coverage" tests/` — no matches (fitness test doesn't exist)
 
 **After implementation** (should pass / show presence):
-- [ ] `bun run test -- tests/unit/rpc/next-commands.test.ts` — all unit tests pass
-- [ ] `bun run test -- tests/fitness/command-metadata-coverage.test.ts` — fitness test passes (bidirectional coverage + transition reachability)
-- [ ] `bun -e "import { computeNextCommands } from './src/core/rpc/next-commands.ts'; console.log(typeof computeNextCommands)"` — confirms the function is exported
+- [x] `bun run test -- tests/unit/rpc/next-commands.test.ts` — all unit tests pass
+- [x] `bun run test -- tests/fitness/command-metadata-coverage.test.ts` — fitness test passes (bidirectional coverage + transition reachability)
+- [x] `bun -e "import { computeNextCommands } from './src/core/rpc/next-commands.ts'; console.log(typeof computeNextCommands)"` — confirms the function is exported
 
 ### Tasks
 
-- [ ] **Prerequisite**: Export declarative transition arrays from `src/core/state/transitions/decision.ts` and `src/core/state/transitions/task-lifecycle.ts` to match the standard `ReadonlyArray<{from, event, to}>` shape used by other entity types:
+- [x] **Prerequisite**: Export declarative transition arrays from `src/core/state/transitions/decision.ts` and `src/core/state/transitions/task-lifecycle.ts` to match the standard `ReadonlyArray<{from, event, to}>` shape used by other entity types:
   - `decision.ts`: Export `decisionTransitions` derived from the internal `VALID_DECISION_TRANSITIONS` record. Decisions are JSONL records — all mutations use `UPDATE_DECISION` (not status-keyed events) or `CREATE_DECISION`. The full derived entry set:
       - `{ from: "active", event: "UPDATE_DECISION", to: "active" }` (update without status change)
       - `{ from: "active", event: "UPDATE_DECISION", to: "revisiting" }`
@@ -44,7 +44,7 @@ Create the derived `commandMappings` registry, `computeNextCommands()` function,
       - `{ from: "(none)", event: "CREATE_DECISION", to: "active" }` (initial creation — uses the `"(none)"` sentinel consistent with all other entity creation transition tables)
   - `task-lifecycle.ts`: Export `taskLifecycleTransitions` covering `task:drop` (`DROP_TASK`: `open → dropped`) and `task:convert` (`CONVERT_TASK`: `open → converted`). Currently only `task-create.ts` exports `createTaskTransitions`. The lifecycle transitions for drop/convert are validated by handler functions but not exported as declarative arrays. **Note on `task:convert`**: `CONVERT_TASK` transitions the task to `converted` (terminal) but also creates a new quest or epic as a side effect. For `commandMappings` derivation, only the task's own transition matters — `{ from: "open", event: "CONVERT_TASK", to: "converted" }` drives `task:convert` appearing in commands for an `open` task. The resulting entity creation is an RPC-layer concern, not a `commandMappings` concern.
   - This keeps the derivation constraint intact — `commandMappings` derives from exported transition arrays rather than hardcoding decision/task transitions in `commandToEvent`.
-- [ ] Create `src/core/rpc/next-commands.ts`:
+- [x] Create `src/core/rpc/next-commands.ts`:
   1. Export types:
      - `CommandMetadataEntry { template: `gp ${string}`; description: string; userFacing: boolean }` — template uses `` `gp ${string}` `` template literal type. **Placeholder convention**: `{name}` and `{epic}` are auto-interpolated values; `<reason>` (angle brackets) are user-supplied values. Document this convention in JSDoc on the `template` field.
      - `CommandEntry { command: string; description: string }`
@@ -64,14 +64,14 @@ Create the derived `commandMappings` registry, `computeNextCommands()` function,
      - **Other section**: Curated creation commands from other entity types (`gp epic:create`, `gp quest:create`, `gp task:create`). Exclude the creation command for the current `target.type`. Omit other-section for terminal statuses. **Note**: The "other" section is a pragmatic exception to the derivation constraint — these cross-entity creation commands cannot be derived from transition tables since they aren't status-dependent.
      - **Ordering**: `entity` commands are ordered by their position in the transition table (reflecting workflow progression). `other` commands are ordered alphabetically by command name. This provides deterministic, predictable output for consumers.
      - Return `{ entity, other }`.
-- [ ] Create `tests/unit/rpc/next-commands.test.ts`:
+- [x] Create `tests/unit/rpc/next-commands.test.ts`:
   1. Test `computeNextCommands({ type: "epic", name: "test-epic" }, "created")` — returns entity commands including `gp epic:explore --epic test-epic`, other includes `gp quest:create` but not `gp epic:create`
   2. Test `computeNextCommands({ type: "slice", name: "my-slice", epic: "my-epic" }, "plan-created")` — returns entity commands with interpolated `--epic my-epic`, other includes `gp epic:create` but not `gp slice:create`
   3. Test terminal status (`"completed"`) — entity section is empty (or show-only), other section is empty
   4. Test unknown status with valid entity type — `computeNextCommands({ type: "epic", name: "x" }, "nonexistent-status")` returns empty `{ entity: [], other: [] }` (graceful degradation). Note: testing unknown entityType requires a `as Target` type assertion since `Target` is a discriminated union; testing unknown status is the correct runtime scenario.
   5. Test status unchanged after submit — pass a non-terminal status like `refining` and verify nextCommands includes the submit command (validates that same-status transitions produce correct suggestions)
   6. Test `epic:activate` edge case — `computeNextCommands({ type: "epic", name: "test" }, "activated")` should return commands available after activation (e.g., `epic:complete`, `slice:create`) and NOT include pre-activation commands like `epic:define-architecture`
-- [ ] Create `tests/fitness/command-metadata-coverage.test.ts`:
+- [x] Create `tests/fitness/command-metadata-coverage.test.ts`:
   1. Follow the pattern in `tests/fitness/mutation-through-state-machine.test.ts` — static analysis, no binary spawning
   2. **Forward check**: For every user-facing command in `src/commands/` that calls `begin()`, `complete()`, or `submit()`, verify there exists a `commandToEvent` entry with a matching template
   3. **Reverse check**: For every `commandToEvent` entry with `userFacing: true`, verify a corresponding command file exists in `src/commands/`

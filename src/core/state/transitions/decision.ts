@@ -65,6 +65,20 @@ const VALID_DECISION_TRANSITIONS: Record<
 	superseded: new Set([]),
 };
 
+/** Declarative transition array derived from VALID_DECISION_TRANSITIONS record. */
+export const decisionTransitions = [
+	{ from: "active", event: "UPDATE_DECISION", to: "active" },
+	{ from: "active", event: "UPDATE_DECISION", to: "revisiting" },
+	{ from: "active", event: "UPDATE_DECISION", to: "superseded" },
+	{ from: "revisiting", event: "UPDATE_DECISION", to: "active" },
+	{ from: "revisiting", event: "UPDATE_DECISION", to: "superseded" },
+	{ from: "(none)", event: "CREATE_DECISION", to: "active" },
+] as const satisfies ReadonlyArray<{
+	from: DecisionEntry["status"] | "(none)";
+	event: StateEvent["type"];
+	to: DecisionEntry["status"];
+}>;
+
 export function handleUpdateDecision(
 	state: ProjectState,
 	event: UpdateDecisionEvent,

@@ -5,6 +5,7 @@
  * Pure functions, no I/O.
  */
 import type { Overview } from "../../../schemas/entities/overview.js";
+import type { TaskStatus } from "../../../schemas/entities/task.js";
 import type { ProjectState } from "../../tree.js";
 import { getJson, hasChild, setEntry } from "../../tree.js";
 import type { StateError, StateEvent } from "../types.js";
@@ -174,3 +175,13 @@ export function handleConvertTask(
 
 	return tree;
 }
+
+/** Transition table rows for DROP_TASK and CONVERT_TASK */
+export const taskLifecycleTransitions = [
+	{ from: "open", event: "DROP_TASK", to: "dropped" },
+	{ from: "open", event: "CONVERT_TASK", to: "converted" },
+] as const satisfies ReadonlyArray<{
+	from: TaskStatus;
+	event: StateEvent["type"];
+	to: TaskStatus;
+}>;
