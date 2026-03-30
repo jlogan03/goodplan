@@ -91,13 +91,30 @@ Version injected by `build:plugin` from `package.json`.
 **Logic:**
 ```bash
 INPUT=$(cat)
-FILE_PATH=$(python3 -c "import sys,json; print(json.loads(sys.stdin.read()).get('tool_input',{}).get('file_path',''))" <<< "$INPUT")
-CWD=$(python3 -c "import sys,json; print(json.loads(sys.stdin.read()).get('cwd',''))" <<< "$INPUT")
+echo "$INPUT" | python3 -c "
+import json, os, sys
+d = json.load(sys.stdin)
+fp = d.get('tool_input', {}).get('file_path', '')
+cwd = d.get('cwd', '')
+if not fp:
+    sys.exit(0)
+if os.path.isfile(os.path.join(cwd, '.goodplan-dev')):
+    sys.exit(0)
+if not os.path.isabs(fp):
+    fp = os.path.join(cwd, fp)
+resolved = os.path.normpath(fp)
+prefix = os.path.join(cwd, '.goodplan') + os.sep
+if resolved.startswith(prefix) and (resolved.endswith('.json') or resolved.endswith('.jsonl')):
+    print('Blocked: ...', file=sys.stderr)
+    sys.exit(2)
+"
 ```
-1. Extract `tool_input.file_path` and `cwd` from stdin JSON in a single `python3` invocation
-2. Check if path matches `$CWD/.goodplan/**/*.json` or `$CWD/.goodplan/**/*.jsonl`
-3. If match -> exit 2, stderr: `"Blocked: direct write to .goodplan/ state file. Use the gp CLI instead (e.g., gp status, gp epic:create). See gp --help for available commands."`
-4. If no match -> exit 0 (allow)
+1. All logic in a single `python3` invocation (avoids subshell variable-evaporation under `set -euo pipefail`)
+2. Check if `$CWD/.goodplan-dev` sentinel file exists — if so, exit 0 (skip protection in dev repo)
+3. Resolve relative paths, normalize `..` segments
+4. Check if path matches `$CWD/.goodplan/**/*.json` or `$CWD/.goodplan/**/*.jsonl`
+5. If match -> exit 2, stderr: `"Blocked: direct write to .goodplan/ state file. Use the gp CLI instead (e.g., gp status, gp epic:create). See gp --help for available commands."`
+6. If no match -> exit 0 (allow)
 
 ### `warn-bash-state.sh` (PreToolUse — Bash)
 
@@ -113,13 +130,21 @@ CWD=$(python3 -c "import sys,json; print(json.loads(sys.stdin.read()).get('cwd',
 **Logic:**
 ```bash
 INPUT=$(cat)
-CWD=$(python3 -c "import sys,json; print(json.loads(sys.stdin.read()).get('cwd',''))" <<< "$INPUT")
-COMMAND=$(python3 -c "import sys,json; print(json.loads(sys.stdin.read()).get('tool_input',{}).get('command',''))" <<< "$INPUT")
+echo "$INPUT" | python3 -c "
+import json, os, sys
+d = json.load(sys.stdin)
+cmd = d.get('tool_input', {}).get('command', '')
+cwd = d.get('cwd', '')
+if os.path.isfile(os.path.join(cwd, '.goodplan-dev')):
+    sys.exit(0)
+if '.goodplan/' in cmd:
+    print(json.dumps({'hookSpecificOutput': {'additionalContext': '...'}}))
+"
 ```
-1. Extract `cwd` and `tool_input.command` from stdin JSON in a single `python3` invocation
+1. All logic in a single `python3` invocation (avoids subshell variable-evaporation under `set -euo pipefail`)
 2. Check if `$CWD/.goodplan-dev` sentinel file exists — if so, exit 0 (skip warning in dev repo)
 3. Check if command contains `.goodplan/`
-4. If match -> exit 0, stderr: `"Warning: This command references .goodplan/ files. State files should only be modified via the gp CLI. If this is intentional (e.g., reading docs), ignore this warning."`
+4. If match -> exit 0, stdout JSON: `{"hookSpecificOutput": {"additionalContext": "This command references .goodplan/ files. State files (.json/.jsonl) are managed by the gp CLI -- direct reads are fine, but avoid direct writes."}}`
 5. If no match -> exit 0
 
 ## Plugin CLAUDE.md

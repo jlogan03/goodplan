@@ -38,7 +38,7 @@ Create the two hook scripts and `hooks.json` in the `plugin-hooks/` source direc
 
 ### Tasks
 
-- [ ] Create `plugin-hooks/protect-state.sh`:
+- [x] Create `plugin-hooks/protect-state.sh`:
   1. `#!/usr/bin/env bash` with `set -euo pipefail`
   2. Python3 availability guard: `command -v python3 >/dev/null 2>&1 || exit 0` (degrade gracefully — allow if python3 missing)
   3. Capture stdin once: `INPUT=$(cat)`
@@ -48,7 +48,7 @@ Create the two hook scripts and `hooks.json` in the `plugin-hooks/` source direc
   7. All other paths (including `.goodplan/**/*.md`): exit 0 (allow)
   8. Stderr message on block: `"Blocked: direct write to .goodplan/ state file. Use the gp CLI instead (e.g., gp status, gp epic:create). See gp --help for available commands."`
   9. Make executable: `chmod +x plugin-hooks/protect-state.sh`
-- [ ] Create `plugin-hooks/warn-bash-state.sh`:
+- [x] Create `plugin-hooks/warn-bash-state.sh`:
   1. `#!/usr/bin/env bash` with `set -euo pipefail`
   2. Python3 availability guard: `command -v python3 >/dev/null 2>&1 || exit 0` (degrade gracefully)
   3. Capture stdin once: `INPUT=$(cat)`
@@ -56,7 +56,7 @@ Create the two hook scripts and `hooks.json` in the `plugin-hooks/` source direc
   5. Comment in script: `# If python3 fails (exit 1), bash exits due to set -e -> hook is skipped -> tool proceeds. This is intentional graceful degradation.`
   6. Exit 0
   7. Make executable: `chmod +x plugin-hooks/warn-bash-state.sh`
-- [ ] Create `plugin-hooks/hooks.json`:
+- [x] Create `plugin-hooks/hooks.json`:
   ```json
   {
     "description": "Protects .goodplan/ state files from direct modification",
@@ -74,13 +74,13 @@ Create the two hook scripts and `hooks.json` in the `plugin-hooks/` source direc
     }
   }
   ```
-- [ ] Remove `plugin-hooks/.gitkeep` (no longer needed — directory has real files)
+- [x] Remove `plugin-hooks/.gitkeep` (no longer needed — directory has real files)
 
 ### Verification
 
 Run all stdin-piped tests above. Verify scripts handle edge cases: empty file_path, missing cwd field, file_path that contains `.goodplan/` as a substring but isn't under `.goodplan/` (e.g., `/tmp/not-.goodplan/foo.json`). Run `shellcheck plugin-hooks/*.sh` — expect no warnings. Verify implementation aligns with architecture docs (`plugin-api.md`, `_overview.md`).
 
-- [ ] **Update `plugin-api.md` warn-bash-state.sh Logic block** (lines 113–123): the current text shows two separate python3 invocations and stderr output. Update the entire block to reflect the consolidated single-invocation pattern and stdout JSON `additionalContext` contract used in the actual implementation.
+- [x] **Update `plugin-api.md` warn-bash-state.sh Logic block** (lines 113–123): the current text shows two separate python3 invocations and stderr output. Update the entire block to reflect the consolidated single-invocation pattern and stdout JSON `additionalContext` contract used in the actual implementation.
 
 ## Phase 2: Build Integration & Validation
 

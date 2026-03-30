@@ -1,0 +1,17 @@
+{
+	"description": "Protects .goodplan/ state files from direct modification",
+	"hooks": {
+		"PreToolUse": [
+			{
+				"matcher": "Edit|Write",
+				"hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/protect-state.sh" }]
+			},
+			{
+				"matcher": "Bash",
+				"hooks": [
+					{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/warn-bash-state.sh" }
+				]
+			}
+		]
+	}
+}
