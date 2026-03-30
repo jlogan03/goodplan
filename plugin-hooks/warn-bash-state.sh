@@ -22,6 +22,7 @@ if os.path.isfile(os.path.join(cwd, '.goodplan-dev')):
 if '.goodplan/' in cmd:
     print(json.dumps({
         'hookSpecificOutput': {
+            'hookEventName': 'PreToolUse',
             'additionalContext': 'This command references .goodplan/ files. State files (.json/.jsonl) are managed by the gp CLI -- direct reads are fine, but avoid direct writes.'
         }
     }))

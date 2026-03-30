@@ -138,13 +138,13 @@ cwd = d.get('cwd', '')
 if os.path.isfile(os.path.join(cwd, '.goodplan-dev')):
     sys.exit(0)
 if '.goodplan/' in cmd:
-    print(json.dumps({'hookSpecificOutput': {'additionalContext': '...'}}))
+    print(json.dumps({'hookSpecificOutput': {'hookEventName': 'PreToolUse', 'additionalContext': '...'}}))
 "
 ```
 1. All logic in a single `python3` invocation (avoids subshell variable-evaporation under `set -euo pipefail`)
 2. Check if `$CWD/.goodplan-dev` sentinel file exists — if so, exit 0 (skip warning in dev repo)
 3. Check if command contains `.goodplan/`
-4. If match -> exit 0, stdout JSON: `{"hookSpecificOutput": {"additionalContext": "This command references .goodplan/ files. State files (.json/.jsonl) are managed by the gp CLI -- direct reads are fine, but avoid direct writes."}}`
+4. If match -> exit 0, stdout JSON: `{"hookSpecificOutput": {"hookEventName": "PreToolUse", "additionalContext": "This command references .goodplan/ files. State files (.json/.jsonl) are managed by the gp CLI -- direct reads are fine, but avoid direct writes."}}`
 5. If no match -> exit 0
 
 ## Plugin CLAUDE.md
