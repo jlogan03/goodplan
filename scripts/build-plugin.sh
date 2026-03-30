@@ -42,12 +42,74 @@ cat > "$PLUGIN_DIR/.claude-plugin/plugin.json" <<MANIFEST
 }
 MANIFEST
 
+# Copy skills (rsync matches install-skills.sh convention)
+rsync -a --exclude '.DS_Store' "$REPO_ROOT/skills/" "$PLUGIN_DIR/skills/"
+
 # Copy hook scripts and configuration
 cp "$REPO_ROOT/plugin-hooks/"*.sh "$REPO_ROOT/plugin-hooks/"*.json "$PLUGIN_DIR/hooks/"
 chmod +x "$PLUGIN_DIR/hooks/"*.sh
 
 # Copy plugin CLAUDE.md template
 cp "$REPO_ROOT/plugin/CLAUDE.md" "$PLUGIN_DIR/CLAUDE.md"
+
+# Verify skill packaging
+echo ""
+echo "Verifying skills..."
+
+# Assert _shared directory exists with cli-interaction.md
+test -d "$PLUGIN_DIR/skills/_shared/" || { echo "FAIL: skills/_shared/ directory missing"; exit 1; }
+test -f "$PLUGIN_DIR/skills/_shared/references/cli-interaction.md" || { echo "FAIL: skills/_shared/references/cli-interaction.md missing"; exit 1; }
+echo "  _shared/references/cli-interaction.md: present"
+
+# Assert every non-underscore skill directory contains a SKILL.md
+SKILL_COUNT=0
+for dir in "$PLUGIN_DIR/skills"/*/; do
+  dirname=$(basename "$dir")
+  # Skip underscore-prefixed directories (internal/shared resources)
+  if [[ "$dirname" == _* ]]; then
+    continue
+  fi
+  if [[ ! -f "$dir/SKILL.md" ]]; then
+    echo "FAIL: $dir is missing SKILL.md"
+    exit 1
+  fi
+
+  # Validate SKILL.md frontmatter: must have opening/closing --- with name: and description: fields
+  FRONTMATTER=$(awk 'NR==1 && /^---$/{found=1; next} found && /^---$/{exit} found{print}' "$dir/SKILL.md")
+  if [[ -z "$FRONTMATTER" ]]; then
+    echo "FAIL: $dir/SKILL.md has no valid YAML frontmatter (missing --- delimiters)"
+    exit 1
+  fi
+  if ! echo "$FRONTMATTER" | grep -q '^name:'; then
+    echo "FAIL: $dir/SKILL.md frontmatter missing name: field"
+    exit 1
+  fi
+  if ! echo "$FRONTMATTER" | grep -q '^description:'; then
+    echo "FAIL: $dir/SKILL.md frontmatter missing description: field"
+    exit 1
+  fi
+
+  SKILL_COUNT=$((SKILL_COUNT + 1))
+done
+echo "  frontmatter validation: all skills pass"
+
+# Assert no old CLI name invocations (regression guard)
+if grep -rE 'goodplan (init|status|epic:|slice:|quest:|learning:|decision:|task:|schema|version|subagent:)' "$PLUGIN_DIR/skills/" > /dev/null 2>&1; then
+  echo "FAIL: found old 'goodplan' CLI invocations in skills:"
+  grep -rE 'goodplan (init|status|epic:|slice:|quest:|learning:|decision:|task:|schema|version|subagent:)' "$PLUGIN_DIR/skills/"
+  exit 1
+fi
+echo "  old CLI name check: clean"
+
+# Assert no .DS_Store files
+DS_COUNT=$(find "$PLUGIN_DIR/skills" -name '.DS_Store' | wc -l | tr -d ' ')
+if [[ "$DS_COUNT" -ne 0 ]]; then
+  echo "FAIL: found $DS_COUNT .DS_Store files in skills"
+  exit 1
+fi
+echo "  .DS_Store check: clean"
+
+echo "  Packaged $SKILL_COUNT skills"
 
 # Validate plugin structure
 if command -v claude &> /dev/null; then
