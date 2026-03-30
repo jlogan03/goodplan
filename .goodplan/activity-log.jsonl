@@ -120,3 +120,5 @@
 {"phase":"begin-plan","scope":"epics/plugin-distribution/slices/05-next-commands","status":"complete","summary":"Slice \"05-next-commands\" planning started","ts":"2026-03-30T14:10:14.292Z"}
 {"phase":"complete-plan","scope":"epics/plugin-distribution/slices/05-next-commands","status":"complete","summary":"Slice \"05-next-commands\" plan completed","ts":"2026-03-30T14:10:18.196Z"}
 {"phase":"complete-refinement","scope":"epics/plugin-distribution/slices/05-next-commands","status":"complete","summary":"Slice \"05-next-commands\" plan refined","ts":"2026-03-30T15:27:34.617Z"}
+{"phase":"begin-implementation","scope":"epics/plugin-distribution/slices/05-next-commands","status":"complete","summary":"Slice \"05-next-commands\" implementation started","ts":"2026-03-30T15:29:36.235Z"}
+{"phase":"complete-implementation","scope":"epics/plugin-distribution/slices/05-next-commands","status":"complete","summary":"Slice \"05-next-commands\" implementation completed","ts":"2026-03-30T15:57:01.350Z"}
