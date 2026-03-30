@@ -1,0 +1,108 @@
+name: Build and Publish Plugin
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: release-pipeline
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish:
+    runs-on: macos-15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build plugin
+        run: bun run build:plugin
+        env:
+          GP_HMAC_KEY: ${{ secrets.GP_HMAC_KEY }}
+
+      - name: Post-build version assertion
+        run: |
+          BINARY_VERSION=$(./dist/gp-plugin/binaries/macos-arm64/gp --version --json | python3 -c "import sys,json; print(json.load(sys.stdin)['version'])")
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          echo "Binary version: $BINARY_VERSION"
+          echo "Tag version: $TAG_VERSION"
+          [ "$BINARY_VERSION" = "$TAG_VERSION" ] || { echo "Version mismatch: binary=$BINARY_VERSION tag=$TAG_VERSION"; exit 1; }
+
+      - name: Smoke test hooks
+        run: |
+          # Remove dev sentinel so hooks enforce protection during smoke tests
+          rm -f .goodplan-dev
+
+          echo "Testing protect-state.sh..."
+
+          # protect-state: blocked path — expected exit 2
+          echo '{"tool_input":{"file_path":".goodplan/project.json"},"cwd":"'"$PWD"'"}' | ./dist/gp-plugin/hooks/protect-state.sh && { echo "FAIL: expected exit 2 for blocked path"; exit 1; } || [ $? -eq 2 ] || { echo "FAIL: expected exit 2, got $?"; exit 1; }
+          echo "  blocked path: exit 2 (correct)"
+
+          # protect-state: allowed path — expected exit 0
+          echo '{"tool_input":{"file_path":"src/index.ts"},"cwd":"'"$PWD"'"}' | ./dist/gp-plugin/hooks/protect-state.sh
+          echo "  allowed path: exit 0 (correct)"
+
+          echo "Testing warn-bash-state.sh..."
+
+          # warn-bash: .goodplan/ command — expected exit 0, stdout contains hookSpecificOutput.additionalContext
+          OUTPUT=$(echo '{"tool_input":{"command":"cat .goodplan/project.json"},"cwd":"'"$PWD"'"}' | ./dist/gp-plugin/hooks/warn-bash-state.sh)
+          echo "$OUTPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); assert 'additionalContext' in d.get('hookSpecificOutput',{}), 'missing additionalContext'" || { echo "FAIL: warn-bash missing additionalContext"; exit 1; }
+          echo "  .goodplan/ command: additionalContext present (correct)"
+
+          # warn-bash: clean command — expected exit 0, no stdout
+          OUTPUT=$(echo '{"tool_input":{"command":"ls src/"},"cwd":"'"$PWD"'"}' | ./dist/gp-plugin/hooks/warn-bash-state.sh)
+          [ -z "$OUTPUT" ] || { echo "FAIL: expected no output for clean command, got: $OUTPUT"; exit 1; }
+          echo "  clean command: no output (correct)"
+
+          echo "All hook smoke tests passed."
+
+      - name: Create tarball
+        run: tar -czf gp-plugin-${{ github.ref_name }}.tar.gz -C dist gp-plugin
+
+      - name: Create GitHub Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
+        with:
+          files: gp-plugin-${{ github.ref_name }}.tar.gz
+
+      - name: Prepare release branch content
+        run: |
+          mkdir -p tmp-release/.claude-plugin tmp-release/plugins
+          cp .claude-plugin/marketplace.json tmp-release/.claude-plugin/
+          cp -R dist/gp-plugin tmp-release/plugins/gp
+
+      - name: Tag release branch for rollback
+        if: github.ref_type == 'tag'
+        run: |
+          # Only tag if release branch already exists (skip on first-ever release)
+          if git ls-remote --heads origin release | grep -q release; then
+            git fetch origin release
+            git tag "release-before-${{ github.ref_name }}" origin/release
+            git push origin "release-before-${{ github.ref_name }}"
+            echo "Tagged release branch HEAD as release-before-${{ github.ref_name }}"
+          else
+            echo "No existing release branch — skipping rollback tag"
+          fi
+
+      - name: Publish to release branch
+        if: github.ref_type == 'tag'
+        run: |
+          cd tmp-release
+          git init
+          git checkout -b release
+          git add -A
+          git commit -m "Release ${{ github.ref_name }}"
+          git push --force "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" HEAD:refs/heads/release
+          echo "Published to release branch"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

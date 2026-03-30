@@ -1,7 +1,8 @@
 {
 	"name": "goodplan-marketplace",
 	"owner": {
-		"name": "Ian White"
+		"name": "Ian White",
+		"url": "https://github.com/ian97531"
 	},
 	"plugins": [
 		{
@@ -11,7 +12,8 @@
 				"url": "https://github.com/ian97531/project-skills.git",
 				"path": "plugins/gp",
 				"ref": "release"
-			}
+			},
+			"description": "goodplan — structured development workflow for Claude Code"
 		}
 	]
 }
