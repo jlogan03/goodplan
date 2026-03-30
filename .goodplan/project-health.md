@@ -4,7 +4,7 @@
 
 ### Well-tested areas
 - Skill file structure (SKILL.md frontmatter, step numbering, reference paths): verified across 4 skill files during slice-quality-and-health implementation with 28-point checklist
-- goodplan CLI (`gp`): 1509 tests across 108 files, integration + fitness tests. Unit tests cover tree types, schemas, I/O, state machine (including task entity and nested epic paths), RPC (including paths, version-stamp, deferred routing with cross-epic support, migration re-run), context (resolveScope, entityDir with epic paths), commands (including status with embedded overview, slice:list with --all, slice:show with --epic, verify pass/fail/fix), state transition helpers (evaluateRefinement, guard functions, processLearnings, status setters), data serialization (serialize.ts), markdown file operations (writeMarkdownFiles, copyMarkdownFiles), and HMAC state integrity (signing, verification, serialization, tamper detection, bootstrap). Integration tests spawn compiled binary and cover migration with nested paths. Fitness functions verify all architectural invariants including ENTITY_EXEMPT_COMMANDS, structured error responses (INV-007), mutation-through-state-machine (INV-001), and state integrity (signature embedding, tamper detection, markdown exclusion). Type-clean against `tsc --noEmit`.
+- goodplan CLI (`gp`): 1659 tests across 110 files, integration + fitness tests. Unit tests cover tree types, schemas, I/O, state machine (including task entity and nested epic paths), RPC (including paths, version-stamp, deferred routing with cross-epic support, migration re-run), context (resolveScope, entityDir with epic paths), commands (including status with embedded overview, slice:list with --all, slice:show with --epic, verify pass/fail/fix), state transition helpers (evaluateRefinement, guard functions, processLearnings, status setters), data serialization (serialize.ts), markdown file operations (writeMarkdownFiles, copyMarkdownFiles), and HMAC state integrity (signing, verification, serialization, tamper detection, bootstrap). Integration tests spawn compiled binary and cover migration with nested paths. Fitness functions verify all architectural invariants including ENTITY_EXEMPT_COMMANDS, structured error responses (INV-007), mutation-through-state-machine (INV-001), and state integrity (signature embedding, tamper detection, markdown exclusion). Type-clean against `tsc --noEmit`.
 - goodplan CLI main runner (`src/index.ts`): integration tests cover unknown commands, --help, --version, --json error mode, NO_COLOR, stdin validation, version compatibility checking (4 variants), --quiet suppression of warnings.
 
 ### Undertested areas
@@ -24,15 +24,15 @@
 - epic-conventions.md is consumed by 12+ skills: changes require updating all consumers
 - citty + `exactOptionalPropertyTypes`: requires `as unknown as CommandDef` casts in `src/index.ts`. May break on citty upgrade.
 
-<!-- Last updated by: complete for 04-state-protection-hooks, 2026-03-30 -->
+<!-- Last updated by: complete for 05-next-commands, 2026-03-30 -->
 
 ## Performance Characteristics
 
-- Full test suite (1509 tests, 108 files): ~4.4s total including binary compilation (~50ms cached)
+- Full test suite (1659 tests, 110 files): ~6.5s total including binary compilation (~50ms cached)
 - Integration tests (~50 tests): ~10s (dominated by binary spawning)
 - Fitness tests (~350 tests): ~4s (mix of source parsing, module imports, and binary spawning)
 
-<!-- Last updated by: complete for epics/__active__skills-cli-integration/slices/02-show-status-enrichment, 2026-03-24 -->
+<!-- Last updated by: complete for 05-next-commands, 2026-03-30 -->
 
 ## Extensibility
 
@@ -75,8 +75,8 @@
 
 ## Recent Changes
 
+- **05-next-commands** (2026-03-30): `nextCommands` feature — `commandMappings` registry derived from transition tables, `computeNextCommands()` pure function, RPC-layer integration (begin/submit/complete). Every mutation's `--json` output includes `nextCommands` with entity/other command arrays. Prerequisite: exported declarative transition arrays from `decision.ts` and `task-lifecycle.ts`. 6 new/modified source files, 148 new tests (14 unit + 134 fitness), 1659 tests total.
 - **04-state-protection-hooks** (2026-03-30): PreToolUse hook scripts for Layer 1 state protection. `protect-state.sh` blocks Write/Edit on `.goodplan/**/*.json|jsonl`, `warn-bash-state.sh` emits `additionalContext` advisory. Both use consolidated single python3 invocations, `.goodplan-dev` sentinel bypass. Build integration copies hooks to `dist/gp-plugin/hooks/`. 3 new files, 2 modified.
 - **03-hmac-signatures** (2026-03-30): HMAC-SHA256 state integrity — signing on write, verification on read, bootstrap for pre-HMAC repos. New `gp verify` / `gp verify --fix` commands. `__GP_HMAC_KEY__` build-time define. 29 files changed, 1326 lines added, 1509 tests pass.
-- **02-plugin-scaffold** (2026-03-29): Plugin build pipeline (`scripts/build-plugin.sh`), assembles `dist/gp-plugin/` with compiled binary, plugin manifest, CLAUDE.md, placeholder dirs. Marketplace manifest at `.claude-plugin/marketplace.json`. Passes `claude plugin validate`. 4 new files, 2 modified.
 
-<!-- Last updated by: complete for 04-state-protection-hooks, 2026-03-30 -->
+<!-- Last updated by: complete for 05-next-commands, 2026-03-30 -->

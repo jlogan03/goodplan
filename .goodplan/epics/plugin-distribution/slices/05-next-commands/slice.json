@@ -5,6 +5,6 @@
 	"goal": "Implement commandMetadata registry, computeNextCommands(), and Commands layer integration",
 	"name": "05-next-commands",
 	"refinement": null,
-	"status": "implementation-complete",
-	"updated": "2026-03-30T15:57:01.350Z"
+	"status": "completed",
+	"updated": "2026-03-30T16:04:48.114Z"
 }

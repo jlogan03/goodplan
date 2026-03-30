@@ -1,0 +1,1 @@
+Bun transpiles without type-checking, so bun run test passes even with TypeScript compilation errors. Phase 2 introduced 5 tsc errors that went undetected until code review. Future phases should run tsc --noEmit as mandatory verification.

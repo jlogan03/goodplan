@@ -1,0 +1,1 @@
+Before this slice, decision.ts and task-lifecycle.ts validated transitions via imperative guards but lacked declarative ReadonlyArray exports. Adding exports (6 entries for decisions, 2 for tasks) brings all entity types to consistent format for derivation.
