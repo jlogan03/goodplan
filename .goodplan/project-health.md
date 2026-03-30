@@ -4,11 +4,11 @@
 
 ### Well-tested areas
 - Skill file structure (SKILL.md frontmatter, step numbering, reference paths): verified across 4 skill files during slice-quality-and-health implementation with 28-point checklist
-- goodplan CLI: 1378 tests across 98 files, integration + fitness tests. Unit tests cover tree types, schemas, I/O, state machine (including task entity and nested epic paths), RPC (including paths, version-stamp, deferred routing with cross-epic support, migration re-run), context (resolveScope, entityDir with epic paths), commands (including status with embedded overview, slice:list with --all, slice:show with --epic), state transition helpers (evaluateRefinement, guard functions, processLearnings, status setters), data serialization (serialize.ts), and markdown file operations (writeMarkdownFiles, copyMarkdownFiles). Integration tests spawn compiled binary and cover migration with nested paths. Fitness functions verify all architectural invariants including ENTITY_EXEMPT_COMMANDS, structured error responses (INV-007), and mutation-through-state-machine (INV-001). Type-clean against `tsc --noEmit`.
+- goodplan CLI (`gp`): 1475 tests across 105 files, integration + fitness tests. Unit tests cover tree types, schemas, I/O, state machine (including task entity and nested epic paths), RPC (including paths, version-stamp, deferred routing with cross-epic support, migration re-run), context (resolveScope, entityDir with epic paths), commands (including status with embedded overview, slice:list with --all, slice:show with --epic), state transition helpers (evaluateRefinement, guard functions, processLearnings, status setters), data serialization (serialize.ts), and markdown file operations (writeMarkdownFiles, copyMarkdownFiles). Integration tests spawn compiled binary and cover migration with nested paths. Fitness functions verify all architectural invariants including ENTITY_EXEMPT_COMMANDS, structured error responses (INV-007), and mutation-through-state-machine (INV-001). Type-clean against `tsc --noEmit`.
 - goodplan CLI main runner (`src/index.ts`): integration tests cover unknown commands, --help, --version, --json error mode, NO_COLOR, stdin validation, version compatibility checking (4 variants), --quiet suppression of warnings.
 
 ### Undertested areas
-- Runtime behavior of migrated planning/execution skills (create-plan, create-slices, refine-plan, implement-plan, refine-slices): CLI integration paths verified via grep + 19-step smoke test but not yet exercised on a real project
+- Runtime behavior of migrated planning/execution skills (create-plan, create-slices, refine-plan, implement-plan, refine-slices): CLI integration paths verified via grep + 19-step smoke test; refine-plan and implement-plan exercised on 01-rename-gp slice with full review loops
 - Signal tracking algorithm (Step 6d in complete): requires 3+ completed slices to produce data
 - Refactor Intelligence Protocol (Step 9 in complete): new detection algorithm, batch table presentation, inline fix application, side quest proposal — all untested on a real codebase
 - Maturity/invariants/fitness workflow: Steps 8f/8g/8h in define-architecture, Steps 3b/3c/3d in audit-architecture, maturity evaluation in refine-architecture, reviewer criteria 12/13 — all untested on a real project
@@ -18,7 +18,7 @@
 ### Known fragile areas
 - Cross-skill reference paths (e.g., refine-slices references refine-plan's shared-preamble.md): if refine-plan files move, refine-slices breaks silently
 - refine-plan's shared-preamble.md borrowed by refine-architecture and refine-slices: plan-specific framing ("Plan Location") doesn't match non-plan consumers
-- `~~archived~~` prefix sort order: sorts correctly in terminal but may sort above active items in file explorers (VS Code, Finder) due to locale-aware collation
+- `~~archived~~` prefix sort order: sorts correctly in terminal but may sort above active items in file explorers (VS Code, Finder) due to locale-aware collation (note: archive convention removed — directory renaming no longer used)
 - epic-conventions.md is consumed by 12+ skills: changes require updating all consumers
 - citty + `exactOptionalPropertyTypes`: requires `as unknown as CommandDef` casts in `src/index.ts`. May break on citty upgrade.
 
@@ -26,7 +26,7 @@
 
 ## Performance Characteristics
 
-- Full test suite (1378 tests, 98 files): ~3.7s total including binary compilation (~50ms cached)
+- Full test suite (1475 tests, 105 files): ~4.0s total including binary compilation (~50ms cached)
 - Integration tests (~50 tests): ~10s (dominated by binary spawning)
 - Fitness tests (~350 tests): ~4s (mix of source parsing, module imports, and binary spawning)
 
@@ -55,7 +55,7 @@
 
 ### Localized items
 - shared-preamble.md asymmetry: lives in refine-plan/references/ while iteration-loop.md lives in _shared/references/ — candidate for future consolidation
-- `--verbose` flag not wired: defined on all commands via `global-args.ts` but never sets `globalThis.__goodplan_verbose`. Debug logging only works via `GOODPLAN_DEBUG=1` env var.
+- `--verbose` flag not wired: defined on all commands via `global-args.ts` but never sets `globalThis.__goodplan_verbose`. Debug logging only works via `GOODPLAN_DEBUG=1` env var. (Note: globalThis flags intentionally kept as `__goodplan_*` per rename scope decisions.)
 - `setEpicStatus` helper in `helpers.ts` is defined but unused — handlers use `setEpicJson` directly for more control. Dead code candidate.
 - loadState cache detects new/removed files but not content changes to existing JSON files. Bounded by commitState always writing fresh cache.
 - Quest submit handlers (`handleCompleteQuestPlan`, `handleCompleteQuestRefinementRound`, `handleCompleteQuestImplementation`) remain co-located in `slice-submit.ts` — splitting to `quest-submit.ts` deferred. File is now 304 lines covering two entity types.
@@ -72,8 +72,8 @@
 
 ## Recent Changes
 
+- **01-rename-gp** (2026-03-29): Renamed CLI binary from `goodplan` to `gp`, state directory from `.project/` to `.goodplan/`. 204 source/test files + 76 skill/doc files updated. Dual-path migrate support (legacy `.project/` + `.goodplan/` re-migration). Exported `PROJECT_DIR_NAME`/`LEGACY_DIR_NAME` constants. 1475 tests pass.
 - **onboard-repo** (2026-03-29): New `/onboard-repo` skill (SKILL.md + 5 reference files, 613+lines). Fixture generation script, Claude SDK test harness. Updated install script and expertise-tracking.md consumer list. Skills-only changes — no CLI modifications.
 - **consistent-skill-output** (2026-03-28): Consolidated 3 duplicated output template groups into shared output-templates.md. Updated 10 consuming skills to reference shared templates. 11 files changed (net -8 lines from deduplication).
-- **rpc-api-doc-drift** (2026-03-28): Fixed 10 doc-code divergences in rpc-layer-api.md (signatures, types, module locations). Tightened LearningInput.rollupTo schema from open string[] to z.enum(["epic", "project"]). 2 files changed.
 
-<!-- Last updated by: complete for onboard-repo, 2026-03-29 -->
+<!-- Last updated by: complete for 01-rename-gp, 2026-03-29 -->

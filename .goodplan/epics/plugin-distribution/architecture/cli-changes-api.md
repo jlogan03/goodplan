@@ -8,14 +8,14 @@ Documents modifications to the existing CLI for this epic: the binary rename fro
 ### Change
 - `--outfile` in build script changes from `goodplan` to `gp`
 - All skill bodies, shared references, and CLAUDE.md files update `goodplan` → `gp` for CLI invocation references
-- `__GOODPLAN_VERSION__` build define renamed to `__GP_VERSION__` across all affected files (`src/version.ts`, `vitest.config.ts`, `tests/global-setup.ts`, `package.json`)
+- `__GOODPLAN_VERSION__` build define kept as-is (product name is still "goodplan" internally; only binary name and state directory change)
+- `GOODPLAN_DIR` and `GOODPLAN_DEBUG` env vars kept as-is (reference product name, not directory)
+- `__goodplan_force` / `__goodplan_verbose` globalThis flags kept as-is (internal, not user-facing)
 - "goodplan" remains as the product name in prose
 
 ### Affected Files
-- `package.json` — build script `--outfile`, `__GP_VERSION__` define
-- `src/version.ts` — `__GP_VERSION__` reference
-- `vitest.config.ts` — `__GP_VERSION__` define
-- `tests/global-setup.ts` — `__GP_VERSION__` define
+- `package.json` — build script `--outfile gp` (define stays `__GOODPLAN_VERSION__`)
+- `tests/global-setup.ts` — outfile path changed to `gp` (define stays `__GOODPLAN_VERSION__`)
 - `skills/**/*.md` — all CLI invocation references
 - `skills/_shared/references/*.md` — CLI interaction conventions
 - `CLAUDE.md` — project instructions

@@ -1,0 +1,1 @@
+.gitignore binary entry and biome.json ignore were planned for Phase 2 but Phase 1 verification needed them. Config changes affecting build/lint/git tooling should be phased with the code changes they support.

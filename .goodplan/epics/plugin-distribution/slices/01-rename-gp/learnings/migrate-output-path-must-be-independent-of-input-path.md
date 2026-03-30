@@ -1,0 +1,1 @@
+The dual-path detection correctly found .project/ as legacy input, but passed that path through to the RPC layer, causing output to write to .project/ instead of .goodplan/. Fixed by introducing outputDir = path.join(cwd, PROJECT_DIR_NAME). Any command that reads from a legacy path must ensure output goes to the canonical current path.

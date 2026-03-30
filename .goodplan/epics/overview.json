@@ -194,10 +194,10 @@
 			"name": "plugin-distribution",
 			"slices": [
 				{
-					"completed": null,
+					"completed": "2026-03-30T01:12:49.149Z",
 					"created": "2026-03-29T20:39:00.525Z",
 					"name": "01-rename-gp",
-					"status": "implementation-complete"
+					"status": "completed"
 				},
 				{
 					"completed": null,

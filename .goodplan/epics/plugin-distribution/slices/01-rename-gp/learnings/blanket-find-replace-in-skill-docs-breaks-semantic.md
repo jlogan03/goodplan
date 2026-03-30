@@ -1,0 +1,1 @@
+The migrate skill describes converting .project/ directories, so .project/ references in its scanning instructions must stay. Mechanical replacement broke pre-flight checks and entity discovery commands. Skill documentation requires semantic review, not blanket replacement.
