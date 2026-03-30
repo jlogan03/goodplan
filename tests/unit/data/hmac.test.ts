@@ -135,9 +135,14 @@ describe("verifyStateTree", () => {
 
 	it("returns false for non-hex/malformed signature input", () => {
 		const state = makeState();
+		// These fail via the length-mismatch guard: Buffer.from(malformed, "hex")
+		// produces a shorter buffer than the valid 32-byte HMAC digest
 		expect(verifyStateTree(state, "not-a-hex-string")).toBe(false);
 		expect(verifyStateTree(state, "")).toBe(false);
 		expect(verifyStateTree(state, "zzzz")).toBe(false);
+		// A well-formed 64-char hex string that doesn't match still fails
+		// (via timingSafeEqual, not the length guard)
+		expect(verifyStateTree(state, "a".repeat(64))).toBe(false);
 	});
 });
 

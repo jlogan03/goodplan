@@ -11,8 +11,8 @@ import { GoodplanError } from "../../util/errors.js";
 import { debug } from "../../util/debug.js";
 import { deterministicStringify } from "../../util/json.js";
 import type { Project } from "../../schemas/entities/project.js";
-import type { ProjectState, StateEntry } from "../tree.js";
-import { getJson } from "../tree.js";
+import type { ProjectState, StateEntry } from "./tree.js";
+import { getJson } from "./tree.js";
 
 declare const __GP_HMAC_KEY__: string | undefined;
 
