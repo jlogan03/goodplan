@@ -285,7 +285,7 @@ function embedStateSignature(
  * Callers outside commit.ts should be limited to `verify --fix`;
  * general writes must go through commitState().
  */
-function atomicWrite(absPath: string, content: string, relativePath: string): void {
+export function atomicWrite(absPath: string, content: string, relativePath: string): void {
 	const tmpPath = `${absPath}.tmp.${process.pid}`;
 
 	// Ensure parent directory exists

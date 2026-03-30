@@ -8,6 +8,7 @@
 - **Known Exceptions:**
   - `project.json.version` is stamped post-reduce in the RPC layer (`src/core/rpc/version-stamp.ts`). Version is infrastructure metadata (tracking which CLI version last wrote the data), not workflow state. The state machine need not validate or be aware of it.
   - `goodplan migrate` constructs `ProjectState` directly via `buildMigrationState()` in `src/core/rpc/migrate.ts` and calls `commitState(projectDir, ZERO_STATE, newState)`, bypassing `reduce()`. Migration is a data import from a pre-CLI format, not a state transition. There is no corresponding `StateEvent` — the state machine is unaware of migration. An activity log entry records that migration occurred.
+  - `gp verify --fix` writes `project.json` directly via `atomicWrite()`, bypassing `commitState()` and the state machine. Signature repair is infrastructure metadata maintenance, not a workflow state transition.
 
 ## INV-002: JSON files always use deterministic key ordering
 

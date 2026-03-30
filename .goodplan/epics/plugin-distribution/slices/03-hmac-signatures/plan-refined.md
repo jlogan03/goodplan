@@ -124,21 +124,21 @@ Add `gp verify` (read-only check) and `gp verify --fix` (recompute) commands. Up
 ### Expected Behavior
 
 **Before implementation** (should fail / show absence):
-- [ ] `gp verify --json` — fails: unknown command
-- [ ] `grep GP_HMAC_KEY package.json` — no output (define not in build script)
-- [ ] `grep GP_HMAC_KEY scripts/build-plugin.sh` — no output
+- [x] `gp verify --json` — fails: unknown command
+- [x] `grep GP_HMAC_KEY package.json` — no output (define not in build script)
+- [x] `grep GP_HMAC_KEY scripts/build-plugin.sh` — no output
 
 **After implementation** (should pass / show presence):
-- [ ] `gp verify --json` in a valid project — returns `{ "status": "pass" }` with exit 0
-- [ ] Tamper with `.goodplan/goodplan.json`, then `gp verify --json` — throws `DATA_INTEGRITY_CHECK_FAILED` via `GoodplanError`, formatted per INV-007 as `{ "error": { "code": "DATA_INTEGRITY_CHECK_FAILED", "message": "..." } }` with exit 1
-- [ ] `gp verify --fix --json` after tampering — returns `{ "status": "fixed" }` with exit 0, subsequent `gp verify` passes
-- [ ] `grep GP_HMAC_KEY package.json` — shows the define in the build command
-- [ ] `grep GP_HMAC_KEY scripts/build-plugin.sh` — shows the define in the plugin build command
-- [ ] `gp schema --json --query '.commands[] | select(.name == "verify")'` — returns an object with `name: "verify"` and an `args` property containing the `--fix` flag definition (type boolean, default false). If the query returns `null` or empty, the command registration or arg key structure is wrong.
+- [x] `gp verify --json` in a valid project — returns `{ "status": "pass" }` with exit 0
+- [x] Tamper with `.goodplan/goodplan.json`, then `gp verify --json` — throws `DATA_INTEGRITY_CHECK_FAILED` via `GoodplanError`, formatted per INV-007 as `{ "error": { "code": "DATA_INTEGRITY_CHECK_FAILED", "message": "..." } }` with exit 1
+- [x] `gp verify --fix --json` after tampering — returns `{ "status": "fixed" }` with exit 0, subsequent `gp verify` passes
+- [x] `grep GP_HMAC_KEY package.json` — shows the define in the build command
+- [x] `grep GP_HMAC_KEY scripts/build-plugin.sh` — shows the define in the plugin build command
+- [x] `gp schema --json --query '.commands[] | select(.name == "verify")'` — returns an object with `name: "verify"` and an `args` property containing the `--fix` flag definition (type boolean, default false). If the query returns `null` or empty, the command registration or arg key structure is wrong.
 
 ### Tasks
 
-- [ ] Create `src/commands/global/verify.ts` with citty args definition:
+- [x] Create `src/commands/global/verify.ts` with citty args definition:
   ```typescript
   args: {
     ...globalArgs,
@@ -154,16 +154,16 @@ Add `gp verify` (read-only check) and `gp verify --fix` (recompute) commands. Up
   2. `gp verify --fix`: calls `assembleState()` directly, recomputes signature, embeds in `goodplan.json`, validates through `projectSchema.parse()` before writing (preserves INV-005 compliance since this path bypasses `commitState()` and `processJsonEntry`), then writes atomically via exported `atomicWrite()` (export it from `commit.ts` — it's currently module-private; pass `"goodplan.json"` as the `relativePath` parameter for meaningful error messages). Writes ONLY `goodplan.json`, does NOT use `commitState()` (overkill for a single-field metadata update), and does NOT update the state cache. Cache staleness is intentional and resolved on next `loadState()` via mtime invalidation (mtime changes because `goodplan.json` was rewritten) — note that the next command after `--fix` will be slightly slower due to cache miss; this is expected. This is an INV-001 exception (like version-stamp and migrate): signature repair is infrastructure metadata maintenance, not a workflow state transition. `--json` output: `{ "status": "fixed" }` (exit 0). Human output: "State signature recomputed." (stdout via `output()`).
   3. Export `atomicWrite()` from `src/core/data/commit.ts` (currently module-private) so `verify --fix` can use it. **Add a JSDoc comment on the export:** `atomicWrite` is an internal utility — callers outside `commit.ts` should be limited to `verify --fix`; general writes must go through `commitState()`. This prevents future misuse while the Data Layer API surface is still being shaped (Developing maturity). In `verify --fix`, derive the absolute path via `path.join(resolveProjectDir(), "goodplan.json")`, matching the pattern in `status.ts`.
   4. Register command in `src/commands/main.ts` with key `verify: verifyCommand` (un-namespaced global command)
-- [ ] Document `gp verify --fix` as a third INV-001 exception in `architecture/invariants.md` with rationale: "signature repair is infrastructure metadata maintenance, not a workflow state transition"
-- [ ] Add `verify` command to `.goodplan/architecture/commands-api.md`: add to the "Global Commands" section (alongside `status`, `state`, `init`, `migrate`, `schema`), documenting both the read-only `gp verify` form (exits 0 on pass, 1 on fail) and the `gp verify --fix` variant (recomputes and re-embeds signature)
-- [ ] Update `.goodplan/architecture/data-layer-api.md`: add an "HMAC State Integrity" subsection under Contracts describing sign-on-write / verify-on-read behavior and the bootstrap exception (INV-001 carve-out for `verify --fix`). Reflect `commitState()` behavioral change (HMAC computation/embedding) and `loadState()` behavioral change (HMAC verification on non-cache-hit paths)
-- [ ] Add `--define __GP_HMAC_KEY__` to `package.json` build script. Match the existing `__GOODPLAN_VERSION__` quoting pattern in `package.json` (which uses `'\"'...'\"'`): `--define __GP_HMAC_KEY__='\"'${GP_HMAC_KEY:-goodplan-dev-hmac-key}'\"'`
-- [ ] Add `--define __GP_HMAC_KEY__` to `scripts/build-plugin.sh`. Match the existing `__GOODPLAN_VERSION__` quoting pattern in that file (which uses `\"...\"`): `--define "__GP_HMAC_KEY__=\"${GP_HMAC_KEY:-goodplan-dev-hmac-key}\""`
-- [ ] Create `tests/unit/commands/verify.test.ts` (or add to existing global command tests):
+- [x] Document `gp verify --fix` as a third INV-001 exception in `architecture/invariants.md` with rationale: "signature repair is infrastructure metadata maintenance, not a workflow state transition"
+- [x] Add `verify` command to `.goodplan/architecture/commands-api.md`: add to the "Global Commands" section (alongside `status`, `state`, `init`, `migrate`, `schema`), documenting both the read-only `gp verify` form (exits 0 on pass, 1 on fail) and the `gp verify --fix` variant (recomputes and re-embeds signature)
+- [x] Update `.goodplan/architecture/data-layer-api.md`: add an "HMAC State Integrity" subsection under Contracts describing sign-on-write / verify-on-read behavior and the bootstrap exception (INV-001 carve-out for `verify --fix`). Reflect `commitState()` behavioral change (HMAC computation/embedding) and `loadState()` behavioral change (HMAC verification on non-cache-hit paths)
+- [x] Add `--define __GP_HMAC_KEY__` to `package.json` build script. Match the existing `__GOODPLAN_VERSION__` quoting pattern in `package.json` (which uses `'\"'...'\"'`): `--define __GP_HMAC_KEY__='\"'${GP_HMAC_KEY:-goodplan-dev-hmac-key}'\"'`
+- [x] Add `--define __GP_HMAC_KEY__` to `scripts/build-plugin.sh`. Match the existing `__GOODPLAN_VERSION__` quoting pattern in that file (which uses `\"...\"`): `--define "__GP_HMAC_KEY__=\"${GP_HMAC_KEY:-goodplan-dev-hmac-key}\""`
+- [x] Create `tests/unit/commands/verify.test.ts` (or add to existing global command tests):
   1. `gp verify` on valid project returns pass (both JSON and human-readable output)
   2. `gp verify` on tampered project throws `DATA_INTEGRITY_CHECK_FAILED` with exit 1 (JSON: INV-007 error shape; human-readable: red error on stderr)
   3. `gp verify --fix` on tampered project returns fixed (both JSON and human-readable "State signature recomputed." output), subsequent verify passes
-- [ ] Create `tests/fitness/state-integrity.test.ts`:
+- [x] Create `tests/fitness/state-integrity.test.ts`:
   1. `commitState()` always embeds a valid signature (unit-level — the core invariant)
   2. Signature changes when state changes (different mutations produce different signatures)
   3. One representative end-to-end command (e.g., `gp epic:create`) produces a valid signature (integration-level — depends on Phase 2's `global-setup.ts` define change; validates the injected-key path via the compiled binary). **Note:** this test has an implicit dependency on the compiled binary having the `__GP_HMAC_KEY__` define from `global-setup.ts`. If the define is missing, the dev-key fallback makes the test pass vacuously. Verify the test binary was compiled with the define.

@@ -5,7 +5,7 @@
 	"scripts": {
 		"check": "biome check .",
 		"test": "vitest",
-		"build": "bun build --compile src/index.ts --outfile gp --define __GOODPLAN_VERSION__='\"'$(node -p 'require(\"./package.json\").version')'\"'",
+		"build": "bun build --compile src/index.ts --outfile gp --define __GOODPLAN_VERSION__='\"'$(node -p 'require(\"./package.json\").version')'\"' --define __GP_HMAC_KEY__='\"'${GP_HMAC_KEY:-goodplan-dev-hmac-key}'\"'",
 		"build:plugin": "bash scripts/build-plugin.sh",
 		"install:skills": "bash scripts/install-skills.sh"
 	},

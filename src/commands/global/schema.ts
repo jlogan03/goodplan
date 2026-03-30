@@ -1,5 +1,6 @@
 import { defineCommand } from "citty";
 import { z } from "zod";
+import { LEGACY_DIR_NAME, PROJECT_DIR_NAME } from "../../core/data/project.js";
 import { migrationResponseSchema } from "../../core/rpc/migrate.js";
 import {
 	createDecisionInputSchema,
@@ -24,7 +25,6 @@ import {
 	submitSlicesInputSchema,
 } from "../../schemas/commands/submit.js";
 import { taskCreateInputSchema } from "../../schemas/commands/task.js";
-import { LEGACY_DIR_NAME, PROJECT_DIR_NAME } from "../../core/data/project.js";
 import { GoodplanError } from "../../util/errors.js";
 import { output } from "../../util/output.js";
 import { globalArgs, listArgs } from "../global-args.js";
@@ -156,6 +156,19 @@ registerCommand(
 			type: "string",
 			description: "Return at most N entries when result is an array (requires --query)",
 			required: false,
+		},
+	},
+);
+
+registerCommand(
+	"verify",
+	"Verify state integrity (HMAC signature). Use --fix to recompute and re-embed the signature.",
+	{
+		...globalArgDefs,
+		fix: {
+			type: "boolean",
+			description: "Recompute and re-embed the state signature",
+			default: false,
 		},
 	},
 );

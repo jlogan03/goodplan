@@ -37,7 +37,8 @@ const ENTITY_ARGS = new Set(["epic", "slice", "quest", "task", "id", "from", "to
  * Commands that operate on the entire project rather than targeting a specific entity.
  * Note: `init` is also project-scoped but lives in `READ_ONLY_COMMANDS`.
  */
-const ENTITY_EXEMPT_COMMANDS = new Set(["migrate"]);
+/** verify --fix writes project.json (signature repair), like migrate writes during schema upgrades. */
+const ENTITY_EXEMPT_COMMANDS = new Set(["migrate", "verify"]);
 
 /** Commands that accept stdin with required entity-identifying fields. */
 const STDIN_ENTITY_COMMANDS = new Set([

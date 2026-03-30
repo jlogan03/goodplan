@@ -134,6 +134,14 @@ const schemaRegistry: Array<{ pattern: RegExp; schema: ZodSchema }> = [
 
 Files not matching any pattern are either markdown (`.md` → `MarkdownEntry`) or ignored.
 
+### HMAC State Integrity
+
+Every `commitState()` call computes an HMAC-SHA256 signature over the serialized state tree (JSON/JSONL files, excluding markdown) and embeds it as `stateSignature` in `project.json`. The signature is injected after `diffTree()` collects writes but before flushing, ensuring atomic inclusion. The key (`__GP_HMAC_KEY__`) is a compile-time define; dev/test builds use a well-known dev key.
+
+Every `loadState()` call verifies the HMAC on non-cache-hit paths (full `assembleState()` rebuild and `incrementalUpdate()` paths). Cache hits are trusted (mtime-based). Missing signatures (bootstrap) are skipped — the next `commitState()` embeds one. On mismatch: hard error (`DATA_INTEGRITY_CHECK_FAILED`) directing the user to `gp verify --fix`.
+
+`gp verify --fix` is an INV-001 exception: it writes `project.json` directly via `atomicWrite()`, bypassing `commitState()` and the state machine. Cache staleness is intentional — resolved on next `loadState()` via mtime invalidation.
+
 ### No Business Logic
 
 The Data Layer does not make decisions about state transitions, workflow rules, or content semantics. It reads, validates, serializes, diffs, and writes. All business logic lives in the State Machine (for transitions) or the RPC Layer (for orchestration).

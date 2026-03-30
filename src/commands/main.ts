@@ -22,6 +22,7 @@ import { migrateCommand } from "./global/migrate.js";
 import { schemaCommand } from "./global/schema.js";
 import { stateCommand } from "./global/state.js";
 import { statusCommand } from "./global/status.js";
+import { verifyCommand } from "./global/verify.js";
 import { learningListCommand } from "./learning/list.js";
 import { learningRollupCommand } from "./learning/rollup.js";
 import { questAbandonCommand } from "./quest/abandon.js";
@@ -80,6 +81,7 @@ export const mainCommand = defineCommand({
 		schema: schemaCommand,
 		state: stateCommand,
 		status: statusCommand,
+		verify: verifyCommand,
 		"decision:create": decisionCreateCommand,
 		"decision:list": decisionListCommand,
 		"decision:show": decisionShowCommand,

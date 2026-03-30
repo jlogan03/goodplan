@@ -23,7 +23,8 @@ mkdir -p "$PLUGIN_DIR/hooks"
 (cd "$REPO_ROOT" && bun build --compile src/index.ts \
   --outfile "$PLUGIN_DIR/binaries/macos-arm64/gp" \
   --target=bun-darwin-arm64 \
-  --define "__GOODPLAN_VERSION__=\"$VERSION\"")
+  --define "__GOODPLAN_VERSION__=\"$VERSION\"" \
+  --define "__GP_HMAC_KEY__=\"${GP_HMAC_KEY:-goodplan-dev-hmac-key}\"")
 
 # Generate plugin manifest
 # Paths must use ./ prefix to pass `claude plugin validate`

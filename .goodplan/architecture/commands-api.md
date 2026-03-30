@@ -237,6 +237,7 @@ goodplan submit-refine-slices --epic <name>
 ```
 goodplan status [--json] [--query <jq>]
 goodplan state [--json] [--query <jq>] [--inline] [--offset <n>] [--limit <n>]
+goodplan verify [--fix] [--json] [--query <jq>]
 goodplan init [--name <name>]
 goodplan migrate [--json]
 goodplan schema [--command <command-path>] [--json] [--query <jq>]
@@ -249,6 +250,8 @@ goodplan schema [--command <command-path>] [--json] [--query <jq>]
 `init` initializes the `.project/` directory structure and `project.json`. Maps to `INIT_PROJECT` event. When `--name` is provided, uses it as the project name. When `--name` is omitted, falls back to the current directory name (`path.basename(cwd)`). If `.project/` already exists, returns error `STATE_ALREADY_INITIALIZED`.
 
 `schema` outputs the CLI's command tree with input/output schemas. Without `--command`, returns the full command hierarchy. With `--command` (e.g., `schema --command slice:complete`), returns that command's input schema, output schema, and flags. Output is always JSON (human-readable formatting by default, raw with `--json`). Supports `--query` for filtering.
+
+`verify` checks the HMAC state integrity signature. Without `--fix`: calls `assembleState()` directly (bypassing `loadState()` verification), computes the HMAC, compares to the embedded signature. Exit 0 on pass, exit 1 on fail (`DATA_INTEGRITY_CHECK_FAILED`). With `--fix`: recomputes the signature, validates through `projectSchema.parse()`, writes `project.json` atomically. This is an INV-001 exception — signature repair bypasses the state machine. Does not update the state cache (staleness resolved on next `loadState()` via mtime invalidation).
 
 There is no standalone `context` command. Sub-agents get context via `start-*` commands. The orchestrator uses `status`.
 
