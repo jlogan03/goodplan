@@ -12,3 +12,4 @@ gp
 skills/**/.DS_Store
 .migration-in-progress.json
 dist/
+.goodplan-dev

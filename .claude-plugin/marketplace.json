@@ -1,0 +1,17 @@
+{
+	"name": "goodplan-marketplace",
+	"owner": {
+		"name": "Ian White"
+	},
+	"plugins": [
+		{
+			"name": "gp",
+			"source": {
+				"source": "git-subdir",
+				"url": "https://github.com/ian97531/project-skills.git",
+				"path": "plugins/gp",
+				"ref": "release"
+			}
+		}
+	]
+}
