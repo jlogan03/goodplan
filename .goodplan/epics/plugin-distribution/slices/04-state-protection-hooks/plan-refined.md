@@ -1,5 +1,8 @@
 # Plan: State Protection Hooks
 
+Status: COMPLETE
+Completed: 2026-03-30
+
 ## Overview
 
 Implement two PreToolUse hook scripts that ship with the goodplan plugin: `protect-state.sh` blocks Write/Edit on `.goodplan/` JSON/JSONL state files, and `warn-bash-state.sh` warns when Bash commands reference `.goodplan/`. Hook configuration lives in `hooks.json` using Claude Code's matcher-based format. Source files live in `plugin-hooks/` and are copied to `dist/gp-plugin/hooks/` during `build:plugin`.
