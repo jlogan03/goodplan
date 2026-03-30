@@ -1,0 +1,1 @@
+Both protect-state.sh and warn-bash-state.sh need the sentinel check as their first action after python3 guard.

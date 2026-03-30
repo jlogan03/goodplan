@@ -1,0 +1,1 @@
+Non-blocking advisory context requires stdout JSON with additionalContext inside hookSpecificOutput.

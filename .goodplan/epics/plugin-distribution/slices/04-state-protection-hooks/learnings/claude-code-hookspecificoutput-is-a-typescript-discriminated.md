@@ -1,0 +1,1 @@
+Future hook plans should always specify the complete JSON shape including hookEventName.
