@@ -10,7 +10,7 @@ Implement an embedded `stateSignature` field in `goodplan.json` that contains an
 4. Bootstrap exception: if `stateSignature` is missing from `goodplan.json`, compute and embed it automatically on first CLI run. `gp verify` without `--fix` on a pre-HMAC repo returns fail (not bootstrap).
 5. `gp verify` (read-only): assemble state tree, compute HMAC, compare. Returns JSON `{ "status": "pass" }` or `{ "status": "fail", "message": "..." }`. Exit 0 on pass, exit 1 on fail.
 6. `gp verify --fix`: recompute and re-embed the signature. Returns `{ "status": "fixed" }`. Exit 0.
-7. HMAC key injected via `--define __GP_HMAC_KEY__` at compile time. Dev builds use a well-known dev key.
+7. HMAC key injected via `--define __GP_HMAC_KEY__` at compile time. Dev builds use a well-known dev key. Must be added to both `bun run build` (package.json) and `scripts/build-plugin.sh` (plugin build).
 8. `serializeStateTree()` uses deterministic key ordering, lexicographic file path sorting, preserved JSONL order, `\n` normalization
 9. Markdown files (architecture, research, brainstorm, plans, goals) are excluded from the signature — LLM-owned content changes don't invalidate state integrity
 

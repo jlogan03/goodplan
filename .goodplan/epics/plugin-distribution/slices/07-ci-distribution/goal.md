@@ -32,6 +32,7 @@ GitHub Actions workflow that builds the plugin on version tag push, runs smoke t
 - [ ] `plugins/gp/binaries/macos-arm64/gp --version --json` (from release branch checkout) returns expected version
 - [ ] Concurrency: push two tags in quick succession — second job queues, doesn't cancel first
 - [ ] `/plugin marketplace add ian97531/project-skills` — plugin installs from the marketplace (end-to-end)
+- [ ] Verify whether `plugin/CLAUDE.md` is loaded for marketplace-installed plugins (CLAUDE.md discovery walks up from user cwd, not plugin cache — may not load). If not loaded, remove it from the build script and ensure all instructions live in skill content instead (see slice 02 research: `claude-plugin-root-scope.md`).
 
 Push a test version tag to trigger the workflow. Monitor the GitHub Actions run through all steps. After success, check the release branch for the published plugin. Check the GitHub Release page for the attached artifact. Attempt to install the plugin via the marketplace command. If the full marketplace test isn't feasible in CI, at least verify the release branch structure matches what `git-subdir` expects.
 

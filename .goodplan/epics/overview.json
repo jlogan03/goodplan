@@ -200,10 +200,10 @@
 					"status": "completed"
 				},
 				{
-					"completed": null,
+					"completed": "2026-03-30T02:52:05.802Z",
 					"created": "2026-03-29T20:39:00.657Z",
 					"name": "02-plugin-scaffold",
-					"status": "implementation-complete"
+					"status": "completed"
 				},
 				{
 					"completed": null,

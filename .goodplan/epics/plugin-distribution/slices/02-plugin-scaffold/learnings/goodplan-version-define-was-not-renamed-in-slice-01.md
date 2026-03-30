@@ -1,0 +1,1 @@
+Epic architecture docs referenced __GP_VERSION__ but slice 01 kept __GOODPLAN_VERSION__. Architecture docs updated to match. Future slices should use __GOODPLAN_VERSION__ for version and __GP_HMAC_KEY__ for HMAC.

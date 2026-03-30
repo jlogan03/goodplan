@@ -1,0 +1,1 @@
+marketplace.json uses { source: { source: "git-subdir", ... } } — the nested source.source is correct per official Claude Code docs. Not an error.

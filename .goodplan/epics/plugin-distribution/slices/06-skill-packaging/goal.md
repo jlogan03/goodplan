@@ -5,6 +5,7 @@ Copy all skills from the repo's `skills/` directory into the plugin structure at
 
 ## Behavior
 1. `build:plugin` copies the entire `skills/` directory to `dist/gp-plugin/skills/`, including `_shared/` references
+2. Create `plugin/skills/_shared/cli-usage.md` — shared skill reference containing the binary path `${CLAUDE_PLUGIN_ROOT}/binaries/macos-arm64/gp`. Skills import this via relative path. This was deferred from slice 02 because there were no consumers until skills are packaged. `${CLAUDE_PLUGIN_ROOT}` substitution works in skill content but NOT in a plugin's root-level CLAUDE.md (see slice 02 research: `claude-plugin-root-scope.md`).
 2. All skill SKILL.md files reference `gp` (not `goodplan`) for CLI invocations — already done in slice 1
 3. Relative paths (`../_shared/references/`) work within the plugin boundary since `_shared/` is a sibling of skill directories
 4. Skills are discoverable by Claude Code when loaded via `--plugin-dir`

@@ -36,8 +36,8 @@ gp-plugin/
   "version": "1.0.0",
   "description": "goodplan — structured development workflow for Claude Code",
   "author": { "name": "Ian White" },
-  "skills": "skills",
-  "hooks": "hooks/hooks.json"
+  "skills": "./skills",
+  "hooks": "./hooks/hooks.json"
 }
 ```
 
@@ -141,7 +141,7 @@ Provides universal instructions for any project using goodplan:
 A `package.json` script entry delegating to `scripts/build-plugin.sh` (following the existing `scripts/install-skills.sh` pattern). The shell script enables `set -e`, inline comments, and easier debugging for the multi-step build. Assembles `dist/gp-plugin/`:
 
 1. Clean `dist/gp-plugin/`
-2. Compile binary: `bun build --compile src/index.ts --outfile dist/gp-plugin/binaries/macos-arm64/gp --target=bun-darwin-arm64 --define __GP_VERSION__=\"<version>\" --define __GP_HMAC_KEY__=\"${GP_HMAC_KEY:-<dev-key>}\"`
+2. Compile binary: `bun build --compile src/index.ts --outfile dist/gp-plugin/binaries/macos-arm64/gp --target=bun-darwin-arm64 --define __GOODPLAN_VERSION__=\"<version>\" --define __GP_HMAC_KEY__=\"${GP_HMAC_KEY:-<dev-key>}\"`
    - Production: `GP_HMAC_KEY` env var injected from GitHub Actions secret `GP_HMAC_KEY`
    - Local dev: falls back to a well-known dev key hardcoded in the script (different from the production key)
 3. Copy `skills/` -> `dist/gp-plugin/skills/`

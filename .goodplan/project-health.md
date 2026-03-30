@@ -14,6 +14,7 @@
 - Maturity/invariants/fitness workflow: Steps 8f/8g/8h in define-architecture, Steps 3b/3c/3d in audit-architecture, maturity evaluation in refine-architecture, reviewer criteria 12/13 — all untested on a real project
 - Epic completion mode in /complete: new epic scope type, architecture reconciliation, artifact promotion, archive numbering — all untested on a real epic
 - Install script (`scripts/install-skills.sh`): verified manually via `bun run install:skills` + diff; no automated test
+- Plugin build script (`scripts/build-plugin.sh`): verified manually via `bun run build:plugin` + `claude plugin validate`; no automated test
 
 ### Known fragile areas
 - Cross-skill reference paths (e.g., refine-slices references refine-plan's shared-preamble.md): if refine-plan files move, refine-slices breaks silently
@@ -22,7 +23,7 @@
 - epic-conventions.md is consumed by 12+ skills: changes require updating all consumers
 - citty + `exactOptionalPropertyTypes`: requires `as unknown as CommandDef` casts in `src/index.ts`. May break on citty upgrade.
 
-<!-- Last updated by: complete for improve-test-coverage-and-quality, 2026-03-28 -->
+<!-- Last updated by: complete for 02-plugin-scaffold, 2026-03-29 -->
 
 ## Performance Characteristics
 
@@ -72,8 +73,8 @@
 
 ## Recent Changes
 
+- **02-plugin-scaffold** (2026-03-29): Plugin build pipeline (`scripts/build-plugin.sh`), assembles `dist/gp-plugin/` with compiled binary, plugin manifest, CLAUDE.md, placeholder dirs. Marketplace manifest at `.claude-plugin/marketplace.json`. Passes `claude plugin validate`. 4 new files, 2 modified.
 - **01-rename-gp** (2026-03-29): Renamed CLI binary from `goodplan` to `gp`, state directory from `.project/` to `.goodplan/`. 204 source/test files + 76 skill/doc files updated. Dual-path migrate support (legacy `.project/` + `.goodplan/` re-migration). Exported `PROJECT_DIR_NAME`/`LEGACY_DIR_NAME` constants. 1475 tests pass.
 - **onboard-repo** (2026-03-29): New `/onboard-repo` skill (SKILL.md + 5 reference files, 613+lines). Fixture generation script, Claude SDK test harness. Updated install script and expertise-tracking.md consumer list. Skills-only changes — no CLI modifications.
-- **consistent-skill-output** (2026-03-28): Consolidated 3 duplicated output template groups into shared output-templates.md. Updated 10 consuming skills to reference shared templates. 11 files changed (net -8 lines from deduplication).
 
-<!-- Last updated by: complete for 01-rename-gp, 2026-03-29 -->
+<!-- Last updated by: complete for 02-plugin-scaffold, 2026-03-29 -->
