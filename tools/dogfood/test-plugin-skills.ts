@@ -26,7 +26,7 @@ if (!HOME) {
 	process.exit(1);
 }
 
-const GOODPLAN_DIR = join(HOME, "Repos/goodplan");
+const GOODPLAN_DIR = join(import.meta.dir, "../..");
 const PLUGIN_DIR = resolve(GOODPLAN_DIR, "dist/gp-plugin");
 const GP_BIN = join(PLUGIN_DIR, "binaries/macos-arm64/gp");
 const TEST_DIR = "/tmp/gp-plugin-skills-test";

@@ -30,7 +30,7 @@ if (!HOME) {
 	process.exit(1);
 }
 
-const GOODPLAN_DIR = join(HOME, "Repos/goodplan");
+const GOODPLAN_DIR = join(import.meta.dir, "../..");
 const GOODPLAN_BIN = join(HOME, ".local/bin/goodplan");
 const TEST_DIR = "/tmp/goodplan-migrate-test";
 const LOG_FILE = join(GOODPLAN_DIR, "tools/dogfood/migrate-test.log");

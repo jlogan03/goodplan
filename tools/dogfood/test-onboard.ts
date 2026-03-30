@@ -30,7 +30,7 @@ if (!HOME) {
 	process.exit(1);
 }
 
-const GOODPLAN_DIR = join(HOME, "Repos/goodplan");
+const GOODPLAN_DIR = join(import.meta.dir, "../..");
 const GOODPLAN_BIN = join(HOME, ".local/bin/goodplan");
 const TEST_DIR = "/tmp/goodplan-onboard-test";
 const FIXTURE_SCRIPT = join(GOODPLAN_DIR, "scripts/generate-onboard-fixture.sh");

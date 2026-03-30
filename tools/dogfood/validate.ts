@@ -30,7 +30,7 @@ import type { AskUserQuestionInput } from "@anthropic-ai/claude-agent-sdk/sdk-to
 const HOME = process.env.HOME!;
 const PROJECT_DIR = join(HOME, "Repos/flashcards");
 const GOODPLAN_BIN = join(HOME, "bin/goodplan");
-const LOG_DIR = join(HOME, "Repos/goodplan/tools/dogfood/validate-logs");
+const LOG_DIR = join(import.meta.dir, "validate-logs");
 const MODEL = "claude-opus-4-6";
 
 mkdirSync(LOG_DIR, { recursive: true });

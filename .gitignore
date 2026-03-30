@@ -1,15 +1,36 @@
+# Build artifacts
+dist/
+goodplan
+gp
+node_modules
+
+# OS files
+.DS_Store
+skills/**/.DS_Store
+
+# IDE / tools
+.superpowers/
+.superset/
+
+# Logs
+*.log
+tools/dogfood/validate-logs/
+
+# Dev sentinel (excluded from plugin builds)
+.goodplan-dev
+
+# Migration artifacts
+.migration-in-progress.json
+
+# Backup directories from migrations
+.project-old-*/
+
+# State markdown (generated, not tracked)
 .project/state.md
 .goodplan/state.md
-.DS_Store
-.superpowers/
+
+# Legacy prototype artifacts
 .project/epics/goodplan-cli/prototypes/jqjs-spike/jqjs-spike
 .project/epics/goodplan-cli/prototypes/jqjs-spike/node_modules/
 .goodplan/epics/goodplan-cli/prototypes/jqjs-spike/jqjs-spike
 .goodplan/epics/goodplan-cli/prototypes/jqjs-spike/node_modules/
-node_modules
-goodplan
-gp
-skills/**/.DS_Store
-.migration-in-progress.json
-dist/
-.goodplan-dev

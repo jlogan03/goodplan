@@ -36,7 +36,7 @@ if (!HOME) {
 }
 
 const NONDET_EVAL_DIR = join(HOME, "Repos/nondet-eval");
-const GOODPLAN_DIR = join(HOME, "Repos/goodplan");
+const GOODPLAN_DIR = join(import.meta.dir, "../..");
 const GOODPLAN_BIN = join(HOME, "bin/goodplan");
 const SKILLS_DIR = join(GOODPLAN_DIR, "skills");
 const LOG_DIR = join(GOODPLAN_DIR, ".project/quests/dogfood-harness/harness-logs");
