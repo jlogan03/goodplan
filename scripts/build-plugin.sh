@@ -30,7 +30,7 @@ mkdir -p "$PLUGIN_DIR/hooks"
 # Paths must use ./ prefix to pass `claude plugin validate`
 cat > "$PLUGIN_DIR/.claude-plugin/plugin.json" <<MANIFEST
 {
-  "name": "gp",
+  "name": "goodplan",
   "version": "$VERSION",
   "description": "goodplan workflow CLI — manages epics, slices, architecture, and project state",
   "author": {
@@ -51,6 +51,34 @@ chmod +x "$PLUGIN_DIR/hooks/"*.sh
 
 # Copy plugin CLAUDE.md template
 cp "$REPO_ROOT/plugin/CLAUDE.md" "$PLUGIN_DIR/CLAUDE.md"
+
+# Add gp: namespace prefix to dist skill names (source unchanged).
+# Plugin name is "goodplan" (marketing name) but skills use "gp:" prefix (CLI shorthand).
+echo ""
+echo "Applying gp: namespace prefix to skills..."
+for dir in "$PLUGIN_DIR/skills"/*/; do
+  dirname=$(basename "$dir")
+  if [[ "$dirname" == _* ]]; then
+    continue
+  fi
+  SKILL_FILE="$dir/SKILL.md"
+  if [[ ! -f "$SKILL_FILE" ]]; then
+    continue
+  fi
+  # Extract current name from frontmatter
+  CURRENT_NAME=$(awk 'NR==1 && /^---$/{found=1; next} found && /^---$/{exit} found && /^name:/{print $2}' "$SKILL_FILE")
+  if [[ -z "$CURRENT_NAME" ]]; then
+    echo "  WARN: $dirname has no name: field, inserting gp:$dirname"
+    # Insert name: gp:<dirname> after opening ---
+    awk 'NR==1 && /^---$/{print; print "name: gp:'"$dirname"'"; next} {print}' "$SKILL_FILE" > "$SKILL_FILE.tmp"
+    mv "$SKILL_FILE.tmp" "$SKILL_FILE"
+  elif [[ "$CURRENT_NAME" != gp:* ]]; then
+    # Replace name: <current> with name: gp:<current>
+    awk '/^name: /{sub(/^name: /, "name: gp:"); print; next} {print}' "$SKILL_FILE" > "$SKILL_FILE.tmp"
+    mv "$SKILL_FILE.tmp" "$SKILL_FILE"
+  fi
+done
+echo "  namespace prefixing: done"
 
 # Verify skill packaging
 echo ""
@@ -80,8 +108,8 @@ for dir in "$PLUGIN_DIR/skills"/*/; do
     echo "FAIL: $dir/SKILL.md has no valid YAML frontmatter (missing --- delimiters)"
     exit 1
   fi
-  if ! echo "$FRONTMATTER" | grep -q '^name:'; then
-    echo "FAIL: $dir/SKILL.md frontmatter missing name: field"
+  if ! echo "$FRONTMATTER" | grep -q '^name: gp:'; then
+    echo "FAIL: $dir/SKILL.md frontmatter missing or incorrect name: field (expected name: gp:<skill-name>)"
     exit 1
   fi
   if ! echo "$FRONTMATTER" | grep -q '^description:'; then

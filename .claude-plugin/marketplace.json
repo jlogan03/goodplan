@@ -6,7 +6,7 @@
 	},
 	"plugins": [
 		{
-			"name": "gp",
+			"name": "goodplan",
 			"source": {
 				"source": "git-subdir",
 				"url": "https://github.com/ian97531/goodplan.git",
