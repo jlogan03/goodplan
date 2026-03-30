@@ -44,15 +44,15 @@ We are implementing a set of improvements to the goodplan workflow itself. These
 
 ## Three Separate Things — Do Not Confuse
 
-This repo builds the goodplan workflow system. It contains the source code for both the CLI and skills, AND it uses an older installed version of those same tools to manage its own `.project/` state. These are three distinct things:
+This repo builds the goodplan workflow system. It contains the source code for both the CLI and skills, AND it uses the installed version of those same tools to manage its own `.goodplan/` state. These are three distinct things:
 
 ### 1. Repo source code (`skills/`, `src/`)
 This is what we are actively developing. **"Update a skill" always means editing files here.** The `skills/` directory is the **source of truth** for all goodplan skills. The `src/` directory is the source for the CLI. These are NOT installed or active anywhere until explicitly built/installed.
 
-### 2. Installed tools (`~/.claude/skills/`, `goodplan` on PATH)
-These are an **older version**, installed from the repo at some earlier point via `bun run install:skills`. They are what `/project-status`, `/create-plan`, `/implement-plan`, and all other slash commands actually use. They may have **different capabilities** from what's in the repo — we are actively improving the repo versions. The installed `goodplan` CLI binary lives at `~/.local/bin/goodplan`. **Never edit `~/.claude/skills/` directly** — those files get overwritten by `bun run install:skills`.
+### 2. Installed tools (`~/.claude/skills/`, `gp` on PATH)
+These are installed from the repo via `bun run install:skills`. They are what `/project-status`, `/create-plan`, `/implement-plan`, and all other slash commands actually use. They may have **different capabilities** from what's in the repo — we are actively improving the repo versions. The installed `gp` CLI binary lives at `~/.local/bin/gp`. **Never edit `~/.claude/skills/` directly** — those files get overwritten by `bun run install:skills`.
 
-### 3. This repo's `.project/` directory
+### 3. This repo's `.goodplan/` directory
 This is managed by the **installed** CLI and skills (#2 above), not the repo source code (#1). It must stay compatible with the installed version. It tracks this repo's own epics, quests, learnings, and architecture.
 
 ### Rules
@@ -60,7 +60,7 @@ This is managed by the **installed** CLI and skills (#2 above), not the repo sou
 | Action | Correct | Wrong |
 |---|---|---|
 | Edit a skill | Edit `skills/<name>/SKILL.md` in the repo | Edit `~/.claude/skills/<name>/SKILL.md` |
-| Run a workflow command | `goodplan status --json` (installed CLI) | `./goodplan status --json` (local build) |
-| Mutate `.project/` state | `goodplan quest:complete ...` (installed CLI) | Directly edit `.project/quests/*/quest.json` |
-| Test CLI changes | Run `./goodplan` against a **fixture repo** in `/tmp` | Run `./goodplan` against this repo's `.project/` |
+| Run a workflow command | `gp status --json` (installed CLI) | `./gp status --json` (local build) |
+| Mutate `.goodplan/` state | `gp quest:complete ...` (installed CLI) | Directly edit `.goodplan/quests/*/quest.json` |
+| Test CLI changes | Run `./gp` against a **fixture repo** in `/tmp` | Run `./gp` against this repo's `.goodplan/` |
 | Install updated skills | `bun run install:skills` (explicit, user-initiated) | Auto-install during development |
