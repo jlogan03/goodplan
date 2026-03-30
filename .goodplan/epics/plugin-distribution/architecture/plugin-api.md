@@ -188,7 +188,7 @@ At repo root: `.claude-plugin/marketplace.json`
       "name": "gp",
       "source": {
         "source": "git-subdir",
-        "url": "https://github.com/ian97531/project-skills.git",
+        "url": "https://github.com/ian97531/goodplan.git",
         "path": "plugins/gp",
         "ref": "release"
       },

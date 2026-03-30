@@ -57,7 +57,7 @@ The registry is derived from the Commands API's command-to-event mapping — the
 
 - Single-repo marketplace using `git-subdir` with `ref: "release"`
 - CI builds plugin on tag push, force-pushes to `release` branch at `plugins/gp/`
-- Users install via `/plugin marketplace add ian97531/project-skills` (`ian97531/project-skills` is the GitHub repo name for goodplan)
+- Users install via `/plugin marketplace add ian97531/goodplan` (`ian97531/goodplan` is the GitHub repo name for goodplan)
 - Binary at `${CLAUDE_PLUGIN_ROOT}/binaries/macos-arm64/gp` — no PATH integration or setup script needed
 - Skills invoked as `/gp:create-plan`, `/gp:explore`, etc.
 

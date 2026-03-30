@@ -49,7 +49,7 @@ plugins/
     CLAUDE.md           # universal goodplan instructions
 ```
 
-Users install via: `/plugin marketplace add ian97531/project-skills`
+Users install via: `/plugin marketplace add ian97531/goodplan`
 
 ## Rollback
 
