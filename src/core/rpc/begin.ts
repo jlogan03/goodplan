@@ -21,6 +21,7 @@ import { reduce } from "../state/reduce.js";
 import { isStateError } from "../state/types.js";
 import { getJson, getJsonl } from "../tree.js";
 import type { ProjectState } from "../tree.js";
+import { computeNextCommands } from "./next-commands.js";
 import { resolvePathReferences } from "./paths.js";
 import type {
 	BeginPayloadMap,
@@ -79,9 +80,11 @@ export function begin<P extends BeginPhase>(
 			: BeginResult;
 	}
 
+	const baseResult = buildBeginResult(phase, target, oldState, stampedResult);
 	const beginResult: BeginResult = {
-		...buildBeginResult(phase, target, oldState, stampedResult),
+		...baseResult,
 		paths: resolvePathReferences(projectDir, target, phase),
+		nextCommands: computeNextCommands(target, baseResult.newStatus),
 	};
 	return beginResult as P extends "rollup" ? RollupResult : BeginResult;
 }
@@ -365,7 +368,7 @@ function buildBeginResult(
 	target: Target,
 	oldState: ProjectState,
 	newState: ProjectState,
-): BeginResult {
+): Omit<BeginResult, "nextCommands" | "paths"> {
 	const entityPath = resolveEntityJsonPath(target);
 	const entity = resolveEntityName(target);
 

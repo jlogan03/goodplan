@@ -22,6 +22,7 @@ import { ACTIVITY_PHASE_DEFERRED_SKIP } from "../state/transitions/helpers.js";
 import { isStateError } from "../state/types.js";
 import { getJson, getJsonl } from "../tree.js";
 import type { ProjectState } from "../tree.js";
+import { computeNextCommands } from "./next-commands.js";
 import { resolvePathReferences } from "./paths.js";
 import type {
 	CompleteInput,
@@ -75,9 +76,11 @@ export function complete(
 
 	commitState(projectDir, oldState, stampedResult, options?.force === true ? { force: true } : undefined);
 
+	const baseResult = buildCompleteResult(target, oldState, stampedResult);
 	const completeResult: CompleteResult = {
-		...buildCompleteResult(target, oldState, stampedResult),
+		...baseResult,
 		paths: resolvePathReferences(projectDir, target, "complete"),
+		nextCommands: computeNextCommands(target, baseResult.newStatus),
 	};
 
 	// Wire --inline: assemble context bundle after state transition
@@ -256,7 +259,7 @@ function buildCompleteResult(
 	target: Target,
 	oldState: ProjectState,
 	newState: ProjectState,
-): CompleteResult {
+): Omit<CompleteResult, "nextCommands" | "paths" | "context"> {
 	const entity = resolveEntityName(target);
 	const entityPath = resolveEntityJsonPath(target);
 
@@ -290,11 +293,11 @@ function buildSliceCompleteResult(
 	entity: string,
 	oldState: ProjectState,
 	newState: ProjectState,
-): CompleteResult {
+): Omit<CompleteResult, "nextCommands" | "paths" | "context"> {
 	const oldSlice = getJson<Slice>(oldState, `epics/${epicName}/slices/${sliceName}/slice.json`);
 	const newSlice = getJson<Slice>(newState, `epics/${epicName}/slices/${sliceName}/slice.json`);
 
-	const result: CompleteResult = {
+	const result: Omit<CompleteResult, "nextCommands" | "paths" | "context"> = {
 		entity,
 		previousStatus: oldSlice?.status ?? "none",
 		newStatus: newSlice?.status ?? "unknown",
@@ -390,11 +393,11 @@ function buildQuestCompleteResult(
 	entity: string,
 	oldState: ProjectState,
 	newState: ProjectState,
-): CompleteResult {
+): Omit<CompleteResult, "nextCommands" | "paths" | "context"> {
 	const oldQuest = getJson<Quest>(oldState, `quests/${questName}/quest.json`);
 	const newQuest = getJson<Quest>(newState, `quests/${questName}/quest.json`);
 
-	const result: CompleteResult = {
+	const result: Omit<CompleteResult, "nextCommands" | "paths" | "context"> = {
 		entity,
 		previousStatus: oldQuest?.status ?? "none",
 		newStatus: newQuest?.status ?? "unknown",

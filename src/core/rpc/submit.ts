@@ -18,6 +18,7 @@ import { reduce } from "../state/reduce.js";
 import { isStateError } from "../state/types.js";
 import { getJson } from "../tree.js";
 import type { ProjectState } from "../tree.js";
+import { computeNextCommands } from "./next-commands.js";
 import { resolvePathReferences } from "./paths.js";
 import type { SubmitInput, SubmitPhase, SubmitResult, Target, WorkflowOptions } from "./types.js";
 import { resolveEntityJsonPath, resolveEntityName } from "./types.js";
@@ -61,9 +62,11 @@ export function submit(
 
 	commitState(projectDir, oldState, stampedResult, options?.force === true ? { force: true } : undefined);
 
+	const baseResult = buildSubmitResult(phase, target, oldState, stampedResult);
 	const submitResult: SubmitResult = {
-		...buildSubmitResult(phase, target, oldState, stampedResult),
+		...baseResult,
 		paths: resolvePathReferences(projectDir, target, phase),
+		nextCommands: computeNextCommands(target, baseResult.newStatus),
 	};
 	return submitResult;
 }
@@ -198,7 +201,7 @@ function buildSubmitResult(
 	target: Target,
 	oldState: ProjectState,
 	newState: ProjectState,
-): SubmitResult {
+): Omit<SubmitResult, "nextCommands" | "paths"> {
 	const entity = resolveEntityName(target);
 	const { previousStatus, newStatus } = resolveStatuses(target, oldState, newState);
 

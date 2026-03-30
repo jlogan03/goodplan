@@ -90,27 +90,27 @@ Wire `computeNextCommands()` into the RPC layer's `begin()`, `submit()`, and `co
 ### Expected Behavior
 
 **Before implementation** (should fail / show absence):
-- [ ] `bun run test` — all existing tests pass (baseline before changes)
-- [ ] `grep -r "nextCommands" src/core/rpc/types.ts` — no matches (field not yet on result types)
+- [x] `bun run test` — all existing tests pass (baseline before changes)
+- [x] `grep -r "nextCommands" src/core/rpc/types.ts` — no matches (field not yet on result types)
 
 **After implementation** (should pass / show presence):
-- [ ] `bun run test` — all tests pass including new integration coverage
-- [ ] `bun run check` — no lint errors
-- [ ] `grep -r "nextCommands" src/core/rpc/types.ts` — shows field on `BeginResult`, `SubmitResult`, `CompleteResult`
+- [x] `bun run test` — all tests pass including new integration coverage
+- [x] `bun run check` — no new lint errors (pre-existing formatting issues in modified files)
+- [x] `grep -r "nextCommands" src/core/rpc/types.ts` — shows field on `BeginResult`, `SubmitResult`, `CompleteResult`
 - [ ] After `bun run build`: `echo '{"name":"test-nc","goal":"testing nextCommands"}' | $GP_BIN epic:create --json | jq '.nextCommands'` — returns object with `entity` and `other` arrays, both with length > 0
 
 Note: Shell-based `$GP_BIN` verification requires `bun run build` first. Primary verification is via `bun run test` (faster, catches type errors).
 
 ### Tasks
 
-- [ ] Update `src/core/rpc/types.ts`:
+- [x] Update `src/core/rpc/types.ts`:
   - Import `NextCommands` from `./next-commands.js`
   - Add `nextCommands: NextCommands` (required, not optional) to `BeginResult`, `SubmitResult`, and `CompleteResult`. No backward compatibility concern — this is a new field with no existing consumers. `RollupResult` is a separate type and remains unchanged. Terminal statuses return `{ entity: [showCommand], other: [] }` (always both fields, always arrays — never omitted).
-- [ ] Update `src/core/rpc/begin.ts` — in the `begin()` function, after computing the result, call `computeNextCommands()` with the target and new status, and include the result in the returned `BeginResult`
-- [ ] Update `src/core/rpc/submit.ts` — same pattern in the `submit()` function for `SubmitResult`
-- [ ] Update `src/core/rpc/complete.ts` — same pattern in the `complete()` function for `CompleteResult`
-- [ ] **Exception**: `learning/rollup.ts` — uses `rpcRollup()` which returns `RollupResult`, not the standard trio. No change needed (rollup is excluded from nextCommands).
-- [ ] **Edge cases to verify** (these are handled automatically by the RPC-layer approach since the RPC functions already have the target):
+- [x] Update `src/core/rpc/begin.ts` — in the `begin()` function, after computing the result, call `computeNextCommands()` with the target and new status, and include the result in the returned `BeginResult`
+- [x] Update `src/core/rpc/submit.ts` — same pattern in the `submit()` function for `SubmitResult`
+- [x] Update `src/core/rpc/complete.ts` — same pattern in the `complete()` function for `CompleteResult`
+- [x] **Exception**: `learning/rollup.ts` — uses `rpcRollup()` which returns `RollupResult`, not the standard trio. No change needed (rollup is excluded from nextCommands).
+- [x] **Edge cases to verify** (these are handled automatically by the RPC-layer approach since the RPC functions already have the target):
   - All 8 subagent submit commands (`submit-plan.ts`, `submit-refinement.ts`, `submit-implementation.ts`, `submit-explore.ts`, `submit-architecture.ts`, `submit-slices.ts`, `submit-refine-architecture.ts`, `submit-refine-slices.ts`) are `userFacing: false` in `commandToEvent` — they are invoked by skills, not directly by users, so they should not appear in `nextCommands` output. The RPC layer's `submit()` still computes `nextCommands` for them (the result reaches the skill's JSON output), but the submit commands themselves don't appear as suggested next steps.
   - `submit-plan.ts`, `submit-refinement.ts`, `submit-implementation.ts` handle both slice and quest — the RPC layer's `submit()` already receives the correct `Target`, so `entityType` is derived correctly
   - `task/convert.ts` produces a new entity — nextCommands should reflect the _resulting_ entity's status (the target passed to the RPC function)

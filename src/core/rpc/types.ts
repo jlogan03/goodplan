@@ -13,6 +13,7 @@ import type { LearningInput } from "../../schemas/records/learning.js";
 // imports Target/SubmitPhase from here; this imports ContextBundle from there.
 // Both are `import type` (erased at compile time), which is safe.
 import type { ContextBundle } from "../context/types.js";
+import type { NextCommands } from "./next-commands.js";
 
 /** Changes allowed on decision:update — mirrors Partial<Omit<DecisionEntry, "id" | "date">> */
 export type UpdateDecisionChanges = Partial<Omit<DecisionEntry, "id" | "date">>;
@@ -129,6 +130,7 @@ export interface BeginResult {
 	newStatus: string;
 	/** Always populated by the RPC layer; typed optional for backward compatibility with consumers that don't expect it. */
 	paths?: PathReferences;
+	nextCommands: NextCommands;
 }
 
 /** Specialized result for rollup operations — no meaningful entity status. */
@@ -156,6 +158,7 @@ export interface CompleteResult {
 	context?: ContextBundle;
 	/** Always populated by the RPC layer; typed optional for backward compatibility with consumers that don't expect it. Uses absolute paths (unlike architecturePaths which uses state-tree-relative paths). */
 	paths?: PathReferences;
+	nextCommands: NextCommands;
 }
 
 export interface SubmitResult {
@@ -166,6 +169,7 @@ export interface SubmitResult {
 	advanced: boolean;
 	/** Always populated by the RPC layer; typed optional for backward compatibility with consumers that don't expect it. */
 	paths?: PathReferences;
+	nextCommands: NextCommands;
 }
 
 // ── Complete input ───────────────────────────────────────────
