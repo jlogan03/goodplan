@@ -43,12 +43,12 @@ These variables are referenced in Steps 2–10b. Resolve them as soon as the sco
 ### Version Check
 
 ```bash
-gp --version --json
+"${CLAUDE_PLUGIN_ROOT}/binaries/macos-arm64/gp" --version --json
 ```
 
 Verify the reported version satisfies `requires: gp >= 1.0.0`. If the CLI is not found or the version is too old:
 
-> The `gp` CLI is required (>= 1.0.0) but was not found or is incompatible. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH.
+> The `gp` CLI is required (>= 1.0.0) but was not found or is incompatible. Ensure the goodplan plugin is installed and enabled — run `/plugin` to check.
 
 **Stop the skill.** Do not fall back to direct file access.
 

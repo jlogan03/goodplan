@@ -20,24 +20,18 @@ Shared reference for all goodplan workflow skills. Defines how skills detect, in
 
 ## 1. Binary Detection & Version
 
-At the start of any skill that uses the CLI, verify it is available and compatible:
-
-```bash
-gp --version --json
-# Returns: { "version": "1.0.0" }
-```
-
-**If `gp` is not on PATH**, check the plugin-bundled binary:
+The `gp` binary is bundled with the goodplan plugin. At the start of any skill that uses the CLI, verify it is available and compatible:
 
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/binaries/macos-arm64/gp" --version --json
+# Returns: { "version": "1.0.0" }
 ```
 
-If the plugin binary exists, use its absolute path for all subsequent `gp` invocations in this skill session (e.g., set `GP_BIN="${CLAUDE_PLUGIN_ROOT}/binaries/macos-arm64/gp"` and use `$GP_BIN` instead of `gp`). The `${CLAUDE_PLUGIN_ROOT}` variable is substituted by Claude Code at skill load time.
+`${CLAUDE_PLUGIN_ROOT}` is substituted by Claude Code at skill load time with the plugin's installation directory. Use this full path for **all** `gp` invocations — the binary is not on PATH.
 
-**If neither PATH nor plugin binary works** (both not found, non-zero exit):
+**If the command fails** (not found, non-zero exit):
 
-> The `gp` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH.
+> The `gp` CLI binary was not found at the expected plugin location. Ensure the goodplan plugin is installed and enabled. Run `/plugin` to check plugin status.
 
 **Do not fall back to direct file access.** Stop the skill.
 

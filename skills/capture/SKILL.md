@@ -16,10 +16,10 @@ Quickly capture a thought, bug, or idea as a task without breaking your current 
 ## Step 0 — Version Check
 
 ```bash
-gp --version --json
+"${CLAUDE_PLUGIN_ROOT}/binaries/macos-arm64/gp" --version --json
 ```
 
-If the command fails: "The `gp` CLI is required but not found. Install it with `bun run build` in the goodplan repo, or ensure it's on your PATH."
+If the command fails: "The `gp` CLI is required but not found. Ensure the goodplan plugin is installed and enabled — run `/plugin` to check."
 
 If the version doesn't satisfy `>= 1.0.0`: "This skill requires gp >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
 

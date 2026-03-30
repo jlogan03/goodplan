@@ -69,10 +69,10 @@ Read `../_shared/references/cli-interaction.md` for CLI interaction conventions 
 Verify CLI availability and compatibility:
 
 ```bash
-gp --version --json
+"${CLAUDE_PLUGIN_ROOT}/binaries/macos-arm64/gp" --version --json
 ```
 
-If the command fails, stop: "The `gp` CLI is required but not found." If the version doesn't satisfy `requires: gp >= 1.0.0`, stop with a version mismatch message.
+If the command fails, stop: "The `gp` CLI binary was not found. Ensure the goodplan plugin is installed and enabled." If the version doesn't satisfy `requires: gp >= 1.0.0`, stop with a version mismatch message.
 
 Also load `../_shared/references/epic-conventions.md` for epic directory structure.
 
