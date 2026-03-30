@@ -4,6 +4,7 @@
 	"activeSlice": null,
 	"created": "2026-01-01T00:00:00.000Z",
 	"name": "test-project",
+	"stateSignature": "c800cec64ac1f189acdcf272d660a4b11e19843ee7a1108ecba7a449ada3bcdb",
 	"updated": "2026-01-01T00:00:00.000Z",
 	"version": "1.0.0"
 }

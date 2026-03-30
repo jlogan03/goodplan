@@ -102,9 +102,13 @@ describe("loadState", () => {
 		commitState(projectDir(), oldState, newState);
 		expect(fileExists(".state-cache.json")).toBe(true);
 
-		// loadState should return cached state
+		// loadState should return cached state.
+		// The cached state includes stateSignature in project.json (injected by
+		// commitState's embedStateSignature), so compare against assembleState
+		// which also reads the signed project.json from disk.
 		const loaded = loadState(projectDir());
-		expect(loaded).toEqual(newState);
+		const expected = assembleState(projectDir());
+		expect(loaded).toEqual(expected);
 	});
 
 	it("falls back to assembleState on stale cache version", () => {

@@ -25,6 +25,11 @@ export function setup(): void {
 			outfile,
 			"--define",
 			`__GOODPLAN_VERSION__="${pkg.version}"`,
+			// HMAC key for state integrity — must match vitest.config.ts define.
+			// global-setup.ts compiles the test binary (integration/fitness tests);
+			// vitest.config.ts configures Vitest's module transform (unit tests).
+			"--define",
+			'__GP_HMAC_KEY__="goodplan-dev-hmac-key"',
 		],
 		{
 			cwd: projectRoot,

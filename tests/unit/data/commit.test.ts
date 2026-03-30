@@ -3,6 +3,7 @@ import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assembleState } from "../../../src/core/data/assemble.js";
 import { commitState } from "../../../src/core/data/commit.js";
+import { signStateTree } from "../../../src/core/data/hmac.js";
 import { ZERO_STATE } from "../../../src/core/data/tree.js";
 import type { ProjectState } from "../../../src/core/data/tree.js";
 
@@ -209,6 +210,9 @@ describe("commitState", () => {
 		};
 
 		commitState(projectDir(), ZERO_STATE, state);
+
+		// Re-assemble to get state with embedded stateSignature (on-disk reality)
+		const assembled = assembleState(projectDir());
 		const stat1 = fs.statSync(path.join(tmpDir, "project.json"));
 
 		// Small delay to detect mtime change
@@ -217,8 +221,9 @@ describe("commitState", () => {
 			// busy wait for mtime resolution
 		}
 
-		// Commit same state — should not rewrite
-		commitState(projectDir(), state, state);
+		// Commit same state (with signature) — should not rewrite project.json
+		// because the signature is deterministic for unchanged state
+		commitState(projectDir(), assembled, assembled);
 		const stat2 = fs.statSync(path.join(tmpDir, "project.json"));
 
 		expect(stat2.mtimeMs).toBe(stat1.mtimeMs);
@@ -347,11 +352,7 @@ describe("concurrent modification detection", () => {
 
 		// Externally modify the file on disk
 		const modified = { ...projectContent, name: "externally-changed" };
-		fs.writeFileSync(
-			path.join(tmpDir, "project.json"),
-			JSON.stringify(modified),
-			"utf-8",
-		);
+		fs.writeFileSync(path.join(tmpDir, "project.json"), JSON.stringify(modified), "utf-8");
 
 		// Try to commit a different change — should detect concurrent modification
 		const state2: ProjectState = {
@@ -441,11 +442,7 @@ describe("concurrent modification detection", () => {
 			status: "started",
 			summary: "External append",
 		});
-		fs.appendFileSync(
-			path.join(tmpDir, "activity-log.jsonl"),
-			`${externalEntry}\n`,
-			"utf-8",
-		);
+		fs.appendFileSync(path.join(tmpDir, "activity-log.jsonl"), `${externalEntry}\n`, "utf-8");
 
 		// Commit a new entry — should NOT throw (JSONL has append-only semantics)
 		const newEntry = {
@@ -478,6 +475,9 @@ describe("concurrent modification detection", () => {
 		};
 		commitState(projectDir(), ZERO_STATE, state1);
 
+		// Re-assemble to get state with embedded stateSignature (matches on-disk reality)
+		const assembled = assembleState(projectDir());
+
 		// Commit a legitimate change — on-disk matches oldState, no external changes
 		const state2: ProjectState = {
 			type: "directory",
@@ -489,6 +489,175 @@ describe("concurrent modification detection", () => {
 			},
 		};
 
-		expect(() => commitState(projectDir(), state1, state2)).not.toThrow();
+		expect(() => commitState(projectDir(), assembled, state2)).not.toThrow();
+	});
+});
+
+describe("HMAC state signature", () => {
+	it("embeds stateSignature in project.json after commitState", () => {
+		const newState: ProjectState = {
+			type: "directory",
+			contents: {
+				"project.json": { type: "json", content: projectContent },
+			},
+		};
+
+		commitState(projectDir(), ZERO_STATE, newState);
+
+		const parsed = JSON.parse(readFile("project.json"));
+		expect(parsed.stateSignature).toBeDefined();
+		expect(typeof parsed.stateSignature).toBe("string");
+		// HMAC-SHA256 hex digest is 64 characters
+		expect(parsed.stateSignature).toMatch(/^[0-9a-f]{64}$/);
+	});
+
+	it("embedded signature verifies against committed state", () => {
+		const newState: ProjectState = {
+			type: "directory",
+			contents: {
+				"project.json": { type: "json", content: projectContent },
+			},
+		};
+
+		commitState(projectDir(), ZERO_STATE, newState);
+
+		// Re-assemble state from disk and verify the signature
+		const assembled = assembleState(projectDir());
+		const projectNode = assembled.contents["project.json"];
+		expect(projectNode).toBeDefined();
+		expect(projectNode?.type).toBe("json");
+		const content = (projectNode as { type: "json"; content: Record<string, unknown> }).content;
+		const embeddedSig = content.stateSignature as string;
+
+		// Recompute signature over the assembled state
+		const recomputed = signStateTree(assembled);
+		expect(embeddedSig).toBe(recomputed);
+	});
+
+	it("signature changes when state changes", () => {
+		const state1: ProjectState = {
+			type: "directory",
+			contents: {
+				"project.json": { type: "json", content: projectContent },
+			},
+		};
+
+		commitState(projectDir(), ZERO_STATE, state1);
+		const parsed1 = JSON.parse(readFile("project.json"));
+		const sig1 = parsed1.stateSignature as string;
+
+		// Read back as oldState for the next commit (includes stateSignature)
+		const assembled = assembleState(projectDir());
+
+		// Mutate state — change project name
+		const state2: ProjectState = {
+			type: "directory",
+			contents: {
+				"project.json": {
+					type: "json",
+					content: { ...projectContent, name: "changed-project" },
+				},
+			},
+		};
+
+		commitState(projectDir(), assembled, state2);
+		const parsed2 = JSON.parse(readFile("project.json"));
+		const sig2 = parsed2.stateSignature as string;
+
+		expect(sig1).not.toBe(sig2);
+	});
+
+	it("write-read equivalence: commit, reassemble, verify signature matches recomputed", () => {
+		// Build a state with multiple entity types
+		const newState: ProjectState = {
+			type: "directory",
+			contents: {
+				"project.json": { type: "json", content: projectContent },
+				"activity-log.jsonl": {
+					type: "jsonl",
+					content: [activityEntry],
+				},
+				epics: {
+					type: "directory",
+					contents: {
+						"overview.json": {
+							type: "json",
+							content: { items: [] },
+						},
+					},
+				},
+			},
+		};
+
+		commitState(projectDir(), ZERO_STATE, newState);
+
+		// Reassemble from disk
+		const assembled = assembleState(projectDir());
+
+		// Extract the embedded signature
+		const projectNode = assembled.contents["project.json"];
+		expect(projectNode).toBeDefined();
+		const content = (projectNode as { type: "json"; content: Record<string, unknown> }).content;
+		const embeddedSig = content.stateSignature as string;
+
+		// Recompute over the reassembled state — proves write-time and read-time
+		// serialization paths produce identical canonical strings
+		const recomputed = signStateTree(assembled);
+		expect(embeddedSig).toBe(recomputed);
+	});
+
+	it("embeds signature even when only child entities changed", () => {
+		// First commit: project + epics
+		const state1: ProjectState = {
+			type: "directory",
+			contents: {
+				"project.json": { type: "json", content: projectContent },
+				epics: {
+					type: "directory",
+					contents: {
+						"overview.json": {
+							type: "json",
+							content: { items: [] },
+						},
+					},
+				},
+			},
+		};
+
+		commitState(projectDir(), ZERO_STATE, state1);
+		const sig1 = JSON.parse(readFile("project.json")).stateSignature as string;
+
+		// Read back assembled state (includes embedded stateSignature)
+		const assembled = assembleState(projectDir());
+
+		// Second commit: change only epic overview, project.json content unchanged
+		const state2: ProjectState = {
+			type: "directory",
+			contents: {
+				"project.json": {
+					type: "json",
+					content: (assembled.contents["project.json"] as { type: "json"; content: unknown })
+						.content,
+				},
+				epics: {
+					type: "directory",
+					contents: {
+						"overview.json": {
+							type: "json",
+							content: {
+								items: [{ name: "New Epic", status: "active", created: ts, completed: null }],
+							},
+						},
+					},
+				},
+			},
+		};
+
+		commitState(projectDir(), assembled, state2);
+		const sig2 = JSON.parse(readFile("project.json")).stateSignature as string;
+
+		// Signature should change because child state changed
+		expect(sig2).toBeDefined();
+		expect(sig2).not.toBe(sig1);
 	});
 });

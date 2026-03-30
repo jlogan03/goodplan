@@ -6,6 +6,7 @@ const pkg = JSON.parse(fs.readFileSync("./package.json", "utf-8")) as { version:
 export default defineConfig({
 	define: {
 		__GOODPLAN_VERSION__: JSON.stringify(pkg.version),
+		__GP_HMAC_KEY__: JSON.stringify("goodplan-dev-hmac-key"),
 	},
 	test: {
 		testTimeout: 30_000,

@@ -64,7 +64,7 @@ Hook `signStateTree()` into `commitState()` so every state write computes and em
 
 ### Tasks
 
-- [ ] Modify `commitState()` in `src/core/data/commit.ts`:
+- [x] Modify `commitState()` in `src/core/data/commit.ts`:
   1. After `diffTree()` collects `jsonWrites`/`jsonlWrites` but *before* flushing them, compute the signature from `newState` using `signStateTree(newState)` (which calls `serializeForHmac(state: ProjectState)` as defined in Phase 1). This keeps a single serialization API — `serializeForHmac` always accepts `ProjectState`. In practice `newState` content is already post-Zod and the state machine is pure (INV-003), so round-trip discrepancies do not occur.
   2. Do NOT mutate `newState` — create a shallow clone of the project node with `stateSignature` injected using the conditional spread pattern: `{ ...projectNode, ...(signature !== undefined ? { stateSignature: signature } : {}) }`
   3. Run `projectSchema.parse(cloneWithSignature)` on the clone before serializing — this preserves INV-005 (Zod validation on all write paths). Serialize the validated result using `${deterministicStringify(parsed)}\n` (trailing newline matching `processJsonEntry` output format).
@@ -72,12 +72,12 @@ Hook `signStateTree()` into `commitState()` so every state write computes and em
   5. Flush all writes (JSON atomic writes + JSONL appends) — `goodplan.json` is written once, with the signature already embedded
   6. Then write state cache last (existing behavior)
   This ensures one write, no crash window, and no concurrent modification issues.
-- [ ] Add tests to `tests/unit/data/commit.test.ts`:
+- [x] Add tests to `tests/unit/data/commit.test.ts`:
   1. After `commitState`, the written `goodplan.json` contains a `stateSignature` field
   2. The embedded signature verifies against the committed state
   3. Signature changes when state changes (different mutations produce different signatures)
   4. Write-read equivalence: commit state via `commitState()`, read it back via `assembleState()` on the same `projectDir`, extract `stateSignature` from the project node of the reassembled state, call `signStateTree()` on the reassembled state, assert the extracted signature equals the recomputed signature. This proves write-time and read-time serialization paths produce identical canonical strings (not just that the field round-trips trivially).
-- [ ] Add `--define __GP_HMAC_KEY__` to `tests/global-setup.ts`: add two consecutive array elements matching the existing `__GOODPLAN_VERSION__` pattern: `"--define"`, `"__GP_HMAC_KEY__=\"goodplan-dev-hmac-key\""`. Incorrect quoting causes Bun to treat the value as an identifier, silently falling back to the dev key — integration tests would pass but never test the injected-key path.
+- [x] Add `--define __GP_HMAC_KEY__` to `tests/global-setup.ts`: add two consecutive array elements matching the existing `__GOODPLAN_VERSION__` pattern: `"--define"`, `"__GP_HMAC_KEY__=\"goodplan-dev-hmac-key\""`. Incorrect quoting causes Bun to treat the value as an identifier, silently falling back to the dev key — integration tests would pass but never test the injected-key path.
   **Why both `global-setup.ts` AND `vitest.config.ts` need defines:** `global-setup.ts` compiles a test binary used by integration/fitness tests (the binary must have the key baked in). `vitest.config.ts` configures Vitest's module transform for unit tests that import source files directly (without it, the `typeof __GP_HMAC_KEY__` guard in `getHmacKey()` would fall through to the dev-key fallback silently). Both produce the string `"goodplan-dev-hmac-key"` at runtime but via different quoting mechanisms — `global-setup.ts` uses escaped quotes in a string array element, `vitest.config.ts` uses `JSON.stringify()`. Confirm parity if either is changed. If one is omitted, the dev-key fallback in `getHmacKey()` silently masks the missing define.
 
 ### Verification

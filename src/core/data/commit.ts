@@ -8,17 +8,15 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { GoodplanError } from "../../util/errors.js";
+import { projectSchema } from "../../schemas/entities/project.js";
 import { debug } from "../../util/debug.js";
+import { GoodplanError } from "../../util/errors.js";
 import { deterministicStringify, deterministicStringifyCompact } from "../../util/json.js";
+import { signStateTree } from "./hmac.js";
 import { CACHE_FILENAME, collectDirMtimes } from "./load.js";
 import type { StateCache } from "./load.js";
 import { findSchema } from "./schema-registry.js";
-import type {
-	DirectoryEntry,
-	ProjectState,
-	StateEntry,
-} from "./tree.js";
+import type { DirectoryEntry, ProjectState, StateEntry } from "./tree.js";
 
 export interface CommitOptions {
 	force?: boolean;
@@ -43,6 +41,11 @@ export function commitState(
 
 	diffTree(projectDir, "", oldState, newState, jsonWrites, jsonlWrites, force);
 
+	// Compute HMAC signature over the full state tree and embed in project.json.
+	// Done after diffTree (so jsonWrites is populated) but before flushing writes
+	// (so the signature is written atomically with all other changes).
+	const signedProjectContent = embedStateSignature(newState, jsonWrites, projectDir);
+
 	// Write ordering: JSON first, JSONL second
 	for (const write of jsonWrites) {
 		atomicWrite(write.absPath, write.content, write.relativePath);
@@ -55,8 +58,26 @@ export function commitState(
 		}
 	}
 
+	// Build the state to cache, injecting the signed project.json content so the
+	// cache includes stateSignature (matching what's on disk). Without this, the
+	// cache would store the caller's newState which lacks the signature, causing
+	// cache/disk divergence.
+	const stateToCache =
+		signedProjectContent !== undefined
+			? {
+					...newState,
+					contents: {
+						...newState.contents,
+						"project.json": {
+							type: "json" as const,
+							content: signedProjectContent,
+						},
+					},
+				}
+			: newState;
+
 	// Write state cache as the last step (crash-safe: stale cache triggers full assembleState)
-	writeStateCache(projectDir, newState);
+	writeStateCache(projectDir, stateToCache);
 
 	debug(`commitState complete: ${jsonWrites.length} json, ${jsonlWrites.length} jsonl writes`);
 }
@@ -91,13 +112,7 @@ function diffTree(
 		} else if (newEntry.type === "json") {
 			processJsonEntry(childRelative, childAbs, oldEntry, newEntry.content, jsonWrites, force);
 		} else if (newEntry.type === "jsonl") {
-			processJsonlEntry(
-				childRelative,
-				childAbs,
-				oldEntry,
-				newEntry.content,
-				jsonlWrites,
-			);
+			processJsonlEntry(childRelative, childAbs, oldEntry, newEntry.content, jsonlWrites);
 		} else if (newEntry.type === "markdown") {
 			// Markdown is read-only — skip
 			debug(`skip markdown (read-only): ${childRelative}`);
@@ -158,9 +173,7 @@ function processJsonlEntry(
 ): void {
 	const schema = findSchema(relativePath);
 	const oldLength =
-		oldEntry !== undefined && oldEntry.type === "jsonl"
-			? oldEntry.content.length
-			: 0;
+		oldEntry !== undefined && oldEntry.type === "jsonl" ? oldEntry.content.length : 0;
 
 	// Only validate NEW entries — existing ones were validated during assembleState
 	// and are trusted unchanged per INV-003 (reducer purity).
@@ -206,6 +219,72 @@ function processJsonlEntry(
 	jsonlWrites.push({ absPath, content, relativePath });
 }
 
+/**
+ * Embed the HMAC state signature into the project.json write entry.
+ * Does NOT mutate newState — creates a shallow clone of the project node
+ * with stateSignature injected, validates through projectSchema, and
+ * updates or creates the jsonWrites entry for project.json.
+ * Returns the validated project content with signature (for cache sync),
+ * or undefined if no project.json exists in state.
+ */
+function embedStateSignature(
+	newState: ProjectState,
+	jsonWrites: PendingWrite[],
+	projectDir: string,
+): unknown | undefined {
+	const signature = signStateTree(newState);
+
+	// Extract the project node content from newState
+	const projectEntry = newState.contents["project.json"];
+	if (projectEntry === undefined || projectEntry.type !== "json") {
+		// No project.json in state — nothing to sign (shouldn't happen in practice)
+		return undefined;
+	}
+
+	// Type assertion is safe: projectSchema.parse() below validates the shape.
+	const projectNode = projectEntry.content as Record<string, unknown>;
+	const cloneWithSignature = {
+		...projectNode,
+		stateSignature: signature,
+	};
+
+	// Validate through projectSchema (preserves INV-005)
+	const parsed = projectSchema.parse(cloneWithSignature);
+	const content = `${deterministicStringify(parsed)}\n`;
+
+	// Find existing jsonWrites entry for project.json, or create one
+	const existingIdx = jsonWrites.findIndex((w) => w.relativePath === "project.json");
+	if (existingIdx !== -1) {
+		// Update the existing entry's content with signature-embedded version
+		const existing = jsonWrites[existingIdx];
+		if (existing === undefined) return parsed;
+		jsonWrites[existingIdx] = { ...existing, content };
+	} else {
+		// diffTree skipped project.json (e.g., only child entities changed) —
+		// create a new entry so the signature is always written.
+		// But skip if on-disk content is already identical (avoids unnecessary writes
+		// when signature hasn't changed).
+		const absPath = path.join(projectDir, "project.json");
+		try {
+			const diskContent = fs.readFileSync(absPath, "utf-8");
+			if (diskContent === content) {
+				debug("skip project.json write: signature unchanged");
+				return parsed;
+			}
+		} catch {
+			// File doesn't exist yet — proceed with write
+		}
+		jsonWrites.push({ absPath, content, relativePath: "project.json" });
+	}
+
+	return parsed;
+}
+
+/**
+ * atomicWrite — internal utility for crash-safe file writes.
+ * Callers outside commit.ts should be limited to `verify --fix`;
+ * general writes must go through commitState().
+ */
 function atomicWrite(absPath: string, content: string, relativePath: string): void {
 	const tmpPath = `${absPath}.tmp.${process.pid}`;
 
@@ -252,14 +331,38 @@ function checkConcurrentModification(
 
 	// Compare on-disk bytes against a single serialization of oldContent.
 	// This avoids parsing diskRaw then re-serializing both sides.
-	const expectedRaw = `${deterministicStringify(oldContent)}\n`;
+	// For project.json, strip stateSignature from both sides — it's injected by
+	// embedStateSignature during writes and is not part of the logical state that
+	// callers pass via oldState/newState.
+	// NOTE: project.json uses parsed comparison (required for signature stripping)
+	// while other JSON files use byte-level comparison. Safe because all writes use
+	// deterministicStringify, but worth noting the asymmetry.
+	let expectedRaw: string;
+	let actualRaw: string;
+	if (relativePath === "project.json") {
+		const stripSig = (content: unknown): unknown => {
+			if (content !== null && typeof content === "object" && !Array.isArray(content)) {
+				const { stateSignature: _, ...rest } = content as Record<string, unknown>;
+				return rest;
+			}
+			return content;
+		};
+		expectedRaw = `${deterministicStringify(stripSig(oldContent))}\n`;
+		try {
+			const diskParsed = JSON.parse(diskRaw);
+			actualRaw = `${deterministicStringify(stripSig(diskParsed))}\n`;
+		} catch {
+			actualRaw = diskRaw;
+		}
+	} else {
+		expectedRaw = `${deterministicStringify(oldContent)}\n`;
+		actualRaw = diskRaw;
+	}
 
-	if (diskRaw !== expectedRaw) {
+	if (actualRaw !== expectedRaw) {
 		const globalForce = (globalThis as Record<string, unknown>).__goodplan_force === true;
 		if (force || globalForce) {
-			process.stderr.write(
-				`[gp] --force: overwriting externally modified file ${relativePath}\n`,
-			);
+			process.stderr.write(`[gp] --force: overwriting externally modified file ${relativePath}\n`);
 			return;
 		}
 		throw new GoodplanError(
