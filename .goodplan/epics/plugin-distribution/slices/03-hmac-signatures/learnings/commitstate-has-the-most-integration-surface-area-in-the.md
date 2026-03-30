@@ -1,0 +1,1 @@
+Modifying commitState requires coordinated changes to concurrent modification detection, state cache, test fixtures, and INV-005 compliance. Plan for this coordination burden.

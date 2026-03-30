@@ -5,6 +5,6 @@
 	"goal": "Implement embedded stateSignature in goodplan.json — signing, verification, bootstrap, gp verify",
 	"name": "03-hmac-signatures",
 	"refinement": null,
-	"status": "implementation-complete",
-	"updated": "2026-03-30T05:07:13.996Z"
+	"status": "completed",
+	"updated": "2026-03-30T05:18:44.760Z"
 }

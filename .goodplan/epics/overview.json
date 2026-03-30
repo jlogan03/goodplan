@@ -206,10 +206,10 @@
 					"status": "completed"
 				},
 				{
-					"completed": null,
+					"completed": "2026-03-30T05:18:44.760Z",
 					"created": "2026-03-29T20:39:00.799Z",
 					"name": "03-hmac-signatures",
-					"status": "implementation-complete"
+					"status": "completed"
 				},
 				{
 					"completed": null,

@@ -4,7 +4,7 @@
 
 ### Well-tested areas
 - Skill file structure (SKILL.md frontmatter, step numbering, reference paths): verified across 4 skill files during slice-quality-and-health implementation with 28-point checklist
-- goodplan CLI (`gp`): 1475 tests across 105 files, integration + fitness tests. Unit tests cover tree types, schemas, I/O, state machine (including task entity and nested epic paths), RPC (including paths, version-stamp, deferred routing with cross-epic support, migration re-run), context (resolveScope, entityDir with epic paths), commands (including status with embedded overview, slice:list with --all, slice:show with --epic), state transition helpers (evaluateRefinement, guard functions, processLearnings, status setters), data serialization (serialize.ts), and markdown file operations (writeMarkdownFiles, copyMarkdownFiles). Integration tests spawn compiled binary and cover migration with nested paths. Fitness functions verify all architectural invariants including ENTITY_EXEMPT_COMMANDS, structured error responses (INV-007), and mutation-through-state-machine (INV-001). Type-clean against `tsc --noEmit`.
+- goodplan CLI (`gp`): 1509 tests across 108 files, integration + fitness tests. Unit tests cover tree types, schemas, I/O, state machine (including task entity and nested epic paths), RPC (including paths, version-stamp, deferred routing with cross-epic support, migration re-run), context (resolveScope, entityDir with epic paths), commands (including status with embedded overview, slice:list with --all, slice:show with --epic, verify pass/fail/fix), state transition helpers (evaluateRefinement, guard functions, processLearnings, status setters), data serialization (serialize.ts), markdown file operations (writeMarkdownFiles, copyMarkdownFiles), and HMAC state integrity (signing, verification, serialization, tamper detection, bootstrap). Integration tests spawn compiled binary and cover migration with nested paths. Fitness functions verify all architectural invariants including ENTITY_EXEMPT_COMMANDS, structured error responses (INV-007), mutation-through-state-machine (INV-001), and state integrity (signature embedding, tamper detection, markdown exclusion). Type-clean against `tsc --noEmit`.
 - goodplan CLI main runner (`src/index.ts`): integration tests cover unknown commands, --help, --version, --json error mode, NO_COLOR, stdin validation, version compatibility checking (4 variants), --quiet suppression of warnings.
 
 ### Undertested areas
@@ -23,11 +23,11 @@
 - epic-conventions.md is consumed by 12+ skills: changes require updating all consumers
 - citty + `exactOptionalPropertyTypes`: requires `as unknown as CommandDef` casts in `src/index.ts`. May break on citty upgrade.
 
-<!-- Last updated by: complete for 02-plugin-scaffold, 2026-03-29 -->
+<!-- Last updated by: complete for 03-hmac-signatures, 2026-03-30 -->
 
 ## Performance Characteristics
 
-- Full test suite (1475 tests, 105 files): ~4.0s total including binary compilation (~50ms cached)
+- Full test suite (1509 tests, 108 files): ~4.4s total including binary compilation (~50ms cached)
 - Integration tests (~50 tests): ~10s (dominated by binary spawning)
 - Fitness tests (~350 tests): ~4s (mix of source parsing, module imports, and binary spawning)
 
@@ -58,7 +58,8 @@
 - shared-preamble.md asymmetry: lives in refine-plan/references/ while iteration-loop.md lives in _shared/references/ — candidate for future consolidation
 - `--verbose` flag not wired: defined on all commands via `global-args.ts` but never sets `globalThis.__goodplan_verbose`. Debug logging only works via `GOODPLAN_DEBUG=1` env var. (Note: globalThis flags intentionally kept as `__goodplan_*` per rename scope decisions.)
 - `setEpicStatus` helper in `helpers.ts` is defined but unused — handlers use `setEpicJson` directly for more control. Dead code candidate.
-- loadState cache detects new/removed files but not content changes to existing JSON files. Bounded by commitState always writing fresh cache.
+- loadState cache detects new/removed files but not content changes to existing JSON files. Bounded by commitState always writing fresh cache. HMAC verification on non-cache-hit paths provides a secondary detection layer.
+- `serializeForHmac` structurally coupled to `"project.json"` key path in the state tree. Entity-restructuring epic should revisit.
 - Quest submit handlers (`handleCompleteQuestPlan`, `handleCompleteQuestRefinementRound`, `handleCompleteQuestImplementation`) remain co-located in `slice-submit.ts` — splitting to `quest-submit.ts` deferred. File is now 304 lines covering two entity types.
 - Overview `completed` timestamp now set for task terminal transitions (dropped/converted) but still not set for other entity types (epic, slice, quest) — partially addressed.
 - Bidirectional `import type` between `context/types.ts` and `rpc/types.ts` — works but violates independent-modules principle.
@@ -73,8 +74,8 @@
 
 ## Recent Changes
 
+- **03-hmac-signatures** (2026-03-30): HMAC-SHA256 state integrity — signing on write, verification on read, bootstrap for pre-HMAC repos. New `gp verify` / `gp verify --fix` commands. `__GP_HMAC_KEY__` build-time define. 29 files changed, 1326 lines added, 1509 tests pass.
 - **02-plugin-scaffold** (2026-03-29): Plugin build pipeline (`scripts/build-plugin.sh`), assembles `dist/gp-plugin/` with compiled binary, plugin manifest, CLAUDE.md, placeholder dirs. Marketplace manifest at `.claude-plugin/marketplace.json`. Passes `claude plugin validate`. 4 new files, 2 modified.
 - **01-rename-gp** (2026-03-29): Renamed CLI binary from `goodplan` to `gp`, state directory from `.project/` to `.goodplan/`. 204 source/test files + 76 skill/doc files updated. Dual-path migrate support (legacy `.project/` + `.goodplan/` re-migration). Exported `PROJECT_DIR_NAME`/`LEGACY_DIR_NAME` constants. 1475 tests pass.
-- **onboard-repo** (2026-03-29): New `/onboard-repo` skill (SKILL.md + 5 reference files, 613+lines). Fixture generation script, Claude SDK test harness. Updated install script and expertise-tracking.md consumer list. Skills-only changes — no CLI modifications.
 
-<!-- Last updated by: complete for 02-plugin-scaffold, 2026-03-29 -->
+<!-- Last updated by: complete for 03-hmac-signatures, 2026-03-30 -->

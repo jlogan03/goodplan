@@ -1,0 +1,1 @@
+serializeStateTree with inline:false replaces markdown with true, making the hash sensitive to file additions/removals. A custom walker fully excluding markdown entries is the correct approach.

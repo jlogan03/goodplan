@@ -1,0 +1,1 @@
+Both global-setup.ts (compiled test binary) and vitest.config.ts (Vitest module transform) must define __GP_HMAC_KEY__. Missing either creates a silent dev-key fallback that makes tests pass vacuously.
