@@ -17,6 +17,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { debug } from "../../util/debug.js";
 import { SKIP_NAMES, assembleState } from "./assemble.js";
+import { verifyHmacOrThrow } from "./hmac.js";
 import { findSchema } from "./schema-registry.js";
 import { ZERO_STATE } from "./tree.js";
 import type {
@@ -59,17 +60,23 @@ export function loadState(projectDir?: string): ProjectState {
 		cache = readCache(cachePath);
 	} catch {
 		debug("loadState: cache read/parse failed, falling back to assembleState");
-		return assembleState(projectDir);
+		const state = assembleState(projectDir);
+		verifyHmacOrThrow(state);
+		return state;
 	}
 
 	if (cache === undefined) {
 		debug("loadState: no cache found, falling back to assembleState");
-		return assembleState(projectDir);
+		const state = assembleState(projectDir);
+		verifyHmacOrThrow(state);
+		return state;
 	}
 
 	if (cache.version !== CACHE_VERSION) {
 		debug(`loadState: cache version mismatch (${cache.version} !== ${CACHE_VERSION}), falling back`);
-		return assembleState(projectDir);
+		const state = assembleState(projectDir);
+		verifyHmacOrThrow(state);
+		return state;
 	}
 
 	// Compare directory mtimes to detect filesystem changes
@@ -77,12 +84,19 @@ export function loadState(projectDir?: string): ProjectState {
 	const changedDirs = findChangedDirs(cache.dirMtimes, currentMtimes);
 
 	if (changedDirs.length === 0) {
+		// Security tradeoff: cache-hit returns state without HMAC reverification.
+		// This is intentional — the cached state was verified on the prior non-cache-hit
+		// load, and commitState (the only writer) embeds a fresh signature. Manual JSON
+		// edits that don't change directory mtimes will bypass verification until cache
+		// invalidation. `gp verify` (Phase 4) provides an explicit integrity check.
 		debug("loadState: cache hit — all directory mtimes match");
 		return cache.state;
 	}
 
 	debug(`loadState: ${changedDirs.length} directory(ies) changed, doing incremental update`);
-	return incrementalUpdate(projectDir, cache.state, changedDirs);
+	const state = incrementalUpdate(projectDir, cache.state, changedDirs);
+	verifyHmacOrThrow(state);
+	return state;
 }
 
 // ── Cache I/O ─────────────────────────────────────────────────

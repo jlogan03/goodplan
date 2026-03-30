@@ -7,6 +7,7 @@ import { loadState } from "../../../src/core/data/load.js";
 import type { StateCache } from "../../../src/core/data/load.js";
 import { ZERO_STATE } from "../../../src/core/data/tree.js";
 import type { ProjectState } from "../../../src/core/data/tree.js";
+import { GoodplanError } from "../../../src/util/errors.js";
 
 // ── Helpers ───────────────────────────────────────────────────
 
@@ -215,5 +216,55 @@ describe("loadState", () => {
 		// assembleState should skip the cache file
 		const assembled = assembleState(projectDir());
 		expect(assembled.contents[".state-cache.json"]).toBeUndefined();
+	});
+
+	// ── HMAC verification tests ─────────────────────────────────
+
+	it("loads state with valid signature successfully", () => {
+		// commitState embeds a valid signature
+		writeFixture("project.json", validProject);
+		const oldState = assembleState(projectDir());
+		commitState(projectDir(), ZERO_STATE, oldState);
+
+		// Delete cache to force assembleState fallback path (which verifies HMAC)
+		fs.unlinkSync(path.join(tmpDir, ".state-cache.json"));
+
+		const state = loadState(projectDir());
+		expect(state.contents["project.json"]).toBeDefined();
+	});
+
+	it("throws DATA_INTEGRITY_CHECK_FAILED on tampered state", () => {
+		// Set up a project with a valid signature
+		writeFixture("project.json", validProject);
+		const oldState = assembleState(projectDir());
+		commitState(projectDir(), ZERO_STATE, oldState);
+
+		// Read the project.json, tamper with the name, but keep the old signature
+		const projectPath = path.join(tmpDir, "project.json");
+		const projectData = JSON.parse(fs.readFileSync(projectPath, "utf-8"));
+		projectData.name = "tampered";
+		fs.writeFileSync(projectPath, JSON.stringify(projectData), "utf-8");
+
+		// Delete cache to force assembleState fallback path
+		fs.unlinkSync(path.join(tmpDir, ".state-cache.json"));
+
+		try {
+			loadState(projectDir());
+			expect.unreachable("loadState should have thrown");
+		} catch (err) {
+			expect(err).toBeInstanceOf(GoodplanError);
+			const gpErr = err as GoodplanError;
+			expect(gpErr.code).toBe("DATA_INTEGRITY_CHECK_FAILED");
+			expect(gpErr.message).toContain("gp verify --fix");
+		}
+	});
+
+	it("loads state with missing signature (bootstrap) without error", () => {
+		// Write a project.json without stateSignature (pre-HMAC repo)
+		writeFixture("project.json", validProject);
+
+		// No cache, no signature — should load fine (bootstrap exception)
+		const state = loadState(projectDir());
+		expect(state.contents["project.json"]).toBeDefined();
 	});
 });

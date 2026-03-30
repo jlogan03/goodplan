@@ -1,6 +1,6 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { assembleState } from "../../core/data/assemble.js";
+import { loadState } from "../../core/data/load.js";
 import { PROJECT_DIR_NAME, resolveProjectDir } from "../../core/data/project.js";
 import { getDir, getJson, getJsonl } from "../../core/data/tree.js";
 import type { DirectoryEntry, ProjectState } from "../../core/tree.js";
@@ -19,14 +19,14 @@ import { globalArgs } from "../global-args.js";
 
 /**
  * Build a StatusResult from the current project state.
- * Uses assembleState() (not loadState) — deliberately chosen because it handles
- * fresh/zero-state projects gracefully.
+ * Uses loadState() which handles zero-state/missing-dir cases (returns ZERO_STATE)
+ * and adds HMAC verification on non-cache-hit paths.
  *
  * Architecture: read-only commands bypass RPC and access the Data Layer directly.
  */
 export function buildStatusResult(projectDir?: string): StatusResult {
 	const dir = projectDir ?? resolveProjectDir();
-	const state = assembleState(dir);
+	const state = loadState(dir);
 
 	const project = getJson<Project>(state, "project.json");
 	if (project === undefined) {

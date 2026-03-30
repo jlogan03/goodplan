@@ -62,15 +62,14 @@ function makeState(overrides?: {
 // ── serializeForHmac ─────────────────────────────────────────
 
 describe("serializeForHmac", () => {
-	it("replaces markdown content with boolean placeholder", () => {
+	it("excludes markdown entries from output entirely", () => {
 		const state = makeState();
 		const result = serializeForHmac(state);
-		// Markdown entries become `true` in no-inline mode but should still
-		// appear as `true` — the key point is they are NOT the raw string
 		const parsed = JSON.parse(result) as Record<string, unknown>;
-		expect(parsed["readme.md"]).toBe(true);
-		// Verify it's not the raw markdown content
-		expect(parsed["readme.md"]).not.toBe("# Test Project");
+		// Markdown entries must be completely absent — not even present as `true`.
+		// Sub-agents write .md files directly to disk between commits, so
+		// their presence/absence must not affect the HMAC.
+		expect(parsed).not.toHaveProperty("readme.md");
 	});
 
 	it("excludes stateSignature from project node", () => {

@@ -13,6 +13,7 @@
 
 import { defineCommand } from "citty";
 import { assembleState } from "../../core/data/assemble.js";
+import { verifyHmacOrThrow } from "../../core/data/hmac.js";
 import { resolveProjectDir } from "../../core/data/project.js";
 import { serializeStateTree } from "../../core/data/serialize.js";
 import { GoodplanError } from "../../util/errors.js";
@@ -60,6 +61,11 @@ export const stateCommand = defineCommand({
 
 			const dir = resolveProjectDir();
 			const state = assembleState(dir);
+
+			// HMAC verification — state.ts uses assembleState() (not loadState())
+			// for ground-truth data, so we verify the signature explicitly here.
+			verifyHmacOrThrow(state);
+
 			const serialized = serializeStateTree(state, { inline });
 
 			// --quiet: suppress all output. Since state bypasses output(), we
