@@ -6,6 +6,7 @@
 		"check": "biome check .",
 		"test": "vitest",
 		"build": "bun build --compile src/index.ts --outfile gp --define __GOODPLAN_VERSION__='\"'$(node -p 'require(\"./package.json\").version')'\"'",
+		"build:plugin": "bash scripts/build-plugin.sh",
 		"install:skills": "bash scripts/install-skills.sh"
 	},
 	"dependencies": {
