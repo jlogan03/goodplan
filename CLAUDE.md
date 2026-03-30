@@ -63,4 +63,19 @@ This is managed by the **installed** CLI and skills (#2 above), not the repo sou
 | Run a workflow command | `gp status --json` (installed CLI) | `./gp status --json` (local build) |
 | Mutate `.goodplan/` state | `gp quest:complete ...` (installed CLI) | Directly edit `.goodplan/quests/*/quest.json` |
 | Test CLI changes | Run `./gp` against a **fixture repo** in `/tmp` | Run `./gp` against this repo's `.goodplan/` |
+| Test skills/plugins | Use Agent SDK harness in `tools/dogfood/` | Ask user to run manual Claude Code sessions |
 | Install updated skills | `bun run install:skills` (explicit, user-initiated) | Auto-install during development |
+
+## Agent SDK Test Harness
+
+When you need to test skills or plugins in a live Claude Code session, use the Agent SDK harness at `tools/dogfood/`. **Do not ask the user to run manual tests** — write a test script instead.
+
+| Harness | Purpose | Usage |
+|---|---|---|
+| `test-plugin-skills.ts` | Plugin skill loading, namespacing, execution | `bun tools/dogfood/test-plugin-skills.ts` |
+| `test-onboard.ts` | `/onboard-repo` skill end-to-end | `bun tools/dogfood/test-onboard.ts` |
+| `test-migrate.ts` | `/migrate` skill end-to-end | `bun tools/dogfood/test-migrate.ts` |
+| `validate.ts` | Full workflow (2 epics + 2 quests) | `bun tools/dogfood/validate.ts` |
+| `harness.ts` | Multi-phase dogfooding | `bun tools/dogfood/harness.ts [phase] [step]` |
+
+Pattern: `query()` from `@anthropic-ai/claude-agent-sdk` with `permissionMode: "bypassPermissions"`, `plugins: [{ type: "local", path: PLUGIN_DIR }]` for plugin testing.

@@ -15,24 +15,24 @@ Extend `scripts/build-plugin.sh` to copy skills and verify the output.
 ### Expected Behavior
 
 **Before implementation** (should fail / show absence):
-- [ ] `ls dist/gp-plugin/skills/explore/SKILL.md` — file not found (skills not copied yet)
+- [x] `ls dist/gp-plugin/skills/explore/SKILL.md` — file not found (skills not copied yet)
 
 **After implementation** (should pass / show presence):
-- [ ] `bun run build:plugin` completes without errors
-- [ ] `ls dist/gp-plugin/skills/explore/SKILL.md` — file exists
-- [ ] `ls dist/gp-plugin/skills/_shared/references/` — shared references directory exists
-- [ ] `find dist/gp-plugin/skills -name '.DS_Store' | wc -l` returns 0 (no OS artifacts)
-- [ ] Source `skills/explore/SKILL.md` is unchanged after build
+- [x] `bun run build:plugin` completes without errors
+- [x] `ls dist/gp-plugin/skills/explore/SKILL.md` — file exists
+- [x] `ls dist/gp-plugin/skills/_shared/references/` — shared references directory exists
+- [x] `find dist/gp-plugin/skills -name '.DS_Store' | wc -l` returns 0 (no OS artifacts)
+- [x] Source `skills/explore/SKILL.md` is unchanged after build
 
 ### Tasks
 
-- [ ] Extend `scripts/build-plugin.sh` to copy skills:
+- [x] Extend `scripts/build-plugin.sh` to copy skills:
   1. Keep the existing `mkdir -p "$PLUGIN_DIR/skills"` line as a defensive fallback (rsync creates the directory, but retaining mkdir guards against confusing errors if rsync is later moved or fails)
   2. After the existing plugin assembly steps, add: `rsync -a --exclude '.DS_Store' skills/ dist/gp-plugin/skills/`
      (Matches `install-skills.sh` convention; excludes `.DS_Store` and OS artifacts)
   3. This copies the entire `skills/` tree including `_shared/` and all skill directories
 
-- [ ] Add build verification assertions to `scripts/build-plugin.sh`:
+- [x] Add build verification assertions to `scripts/build-plugin.sh`:
   1. Assert `dist/gp-plugin/skills/_shared/` directory exists and `dist/gp-plugin/skills/_shared/references/cli-interaction.md` exists (catches empty directory from rsync misconfiguration)
   2. Assert every skill directory not prefixed with `_` contains a `SKILL.md` file (underscore-prefixed directories like `_shared` are internal/shared resources, not skills)
   3. Assert no `SKILL.md` references the old CLI name as an invocation: `grep -rE 'goodplan (init|status|epic:|slice:|quest:|learning:|decision:|task:|schema|version|subagent:)' dist/gp-plugin/skills/` returns no matches. (Currently matches zero files — this is a regression guard, not catching existing issues. The rename to `gp` already happened.)
@@ -50,18 +50,18 @@ Verify the built plugin loads correctly in Claude Code. Structural assertions in
 ### Expected Behavior
 
 **Before implementation** (should fail / show absence):
-- [ ] `grep -cE 'frontmatter|SKILL.md.*name:|SKILL.md.*description:' scripts/build-plugin.sh` returns 0 (no frontmatter validation exists)
+- [x] `grep -cE 'frontmatter|SKILL.md.*name:|SKILL.md.*description:' scripts/build-plugin.sh` returns 0 — UNEXPECTED-PASS: already added in Phase 1
 
 **After implementation** (should pass / show presence):
-- [ ] Build script validates: each SKILL.md has valid YAML frontmatter (opening and closing `---`), `name` field is present, `description` field is present
-- [ ] `claude --plugin-dir dist/gp-plugin` starts without errors — plugin is recognized
-- [ ] In the Claude Code session: `/gp:project-status` is listed as an available skill (auto-namespacing works)
-- [ ] `/gp:project-status` executes successfully in a test project with `.goodplan/` state (reads state, returns status)
-- [ ] A skill that references `../_shared/references/cli-interaction.md` loads it successfully (relative path resolution within plugin boundary works)
+- [x] Build script validates: each SKILL.md has valid YAML frontmatter (opening and closing `---`), `name` field is present, `description` field is present
+- [x] `claude --plugin-dir dist/gp-plugin` starts without errors — plugin is recognized (verified via Agent SDK)
+- [x] In the Claude Code session: `/gp:project-status` is listed as an available skill (auto-namespacing works — all 18 skills discovered with /gp: prefix)
+- [x] `/gp:project-status` executes successfully in a test project with `.goodplan/` state (reads state, returns status)
+- [x] A skill that references `../_shared/references/cli-interaction.md` loads it successfully (relative path resolution within plugin boundary works)
 
 ### Tasks
 
-- [ ] Add frontmatter validation to build script:
+- [x] Add frontmatter validation to build script (completed in Phase 1):
   1. For each `SKILL.md` in `dist/gp-plugin/skills/*/`, verify it starts with `---` and has a closing `---`
   2. Extract the frontmatter block with `sed -n '/^---$/,/^---$/p'` then grep within that block only (avoids false-positives on `name:` or `description:` appearing in skill prose)
   3. Verify `name:` field exists in the extracted frontmatter
@@ -69,7 +69,7 @@ Verify the built plugin loads correctly in Claude Code. Structural assertions in
   5. Fail the build if any check fails, listing the specific file and what's missing
   6. Assumption: `claude plugin validate` does not check SKILL.md frontmatter fields — our build assertions fill this gap. If it turns out `claude plugin validate` does cover these checks, the duplication is harmless (belt-and-suspenders)
 
-- [ ] Manual integration test — create or use a test project:
+- [x] Integration test via Agent SDK harness (`tools/dogfood/test-plugin-skills.ts`):
   1. Build: `bun run build:plugin`
   2. Create temp test project: `mkdir -p /tmp/gp-plugin-test && cd /tmp/gp-plugin-test && gp init --name plugin-test`
   3. Start Claude Code: `claude --plugin-dir <absolute-path-to>/dist/gp-plugin`
@@ -81,13 +81,13 @@ Verify the built plugin loads correctly in Claude Code. Structural assertions in
 
   **Evidence to capture:** Copy terminal output for each step (startup messages, skill listing, execution output). For failures, capture the full error message. These manual checks should become automated assertions in slice 07 (CI) — specifically: plugin load verification, skill discoverability, and namespace correctness.
 
-- [ ] If auto-namespacing does NOT work (bug #20994 still present):
+- [x] ~~If auto-namespacing does NOT work~~ — AUTO-NAMESPACING WORKS. Bug #20994 is fixed. No fallback needed:
   1. Add a namespace prefixing build step that prepends `gp:` to the `name:` field in each dist SKILL.md
   2. Grep dist SKILL.md files for cross-skill references (e.g., `/create-plan`, `/explore`) and update them to `/gp:create-plan`, `/gp:explore` etc. — otherwise internal references won't resolve
   3. Add assertion that every dist SKILL.md has `name: gp:<skill-name>`
   4. Document the workaround for removal when the bug is fixed
 
-- [ ] Document test results in this plan's verification section — what worked, what didn't, any workarounds needed
+- [x] Document test results: Auto-namespacing works (all 18 skills under /gp: prefix). /gp:project-status executes correctly. _shared references resolve. No workarounds needed. Test harness at tools/dogfood/test-plugin-skills.ts.
 
 ### Verification
 

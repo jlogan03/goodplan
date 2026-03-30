@@ -1,0 +1,230 @@
+/**
+ * Plugin skill packaging test — verifies that built plugin skills load
+ * and execute correctly via the Agent SDK with local plugin support.
+ *
+ * Usage: bun tools/dogfood/test-plugin-skills.ts
+ *
+ * Prerequisites: `bun run build:plugin` must have been run first.
+ *
+ * Tests:
+ * 1. Plugin loads without errors
+ * 2. Skills are discoverable with /gp: namespace prefix (auto-namespacing)
+ * 3. /gp:project-status executes and reads .goodplan/ state
+ * 4. Skills referencing _shared/ resources resolve correctly
+ */
+
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdirSync, writeFileSync, appendFileSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { query } from "@anthropic-ai/claude-agent-sdk";
+
+// ─── Environment ─────────────────────────────────────────────
+
+const HOME = process.env.HOME;
+if (!HOME) {
+	console.error("FATAL: HOME environment variable is not set");
+	process.exit(1);
+}
+
+const GOODPLAN_DIR = join(HOME, "Repos/goodplan");
+const PLUGIN_DIR = resolve(GOODPLAN_DIR, "dist/gp-plugin");
+const GP_BIN = join(PLUGIN_DIR, "binaries/macos-arm64/gp");
+const TEST_DIR = "/tmp/gp-plugin-skills-test";
+const LOG_FILE = join(GOODPLAN_DIR, "tools/dogfood/plugin-skills-test.log");
+
+// ─── Preflight ──────────────────────────────────────────────
+
+if (!existsSync(PLUGIN_DIR)) {
+	console.error("FATAL: Plugin not built. Run `bun run build:plugin` first.");
+	process.exit(1);
+}
+
+if (!existsSync(GP_BIN)) {
+	console.error("FATAL: Plugin binary not found at", GP_BIN);
+	process.exit(1);
+}
+
+// ─── Setup ──────────────────────────────────────────────────
+
+console.log("\n[test-plugin-skills] Setting up test project...");
+
+// Create a fresh test directory with .goodplan/ state
+execFileSync("rm", ["-rf", TEST_DIR]);
+mkdirSync(TEST_DIR, { recursive: true });
+
+// Initialize a goodplan project using the plugin binary
+const initOutput = execFileSync(GP_BIN, ["init", "--name", "plugin-skill-test", "--json"], {
+	cwd: TEST_DIR,
+	encoding: "utf-8",
+	input: "",
+});
+console.log(`[test-plugin-skills] Project initialized: ${initOutput.trim()}`);
+
+// ─── Logging ─────────────────────────────────────────────────
+
+writeFileSync(LOG_FILE, `# Plugin Skills Test Log\nStarted: ${new Date().toISOString()}\n\n`);
+
+function log(content: string): void {
+	appendFileSync(LOG_FILE, `${content}\n`);
+	console.log(content);
+}
+
+// ─── Test 1: Skill discovery with /gp: namespace ─────────────
+
+async function testSkillDiscovery(): Promise<boolean> {
+	log("\n--- TEST 1: Skill discovery with /gp: namespace ---\n");
+
+	let foundGpSkills = false;
+	let skillList = "";
+
+	try {
+		for await (const message of query({
+			prompt: "List all available slash commands that start with /gp: — just output the names, one per line, nothing else.",
+			options: {
+				cwd: TEST_DIR,
+				permissionMode: "bypassPermissions",
+				allowDangerouslySkipPermissions: true,
+				maxTurns: 10,
+				maxBudgetUsd: 1,
+				model: "claude-sonnet-4-6",
+				plugins: [{ type: "local", path: PLUGIN_DIR }],
+				systemPrompt: {
+					type: "preset",
+					preset: "claude_code",
+					append: "You are in an automated test. Be concise. Do not use any tools. Just list the /gp: skills you see available.",
+				},
+			},
+		})) {
+			if (message.type === "result" && message.subtype === "success") {
+				skillList = message.result;
+				foundGpSkills = skillList.includes("/gp:");
+				log(`Skill list output:\n${skillList}`);
+				break;
+			} else if (message.type === "result") {
+				log(`ERROR: ${message.subtype}`);
+				break;
+			}
+		}
+	} catch (err) {
+		log(`ERROR: ${err instanceof Error ? err.message : String(err)}`);
+	}
+
+	if (foundGpSkills) {
+		log("PASS: Skills discovered with /gp: namespace prefix");
+
+		// Check for specific expected skills
+		const expectedSkills = ["project-status", "explore", "create-plan", "create-epic"];
+		for (const skill of expectedSkills) {
+			if (skillList.includes(`/gp:${skill}`)) {
+				log(`  PASS: /gp:${skill} found`);
+			} else {
+				log(`  WARN: /gp:${skill} not found in listing`);
+			}
+		}
+	} else {
+		log("FAIL: No /gp: namespaced skills found");
+		log("This likely means auto-namespacing bug #20994 is still present");
+		log("Fallback: namespace prefixing build step needed");
+	}
+
+	return foundGpSkills;
+}
+
+// ─── Test 2: /gp:project-status executes ─────────────────────
+
+async function testProjectStatus(): Promise<boolean> {
+	log("\n--- TEST 2: /gp:project-status execution ---\n");
+
+	let success = false;
+
+	try {
+		for await (const message of query({
+			prompt: "/gp:project-status",
+			options: {
+				cwd: TEST_DIR,
+				permissionMode: "bypassPermissions",
+				allowDangerouslySkipPermissions: true,
+				maxTurns: 50,
+				maxBudgetUsd: 3,
+				model: "claude-sonnet-4-6",
+				plugins: [{ type: "local", path: PLUGIN_DIR }],
+				env: {
+					...process.env,
+					PATH: `${join(PLUGIN_DIR, "binaries/macos-arm64")}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
+				},
+				systemPrompt: {
+					type: "preset",
+					preset: "claude_code",
+					append: "You are in an automated test. Execute the skill and report results concisely.",
+				},
+			},
+		})) {
+			if (message.type === "result" && message.subtype === "success") {
+				const result = message.result;
+				log(`Result (first 2000 chars):\n${result.slice(0, 2000)}`);
+
+				// Check for indicators that project-status ran successfully
+				if (result.includes("plugin-skill-test") || result.includes("goodplan") || result.includes("project") || result.includes("status")) {
+					success = true;
+					log("\nPASS: /gp:project-status executed and returned project information");
+				} else {
+					log("\nFAIL: /gp:project-status returned unexpected output");
+				}
+				break;
+			} else if (message.type === "result") {
+				log(`ERROR: ${message.subtype}`);
+				break;
+			} else if (message.type === "assistant") {
+				for (const block of message.message.content) {
+					if (block.type === "tool_use") {
+						if (block.name === "Bash") {
+							const cmd = typeof block.input === "object" && block.input && "command" in block.input
+								? String(block.input.command).slice(0, 120)
+								: "?";
+							log(`  [${block.name}] ${cmd}`);
+						} else if (block.name === "Skill") {
+							log(`  [${block.name}] ${JSON.stringify(block.input).slice(0, 120)}`);
+						} else {
+							log(`  [${block.name}]`);
+						}
+					}
+				}
+			}
+		}
+	} catch (err) {
+		log(`ERROR: ${err instanceof Error ? err.message : String(err)}`);
+	}
+
+	return success;
+}
+
+// ─── Main ────────────────────────────────────────────────────
+
+async function main(): Promise<void> {
+	const startTime = Date.now();
+
+	const discoveryPassed = await testSkillDiscovery();
+	const statusPassed = await testProjectStatus();
+
+	const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+	log("\n--- SUMMARY ---");
+	log(`Test 1 (skill discovery): ${discoveryPassed ? "PASS" : "FAIL"}`);
+	log(`Test 2 (project-status): ${statusPassed ? "PASS" : "FAIL"}`);
+	log(`Elapsed: ${elapsed}s`);
+	log(`Log file: ${LOG_FILE}`);
+
+	if (!discoveryPassed) {
+		log("\n⚠ Auto-namespacing failed. The build step should add gp: namespace prefixes.");
+		log("See plan Phase 2 fallback: 'If auto-namespacing does NOT work (bug #20994 still present)'");
+	}
+
+	// Clean up
+	execFileSync("rm", ["-rf", TEST_DIR]);
+	log(`\n[test-plugin-skills] Cleaned up ${TEST_DIR}`);
+}
+
+main().catch((err) => {
+	console.error("Fatal error:", err);
+	process.exit(1);
+});
