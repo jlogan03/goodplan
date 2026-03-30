@@ -42,6 +42,10 @@ cat > "$PLUGIN_DIR/.claude-plugin/plugin.json" <<MANIFEST
 }
 MANIFEST
 
+# Copy hook scripts and configuration
+cp "$REPO_ROOT/plugin-hooks/"*.sh "$REPO_ROOT/plugin-hooks/"*.json "$PLUGIN_DIR/hooks/"
+chmod +x "$PLUGIN_DIR/hooks/"*.sh
+
 # Copy plugin CLAUDE.md template
 cp "$REPO_ROOT/plugin/CLAUDE.md" "$PLUGIN_DIR/CLAUDE.md"
 
@@ -53,9 +57,13 @@ if command -v claude &> /dev/null; then
 else
   echo ""
   echo "claude CLI not available — running fallback assertions..."
-  # Verify plugin.json is valid JSON
+  # jq validates plugin.json (dev machines have jq); python3 validates hooks.json (guaranteed on macOS)
   jq . "$PLUGIN_DIR/.claude-plugin/plugin.json" > /dev/null
   echo "  plugin.json: valid JSON"
+  python3 -c "import json; json.load(open('$PLUGIN_DIR/hooks/hooks.json'))"
+  echo "  hooks.json: valid JSON"
+  test -x "$PLUGIN_DIR/hooks/protect-state.sh" && test -x "$PLUGIN_DIR/hooks/warn-bash-state.sh"
+  echo "  hook scripts: executable"
   # Verify binary is executable and runs
   "$PLUGIN_DIR/binaries/macos-arm64/gp" --version
   echo "  binary: executable and runs"

@@ -102,10 +102,10 @@ Add the hook copy step to `build-plugin.sh` and validate the assembled plugin.
 
 ### Tasks
 
-- [ ] Add hook copy step to `scripts/build-plugin.sh`:
+- [x] Add hook copy step to `scripts/build-plugin.sh`:
   1. After the existing `mkdir -p "$PLUGIN_DIR/hooks"` line, add: `cp plugin-hooks/*.sh plugin-hooks/*.json "$PLUGIN_DIR/hooks/"` and `chmod +x "$PLUGIN_DIR/hooks/"*.sh` (explicit file types — avoids copying `.gitkeep` or other stray files)
   2. Add a validation step in the fallback validation section: `python3 -c "import json; json.load(open('$PLUGIN_DIR/hooks/hooks.json'))"` to assert hooks.json is valid JSON, and `test -x "$PLUGIN_DIR/hooks/protect-state.sh" && test -x "$PLUGIN_DIR/hooks/warn-bash-state.sh"` to assert scripts are executable. Note: this python3 validation is additive to the existing `jq` validation of `plugin.json` — not replacing it. Add a brief comment in the build script: `# jq validates plugin.json (dev machines have jq); python3 validates hooks.json (guaranteed on macOS)`.
-- [ ] Verify `plugin.json` already has `"hooks": "./hooks/hooks.json"` (should already be there from slice 02 — no change needed, just confirm)
+- [x] Verify `plugin.json` already has `"hooks": "./hooks/hooks.json"` (should already be there from slice 02 — no change needed, just confirm)
 
 ### Verification
 
