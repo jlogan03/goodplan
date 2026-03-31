@@ -12,6 +12,9 @@ skills/**/.DS_Store
 .superpowers/
 .superset/
 
+# Dev-only files
+structured-iterative-development-primer.md
+
 # Logs
 *.log
 tools/dogfood/validate-logs/
