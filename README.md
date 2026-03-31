@@ -27,21 +27,21 @@ Then start Claude Code in your project directory and run `/create-epic` to get s
 - **Interrupted work detection** — the workflow knows when work was partially completed and offers to resume from where you left off.
 - **Onboard existing repos** — scan an existing codebase to extract conventions, architecture, and subsystem structure without starting from scratch.
 
-### Exploring & Designing — think before you build
+### Exploration & Architecture — investigate options, then commit
 
 - **Interactive exploration** — research libraries and APIs, brainstorm options with pros/cons analysis, or prototype ideas — all with findings captured as persistent artifacts.
 - **Prototyping before commitment** — build throwaway spikes to validate ideas before they become architecture. Keep what works, discard what doesn't.
 - **Interactive architecture definition via design trees** — systematically explore the design space so you make deliberate choices, not default ones. Covers subsystems, API surfaces, data models, and integration points.
 - **Convention capture** — record tech stack choices, naming conventions, code style, and testing practices as project-level guidance that informs all future work.
 
-### Breaking Work into Deliverable Pieces — plan the work, then work the plan
+### Planning — set Claude up to succeed before it writes code
 
 - **End-to-end first** — the first piece of work cuts through every layer of the system to prove the architecture works, even if each layer is minimal.
 - **Front-loaded risk** — known unknowns, logging, and observability ship early so later work is debuggable.
 - **Interactive planning** — structured Q&A walks through each phase's outcomes, implementation approach, and verification before committing to a plan.
 - **Automated plan refinement** — parallel automated reviewers score plans on multiple dimensions. Plans iterate until quality thresholds are met — fully automated, no human involvement needed.
 
-### Building — Claude does the work, the tools keep it honest
+### Building — automated implementation with built-in quality gates
 
 - **Test-driven implementation** — red-green TDD with verifiable success criteria, so the agent can iterate autonomously and produce complex implementations.
 - **Phased execution** — plans are implemented phase-by-phase with automated review after each phase, not all at once.
@@ -50,7 +50,7 @@ Then start Claude Code in your project directory and run `/create-epic` to get s
 - **Verification at every step** — lint, build, and test after each phase, plus plan-specified integration checks. Nothing ships unchecked.
 - **Side quests** — unplanned work that comes up mid-build gets the same plan/refine/implement discipline without derailing your epic.
 
-### Learning & Improving — mistakes don't repeat, context doesn't disappear
+### Learning & Improving — mistakes don't repeat, context doesn't disappear, ideas don't get dropped
 
 - **Learning accumulation** — learnings captured at each step, rolled up to epic and project levels. When Claude starts new work, it has access to everything learned before.
 - **Quick capture** — jot down bugs, ideas, and improvements mid-flow without losing context. Promote to side-quests or epics later.
