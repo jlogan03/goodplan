@@ -1,10 +1,10 @@
 # goodplan
 
-**A workflow that keeps Claude on track across sessions, branches, and features.**
+**Tools that keep Claude on track across sessions, branches, and features.**
 
-Claude Code is great for small tasks. But on real projects — multi-week, multi-session, architecturally complex — things fall apart. Context evaporates between sessions. Claude applies patterns inconsistently, leaving your codebase fragmented. You become the verification bottleneck, manually checking work Claude could check itself. Discoveries get dropped. The same mistakes repeat. And Claude always wants to jump straight into code instead of thinking first.
+Claude Code changed how I build software. But on real projects — multi-week, multi-session, large and complex — I struggle to keep Claude on track. Context evaporates between sessions. Patterns get applied inconsistently, leaving the codebase fragmented. I become the verification bottleneck, manually checking work Claude could check itself. Discoveries get dropped. The same mistakes repeat. And Claude always wants to jump straight into code instead of thinking first.
 
-goodplan is a structured development workflow for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that fixes this. It keeps project state — architecture, decisions, conventions, and learnings — in your repo, and proactively delivers the right context to Claude at each phase of the workflow. The result: you can take on ambitious, long-lived projects without the codebase falling apart.
+goodplan is a [Claude Code](https://docs.anthropic.com/en/docs/claude-code) plugin that provides a set of skills to fix this. It keeps project state — architecture, decisions, conventions, and learnings — in your repo, and proactively delivers the right context to Claude at each phase of the workflow. The result: you can take on ambitious, long-lived projects without the codebase falling apart.
 
 ## Install
 

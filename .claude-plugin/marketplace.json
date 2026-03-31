@@ -13,7 +13,7 @@
 				"path": "plugins/gp",
 				"ref": "release"
 			},
-			"description": "Keep Claude on track across sessions, branches, and features"
+			"description": "Tools that keep Claude on track across sessions, branches, and features"
 		}
 	]
 }
