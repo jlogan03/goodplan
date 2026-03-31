@@ -33,7 +33,5 @@ tools/dogfood/validate-logs/
 .goodplan/state.md
 
 # Legacy prototype artifacts
-.project/epics/goodplan-cli/prototypes/jqjs-spike/jqjs-spike
-.project/epics/goodplan-cli/prototypes/jqjs-spike/node_modules/
-.goodplan/epics/goodplan-cli/prototypes/jqjs-spike/jqjs-spike
-.goodplan/epics/goodplan-cli/prototypes/jqjs-spike/node_modules/
+**/jqjs-spike/jqjs-spike
+**/jqjs-spike/node_modules/
