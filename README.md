@@ -4,22 +4,21 @@
 
 A workflow that keeps Claude on track across sessions, branches, and features.
 
-goodplan is a structured development workflow for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). It gives your projects memory, architectural guardrails, and a workflow that keeps Claude effective as complexity grows — so you can take on ambitious, long-lived projects without the codebase falling apart.
+Claude Code is great for small tasks. But on real projects — multi-week, multi-session, architecturally complex — things fall apart. Context evaporates between sessions. Claude applies patterns inconsistently, leaving your codebase fragmented. You become the verification bottleneck, manually checking work Claude could check itself. Discoveries get dropped. The same mistakes repeat. And Claude always wants to jump straight into code instead of thinking first.
 
-## The Problem
+goodplan is a structured development workflow for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that fixes this. It keeps project state — architecture, decisions, conventions, and learnings — in your repo, and proactively delivers the right context to Claude at each phase of the workflow. The result: you can take on ambitious, long-lived projects without the codebase falling apart.
 
-Claude Code is great for small tasks, but real projects hit walls:
+## Install
 
-- **Important context evaporates between sessions.** You re-explain the same architecture, the same conventions, the same constraints. Every new session starts from scratch.
-- **Limited steering + fast code generation = big mess.** Claude generates code fast, but without architectural guardrails it drifts. You end up with inconsistent patterns, fragmented conventions, and a codebase that fights you.
-- **You become the verification bottleneck.** You're manually checking Claude's work, re-running tests, confirming changes — doing work that Claude could do if it had the right structure.
-- **You lose track of where things stand.** Juggling multiple sessions, branches, and features, it's hard to remember what's done, what's in progress, and what's next.
-- **Discoveries get dropped.** During implementation, you find edge cases, refactors, and follow-up work. Without a system, those discoveries vanish.
-- **The same mistakes repeat.** Lessons learned in one slice of work don't carry forward to the next. Claude doesn't remember what went wrong last time.
-- **Claude wants to jump straight into code.** Without a workflow, every task starts with implementation instead of understanding the problem, exploring options, and planning an approach.
-- **Claude doesn't know what's stable.** It treats mature, battle-tested subsystems the same as brand-new ones — casually refactoring code that shouldn't change while being too cautious with code that's still being figured out.
+```bash
+# Add the goodplan marketplace:
+claude plugin marketplace add https://github.com/ian97531/goodplan.git
 
-goodplan fixes this by keeping project state in your repo — architecture, decisions, conventions, and learnings — and proactively delivering the right context to Claude at each phase of the workflow.
+# Install the plugin:
+claude plugin install goodplan
+```
+
+Then start Claude Code in your project directory and run `/create-epic` to get started, or `/onboard-repo` to add goodplan to an existing codebase.
 
 ## Features
 
@@ -137,28 +136,6 @@ Behind the scenes, goodplan includes a compiled CLI (`gp`) that the skills use t
 - **State machine** — enforces valid transitions between phases, so work can't skip steps or get into an inconsistent state
 - **Context bundling** — assembles the right architecture docs, decisions, conventions, and learnings for each phase, so Claude gets what it needs without you having to find and paste it
 - **Deterministic state management** — all reads and writes go through validated schemas with atomic writes, so project state doesn't corrupt even across concurrent sessions
-
-## Install
-
-```bash
-# Add the goodplan marketplace:
-claude plugin marketplace add https://github.com/ian97531/goodplan.git
-
-# Install the plugin:
-claude plugin install goodplan
-```
-
-## Quick Start
-
-```bash
-# In your project directory:
-claude
-
-# Then in Claude Code:
-> /create-epic
-```
-
-The workflow will guide you from there. Use `/project-status` at any time to see where you are and what to do next.
 
 ## Design Principles
 
