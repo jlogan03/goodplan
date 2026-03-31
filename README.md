@@ -39,7 +39,7 @@ Then start Claude Code in your project directory and run `/create-epic` to get s
 - **End-to-end first** — the first piece of work cuts through every layer of the system to prove the architecture works, even if each layer is minimal.
 - **Front-loaded risk** — known unknowns, logging, and observability ship early so later work is debuggable.
 - **Interactive planning** — structured Q&A walks through each phase's outcomes, implementation approach, and verification before committing to a plan.
-- **Automated plan refinement** — parallel automated reviewers score plans on multiple dimensions. Plans iterate until quality thresholds are met — fully automated, no human involvement needed.
+- **Automated plan refinement** — parallel automated reviewers score plans on multiple dimensions. Plans iterate until quality thresholds are met.
 
 ### Building — automated implementation with built-in quality gates
 
@@ -109,6 +109,7 @@ Each step produces artifacts that persist across sessions. Use `/project-status`
 - `/refine-architecture` — Iteratively improve architecture files
 - `/create-slices` — Break work into ordered slices
 - `/refine-slices` — Refine slice definitions and sequencing
+- `/start-epic` — Review and approve an epic's architecture before activation
 
 **Building an epic slice or side-quest:**
 - `/create-plan` — Produce a detailed implementation plan
