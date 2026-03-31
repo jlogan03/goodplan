@@ -1,38 +1,50 @@
 # goodplan
 
-**Stop babysitting Claude. Start shipping.**
+**Build bigger, better software with Claude.**
 
-goodplan is a structured development workflow for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). It gives your AI assistant project memory, workflow discipline, and multi-session continuity — so you can set direction and let it work, instead of hand-holding every step.
+A workflow that keeps Claude on track across sessions, branches, and features.
+
+goodplan is a structured development workflow for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). It gives your projects memory, architectural guardrails, and a workflow that keeps Claude effective as complexity grows — so you can take on ambitious, long-lived projects without the codebase falling apart.
 
 ## The Problem
 
-Claude Code is powerful, but on real projects you end up as a human cron job: trigger a task, wait, read output, give the next instruction, repeat. Context gets lost between sessions. Architecture decisions get forgotten. The same mistakes happen twice.
+Claude Code is great for small tasks, but real projects hit walls:
 
-goodplan fixes this by keeping project state in your repo — architecture, decisions, learnings, and progress — and providing a workflow that knows what to do next.
+- **Important context evaporates between sessions.** You re-explain the same architecture, the same conventions, the same constraints. Every new session starts from scratch.
+- **Limited steering + fast code generation = big mess.** Claude generates code fast, but without architectural guardrails it drifts. You end up with inconsistent patterns, fragmented conventions, and a codebase that fights you.
+- **You become the verification bottleneck.** You're manually checking Claude's work, re-running tests, confirming changes — doing work that Claude could do if it had the right structure.
+- **You lose track of where things stand.** Juggling multiple sessions, branches, and features, it's hard to remember what's done, what's in progress, and what's next.
+- **Discoveries get dropped.** During implementation, you find edge cases, refactors, and follow-up work. Without a system, those discoveries vanish.
+- **The same mistakes repeat.** Lessons learned in one slice of work don't carry forward to the next. Claude doesn't remember what went wrong last time.
+- **Claude wants to jump straight into code.** Without a workflow, every task starts with implementation instead of understanding the problem, exploring options, and planning an approach.
+- **Claude doesn't know what's stable.** It treats mature, battle-tested subsystems the same as brand-new ones — casually refactoring code that shouldn't change while being too cautious with code that's still being figured out.
+
+goodplan fixes this by keeping project state in your repo — architecture, decisions, conventions, and learnings — and proactively delivering the right context to Claude at each phase of the workflow.
 
 ## Features
 
 ### Getting Oriented
 
-- **Multi-session continuity** — project state lives in git. Pick up where you left off, on any branch, in any session.
+- **Multi-session continuity** — project state lives in git and is designed for merging. Pick up where you left off, on any branch, in any session.
 - **Always know where you are** — see recent completions, current work, and recommended next steps. Reorient in seconds after any break.
+- **Next-action recommendations** — after each state transition, the workflow suggests what to do next based on current project state.
 - **Interrupted work detection** — the workflow knows when work was partially completed and offers to resume from where you left off.
 - **Onboard existing repos** — scan an existing codebase to extract conventions, architecture, and subsystem structure without starting from scratch.
 
 ### Exploring & Designing
 
-- **Structured exploration** — research libraries and APIs, brainstorm options with pros/cons analysis, or prototype ideas — all with findings captured as persistent artifacts.
+- **Interactive exploration** — research libraries and APIs, brainstorm options with pros/cons analysis, or prototype ideas — all with findings captured as persistent artifacts.
 - **Prototyping before commitment** — build throwaway spikes to validate ideas before they become architecture. Keep what works, discard what doesn't.
-- **Design tree architecture** — systematically explore the design space so you make deliberate choices, not default ones. Covers subsystems, API surfaces, data models, and integration points.
+- **Interactive architecture definition via design trees** — systematically explore the design space so you make deliberate choices, not default ones. Covers subsystems, API surfaces, data models, and integration points.
 - **Convention capture** — record tech stack choices, naming conventions, code style, and testing practices as project-level guidance that informs all future work.
 - **Architectural invariants** — define system-wide constraints (error handling, data integrity, security, performance) that must hold across all work.
 
-### Planning & Slicing
+### Breaking Work into Deliverable Pieces
 
-- **Tracer bullet slicing** — first slice cuts end-to-end through every layer to prove the architecture works, even if each layer is minimal.
+- **Tracer bullet approach** — the first piece of work cuts end-to-end through every layer to prove the architecture works, even if each layer is minimal.
 - **Front-loaded risk** — known unknowns, logging, and observability ship early so later work is debuggable.
 - **Interactive planning** — structured Q&A walks through each phase's outcomes, implementation approach, and verification before committing to a plan.
-- **Iterative plan refinement** — parallel automated reviewers score plans on multiple dimensions. Plans iterate until quality thresholds are met, before implementation starts.
+- **Automated iterative plan refinement** — parallel automated reviewers score plans on multiple dimensions. Plans iterate until quality thresholds are met — fully automated, no human involvement needed.
 - **Stale assumption detection** — plans flag when architecture has changed since goals were written and update before proceeding.
 - **Dependent research** — external libraries and APIs mentioned in plans are researched during planning, not discovered during implementation.
 
@@ -44,41 +56,20 @@ goodplan fixes this by keeping project state in your repo — architecture, deci
 - **Checkpoint and resume** — implementation progress is recorded per-phase. Interrupt and resume without re-doing completed work.
 - **Verification at every step** — lint, build, and test after each phase, plus plan-specified integration checks. Nothing ships unchecked.
 - **Atomic commits** — each phase produces a commit with a summary and plan reference, keeping git history clean and traceable.
+- **Side quests** — unplanned work that comes up mid-build gets the same plan/refine/implement discipline without derailing your epic.
 
 ### Learning & Improving
 
-- **Learning accumulation** — learnings captured per-slice and per-quest, rolled up to epic and project levels. When Claude starts new work, it has access to everything learned before.
-- **Two-level architecture** — project-level tracks current reality; epic-level tracks where you're headed. Deltas reconcile on completion.
-- **Subsystem maturity tracking** — the system knows which parts of your codebase are well-understood and which need more care.
+- **Learning accumulation** — learnings captured per-slice and per-side-quest, rolled up to epic and project levels. When Claude starts new work, it has access to everything learned before.
+- **Quick capture** — jot down bugs, ideas, and improvements mid-flow without losing context. Promote to side-quests or epics later.
+- **Deferred work routing** — work identified during implementation that belongs in a future piece of work gets captured and routed automatically.
+- **Current and target architecture** — project-level architecture tracks current reality. Each epic defines its own target architecture — the desired end state. Deltas reconcile on completion.
+- **Decisions with revisit triggers** — decisions are tracked artifacts that get re-evaluated when their assumptions change.
+- **Subsystem maturity tracking** — tracks which subsystems have stable APIs that other parts depend on versus which are new, experimental, and expected to change. Planning adapts accordingly — mature subsystems require more care and migration steps, while experimental ones expect iteration.
 - **Architecture auditing** — compare intended architecture against actual code to find drift, gaps, and improvement opportunities.
 - **Documentation and test auditing** — find stale docs, undocumented APIs, coverage gaps, and fragile test patterns.
-- **Maturity-aware planning** — when work touches mature subsystems, the workflow requires fitness function updates and migration steps.
-
-### Staying Organized
-
-- **Quick capture** — jot down bugs, ideas, and improvements mid-flow without losing context. Promote to quests or epics later.
-- **Side quests** — unplanned work gets the same plan/refine/implement discipline without derailing your epic.
-- **Decisions with revisit triggers** — decisions are tracked artifacts that get re-evaluated when their assumptions change.
-- **Git-native and mergeable** — all state is JSON, JSONL, and Markdown with deterministic key ordering, designed for minimal merge conflicts across branches.
-- **Next-action recommendations** — after each state transition, the workflow suggests what to do next based on current project state.
-- **Deferred work routing** — work identified during implementation that belongs in a future slice gets captured and routed automatically.
 
 ## How It Works
-
-goodplan adds two things to Claude Code:
-
-1. **A CLI** (`gp`) that manages all project state
-2. **Skills** (slash commands) that guide Claude through the workflow
-
-### The Workflow
-
-```
-/create-epic → /explore → /create-architecture → /create-slices
-                                                       ↓
-              /complete ← /implement-plan ← /refine-plan ← /create-plan
-```
-
-Each step produces artifacts that persist across sessions. Use `/project-status` at any time to see where you are and what to do next.
 
 ### Project Structure
 
@@ -105,63 +96,57 @@ Project
 │   └── Learnings
 │
 └── Tasks (lightweight capture — ideas, bugs, notes)
-    └── Convertible to quests or epics
+    └── Convertible to side-quests or epics
 ```
 
-### Skills Reference
+### Skills
 
-| Skill | Purpose |
-|---|---|
-| `/project-status` | See where you are, what to do next |
-| `/create-epic` | Define a body of work with goals and constraints |
-| `/explore` | Research, brainstorm, or prototype before committing |
-| `/create-architecture` | Drive architecture decisions through a design tree |
-| `/create-slices` | Break work into ordered slices using tracer bullet approach |
-| `/create-plan` | Produce a detailed implementation plan for a slice |
-| `/refine-plan` | Iteratively improve plans with automated reviewers |
-| `/implement-plan` | Execute plans phase-by-phase with built-in review |
-| `/complete` | Synthesize learnings, update architecture, archive |
-| `/capture` | Quick-capture a bug, idea, or improvement without breaking flow |
-| `/onboard-repo` | Scaffold goodplan onto an existing codebase |
-| `/audit-architecture` | Compare intended architecture against actual code |
-| `/audit-docs` | Find stale docs, undocumented APIs, inconsistencies |
-| `/audit-tests` | Analyze test quality, coverage gaps, fragile patterns |
-| `/refine-architecture` | Iteratively improve architecture files |
-| `/refine-slices` | Refine slice definitions and sequencing |
+Each step produces artifacts that persist across sessions. Use `/project-status` at any time to see where you are and what to do next.
 
-### CLI
+**Getting started:**
+- `/onboard-repo` — Scaffold goodplan onto an existing codebase
+- `/migrate` — Migrate project state after CLI updates
 
-The CLI owns all project state. Skills read and write state through it, never by editing files directly.
+**Status and capture:**
+- `/project-status` — See where you are, what to do next
+- `/capture` — Quick-capture a bug, idea, or improvement without breaking flow
 
-```bash
-gp status                    # Project overview
-gp epic:list                 # List epics
-gp slice:show my-slice       # Slice details with plan status
-gp learning:list --json      # Query learnings programmatically
-```
+**Defining an epic:**
+- `/create-epic` — Define a body of work with goals and constraints
+- `/explore` — Research, brainstorm, or prototype before committing
+- `/create-architecture` — Drive architecture decisions through a design tree
+- `/refine-architecture` — Iteratively improve architecture files
+- `/create-slices` — Break work into ordered slices using tracer bullet approach
+- `/refine-slices` — Refine slice definitions and sequencing
+
+**Building an epic slice or side-quest:**
+- `/create-plan` — Produce a detailed implementation plan
+- `/refine-plan` — Iteratively improve plans with automated reviewers
+- `/implement-plan` — Execute plans phase-by-phase with built-in review
+- `/complete` — Synthesize learnings, update architecture, archive
+
+**Auditing:**
+- `/audit-architecture` — Compare intended architecture against actual code
+- `/audit-docs` — Find stale docs, undocumented APIs, inconsistencies
+- `/audit-tests` — Analyze test quality, coverage gaps, fragile patterns
+
+### The CLI
+
+Behind the scenes, goodplan includes a compiled CLI (`gp`) that the skills use to manage project state. You won't interact with it directly — the skills handle that — but it's what makes the workflow reliable:
+
+- **State machine** — enforces valid transitions between phases, so work can't skip steps or get into an inconsistent state
+- **Context bundling** — assembles the right architecture docs, decisions, conventions, and learnings for each phase, so Claude gets what it needs without you having to find and paste it
+- **Deterministic state management** — all reads and writes go through validated schemas with atomic writes, so project state doesn't corrupt even across concurrent sessions
 
 ## Install
 
-### From Source
-
-Requires [Bun](https://bun.sh) 1.3+.
-
 ```bash
-git clone https://github.com/ian97531/goodplan.git
-cd goodplan
-bun install
-bun run install:skills
+# Add the goodplan marketplace:
+claude plugin marketplace add https://github.com/ian97531/goodplan.git
+
+# Install the plugin:
+claude plugin install goodplan
 ```
-
-This compiles the `gp` binary to `~/.local/bin/` and copies skills to `~/.claude/skills/`. Make sure `~/.local/bin` is in your PATH.
-
-### As a Claude Code Plugin
-
-```bash
-claude plugin add goodplan
-```
-
-> Plugin distribution is under active development.
 
 ## Quick Start
 
@@ -181,17 +166,6 @@ The workflow will guide you from there. Use `/project-status` at any time to see
 - **Everything in git.** Architecture, decisions, learnings, and progress travel with your branches. Each branch reflects its own reality.
 - **Multi-session continuity.** Any Claude Code session can resume where the last one left off. No context lost.
 - **Structured but not rigid.** Skip phases for trivial changes. Go back to planning mid-implementation. The workflow adapts to the work.
-
-## Tech Stack
-
-- TypeScript 5.8 (strict mode)
-- Bun runtime and compiler
-- Single compiled binary (~57 MB per platform)
-- macOS (arm64, x64) and Linux (x64)
-
-## Contributing
-
-Contributions welcome. Please open an issue before starting significant work so we can discuss approach.
 
 ## License
 
