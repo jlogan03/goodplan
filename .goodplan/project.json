@@ -1,10 +1,10 @@
 {
-	"activeEpic": "plugin-distribution",
+	"activeEpic": null,
 	"activeQuest": "list-pagination",
 	"activeSlice": null,
 	"created": "2026-03-28T00:06:46.961Z",
 	"name": "goodplan",
-	"stateSignature": "df9eb99f3d5673c82a6e9d53a9f003bb7871a1448f47216f7cc74112aea4b1c7",
+	"stateSignature": "3279c8ce0ba68bdc3dc7148ceb5c0e5bf92ae3ac18a02ebe64ec581509f6f681",
 	"updated": "2026-03-31T12:31:41.250Z",
 	"version": "1.0.2"
 }

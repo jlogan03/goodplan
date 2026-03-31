@@ -2,9 +2,11 @@
 
 ## System Summary
 
-`goodplan` is a compiled TypeScript CLI that serves as the single interface to `.project/` state for both humans and LLMs. It owns all deterministic workflow mechanics — state management, transition validation, file I/O, context bundling, and activity logging — while the LLM retains ownership of judgment-driven work (interviewing users, writing content, reviewing, scoring).
+`goodplan` is a compiled TypeScript CLI that serves as the single interface to `.goodplan/` state for both humans and LLMs. It owns all deterministic workflow mechanics — state management, transition validation, file I/O, context bundling, and activity logging — while the LLM retains ownership of judgment-driven work (interviewing users, writing content, reviewing, scoring).
 
 The system is a four-layer stack with strict unidirectional dependencies: Commands → RPC Layer → State Machine + Data Layer → Filesystem. Read-only commands (`list`, `show`) bypass the RPC layer and go directly from Commands to the Data Layer.
+
+The CLI and skills are distributed as a Claude Code plugin (`goodplan`). The plugin bundles the compiled binary, all workflow skills (namespaced as `/gp:<skill-name>`), and state protection hooks. Users install via `/plugin marketplace add ian97531/goodplan`.
 
 ## Subsystems
 
@@ -23,6 +25,7 @@ Workflow orchestration layer. Coordinates the State Machine and Data Layer to ex
 - Assemble context bundles for each phase (with `--inline` budget-based content inlining). Context bundling is a peer module alongside the RPC layer (`src/core/context/`) — depends on tree types, schema types, and RPC types, consumed by both the RPC layer (for `--inline` on mutations) and the Commands layer (for `start-*` commands).
 - Handle implicit transitions (e.g., all slices complete → epic needs completion)
 - Enforce completion flow ordering (verify goal → deferred work → arch delta → learnings)
+- Compute `nextCommands` after each mutation via a `commandMappings` registry that maps `(entityType, status)` pairs to available commands
 
 **Dependencies:** State Machine, Data Layer
 
@@ -34,7 +37,7 @@ Pure rules engine with no I/O. Implements a reducer pattern over declarative tra
 
 ### Data Layer
 
-Entity CRUD and all filesystem I/O. Reads and writes JSON/JSONL with Zod schema validation. Enforces deterministic key ordering for git merge friendliness. Handles atomic file operations. Materializes state machine output onto the filesystem — creates directories and files as needed, including LLM content directories (research/, brainstorm/, architecture/). `assembleState()` handles uninitialized projects by returning a zero state. Lifecycle-bound markdown (goals, plans) is written through CLI `submit-*` commands with state validation (see commands-api.md Sub-Agent Commands). Free-form markdown (architecture, research, brainstorm) is read by the CLI for context bundling but written directly by the LLM.
+Entity CRUD and all filesystem I/O. Reads and writes JSON/JSONL with Zod schema validation. Enforces deterministic key ordering for git merge friendliness. Handles atomic file operations. Maintains an embedded HMAC-SHA256 `stateSignature` in `goodplan.json` for state integrity — computed over the serialized state tree on every write, verified on every read. Materializes state machine output onto the filesystem — creates directories and files as needed, including LLM content directories (research/, brainstorm/, architecture/). `assembleState()` handles uninitialized projects by returning a zero state. Lifecycle-bound markdown (goals, plans) is written through CLI `submit-*` commands with state validation (see commands-api.md Sub-Agent Commands). Free-form markdown (architecture, research, brainstorm) is read by the CLI for context bundling but written directly by the LLM.
 
 **Dependencies:** Filesystem
 
@@ -55,12 +58,15 @@ Single compiled binary per platform via `bun build --compile`. Target platforms:
 
 **Known Platform Gaps:** windows-x64 is aspirational. Bun's Windows support is maturing but not production-ready for compiled binaries. Known concerns: `fs.rename` atomicity differences, path separator handling in state keys. Windows support will be revisited when Bun's Windows maturity improves.
 
-Installed alongside Claude Code skills. Skills are versioned in the repo (`skills/`) and installed to `~/.claude/skills/` via `bun run install:skills`. The CLI and skills are versioned together — skill prompts contain concrete CLI commands.
+Distributed as a Claude Code plugin via marketplace. CI builds the plugin on version tag push (`v*`), assembles skills/hooks/binary into `dist/gp-plugin/`, and force-pushes to a `release` branch. Users install via `/plugin marketplace add ian97531/goodplan`. The binary lives at `${CLAUDE_PLUGIN_ROOT}/binaries/macos-arm64/gp` inside the plugin — not on PATH. Skills are namespaced as `/gp:<skill-name>`. The CLI and skills are versioned together — skill prompts contain concrete CLI commands.
+
+**Platform constraint (v1):** macOS arm64 only. Multi-platform support is a future enhancement.
 
 ## Subsystem Maturity
 
 | Subsystem | Maturity | Dependents | Fitness Functions | Notes |
 |---|---|---|---|---|
+| Plugin | Experimental | — | candidate | Packaging, hooks, build pipeline, CI/CD, marketplace distribution. |
 | Commands | Developing | — | `tests/fitness/stateless-commands.test.ts`, `tests/fitness/schema-output-accuracy.test.ts`, `tests/fitness/structured-errors.test.ts` | Thin CLI layer. Stable across 8 slices. |
 | RPC Layer | Developing | Commands | `tests/fitness/mutation-through-state-machine.test.ts` | Workflow orchestration. Stable across 8 slices. Tested indirectly via integration tests. |
 | State Machine | Developing | RPC Layer | `tests/fitness/state-machine-purity.test.ts`, `tests/fitness/transition-completeness.test.ts` | Pure rules engine. Purity and completeness fitness functions in place. |
