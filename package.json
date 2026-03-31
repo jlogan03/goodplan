@@ -1,6 +1,6 @@
 {
 	"name": "goodplan",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"description": "Structured development workflow for Claude Code",
 	"author": "Ian White",
 	"license": "MIT",
