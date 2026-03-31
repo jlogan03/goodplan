@@ -1,0 +1,1 @@
+The gp binary is bundled with the plugin and not distributed separately. All 17 SKILL.md files, cli-interaction.md, and plugin/CLAUDE.md needed updating to use the plugin binary path instead of assuming PATH availability.

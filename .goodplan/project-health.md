@@ -15,7 +15,8 @@
 - Epic completion mode in /complete: new epic scope type, architecture reconciliation, artifact promotion, archive numbering — all untested on a real epic
 - Install script (`scripts/install-skills.sh`): verified manually via `bun run install:skills` + diff; no automated test
 - Plugin build script (`scripts/build-plugin.sh`): verified via `bun run build:plugin` + `claude plugin validate` + Agent SDK integration test (`tools/dogfood/test-plugin-skills.ts`) verifying skill discovery, auto-namespacing, and execution
-- Plugin hook scripts (`plugin-hooks/protect-state.sh`, `warn-bash-state.sh`): verified via manual stdin-piped tests (14 checks including edge cases), shellcheck passes; no automated test suite
+- Plugin hook scripts (`plugin-hooks/protect-state.sh`, `warn-bash-state.sh`): verified via manual stdin-piped tests (14 checks including edge cases), shellcheck passes, CI smoke tests in publish-plugin.yml
+- CI release pipeline (`.github/workflows/publish-plugin.yml`): verified via live v1.0.0–v1.0.2 releases — build, post-build assertion, hook smoke tests, tarball, GitHub Release, release branch publish all exercised
 
 ### Known fragile areas
 - Cross-skill reference paths (e.g., refine-slices references refine-plan's shared-preamble.md): if refine-plan files move, refine-slices breaks silently
@@ -24,7 +25,7 @@
 - epic-conventions.md is consumed by 12+ skills: changes require updating all consumers
 - citty + `exactOptionalPropertyTypes`: requires `as unknown as CommandDef` casts in `src/index.ts`. May break on citty upgrade.
 
-<!-- Last updated by: complete for 06-skill-packaging, 2026-03-30 -->
+<!-- Last updated by: complete for 07-ci-distribution, 2026-03-31 -->
 
 ## Performance Characteristics
 
@@ -75,8 +76,8 @@
 
 ## Recent Changes
 
+- **07-ci-distribution** (2026-03-31): GitHub Actions release pipeline — tag-triggered build, post-build version assertion, hook smoke tests (.goodplan-dev sentinel removal), tarball + GitHub Release, force-push to release branch with marketplace layout. Post-impl: plugin rename (gp→goodplan), gp: namespace prefixing, binary path fix, hooks field removal, git history cleanup (238M→36M).
 - **06-skill-packaging** (2026-03-30): Skill packaging into plugin — rsync skills into `dist/gp-plugin/skills/`, build-time assertions (frontmatter validation via awk, old CLI name regression guard, .DS_Store exclusion), Agent SDK integration test confirming auto-namespacing and skill execution. 3 new/modified files, 18 skills packaged.
-- **05-next-commands** (2026-03-30): `nextCommands` feature — `commandMappings` registry derived from transition tables, `computeNextCommands()` pure function, RPC-layer integration (begin/submit/complete). Every mutation's `--json` output includes `nextCommands` with entity/other command arrays. Prerequisite: exported declarative transition arrays from `decision.ts` and `task-lifecycle.ts`. 6 new/modified source files, 148 new tests (14 unit + 134 fitness), 1659 tests total.
-- **04-state-protection-hooks** (2026-03-30): PreToolUse hook scripts for Layer 1 state protection. `protect-state.sh` blocks Write/Edit on `.goodplan/**/*.json|jsonl`, `warn-bash-state.sh` emits `additionalContext` advisory. Both use consolidated single python3 invocations, `.goodplan-dev` sentinel bypass. Build integration copies hooks to `dist/gp-plugin/hooks/`. 3 new files, 2 modified.
+- **05-next-commands** (2026-03-30): `nextCommands` feature — `commandMappings` registry, `computeNextCommands()`, RPC-layer integration. Every mutation's `--json` output includes `nextCommands`. 6 new/modified source files, 148 new tests.
 
-<!-- Last updated by: complete for 06-skill-packaging, 2026-03-30 -->
+<!-- Last updated by: complete for 07-ci-distribution, 2026-03-31 -->

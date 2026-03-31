@@ -1,0 +1,1 @@
+Backup directories, log files, and prototype binaries accumulated in git history. git-filter-repo cleaned them but invalidated all tags, requiring force-push and re-release. Future projects should audit history before the first public push.

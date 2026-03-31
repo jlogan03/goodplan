@@ -230,10 +230,10 @@
 					"status": "completed"
 				},
 				{
-					"completed": null,
+					"completed": "2026-03-31T12:31:41.250Z",
 					"created": "2026-03-29T20:39:01.354Z",
 					"name": "07-ci-distribution",
-					"status": "implementation-complete"
+					"status": "completed"
 				}
 			],
 			"status": "activated"
