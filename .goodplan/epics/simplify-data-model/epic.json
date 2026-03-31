@@ -1,0 +1,10 @@
+{
+	"activated": null,
+	"created": "2026-03-31T19:52:36.068Z",
+	"goal": "Simplify the data model, reduce ceremony, and consolidate skills. Move goals into JSON entities, consolidate overview files, add scoped decision rollup, and reduce the skill count by merging related skills.",
+	"name": "simplify-data-model",
+	"refinement": null,
+	"status": "created",
+	"updated": "2026-03-31T19:52:36.068Z",
+	"verifications": []
+}

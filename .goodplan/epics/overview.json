@@ -237,6 +237,13 @@
 				}
 			],
 			"status": "completed"
+		},
+		{
+			"completed": null,
+			"created": "2026-03-31T19:52:36.068Z",
+			"name": "simplify-data-model",
+			"slices": [],
+			"status": "created"
 		}
 	]
 }
