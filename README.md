@@ -1,8 +1,6 @@
 # goodplan
 
-**Build bigger, better software with Claude.**
-
-A workflow that keeps Claude on track across sessions, branches, and features.
+**A workflow that keeps Claude on track across sessions, branches, and features.**
 
 Claude Code is great for small tasks. But on real projects — multi-week, multi-session, architecturally complex — things fall apart. Context evaporates between sessions. Claude applies patterns inconsistently, leaving your codebase fragmented. You become the verification bottleneck, manually checking work Claude could check itself. Discoveries get dropped. The same mistakes repeat. And Claude always wants to jump straight into code instead of thinking first.
 

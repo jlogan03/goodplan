@@ -13,7 +13,7 @@
 				"path": "plugins/gp",
 				"ref": "release"
 			},
-			"description": "goodplan — structured development workflow for Claude Code"
+			"description": "Keep Claude on track across sessions, branches, and features"
 		}
 	]
 }
