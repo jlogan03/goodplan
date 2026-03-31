@@ -44,14 +44,14 @@ goodplan fixes this by keeping project state in your repo — architecture, deci
 - **Tracer bullet approach** — the first piece of work cuts end-to-end through every layer to prove the architecture works, even if each layer is minimal.
 - **Front-loaded risk** — known unknowns, logging, and observability ship early so later work is debuggable.
 - **Interactive planning** — structured Q&A walks through each phase's outcomes, implementation approach, and verification before committing to a plan.
-- **Automated iterative plan refinement** — parallel automated reviewers score plans on multiple dimensions. Plans iterate until quality thresholds are met — fully automated, no human involvement needed.
+- **Automated plan refinement** — parallel automated reviewers score plans on multiple dimensions. Plans iterate until quality thresholds are met — fully automated, no human involvement needed.
 - **Stale assumption detection** — plans flag when architecture has changed since goals were written and update before proceeding.
 - **Dependent research** — external libraries and APIs mentioned in plans are researched during planning, not discovered during implementation.
 
 ### Building
 
 - **Test-driven implementation** — red-green TDD with verifiable success criteria, so the agent can iterate autonomously and produce complex implementations.
-- **Phased execution** — plans are implemented phase-by-phase with review after each phase, not all at once.
+- **Phased execution** — plans are implemented phase-by-phase with automated review after each phase, not all at once.
 - **Automated review cycles** — parallel specialist reviewers (generalist + domain-specific) provide feedback after each implementation phase.
 - **Checkpoint and resume** — implementation progress is recorded per-phase. Interrupt and resume without re-doing completed work.
 - **Verification at every step** — lint, build, and test after each phase, plus plan-specified integration checks. Nothing ships unchecked.
