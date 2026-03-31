@@ -4,7 +4,7 @@
 
 Claude Code changed how I build software. But on real projects — multi-week, multi-session, large and complex — I struggle to keep Claude on track. Context evaporates between sessions. Patterns get applied inconsistently, leaving the codebase fragmented. I become the verification bottleneck, manually checking work Claude could check itself. Discoveries get dropped. The same mistakes repeat. And Claude always wants to jump straight into code instead of thinking first.
 
-goodplan is a [Claude Code](https://docs.anthropic.com/en/docs/claude-code) plugin that provides a set of skills to fix this. It keeps project state — architecture, decisions, conventions, and learnings — in your repo, and proactively delivers the right context to Claude at each phase of the workflow. The result: you can take on ambitious, long-lived projects without the codebase falling apart.
+I built goodplan to fix this. It's a Claude Code plugin that keeps project state — architecture, decisions, conventions, and learnings — in your repo, and proactively delivers the right context to Claude at each phase of the workflow. The result: you can take on ambitious, long-lived projects without the codebase falling apart.
 
 ## Install
 
@@ -20,53 +20,47 @@ Then start Claude Code in your project directory and run `/create-epic` to get s
 
 ## Features
 
-### Getting Oriented
+### Getting Oriented — never lose track of where you are
 
 - **Multi-session continuity** — project state lives in git and is designed for merging. Pick up where you left off, on any branch, in any session.
 - **Always know where you are** — see recent completions, current work, and recommended next steps. Reorient in seconds after any break.
-- **Next-action recommendations** — after each state transition, the workflow suggests what to do next based on current project state.
 - **Interrupted work detection** — the workflow knows when work was partially completed and offers to resume from where you left off.
 - **Onboard existing repos** — scan an existing codebase to extract conventions, architecture, and subsystem structure without starting from scratch.
 
-### Exploring & Designing
+### Exploring & Designing — think before you build
 
 - **Interactive exploration** — research libraries and APIs, brainstorm options with pros/cons analysis, or prototype ideas — all with findings captured as persistent artifacts.
 - **Prototyping before commitment** — build throwaway spikes to validate ideas before they become architecture. Keep what works, discard what doesn't.
 - **Interactive architecture definition via design trees** — systematically explore the design space so you make deliberate choices, not default ones. Covers subsystems, API surfaces, data models, and integration points.
 - **Convention capture** — record tech stack choices, naming conventions, code style, and testing practices as project-level guidance that informs all future work.
-- **Architectural invariants** — define system-wide constraints (error handling, data integrity, security, performance) that must hold across all work.
 
-### Breaking Work into Deliverable Pieces
+### Breaking Work into Deliverable Pieces — plan the work, then work the plan
 
-- **Tracer bullet approach** — the first piece of work cuts end-to-end through every layer to prove the architecture works, even if each layer is minimal.
+- **End-to-end first** — the first piece of work cuts through every layer of the system to prove the architecture works, even if each layer is minimal.
 - **Front-loaded risk** — known unknowns, logging, and observability ship early so later work is debuggable.
 - **Interactive planning** — structured Q&A walks through each phase's outcomes, implementation approach, and verification before committing to a plan.
 - **Automated plan refinement** — parallel automated reviewers score plans on multiple dimensions. Plans iterate until quality thresholds are met — fully automated, no human involvement needed.
-- **Stale assumption detection** — plans flag when architecture has changed since goals were written and update before proceeding.
-- **Dependent research** — external libraries and APIs mentioned in plans are researched during planning, not discovered during implementation.
 
-### Building
+### Building — Claude does the work, the tools keep it honest
 
 - **Test-driven implementation** — red-green TDD with verifiable success criteria, so the agent can iterate autonomously and produce complex implementations.
 - **Phased execution** — plans are implemented phase-by-phase with automated review after each phase, not all at once.
 - **Automated review cycles** — parallel specialist reviewers (generalist + domain-specific) provide feedback after each implementation phase.
 - **Checkpoint and resume** — implementation progress is recorded per-phase. Interrupt and resume without re-doing completed work.
 - **Verification at every step** — lint, build, and test after each phase, plus plan-specified integration checks. Nothing ships unchecked.
-- **Atomic commits** — each phase produces a commit with a summary and plan reference, keeping git history clean and traceable.
 - **Side quests** — unplanned work that comes up mid-build gets the same plan/refine/implement discipline without derailing your epic.
 
-### Learning & Improving
+### Learning & Improving — mistakes don't repeat, context doesn't disappear
 
-- **Learning accumulation** — learnings captured per-slice and per-side-quest, rolled up to epic and project levels. When Claude starts new work, it has access to everything learned before.
+- **Learning accumulation** — learnings captured at each step, rolled up to epic and project levels. When Claude starts new work, it has access to everything learned before.
 - **Quick capture** — jot down bugs, ideas, and improvements mid-flow without losing context. Promote to side-quests or epics later.
 - **Deferred work routing** — work identified during implementation that belongs in a future piece of work gets captured and routed automatically.
 - **Current and target architecture** — project-level architecture tracks current reality. Each epic defines its own target architecture — the desired end state. Deltas reconcile on completion.
 - **Decisions with revisit triggers** — decisions are tracked artifacts that get re-evaluated when their assumptions change.
-- **Subsystem maturity tracking** — tracks which subsystems have stable APIs that other parts depend on versus which are new, experimental, and expected to change. Planning adapts accordingly — mature subsystems require more care and migration steps, while experimental ones expect iteration.
-- **Architecture auditing** — compare intended architecture against actual code to find drift, gaps, and improvement opportunities.
-- **Documentation and test auditing** — find stale docs, undocumented APIs, coverage gaps, and fragile test patterns.
+- **Subsystem maturity tracking** — tracks which subsystems have stable APIs that other parts depend on versus which are new and expected to change. Planning adapts accordingly.
+- **Architecture, documentation, and test auditing** — compare what was intended against what was built to find drift, gaps, stale docs, and coverage holes.
 
-## How It Works
+## Reference
 
 ### Project Structure
 
@@ -113,7 +107,7 @@ Each step produces artifacts that persist across sessions. Use `/project-status`
 - `/explore` — Research, brainstorm, or prototype before committing
 - `/create-architecture` — Drive architecture decisions through a design tree
 - `/refine-architecture` — Iteratively improve architecture files
-- `/create-slices` — Break work into ordered slices using tracer bullet approach
+- `/create-slices` — Break work into ordered slices
 - `/refine-slices` — Refine slice definitions and sequencing
 
 **Building an epic slice or side-quest:**
@@ -134,13 +128,6 @@ Behind the scenes, goodplan includes a compiled CLI (`gp`) that the skills use t
 - **State machine** — enforces valid transitions between phases, so work can't skip steps or get into an inconsistent state
 - **Context bundling** — assembles the right architecture docs, decisions, conventions, and learnings for each phase, so Claude gets what it needs without you having to find and paste it
 - **Deterministic state management** — all reads and writes go through validated schemas with atomic writes, so project state doesn't corrupt even across concurrent sessions
-
-## Design Principles
-
-- **CLI owns state, LLM owns judgment.** Deterministic mechanics (state transitions, validation, context bundling) live in the CLI. Creative work (planning, reviewing, implementing) stays with Claude.
-- **Everything in git.** Architecture, decisions, learnings, and progress travel with your branches. Each branch reflects its own reality.
-- **Multi-session continuity.** Any Claude Code session can resume where the last one left off. No context lost.
-- **Structured but not rigid.** Skip phases for trivial changes. Go back to planning mid-implementation. The workflow adapts to the work.
 
 ## License
 
