@@ -21,13 +21,13 @@ Extract duplicated patterns from the 5 existing harness scripts into `tools/dogf
 - [ ] No `tools/dogfood/utils.ts` file exists
 
 **After implementation** (should pass / show presence):
-- [ ] `bun run tools/dogfood/utils.ts` — file parses without errors
-- [ ] `bun test tests/unit/dogfood/utils.test.ts` — all unit tests pass
-- [ ] A small integration script (`tools/dogfood/test-utils.ts`) imports all exports from `utils.ts`, calls `createLogger()`, `gp()`, `gpJson()`, `verifyEntityStatus()`, `checkViolation()`, `createCostTracker()`, `createMinimalFixture()`, `parseModel()`, `tierDefault()` against a temp fixture — all succeed
+- [x] `bun run tools/dogfood/utils.ts` — file parses without errors
+- [x] `bun test tests/unit/dogfood/utils.test.ts` — all unit tests pass
+- [x] A small integration script (`tools/dogfood/test-utils.ts`) imports all exports from `utils.ts`, calls `createLogger()`, `gp()`, `gpJson()`, `verifyEntityStatus()`, `checkViolation()`, `createCostTracker()`, `createMinimalFixture()`, `parseModel()`, `tierDefault()` against a temp fixture — all succeed
 
 ### Tasks
 
-- [ ] Create `tools/dogfood/utils.ts` with the following exports:
+- [x] Create `tools/dogfood/utils.ts` with the following exports:
   - `createLogger(logFile: string)` — returns `{ log(msg: string): void }` that writes to both file and console. Extracted from the inline `log()` pattern in all 5 harness scripts.
   - `gp(args: string[], opts?: { cwd?: string, gpBin?: string }): { stdout: string, exitCode: number }` — CLI helper wrapping `execFileSync`. Uses `GP_CLI_PATH` env var or defaults to the plugin binary path. Extracted from `goodplan()`/`gp()` in harness.ts and validate.ts.
   - `gpJson<T>(args: string[], opts?): T` — typed JSON-parsing wrapper. Throws with exit code description on failure. Extracted from `goodplanJson()`/`gpJson()`.
@@ -44,7 +44,7 @@ Extract duplicated patterns from the 5 existing harness scripts into `tools/dogf
   - `FixtureSetupError` — custom error class thrown by `createMinimalFixture` on fixture creation failures. Distinguishes setup problems from downstream test failures (e.g., `catch (e) { if (e instanceof FixtureSetupError) ... }`).
   - `parseModel(defaultModel: string): string` — reads `--model` from `process.argv`, returns override or default
   - `tierDefault(tier: "structural" | "pipeline" | "quality" | "e2e"): "claude-haiku-4-5" | "claude-sonnet-4-5" | "claude-opus-4-6"` — returns `claude-haiku-4-5` for structural/pipeline, `claude-sonnet-4-5` for quality, `claude-opus-4-6` for e2e. Note: quality tier uses sonnet for cost efficiency. For full-workflow validation runs (validate.ts), use `--model claude-opus-4-6` or pass `tierDefault("e2e")` to avoid silent quality degradation from the opus-to-sonnet default change.
-- [ ] Create `tests/unit/dogfood/utils.test.ts` with unit tests for each utility function:
+- [x] Create `tests/unit/dogfood/utils.test.ts` with unit tests for each utility function:
   - `createLogger`: writes to file and returns content
   - `gp`/`gpJson`: integration test calling real CLI (or note as acceptable deviation if mocking `execFileSync`, since it's process mock not filesystem mock)
   - `gpForce`: returns failing result if both attempts fail; retries exactly once
@@ -54,7 +54,7 @@ Extract duplicated patterns from the 5 existing harness scripts into `tools/dogf
   - `writeTranscriptEntry`: appends valid JSONL line, filters out `stream_event` messages, survives write errors without throwing. `flushTranscript`: flushes buffered entries to disk; verify all buffered entries appear in file after flush
   - `parseModel`: returns override when `--model` is present, default otherwise
   - `tierDefault`: returns `claude-haiku-4-5` for structural/pipeline, `claude-sonnet-4-5` for quality, `claude-opus-4-6` for e2e
-- [ ] Create `tools/dogfood/test-utils.ts` — integration test that exercises utils against a real temp directory with a real `gp init` call. Includes `createMinimalFixture` verification: all expected files exist, `gp status --json` works in the fixture dir. Uses `finally { rmSync(...) }` for cleanup.
+- [x] Create `tools/dogfood/test-utils.ts` — integration test that exercises utils against a real temp directory with a real `gp init` call. Includes `createMinimalFixture` verification: all expected files exist, `gp status --json` works in the fixture dir. Uses `finally { rmSync(...) }` for cleanup.
 
 ### Verification
 Run `bun test tests/unit/dogfood/utils.test.ts` — all tests pass. Run `bun tools/dogfood/test-utils.ts` — integration test completes with all checks passing. Inspect the created log file and verify it contains dual output. Verify `verifyEntityStatus` correctly reports a freshly-initialized project's status. Verify `createMinimalFixture` produces a valid project where `gp status --json` succeeds. Verify temp dirs are cleaned up.
