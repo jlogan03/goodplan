@@ -16,7 +16,7 @@ The existing four-layer CLI stack (Commands → RPC → State Machine → Data L
 Three categories of change:
 
 **Pipeline skills** (new orchestrator pattern):
-- `/gp:create-epic` — replaces create-epic + explore + create-architecture + refine-architecture + create-slices + refine-slices. Lightweight orchestrator that checks CLI status, spawns sub-agents per phase, passes file paths between them. Orchestrator never reads files — only passes paths.
+- `/gp:create-epic` — replaces create-epic + explore + create-architecture + refine-architecture + create-slices + refine-slices. Lightweight orchestrator that checks CLI status, spawns sub-agents per phase, passes file paths between them. Orchestrator relies on CLI status and sub-agent return summaries — never reads full artifact content.
 - `/gp:plan-slice` — replaces create-plan + refine-plan. Creates and refines a slice plan in one invocation.
 - `/gp:create-side-quest` — replaces quest creation + explore + create-plan + refine-plan for quests.
 
@@ -27,7 +27,7 @@ Three categories of change:
 
 **Unchanged skills** (renamed):
 - `/gp:start-epic` (was start-epic)
-- `/gp:explore` (was explore) — also invoked internally by pipeline skills as a shared module
+- `/gp:explore` (was explore) — thin wrapper that spawns `explore-phase.md` as a sub-agent. Pipeline skills (`create-epic`, `create-side-quest`) also spawn `explore-phase.md` directly — they do not invoke `/gp:explore`.
 - `/gp:task` (was capture) — creates lightweight tasks
 - `/gp:upgrade` (was migrate) — upgrades `.goodplan/` state format between versions
 - `/gp:init` (was onboard-repo + create-epic Mode A) — handles both empty repos and pre-existing repos
@@ -37,7 +37,7 @@ Three categories of change:
 
 Two distribution mechanisms:
 
-**Agent definitions** (`agents/` directory) — for phase-level sub-agents that need full instruction sets. Content loaded by Claude Code at spawn time. The `skills:` frontmatter injects shared reference content without Read permissions.
+**Agent definitions** (`agents/` directory) — for phase-level sub-agents that need full instruction sets. Content loaded by Claude Code at spawn time. The `skills:` frontmatter injects full SKILL.md bodies from named skills into the agent's context at startup — each injectable reference must be a skill directory with its own SKILL.md (use `user-invocable: false` for non-user-facing references).
 
 **Skill-level shared content** (`skills/_shared/`) — for content injected into orchestrator skills via `@` references at SKILL.md load time. Kept minimal to avoid bloating orchestrator context.
 
@@ -59,12 +59,12 @@ Pipeline skills have two types of phases:
 
 The orchestrator flow:
 1. Check entity status via CLI (`gp status --json`, `gp epic:show --json`, etc.)
-2. Determine which phase to run next based on status + filesystem artifacts
+2. Determine which phase to run next based on CLI status
 3. If interactive phase: run Q&A directly, write structured output to disk
 4. If autonomous phase: spawn a named agent, receive compact summary
 5. Advance to next phase or exit
 
-**Agent definitions** live in `agents/` at the plugin root. Each `.md` file's body becomes the sub-agent's system prompt, loaded by Claude Code at spawn time — no Read permission needed. The `skills:` frontmatter field injects shared reference content into the agent's context at startup.
+**Agent definitions** live in `agents/` at the plugin root. Each `.md` file's body becomes the sub-agent's system prompt, loaded by Claude Code at spawn time — no Read permission needed. The `skills:` frontmatter field lists named skills whose full SKILL.md bodies are injected into the agent's context at startup. Each injectable reference (review preamble, output format, CLI conventions) must therefore be a skill directory with a SKILL.md file (`user-invocable: false`).
 
 ```
 goodplan-plugin/
@@ -89,7 +89,7 @@ goodplan-plugin/
 4. If scores don't pass: orchestrator spawns **editor agent**, then re-spawns coordinator to re-evaluate
 5. Orchestrator decides to loop or exit based on synthesis return values (numbers, not content)
 
-The orchestrator never reads artifact contents or decides which reviewers to use — it follows the coordinator's instructions.
+The orchestrator never reads full artifact contents or decides which reviewers to use — it follows the coordinator's instructions.
 
 **Reviewer context passing** — reviewer agents are domain specialists (one per domain, defined in `agents/`). The orchestrator passes a `review_context` in the task prompt that tells the reviewer what it's reviewing: `architecture proposal`, `slice definitions`, `implementation plan`, `code implementation`, or `audit findings`. The reviewer adapts its focus accordingly (e.g., structural soundness for architecture, implementability for plans, code quality for implementations). Same agent definition, different task framing.
 
@@ -123,12 +123,12 @@ This preserves context across re-spawns without requiring experimental features 
 This enables the user to start a skill, step away, and return to completed work — maximizing autonomous runtime without sacrificing quality on decisions that genuinely need human judgment.
 
 **Critical constraints**:
-- Orchestrator never reads file contents — only passes paths and reads structured return values
+- Orchestrator relies primarily on CLI status and sub-agent return summaries. When user-facing context is needed (re-entry summaries, error details from failed sub-agents), it may read lightweight summary files but never full artifact content (architecture files, plans, code). Fitness function: orchestrator context should contain only CLI output, sub-agent return values, user Q&A, and lightweight summary files — no Read calls on full artifact files.
 - Sub-agents cannot spawn sub-agents (flat hierarchy)
 - Sub-agents cannot use AskUserQuestion — all user interaction happens in the orchestrator
-- Cap parallel sub-agents at 5-7
+- Cap parallel sub-agents at 5-7 (empirical finding from dogfood harness testing — beyond 7, Claude Code's parallel agent management becomes unreliable and context budget per agent degrades)
 - Each phase must write its output to disk before the orchestrator advances (crash recovery)
-- Budget: ~25K tokens typical orchestrator context (Q&A + summaries), ~96K max for longest pipeline (~10% of 1M window)
+- Budget: ~25K tokens typical orchestrator context (Q&A + summaries). Worst-case estimate for `create-epic` (longest pipeline): ~15K Q&A (deep design tree) + ~5K CLI status calls + ~30K sub-agent return summaries (30 spawns x ~1K avg) + ~60K spawn overhead (tool definitions, system prompt injection at ~2-3K per spawn) = **~110K total session context** (~11% of 1M window). Shorter pipelines (`plan-slice`, `create-side-quest`) stay well under 50K. The key constraint is that orchestrator-owned context (Q&A + summaries + CLI output, excluding spawn overhead) should stay under ~50K to leave ample budget for sub-agent work.
 - Use Agent tool directly to spawn named agents (not `context: fork` + `agent:` which has open bug #16803)
 - Agent definitions solve the plugin file permission issue: shared references are injected via `skills:` frontmatter, not Read tool calls
 
@@ -146,13 +146,11 @@ Next: refine-architecture
 → Go back to an earlier phase
 ```
 
-Phase detection uses CLI status + filesystem artifact existence:
-- `explore-complete.md` exists → explore done
-- `architecture/_overview.md` exists → architecture drafted
-- Refinement `round-N/` directories exist → refinement in progress
-- `slices/sequencing.md` exists → slices defined
+Phase detection uses the CLI exclusively — no filesystem artifact checks. The orchestrator queries `gp epic:show --json` (or `slice:show`, `quest:show`) and maps the `status` field to the corresponding pipeline phase (see the status-to-phase table in conventions.md).
 
 "Go back" re-enters a phase with existing artifacts preserved (adds to them, doesn't restart from scratch).
+
+**Exception:** For `/gp:implement`, re-entry resumes from the last incomplete plan phase (detected via commit history or CLI status). There is no "go back" option since all phases are autonomous.
 
 ### Data Model Changes
 
@@ -166,7 +164,7 @@ Phase detection uses CLI status + filesystem artifact existence:
 - Embed quests and tasks into a single root overview structure alongside existing epic-embedded-slices
 - Remove separate `quests/overview.json` and `tasks/overview.json`
 - Schema registry and assembleState/commitState adapt via the existing schema-registry pattern
-- ~50 files affected (schemas, transitions, commands, tests, fixtures)
+- ~30 files affected (~20 source files: schemas, transitions, commands, fixtures; ~10 test files updating paths and assertions)
 
 ### Test Harness Improvements
 
@@ -186,10 +184,17 @@ Recommended slice order:
 2. `plan-slice` pipeline proof-of-concept (pattern validation)
 3. Remaining skill consolidation (builds on proven pattern)
 
+### Plugin Build Pipeline Changes
+
+`build-plugin.sh` and `plugin.json` must be updated to support the new `agents/` directory:
+- **`build-plugin.sh`**: add a step to copy `agents/` alongside `skills/` into the dist. Add build verification that all referenced agent `.md` files exist in the dist.
+- **`plugin.json`**: add an `"agents"` field pointing to the agent definitions directory (format: `"agents": "agents/"` — a single directory path; Claude Code discovers all `.md` files within it).
+- Research validation in `.goodplan/epics/simplify-data-model/research/sub-agent-prompt-files.md` confirmed that plugin `agents/` directories are discovered at priority 4.
+
 ## What Doesn't Change
 
 - Four-layer CLI stack (Commands → RPC → State Machine → Data Layer)
-- Plugin packaging and distribution (build-plugin.sh, CI workflow)
+- Plugin packaging and distribution CI workflow (unchanged — build-plugin.sh runs in the same CI job)
 - HMAC state integrity
 - State protection hooks
 - Goal files remain as markdown (migration deferred)
@@ -207,3 +212,11 @@ Recommended slice order:
 | Test Harness | Experimental | New simulated responses, artifact verification |
 
 All other subsystems (RPC Layer, Context, Plugin) are unchanged by this epic.
+
+## Post-Migration Documentation Updates
+
+After skill consolidation is complete, the following docs must be updated to reflect the new skill model:
+- `.goodplan/architecture/_overview.md` — update skill references, subsystem maturity
+- `CLAUDE.md` — update any skill invocation references
+- `skills/` README or index (if present) — update skill inventory
+- These updates should be tracked as a task in the final implementation slice.

@@ -3,8 +3,21 @@
 	"created": "2026-03-31T19:52:36.068Z",
 	"goal": "Simplify the data model, reduce ceremony, and consolidate skills. Move goals into JSON entities, consolidate overview files, add scoped decision rollup, and reduce the skill count by merging related skills.",
 	"name": "simplify-data-model",
-	"refinement": null,
-	"status": "architecture-defined",
-	"updated": "2026-04-01T18:14:04.539Z",
+	"refinement": {
+		"maxRounds": 10,
+		"round": 1,
+		"scoreHistory": [
+			{
+				"round": 1,
+				"scores": {
+					"agent-skill": 9,
+					"holistic": 9,
+					"software-architecture": 9
+				}
+			}
+		]
+	},
+	"status": "architecture-refined",
+	"updated": "2026-04-01T18:38:37.290Z",
 	"verifications": []
 }

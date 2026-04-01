@@ -13,7 +13,7 @@
 | `create-epic` | `/gp:create-epic` | 6 | Goal capture, architecture Q&A, approval gates | Explore, architecture draft, refinement loops, slices draft, refinement loops |
 | `plan-slice` | `/gp:plan-slice` | 2 | Plan Q&A, approval gate | Refinement loop |
 | `create-side-quest` | `/gp:create-side-quest` | 4 | Goal capture, plan Q&A, approval gate | Explore, refinement loop |
-| `implement` | `/gp:implement` | 2 | None (front-loaded by plan-slice) | Implementation loop, slice completion (+ epic completion prompt if last slice) |
+| `implement` | `/gp:implement` | 2 | None | Implementation loop, slice/quest completion (+ epic completion prompt if last slice) |
 
 ### Standalone Skills
 
@@ -21,12 +21,31 @@
 |---|---|---|
 | `start-epic` | `/gp:start-epic` | Approve architecture proposal, activate epic |
 | `explore` | `/gp:explore` | Ad-hoc research/brainstorm/prototype. Also invoked internally by create-epic and create-side-quest |
-| `complete-epic` | `/gp:complete-epic` | Epic-level learnings synthesis, architecture reconciliation, artifact promotion |
+| `complete-epic` | `/gp:complete-epic` | Epic-level learnings synthesis, architecture reconciliation, artifact promotion. Classified as standalone (not pipeline) because it has no interactive phases and no multi-phase status orchestration — it runs a single logical step. **Agent usage:** spawns `completion-phase` agent for learnings synthesis and architecture reconciliation (parallel sub-agents for cross-slice analysis). Does not use the refinement loop. |
 | `audit` | `/gp:audit` | Mode selection (architecture/docs/tests), spawns reviewer agents |
 | `task` | `/gp:task` | Quick task capture |
 | `upgrade` | `/gp:upgrade` | Upgrade `.goodplan/` state format between versions |
-| `init` | `/gp:init` | Initialize new project (empty repo) or onboard existing repo |
+| `init` | `/gp:init` | Initialize new project (empty repo) or onboard existing repo. Auto-detects mode: if source code files exist (e.g., `src/`, `lib/`, `*.ts`, `*.py`), runs onboard flow; otherwise runs new-project flow. Override with `--mode new` or `--mode onboard`. |
 | `status` | `/gp:status` | Query state, orient session |
+
+## Description Field Guidelines
+
+The `description` field is the primary trigger mechanism — Claude uses it to match user intent to skills. Consolidated skills must trigger for ALL merged use cases. Required trigger phrases per skill:
+
+| Skill | Must trigger for |
+|---|---|
+| `create-epic` | "create epic", "new epic", "start epic", "start project", "new project" |
+| `plan-slice` | "create plan", "plan slice", "refine plan", "improve plan", "review plan" |
+| `create-side-quest` | "side quest", "new quest", "quick task that needs a plan" |
+| `implement` | "implement", "execute plan", "build slice", "complete slice" |
+| `complete-epic` | "complete epic", "finish epic", "close epic", "wrap up epic" |
+| `audit` | "audit architecture", "audit docs", "audit tests", "review codebase", "check quality" |
+| `init` | "init", "initialize", "onboard", "new repo", "set up project" |
+| `task` | "capture", "quick note", "bug", "idea", "todo", "task" |
+| `explore` | "explore", "research", "brainstorm", "investigate", "prototype" |
+| `status` | "status", "where am I", "what's next", "project state" |
+| `start-epic` | "start epic", "activate epic", "approve architecture" |
+| `upgrade` | "upgrade", "migrate", "update state format" |
 
 ## Pipeline Skill Details
 
@@ -54,7 +73,7 @@ Creates and refines an implementation plan for a slice.
 | 1. Plan Q&A | Interactive | `created` → `planning` | Orchestrator asks about approach, phasing, expected behavior |
 | 2. Plan draft + refinement | Autonomous | `planning` → `plan-created` → `plan-refined` | Spawns plan-phase agent to draft, then refinement-coordinator → reviewers → synthesis → editor loop |
 
-Re-entry: query `gp slice:show --slice <name> --json`, check `status`.
+Re-entry: query `gp slice:show --slice <name> --json`, check `status`. If status is `plan-refined`, the plan is already complete — offer to re-run refinement (additional review round on the existing plan) or proceed to implementation.
 
 ### `/gp:create-side-quest`
 
@@ -78,6 +97,8 @@ Implements a plan and completes the slice.
 | 1. Implementation | Autonomous | `plan-refined` → `implementing` | Spawns implement-phase agent per plan phase, with review loops per phase |
 | 2. Slice completion | Autonomous | `implementing` → `implementation-complete` → `completed` | Spawns completion agent for learnings, architecture review |
 
+**No interactive phases by design** — user interaction was front-loaded by `/gp:plan-slice`. The approved plan is the user's intent; implementation executes it without further approval gates.
+
 If this is the last slice in the epic: orchestrator prompts "All slices complete. Run `/gp:complete-epic` when ready."
 
 Re-entry: query slice status. If `implementing`, check which plan phases have commits.
@@ -90,18 +111,18 @@ All agent `.md` files live in `agents/` at the plugin root.
 
 | Agent | Used by | Purpose |
 |---|---|---|
-| `explore-phase.md` | create-epic, create-side-quest, explore | Research/brainstorm/prototype loop |
+| `explore-phase.md` | create-epic (direct spawn), create-side-quest (direct spawn), explore (skill wrapper) | Research/brainstorm/prototype loop |
 | `architecture-phase.md` | create-epic | Draft architecture files from Q&A output |
 | `slices-phase.md` | create-epic | Draft slice definitions from Q&A output |
 | `plan-phase.md` | plan-slice, create-side-quest | Draft implementation plan from Q&A output |
 | `implement-phase.md` | implement | Implement a plan phase, report changed files |
-| `completion-phase.md` | implement, complete-epic | Synthesize learnings, review architecture |
+| `completion-phase.md` | implement, complete-epic | Synthesize learnings, review architecture. Adapts scope based on task prompt context: slice-level (learnings + arch review for one slice) vs. epic-level (cross-slice synthesis + artifact promotion). |
 
 ### Coordination Agents
 
 | Agent | Used by | Purpose |
 |---|---|---|
-| `refinement-coordinator.md` | Any skill running a review loop | Read artifact, select reviewers, return spawn plan |
+| `refinement-coordinator.md` | Any skill running a review loop | Read artifact (via Read, Grep, Glob), analyze content, select relevant reviewers, return structured spawn plan to orchestrator. Does not spawn reviewers itself — the orchestrator acts on the spawn plan. |
 | `synthesis.md` | Any skill running a review loop | Merge reviewer outputs, deduplicate, resolve contradictions |
 | `editor.md` | Any skill running a review loop | Apply review feedback to artifact |
 
@@ -177,4 +198,17 @@ After all skills are migrated:
 - `skills/migrate/`
 - `skills/project-status/`
 
-References in `_shared/references/` that are only consumed by deleted skills are also removed. Shared references consumed by agent definitions move to skill-format files injectable via `skills:` frontmatter.
+References in `_shared/references/` are handled per the migration table below. Because `skills:` frontmatter injects full SKILL.md bodies (not arbitrary files), any reference that agents need at spawn time must become a skill directory with `user-invocable: false`.
+
+### `_shared/references/` Migration Table
+
+| Reference File | Disposition | Rationale |
+|---|---|---|
+| Review preamble (output format, severity levels, score rubric) | **Becomes injectable skill** (`skills/_ref-review-preamble/SKILL.md`, `user-invocable: false`) | Injected by all reviewer agents via `skills:` frontmatter |
+| CLI conventions (command patterns, flag usage) | **Becomes injectable skill** (`skills/_ref-cli-conventions/SKILL.md`, `user-invocable: false`) | Injected by phase agents that generate CLI calls |
+| Output format templates | **Merged into review preamble skill** | Already part of the review output contract |
+| Skill-specific references (only used by one deleted skill) | **Deleted** | No remaining consumer after skill consolidation |
+| Reviewer domain prompts (e.g., `reviewers-cross-cutting.md`) | **Become markdown body** of `agents/reviewer-*.md` files | Each reviewer agent's body contains its domain-specific instructions |
+| Large reference docs (architecture guides, style guides) | **Stay as Read-accessed files** in `_shared/references/` | Too large for context injection; sub-agents Read them when needed |
+
+The injectable skills above are NOT counted in the 12 user-facing skills. The total skill directory count will be 12 user-facing + N non-user-invocable reference skills. Enumerate the exact set during the first skill consolidation slice that creates injectable skills (likely the `plan-slice` proof-of-concept slice, which will need the review preamble skill for its refinement loop). Inventory `_shared/references/` contents at that point to determine the full set of injectable skills needed.

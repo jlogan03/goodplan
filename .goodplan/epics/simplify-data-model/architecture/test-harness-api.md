@@ -34,6 +34,8 @@ Implementation options:
 
 The simulated user has a **persona** defined per fixture: project description, user expertise level, preferences. This prevents nonsensical answers.
 
+**Error handling:** If the LLM call fails (API error, timeout, empty response), fall back to selecting the first option with a warning logged: `[simulateUserResponse] LLM call failed, falling back to first option: <label>`. This ensures tests don't hang on transient API issues.
+
 ### Integration
 
 The `canUseTool` interceptor becomes:
@@ -171,7 +173,13 @@ Each consolidated skill gets its own test script:
 
 Quality tier tests run as the final epic slice (full validation).
 
-## 6. Shared Test Utilities
+## 6. Orchestrator Context Discipline Verification
+
+The dogfood harness verifies the orchestrator fitness function: orchestrator context should contain only CLI output, sub-agent return values, user Q&A, and lightweight summary files. The harness already checks for `.project/` violations; extend it to also flag Read calls on full artifact files (architecture docs, plans, source code) made by the orchestrator (not sub-agents).
+
+Implementation: the `canUseTool` interceptor tracks Read calls. After the skill run, compare Read targets against a known set of artifact paths. Any orchestrator-level Read of a full artifact is a violation.
+
+## 7. Shared Test Utilities
 
 Extract common patterns into `tools/dogfood/utils.ts`:
 
