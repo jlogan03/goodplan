@@ -18,7 +18,15 @@ import type {
 	SDKResultMessage,
 	SDKResultSuccess,
 } from "@anthropic-ai/claude-agent-sdk";
+import Anthropic from "@anthropic-ai/sdk";
 // ─── Constants ──────────────────────────────────────────────
+
+/** Returns the platform-arch binary directory name (e.g. "macos-arm64", "linux-x64"). */
+export function platformBinaryDir(): string {
+	const arch = process.arch === "x64" ? "x64" : "arm64";
+	const platform = process.platform === "linux" ? "linux" : "macos";
+	return `${platform}-${arch}`;
+}
 
 function resolveDefaultGpBin(): string {
 	if (process.env.GP_CLI_PATH) return process.env.GP_CLI_PATH;
@@ -34,10 +42,9 @@ function resolveDefaultGpBin(): string {
 			.sort()
 			.reverse();
 		if (versions.length > 0) {
-			// Detect current arch
-			const arch = process.arch === "x64" ? "x64" : "arm64";
-			const platform = process.platform === "linux" ? "linux" : "macos";
-			const candidate = join(cacheBase, versions[0]!, "binaries", `${platform}-${arch}`, "gp");
+			const first = versions[0];
+			if (!first) return ""; // unreachable given length check above, satisfies noUncheckedIndexedAccess
+			const candidate = join(cacheBase, first, "binaries", platformBinaryDir(), "gp");
 			if (statSync(candidate, { throwIfNoEntry: false })) {
 				return candidate;
 			}
@@ -52,8 +59,8 @@ function resolveDefaultGpBin(): string {
 		".claude/plugins/cache/goodplan-marketplace/goodplan/1.0.2/binaries/macos-arm64/gp",
 	);
 	console.warn(
-		`[resolveDefaultGpBin] Using hardcoded fallback path (version 1.0.2 / macos-arm64). ` +
-		`Set GP_CLI_PATH or ensure the plugin cache is populated to avoid stale paths.`,
+		"[resolveDefaultGpBin] Using hardcoded fallback path (version 1.0.2 / macos-arm64). " +
+			"Set GP_CLI_PATH or ensure the plugin cache is populated to avoid stale paths.",
 	);
 	return fallback;
 }
@@ -68,10 +75,8 @@ export interface CliResult {
 }
 
 export interface SimulatedUser {
-	ask(
-		question: string,
-		options: Array<{ label: string; description: string }>,
-	): Promise<string>;
+	ask(question: string, options: Array<{ label: string; description: string }>): Promise<string>;
+	totalCost(): number;
 }
 
 export class FixtureSetupError extends Error {
@@ -111,11 +116,7 @@ export function gp(
 		});
 		return { stdout, exitCode: 0 };
 	} catch (e: unknown) {
-		if (
-			e instanceof Error &&
-			"status" in e &&
-			"stdout" in e
-		) {
+		if (e instanceof Error && "status" in e && "stdout" in e) {
 			const status = (e as { status: unknown }).status;
 			const stdout = (e as { stdout: unknown }).stdout;
 			return {
@@ -140,9 +141,7 @@ export function gpJson<T>(
 ): T {
 	const r = gp(args, opts);
 	if (r.exitCode !== 0) {
-		throw new Error(
-			`gp ${args.join(" ")} failed (exit ${r.exitCode}): ${r.stdout.slice(0, 200)}`,
-		);
+		throw new Error(`gp ${args.join(" ")} failed (exit ${r.exitCode}): ${r.stdout.slice(0, 200)}`);
 	}
 	return JSON.parse(r.stdout) as T;
 }
@@ -168,10 +167,7 @@ export function verifyEntityStatus(
 	opts?: { cwd?: string; gpBin?: string },
 ): { ok: boolean; actual: string } {
 	try {
-		const data = gpJson<{ status: string }>(
-			[`${type}:show`, `--${type}`, name, "--json"],
-			opts,
-		);
+		const data = gpJson<{ status: string }>([`${type}:show`, `--${type}`, name, "--json"], opts);
 		return { ok: data.status === expected, actual: data.status };
 	} catch {
 		return { ok: false, actual: "not-found" };
@@ -180,11 +176,7 @@ export function verifyEntityStatus(
 
 // ─── Violation Detection ────────────────────────────────────
 
-export function checkViolation(
-	toolName: string,
-	input: unknown,
-	violations: string[],
-): void {
+export function checkViolation(toolName: string, input: unknown, violations: string[]): void {
 	if (typeof input !== "object" || input === null || Array.isArray(input)) return;
 
 	const record = input as Record<string, unknown>;
@@ -192,13 +184,10 @@ export function checkViolation(
 	const command = typeof record.command === "string" ? record.command : "";
 
 	// Check Read/Write/Edit on .goodplan/ structured state files
-	if (filePath && filePath.includes(".goodplan/")) {
-		const isStructuredState =
-			filePath.endsWith(".json") || filePath.endsWith(".jsonl");
+	if (filePath?.includes(".goodplan/")) {
+		const isStructuredState = filePath.endsWith(".json") || filePath.endsWith(".jsonl");
 		if (isStructuredState && ["Read", "Write", "Edit"].includes(toolName)) {
-			violations.push(
-				`${toolName} on ${filePath}`,
-			);
+			violations.push(`${toolName} on ${filePath}`);
 		}
 	}
 
@@ -215,9 +204,7 @@ export function checkViolation(
 		];
 		for (const re of patterns) {
 			if (re.test(command)) {
-				violations.push(
-					`Bash: ${command.slice(0, 120)}`,
-				);
+				violations.push(`Bash: ${command.slice(0, 120)}`);
 				break;
 			}
 		}
@@ -278,10 +265,7 @@ export function resetTranscriptState(): void {
 	exitHandlerRegistered = false;
 }
 
-export function writeTranscriptEntry(
-	file: string,
-	message: SDKMessage,
-): void {
+export function writeTranscriptEntry(file: string, message: SDKMessage): void {
 	if (!INCLUDED_TYPES.has(message.type)) return;
 
 	ensureExitHandler();
@@ -312,9 +296,7 @@ export function flushTranscript(file: string): void {
 
 // ─── Type Guard ─────────────────────────────────────────────
 
-export function isSuccess(
-	result: SDKResultMessage,
-): result is SDKResultSuccess {
+export function isSuccess(result: SDKResultMessage): result is SDKResultSuccess {
 	return result.subtype === "success";
 }
 
@@ -345,11 +327,106 @@ export function tierDefault(
 	}
 }
 
+// ─── Simulated User ────────────────────────────────────────
+
+/**
+ * Creates a stateless simulated user that answers AskUserQuestion via
+ * `messages.create()` calls to the Anthropic API.
+ *
+ * Each `ask()` call is independent — no persistent session, no hang risk.
+ * Recent transcript context is included in the system prompt so answers
+ * are contextually relevant.
+ */
+export function createSimulatedUser(opts: {
+	systemPrompt: string;
+	transcriptFile: string;
+	model?: string;
+}): SimulatedUser {
+	const client = new Anthropic();
+	const model = opts.model ?? tierDefault("structural");
+	const costTracker = createCostTracker();
+
+	return {
+		totalCost(): number {
+			return costTracker.total();
+		},
+		async ask(
+			question: string,
+			options: Array<{ label: string; description: string }>,
+		): Promise<string> {
+			// Build recent transcript context (last ~20 entries)
+			let recentContext = "";
+			try {
+				// Read from the buffered entries if available, or from file
+				const buffer = transcriptBuffers.get(opts.transcriptFile);
+				if (buffer && buffer.length > 0) {
+					const recent = buffer.slice(-20);
+					recentContext = recent
+						.map((line) => {
+							try {
+								const parsed = JSON.parse(line) as { type: string };
+								return `[${parsed.type}] ${line.slice(0, 500)}`;
+							} catch {
+								return line.slice(0, 500);
+							}
+						})
+						.join("\n");
+				}
+			} catch {
+				// No transcript context available — that's fine
+			}
+
+			const optionList = options
+				.map((o, i) => `${i + 1}. "${o.label}" — ${o.description}`)
+				.join("\n");
+
+			const userMessage = [
+				"The skill is asking you the following question:",
+				"",
+				question,
+				"",
+				"Available options:",
+				optionList,
+				"",
+				recentContext ? `Recent session context:\n${recentContext}\n` : "",
+				"Reply with ONLY the exact label text of the option you choose. Nothing else.",
+			]
+				.filter(Boolean)
+				.join("\n");
+
+			const response = await client.messages.create({
+				model,
+				max_tokens: 256,
+				system: opts.systemPrompt,
+				messages: [{ role: "user", content: userMessage }],
+			});
+
+			// Track cost (input + output tokens, approximate)
+			const inputTokens = response.usage?.input_tokens ?? 0;
+			const outputTokens = response.usage?.output_tokens ?? 0;
+			// Cost estimate uses haiku pricing ($0.25/MTok input, $1.25/MTok output).
+			// Underestimates when a non-haiku model is used — acceptable for test budget tracking.
+			const estimatedCost = (inputTokens * 0.25 + outputTokens * 1.25) / 1_000_000;
+			costTracker.add(estimatedCost);
+
+			// Extract text response
+			const textBlock = response.content.find((block) => block.type === "text");
+			const rawAnswer = textBlock?.text?.trim() ?? options[0]?.label ?? "Proceed";
+
+			// Try to match against options (fuzzy: strip quotes, case-insensitive)
+			const normalized = rawAnswer.replace(/^["']|["']$/g, "").trim();
+			const matched = options.find(
+				(o) => o.label === normalized || o.label.toLowerCase() === normalized.toLowerCase(),
+			);
+
+			return matched?.label ?? options[0]?.label ?? rawAnswer;
+		},
+	};
+}
+
 // ─── AskUserQuestion Handler ────────────────────────────────
 
-export function createAskUserHandler(
-	simulatedUser: SimulatedUser,
-): CanUseTool {
+export function createAskUserHandler(simulatedUser: SimulatedUser): CanUseTool {
 	return async (toolName, input) => {
 		if (toolName === "AskUserQuestion") {
 			if (
@@ -377,7 +454,7 @@ export function createAskUserHandler(
 				};
 			}
 		}
-		return { behavior: "allow" as const, updatedInput: input };
+		return { behavior: "allow" as const };
 	};
 }
 
@@ -404,9 +481,7 @@ export async function runSkillSession(opts: {
 	const originalCanUseTool = opts.options.canUseTool;
 
 	// Hoist handler creation outside per-tool-call path
-	const askUserHandler = opts.simulatedUser
-		? createAskUserHandler(opts.simulatedUser)
-		: undefined;
+	const askUserHandler = opts.simulatedUser ? createAskUserHandler(opts.simulatedUser) : undefined;
 
 	const composedCanUseTool: CanUseTool = async (toolName, input, toolOpts) => {
 		// Violation detection first
@@ -424,7 +499,7 @@ export async function runSkillSession(opts: {
 			return originalCanUseTool(toolName, input, toolOpts);
 		}
 
-		return { behavior: "allow" as const, updatedInput: input };
+		return { behavior: "allow" as const };
 	};
 
 	const mergedOptions: Options = {
@@ -455,12 +530,15 @@ export async function runSkillSession(opts: {
 	}
 
 	if (violations.length > 0) {
-		console.warn(
-			`[runSkillSession] ${violations.length} violation(s) detected:`,
-		);
+		console.warn(`[runSkillSession] ${violations.length} violation(s) detected:`);
 		for (const v of violations) {
 			console.warn(`  - ${v}`);
 		}
+	}
+
+	// Roll simulated user LLM cost into the session total
+	if (opts.simulatedUser) {
+		costTracker.add(opts.simulatedUser.totalCost());
 	}
 
 	return {
@@ -520,19 +598,20 @@ export async function createMinimalFixture(opts?: {
 					2,
 				),
 			);
-			writeFileSync(
-				join(tmpDir, "src/index.ts"),
-				'export const version = "0.1.0";\n',
-			);
+			writeFileSync(join(tmpDir, "src/index.ts"), 'export const version = "0.1.0";\n');
 		}
 
 		// git init + commit
 		execFileSync("git", ["init"], { cwd: tmpDir, stdio: "pipe" });
 		execFileSync("git", ["add", "-A"], { cwd: tmpDir, stdio: "pipe" });
-		execFileSync("git", ["-c", "user.name=test", "-c", "user.email=test@test.com", "commit", "-m", "initial"], {
-			cwd: tmpDir,
-			stdio: "pipe",
-		});
+		execFileSync(
+			"git",
+			["-c", "user.name=test", "-c", "user.email=test@test.com", "commit", "-m", "initial"],
+			{
+				cwd: tmpDir,
+				stdio: "pipe",
+			},
+		);
 
 		// gp init
 		const initResult = gp(["init", "--name", "test-fixture", "--json"], {

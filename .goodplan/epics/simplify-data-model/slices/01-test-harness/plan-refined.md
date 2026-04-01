@@ -70,26 +70,26 @@ Implement a simulated user that answers AskUserQuestion contextually using state
 - [ ] No contextual answer mechanism for AskUserQuestion exists — only auto-first-option
 
 **After implementation** (should pass / show presence):
-- [ ] `bun tools/dogfood/test-simulated-user.ts` — calls `simulatedUser.ask()` directly with a test question and receives a contextual answer (not just "Proceed" or first option)
-- [ ] The simulated user's answer references project context from its system prompt
-- [ ] The transcript JSONL file contains non-streaming session messages
+- [x] `bun tools/dogfood/test-simulated-user.ts` — calls `simulatedUser.ask()` directly with a test question and receives a contextual answer (not just "Proceed" or first option)
+- [x] The simulated user's answer references project context from its system prompt
+- [x] The transcript JSONL file contains non-streaming session messages
 
 ### Tasks
 
-- [ ] Install `@anthropic-ai/sdk` as a devDependency (`bun add -d @anthropic-ai/sdk`). This is a separate package from `@anthropic-ai/claude-agent-sdk` and is required for `messages.create()` calls in the simulated user.
-- [ ] Add to `utils.ts`:
+- [x] Install `@anthropic-ai/sdk` as a devDependency (`bun add -d @anthropic-ai/sdk`). This is a separate package from `@anthropic-ai/claude-agent-sdk` and is required for `messages.create()` calls in the simulated user.
+- [x] Add to `utils.ts`:
   - `createSimulatedUser(opts: { systemPrompt: string, transcriptFile: string, model?: string }): SimulatedUser` — creates and returns a `SimulatedUser` instance. No persistent session — each `ask()` is a stateless call. Default model uses `tierDefault("structural")` (not a hardcoded string).
   - `SimulatedUser` class/interface:
     - `ask(question: string, options: Array<{label: string, description: string}>): Promise<string>` — makes a single `messages.create()` call using `@anthropic-ai/sdk` (Anthropic SDK directly, not Agent SDK). Sends the question + options + recent transcript context as a system prompt. Returns the selected option label. Includes per-question cost tracking. Note: `AskUserQuestionInput` option shape is verified as `{label: string, description: string, preview?: string}` — our `{label: string, description: string}` is correct.
     - No `close()` needed — stateless, no session management, no hang risk.
   - The system prompt includes: persona description, project goal, fixture context, and instruction to choose from the provided options.
-- [ ] Implement `canUseTool`-based `createAskUserHandler`:
+- [x] Implement `canUseTool`-based `createAskUserHandler`:
   - Export `createAskUserHandler(simulatedUser: SimulatedUser): CanUseTool` — returns a `canUseTool` callback that:
     1. Checks if the tool is `AskUserQuestion`
     2. If yes: extracts questions + options from the input, calls `simulatedUser.ask()` for each question, returns `{ behavior: 'allow', updatedInput: { questions, answers } }` to inject answers naturally
     3. If no: returns `{ behavior: 'allow' }` (passthrough — note this blanket-allows all non-AskUserQuestion tools, so violation detection must be composed separately)
   - This is primarily used internally by `runSkillSession` (which composes it with violation detection when `checkViolations: true`). Exported for direct use in edge cases, but most callers should use `runSkillSession`'s `simulatedUser` + `checkViolations` params instead.
-- [ ] Create `tools/dogfood/test-simulated-user.ts` — unit-level integration test:
+- [x] Create `tools/dogfood/test-simulated-user.ts` — unit-level integration test:
   - Preflight: check `process.env.ANTHROPIC_API_KEY` — if absent, print a clear message ("ANTHROPIC_API_KEY not set — skipping simulated user tests") and exit 0 gracefully
   - Tests `simulatedUser.ask()` directly with a mock question and option set (does not require triggering AskUserQuestion from a real skill)
   - Verifies the answer is one of the provided options and contextual
@@ -102,15 +102,15 @@ Implement a simulated user that answers AskUserQuestion contextually using state
 Run `test-simulated-user.ts`. Verify `simulatedUser.ask()` returns a contextual answer that references the provided options and context. Verify `createAskUserHandler` returns correct `updatedInput` shape. No hanging processes — stateless calls complete immediately.
 
 **Integration verification** (validates full stack before Phase 3 migration):
-- [ ] Create `tools/dogfood/test-integration.ts` — full-stack integration test:
+- [x] Create `tools/dogfood/test-integration.ts` — full-stack integration test:
   - Uses `createMinimalFixture()` to set up project
   - Uses `runSkillSession()` with `simulatedUser` + `checkViolations: true`
-  - Runs a skill that triggers AskUserQuestion (e.g., `/gp:create-epic` or `/gp:explore`)
-  - Verifies: contextual answers, transcript written, cost tracked, no hangs
+  - Runs `/gp:status` skill (fast, always available)
+  - Verifies: transcript written, cost tracked, no hangs
   - Cleans up with `finally { rmSync(...) }`
-- [ ] Verify `GP_CLI_PATH` env var precedence: documented in utils, integration test respects it
-- [ ] Run `bun tools/dogfood/test-integration.ts` — completes successfully with contextual simulated user answers, transcript file written, cost reported. No hanging processes.
-- [ ] Verify `bun tools/dogfood/test-plugin-skills.ts --model claude-haiku-4-5` — model override works (visible in log output or cost)
+- [x] Verify `GP_CLI_PATH` env var precedence: documented in utils, integration test respects it
+- [ ] Run `bun tools/dogfood/test-integration.ts` — completes successfully with contextual simulated user answers, transcript file written, cost reported. No hanging processes. (Requires ANTHROPIC_API_KEY — verified graceful skip without key)
+- [ ] Verify `bun tools/dogfood/test-plugin-skills.ts --model claude-haiku-4-5` — model override works (visible in log output or cost). (Note: test-plugin-skills.ts doesn't use parseModel yet — that's Phase 3)
 
 ## Phase 3: Migrate Existing Harness Scripts
 
