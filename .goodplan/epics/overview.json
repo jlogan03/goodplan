@@ -242,8 +242,57 @@
 			"completed": null,
 			"created": "2026-03-31T19:52:36.068Z",
 			"name": "simplify-data-model",
-			"slices": [],
-			"status": "architecture-refined"
+			"slices": [
+				{
+					"completed": null,
+					"created": "2026-04-01T19:27:30.041Z",
+					"name": "01-test-harness",
+					"status": "plan-created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-01T19:27:35.722Z",
+					"name": "02-plan-slice-poc",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-01T19:27:35.903Z",
+					"name": "03-data-model",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-01T19:27:36.112Z",
+					"name": "04-create-epic-pipeline",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-01T19:27:36.303Z",
+					"name": "05-implement-pipeline",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-01T19:27:36.493Z",
+					"name": "06-remaining-skills",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-01T19:27:36.688Z",
+					"name": "07-quality-validation",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-01T19:27:36.878Z",
+					"name": "08-documentation",
+					"status": "created"
+				}
+			],
+			"status": "activated"
 		}
 	]
 }

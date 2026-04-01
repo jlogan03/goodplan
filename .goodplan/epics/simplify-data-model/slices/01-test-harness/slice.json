@@ -1,0 +1,10 @@
+{
+	"created": "2026-04-01T19:27:30.041Z",
+	"deferred": [],
+	"epic": "simplify-data-model",
+	"goal": "LLM-simulated user responses, per-test model selection, phase verification, shared test utilities",
+	"name": "01-test-harness",
+	"refinement": null,
+	"status": "plan-created",
+	"updated": "2026-04-01T20:29:28.191Z"
+}

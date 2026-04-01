@@ -1,0 +1,10 @@
+{
+	"created": "2026-04-01T19:27:35.903Z",
+	"deferred": [],
+	"epic": "simplify-data-model",
+	"goal": "Decision provenance, learning validity, overview consolidation + upgrade migration",
+	"name": "03-data-model",
+	"refinement": null,
+	"status": "created",
+	"updated": "2026-04-01T19:27:35.903Z"
+}

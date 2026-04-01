@@ -1,5 +1,5 @@
 {
-	"activated": null,
+	"activated": "2026-04-01T20:04:31.494Z",
 	"created": "2026-03-31T19:52:36.068Z",
 	"goal": "Simplify the data model, reduce ceremony, and consolidate skills. Move goals into JSON entities, consolidate overview files, add scoped decision rollup, and reduce the skill count by merging related skills.",
 	"name": "simplify-data-model",
@@ -10,14 +10,19 @@
 			{
 				"round": 1,
 				"scores": {
-					"agent-skill": 9,
-					"holistic": 9,
-					"software-architecture": 9
+					"overall": 9
 				}
 			}
 		]
 	},
-	"status": "architecture-refined",
-	"updated": "2026-04-01T18:38:37.290Z",
-	"verifications": []
+	"status": "activated",
+	"updated": "2026-04-01T20:04:31.494Z",
+	"verifications": [
+		{
+			"addedDuring": "slice-definition",
+			"description": "All 8 slices implemented, tests pass, quality validation with Opus completes end-to-end",
+			"modifiedDuring": null,
+			"status": "pending"
+		}
+	]
 }

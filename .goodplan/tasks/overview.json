@@ -20,6 +20,27 @@
 			"name": "scoped-decision-rollup",
 			"status": "open",
 			"title": "Scope decisions to entities and roll up like learnings"
+		},
+		{
+			"completed": null,
+			"created": "2026-04-01T19:26:28.354Z",
+			"name": "pretooluse-hook-state-protection",
+			"status": "open",
+			"title": "Add PreToolUse hook to plugin that blocks direct writes to .goodplan/"
+		},
+		{
+			"completed": null,
+			"created": "2026-04-01T19:26:36.357Z",
+			"name": "update-skills-use-cli-not-direct-writes",
+			"status": "open",
+			"title": "Update skills that instruct agents to write directly into .goodplan/ to use CLI commands instead"
+		},
+		{
+			"completed": "2026-04-01T20:24:43.716Z",
+			"created": "2026-04-01T20:21:42.004Z",
+			"name": "harness-observability-instrumentation",
+			"status": "dropped",
+			"title": "Add comprehensive instrumentation to test harness: message tracing, tool call tracking, context usage monitoring"
 		}
 	]
 }

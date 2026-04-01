@@ -1,0 +1,10 @@
+{
+	"created": "2026-04-01T19:27:36.493Z",
+	"deferred": [],
+	"epic": "simplify-data-model",
+	"goal": "create-side-quest, audit, init, task, upgrade, status + old skill deletion",
+	"name": "06-remaining-skills",
+	"refinement": null,
+	"status": "created",
+	"updated": "2026-04-01T19:27:36.493Z"
+}

@@ -1,0 +1,12 @@
+{
+	"context": {
+		"activeEpic": "simplify-data-model (pending activation)",
+		"capturedDuring": "defining slices for simplify-data-model epic — agent bypassed HMAC by writing directly to .goodplan/",
+		"gitBranch": "main"
+	},
+	"created": "2026-04-01T19:26:28.354Z",
+	"description": "The plugin should install a PreToolUse hook that rejects Write, Edit, and Bash calls targeting .goodplan/ state files. Currently the HMAC signature is the only protection, but it detects after the fact rather than preventing. A PreToolUse hook would catch the mistake before it happens. The hook should allow the CLI binary itself to write (since it goes through the state machine), but block the LLM from writing directly.",
+	"name": "pretooluse-hook-state-protection",
+	"status": "open",
+	"title": "Add PreToolUse hook to plugin that blocks direct writes to .goodplan/"
+}

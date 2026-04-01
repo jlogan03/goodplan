@@ -1,0 +1,13 @@
+{
+	"context": {
+		"activeEpic": "simplify-data-model",
+		"capturedDuring": "planning slice 01-test-harness",
+		"gitBranch": "main"
+	},
+	"created": "2026-04-01T20:21:42.004Z",
+	"description": "Epic-level question about adding observability to the dogfood test harness. Track: (1) all messages between orchestrator and sub-agents, (2) all messages between orchestrator and simulated human, (3) tool calls from any agent/sub-agent, (4) context usage per agent to ensure no compaction and ideally staying below 40% of 1M context window. This goes beyond the basic cost/stats tracking already in the harness. May be a separate slice or side quest.",
+	"droppedReason": "Raw stream transcript file serves as the instrumentation layer — simulated user reads it for context, and it captures all messages/tool-calls/sub-agent output for observability",
+	"name": "harness-observability-instrumentation",
+	"status": "dropped",
+	"title": "Add comprehensive instrumentation to test harness: message tracing, tool call tracking, context usage monitoring"
+}
