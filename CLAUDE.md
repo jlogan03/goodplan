@@ -22,6 +22,7 @@ Also check if relevant to your task:
 - `.goodplan/epics/plugin-distribution/architecture/` — plugin distribution epic target architecture (plugin packaging, CLI rename, nextCommands, HMAC signatures)
 - `.goodplan/epics/plugin-distribution/slices/sequencing.md` — plugin distribution slice ordering and dependencies
 - `.goodplan/epics/entity-restructuring/architecture/` — entity restructuring epic target architecture (nested slice paths, consolidated overview, affected APIs)
+- `.goodplan/epics/simplify-data-model/architecture/` — simplify data model epic target architecture (skill consolidation 19→12, orchestrator pattern, data model changes, test harness)
 - `.goodplan/research/` — tech stack and library research
 - `.goodplan/brainstorm/` — architecture brainstorming output
 - `.goodplan/decisions/` — active architectural decisions

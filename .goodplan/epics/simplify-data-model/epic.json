@@ -4,7 +4,7 @@
 	"goal": "Simplify the data model, reduce ceremony, and consolidate skills. Move goals into JSON entities, consolidate overview files, add scoped decision rollup, and reduce the skill count by merging related skills.",
 	"name": "simplify-data-model",
 	"refinement": null,
-	"status": "explored",
-	"updated": "2026-04-01T16:50:26.663Z",
+	"status": "architecture-defined",
+	"updated": "2026-04-01T18:14:04.539Z",
 	"verifications": []
 }
