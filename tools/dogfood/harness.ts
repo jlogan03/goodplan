@@ -187,6 +187,7 @@ async function runSkill(
 	log(logName, `Prompt:\n${prompt}\n`);
 
 	const simulatedUser = createSimulatedUser({
+		cwd: NONDET_EVAL_DIR,
 		systemPrompt: SIMULATED_USER_PROMPT,
 		transcriptFile,
 	});
@@ -305,6 +306,7 @@ async function runSkill(
 		console.error(`  │  ERROR: ${errMsg.slice(0, 200)}`);
 	}
 
+	simulatedUser.close();
 	const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 	console.log(
 		`  │  ${elapsed}s, $${costUsd.toFixed(4)}`,

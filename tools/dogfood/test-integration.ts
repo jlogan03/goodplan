@@ -6,7 +6,7 @@
  *
  * Uses /gp:status as the target skill — it's fast and always available.
  *
- * Requires ANTHROPIC_API_KEY — exits 0 gracefully if absent.
+ * Uses Claude subscription via Agent SDK — no ANTHROPIC_API_KEY needed.
  *
  * Usage: bun tools/dogfood/test-integration.ts
  */
@@ -24,11 +24,6 @@ import {
 } from "./utils";
 
 // ─── Preflight ──────────────────────────────────────────────
-
-if (!process.env.ANTHROPIC_API_KEY) {
-	console.log("ANTHROPIC_API_KEY not set — skipping integration tests");
-	process.exit(0);
-}
 
 // ─── Helpers ────────────────────────────────────────────────
 
@@ -71,6 +66,7 @@ async function main(): Promise<void> {
 	const startTime = Date.now();
 
 	let tmpDir: string | undefined;
+	let simulatedUser: ReturnType<typeof createSimulatedUser> | undefined;
 
 	try {
 		// ─── Step 1: Create fixture ─────────────────────────
@@ -84,7 +80,8 @@ async function main(): Promise<void> {
 		console.log("\n--- Step 2: Create simulated user ---");
 		const transcriptFile = join(tmpDir, "transcript.jsonl");
 
-		const simulatedUser = createSimulatedUser({
+		simulatedUser = createSimulatedUser({
+			cwd: tmpDir,
 			systemPrompt: [
 				"You are a simulated user testing the goodplan CLI tool.",
 				"The project is a test fixture with a single epic and slice.",
@@ -170,6 +167,7 @@ async function main(): Promise<void> {
 			assert(allValid, "all transcript entries are valid JSON");
 		}
 	} finally {
+		simulatedUser?.close();
 		if (tmpDir) {
 			rmSync(tmpDir, { recursive: true, force: true });
 			console.log(`\n  Cleaned up: ${tmpDir}`);

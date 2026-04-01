@@ -91,6 +91,7 @@ const logger = createLogger(LOG_FILE);
 // ─── Simulated User ─────────────────────────────────────────
 
 const simulatedUser = createSimulatedUser({
+	cwd: TEST_DIR,
 	systemPrompt: `You are a developer testing the /migrate skill on a goodplan project.
 When asked questions, use reasonable defaults:
 - For project name: use "goodplan"
@@ -204,7 +205,9 @@ async function main(): Promise<void> {
 	logger.log(`[test-migrate] Log file: ${LOG_FILE}`);
 }
 
-main().catch((err) => {
-	console.error("Fatal error:", err);
-	process.exit(1);
-});
+main()
+	.then(() => { simulatedUser.close(); })
+	.catch((err) => {
+		console.error("Fatal error:", err);
+		process.exit(1);
+	});

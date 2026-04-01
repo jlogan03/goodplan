@@ -82,6 +82,7 @@ const logger = createLogger(LOG_FILE);
 // ─── Simulated User ─────────────────────────────────────────
 
 const simulatedUser = createSimulatedUser({
+	cwd: TEST_DIR,
 	systemPrompt: `You are a developer testing the /onboard-repo skill on a TypeScript fixture project.
 When asked questions, choose reasonable defaults:
 - For project name: use whatever is suggested
@@ -281,6 +282,7 @@ async function negativeTest(): Promise<void> {
 
 main()
 	.then(() => negativeTest())
+	.then(() => { simulatedUser.close(); })
 	.catch((err) => {
 		console.error("Fatal error:", err);
 		process.exit(1);

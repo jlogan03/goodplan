@@ -87,6 +87,7 @@ async function runSkill(
 	log(logName, `\n${"=".repeat(50)}\n[${new Date().toISOString()}] ${skillName}\n${"=".repeat(50)}\nPrompt: ${prompt}\n`);
 
 	const simulatedUser = createSimulatedUser({
+		cwd: PROJECT_DIR,
 		systemPrompt: SIMULATED_USER_PROMPT,
 		transcriptFile,
 	});
@@ -158,6 +159,7 @@ Always complete CLI state transitions (submit-explore, submit-architecture, etc.
 		console.error(`  │  ERROR: ${msg.slice(0, 150)}`);
 	}
 
+	simulatedUser.close();
 	const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);
 	console.log(`  └─ ${elapsed}s, $${costUsd.toFixed(2)}`);
 	log(logName, `--- STATS: ${elapsed}s, $${costUsd.toFixed(2)} ---\n`);

@@ -17,8 +17,8 @@ import type {
 	SDKMessage,
 	SDKResultMessage,
 	SDKResultSuccess,
+	SDKUserMessage,
 } from "@anthropic-ai/claude-agent-sdk";
-import Anthropic from "@anthropic-ai/sdk";
 // ─── Constants ──────────────────────────────────────────────
 
 /** Returns the platform-arch binary directory name (e.g. "macos-arm64", "linux-x64"). */
@@ -77,6 +77,7 @@ export interface CliResult {
 export interface SimulatedUser {
 	ask(question: string, options: Array<{ label: string; description: string }>): Promise<string>;
 	totalCost(): number;
+	close(): void;
 }
 
 export class FixtureSetupError extends Error {
@@ -330,57 +331,179 @@ export function tierDefault(
 // ─── Simulated User ────────────────────────────────────────
 
 /**
- * Creates a stateless simulated user that answers AskUserQuestion via
- * `messages.create()` calls to the Anthropic API.
+ * Simple async queue implementing AsyncIterable. Push items in; iterate to pull them out.
+ * Used to feed user messages into a persistent Agent SDK query() session.
+ */
+class AsyncQueue<T> implements AsyncIterable<T> {
+	private queue: T[] = [];
+	private resolve: ((value: IteratorResult<T>) => void) | null = null;
+	private done = false;
+
+	push(item: T): void {
+		if (this.done) return;
+		if (this.resolve) {
+			const r = this.resolve;
+			this.resolve = null;
+			r({ value: item, done: false });
+		} else {
+			this.queue.push(item);
+		}
+	}
+
+	end(): void {
+		this.done = true;
+		if (this.resolve) {
+			const r = this.resolve;
+			this.resolve = null;
+			r({ value: undefined as unknown as T, done: true });
+		}
+	}
+
+	[Symbol.asyncIterator](): AsyncIterator<T> {
+		return {
+			next: (): Promise<IteratorResult<T>> => {
+				const queued = this.queue.shift();
+				if (queued !== undefined) {
+					return Promise.resolve({ value: queued, done: false });
+				}
+				if (this.done) {
+					return Promise.resolve({ value: undefined as unknown as T, done: true });
+				}
+				return new Promise<IteratorResult<T>>((resolve) => {
+					this.resolve = resolve;
+				});
+			},
+		};
+	}
+}
+
+/**
+ * Creates a persistent simulated user session using Agent SDK `query()` with
+ * `AsyncIterable<SDKUserMessage>` as the prompt.
  *
- * Each `ask()` call is independent — no persistent session, no hang risk.
- * Recent transcript context is included in the system prompt so answers
- * are contextually relevant.
+ * The session stays alive for the duration of the test run. Each `ask()` call
+ * pushes a new user message into the session via an async queue, so the simulated
+ * user naturally accumulates conversational history — it has full context of all
+ * prior questions and answers.
+ *
+ * The system prompt tells the simulated user about the project, its persona,
+ * and the transcript file path (which it can Read for full session context).
+ *
+ * Uses the Claude subscription via Agent SDK — no ANTHROPIC_API_KEY needed.
+ *
+ * Call `close()` when done to terminate the session cleanly.
  */
 export function createSimulatedUser(opts: {
+	cwd: string;
 	systemPrompt: string;
 	transcriptFile: string;
 	model?: string;
 }): SimulatedUser {
-	const client = new Anthropic();
 	const model = opts.model ?? tierDefault("structural");
 	const costTracker = createCostTracker();
+	const abortController = new AbortController();
+
+	// Async queue feeds SDKUserMessage objects into the persistent query() session.
+	// Each ask() pushes a message; the session's async iterable yields them as user turns.
+	const messageQueue = new AsyncQueue<SDKUserMessage>();
+
+	// Push the initial setup message
+	const initialMessage: SDKUserMessage = {
+		type: "user",
+		message: {
+			role: "user",
+			content: [
+				"You are a simulated user in a test harness. You will be asked questions by a skill under test.",
+				"For each question, you will be given options to choose from.",
+				"",
+				`The full session transcript is at: ${opts.transcriptFile}`,
+				"You can Read this file to understand what has happened so far in the session.",
+				"",
+				"Reply with ONLY the exact label text of the option you choose. Nothing else.",
+				"Do not add explanation, commentary, or formatting. Just the label.",
+			].join("\n"),
+		},
+		parent_tool_use_id: null,
+		session_id: "",
+	};
+	messageQueue.push(initialMessage);
+
+	// Start the persistent session with the async queue as the prompt source
+	const session = query({
+		prompt: messageQueue,
+		options: {
+			model,
+			cwd: opts.cwd,
+			systemPrompt: opts.systemPrompt,
+			permissionMode: "bypassPermissions",
+			allowDangerouslySkipPermissions: true,
+			abortController,
+			allowedTools: ["Read", "Grep", "Glob"],
+			maxTurns: 200, // generous — session is long-lived across many questions
+		},
+	});
+
+	// Response collector: waits for the next assistant text response from the session stream.
+	// The session yields messages as they arrive; we collect until we see a complete response.
+	let responseResolve: ((answer: string) => void) | null = null;
+	let lastCostUsd = 0;
+
+	// Background loop: drain the session stream, collecting assistant responses
+	const drainLoop = (async () => {
+		try {
+			for await (const message of session) {
+				if (message.type === "assistant" && "message" in message) {
+					const msg = message as { message?: { content?: Array<{ type: string; text?: string }> } };
+					const textBlock = msg.message?.content?.find((b) => b.type === "text");
+					if (textBlock?.text && responseResolve) {
+						const r = responseResolve;
+						responseResolve = null;
+						r(textBlock.text.trim());
+					}
+				}
+				if (message.type === "result" && "subtype" in message) {
+					const result = message as { subtype: string; total_cost_usd?: number };
+					if (result.total_cost_usd) {
+						const incrementalCost = result.total_cost_usd - lastCostUsd;
+						if (incrementalCost > 0) {
+							costTracker.add(incrementalCost);
+						}
+						lastCostUsd = result.total_cost_usd;
+					}
+				}
+			}
+		} catch {
+			// Session ended (abort or error) — expected during close()
+		}
+	})();
+
+	// Wait for the initial setup turn to complete before accepting questions
+	const waitForResponse = (): Promise<string> => {
+		return new Promise<string>((resolve) => {
+			responseResolve = resolve;
+		});
+	};
+
+	// Drain the initial response (persona acknowledgment)
+	let sessionReady = waitForResponse().then(() => {});
 
 	return {
 		totalCost(): number {
 			return costTracker.total();
 		},
+
 		async ask(
 			question: string,
 			options: Array<{ label: string; description: string }>,
 		): Promise<string> {
-			// Build recent transcript context (last ~20 entries)
-			let recentContext = "";
-			try {
-				// Read from the buffered entries if available, or from file
-				const buffer = transcriptBuffers.get(opts.transcriptFile);
-				if (buffer && buffer.length > 0) {
-					const recent = buffer.slice(-20);
-					recentContext = recent
-						.map((line) => {
-							try {
-								const parsed = JSON.parse(line) as { type: string };
-								return `[${parsed.type}] ${line.slice(0, 500)}`;
-							} catch {
-								return line.slice(0, 500);
-							}
-						})
-						.join("\n");
-				}
-			} catch {
-				// No transcript context available — that's fine
-			}
+			// Wait for any previous turn to complete
+			await sessionReady;
 
 			const optionList = options
 				.map((o, i) => `${i + 1}. "${o.label}" — ${o.description}`)
 				.join("\n");
 
-			const userMessage = [
+			const userContent = [
 				"The skill is asking you the following question:",
 				"",
 				question,
@@ -388,38 +511,47 @@ export function createSimulatedUser(opts: {
 				"Available options:",
 				optionList,
 				"",
-				recentContext ? `Recent session context:\n${recentContext}\n` : "",
 				"Reply with ONLY the exact label text of the option you choose. Nothing else.",
-			]
-				.filter(Boolean)
-				.join("\n");
+			].join("\n");
 
-			const response = await client.messages.create({
-				model,
-				max_tokens: 256,
-				system: opts.systemPrompt,
-				messages: [{ role: "user", content: userMessage }],
-			});
+			try {
+				// Push a new user message into the session via the async queue
+				const userMessage: SDKUserMessage = {
+					type: "user",
+					message: { role: "user", content: userContent },
+					parent_tool_use_id: null,
+					session_id: "",
+				};
+				messageQueue.push(userMessage);
 
-			// Track cost (input + output tokens, approximate)
-			const inputTokens = response.usage?.input_tokens ?? 0;
-			const outputTokens = response.usage?.output_tokens ?? 0;
-			// Cost estimate uses haiku pricing ($0.25/MTok input, $1.25/MTok output).
-			// Underestimates when a non-haiku model is used — acceptable for test budget tracking.
-			const estimatedCost = (inputTokens * 0.25 + outputTokens * 1.25) / 1_000_000;
-			costTracker.add(estimatedCost);
+				// Wait for the assistant's response
+				const responsePromise = waitForResponse();
+				sessionReady = responsePromise.then(() => {});
+				const rawAnswer = await responsePromise;
 
-			// Extract text response
-			const textBlock = response.content.find((block) => block.type === "text");
-			const rawAnswer = textBlock?.text?.trim() ?? options[0]?.label ?? "Proceed";
+				if (!rawAnswer) {
+					console.warn("[simulatedUser] Empty response, falling back to first option");
+					return options[0]?.label ?? "Proceed";
+				}
 
-			// Try to match against options (fuzzy: strip quotes, case-insensitive)
-			const normalized = rawAnswer.replace(/^["']|["']$/g, "").trim();
-			const matched = options.find(
-				(o) => o.label === normalized || o.label.toLowerCase() === normalized.toLowerCase(),
-			);
+				// Fuzzy match against options (strip quotes, case-insensitive)
+				const normalized = rawAnswer.replace(/^["']|["']$/g, "").trim();
+				const matched = options.find(
+					(o) => o.label === normalized || o.label.toLowerCase() === normalized.toLowerCase(),
+				);
 
-			return matched?.label ?? options[0]?.label ?? rawAnswer;
+				return matched?.label ?? options[0]?.label ?? rawAnswer;
+			} catch (err) {
+				console.warn(`[simulatedUser] ask failed, falling back to first option: ${err}`);
+				return options[0]?.label ?? "Proceed";
+			}
+		},
+
+		close(): void {
+			messageQueue.end();
+			abortController.abort();
+			// drainLoop will exit naturally when the session ends
+			void drainLoop;
 		},
 	};
 }

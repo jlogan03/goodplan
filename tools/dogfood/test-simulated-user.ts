@@ -1,11 +1,11 @@
 /**
- * Integration test for the simulated user (stateless LLM calls via @anthropic-ai/sdk).
+ * Integration test for the simulated user (Agent SDK query() calls).
  *
  * Tests:
  * 1. simulatedUser.ask() returns a contextual answer from the provided options
  * 2. createAskUserHandler() returns correct updatedInput shape
  *
- * Requires ANTHROPIC_API_KEY — exits 0 gracefully if absent.
+ * Uses Claude subscription via Agent SDK — no ANTHROPIC_API_KEY needed.
  *
  * Usage: bun tools/dogfood/test-simulated-user.ts
  */
@@ -13,13 +13,6 @@
 import { mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { createAskUserHandler, createSimulatedUser, tierDefault } from "./utils";
-
-// ─── Preflight ──────────────────────────────────────────────
-
-if (!process.env.ANTHROPIC_API_KEY) {
-	console.log("ANTHROPIC_API_KEY not set — skipping simulated user tests");
-	process.exit(0);
-}
 
 // ─── Helpers ────────────────────────────────────────────────
 
@@ -49,20 +42,21 @@ async function main(): Promise<void> {
 	console.log("\n[test-simulated-user] Starting...\n");
 	const startTime = Date.now();
 
+	const simulatedUser = createSimulatedUser({
+		cwd: TEST_DIR,
+		systemPrompt: [
+			"You are a simulated user testing a project management CLI tool.",
+			"The project is a TypeScript CLI called 'goodplan' that manages development workflows.",
+			"When asked to choose, pick the option that best advances testing of the project.",
+			"Always prefer options that involve creating or exploring over skipping or canceling.",
+		].join(" "),
+		transcriptFile: TRANSCRIPT_FILE,
+		model: tierDefault("structural"),
+	});
+
 	try {
 		// ─── Test 1: simulatedUser.ask() ────────────────────
 		console.log("--- Test 1: simulatedUser.ask() ---");
-
-		const simulatedUser = createSimulatedUser({
-			systemPrompt: [
-				"You are a simulated user testing a project management CLI tool.",
-				"The project is a TypeScript CLI called 'goodplan' that manages development workflows.",
-				"When asked to choose, pick the option that best advances testing of the project.",
-				"Always prefer options that involve creating or exploring over skipping or canceling.",
-			].join(" "),
-			transcriptFile: TRANSCRIPT_FILE,
-			model: tierDefault("structural"),
-		});
 
 		const options = [
 			{ label: "Create a new epic", description: "Start a new development epic for the project" },
@@ -147,6 +141,7 @@ async function main(): Promise<void> {
 		console.log("\n--- Test 4: tierDefault used for model ---");
 		assert(tierDefault("structural") === "claude-haiku-4-5", "structural tier defaults to haiku");
 	} finally {
+		simulatedUser.close();
 		rmSync(TEST_DIR, { recursive: true, force: true });
 	}
 
