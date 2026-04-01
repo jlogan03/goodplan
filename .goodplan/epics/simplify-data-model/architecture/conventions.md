@@ -145,9 +145,9 @@ Quest statuses map to `create-side-quest` phases:
 ### Size Guidance
 
 Agent definition files should stay under ~500 lines. If a definition grows beyond this:
-- Move stable reference content (rubrics, format specs, convention lists) into injectable skills (`user-invocable: false`) and reference via `skills:` frontmatter
+- Move stable reference content (rubrics, format specs, convention lists) into separate `.md` files in `skills/_shared/references/` and inject via `@${CLAUDE_PLUGIN_ROOT}/skills/_shared/references/<file>.md` in the agent body
 - Keep dynamic, context-sensitive instructions in the agent body
-- Large reference documents that don't fit injectable skills should be Read-accessed by the agent at runtime
+- This keeps each agent focused on its specific role while sharing common content across agents
 
 ### File Naming
 
@@ -163,29 +163,21 @@ Agent definitions in `agents/` follow these patterns:
 name: <agent-name>
 description: <when this agent should be used — used by Claude for auto-matching>
 model: opus
-skills:
-  - <skills to inject into context>
 ---
 ```
 
-- Recommended model defaults by agent type (recommendations, not hard constraints — adjust based on evidence):
-  - **Phase agents** (explore, architecture, plan, implement, completion): `opus` — complex reasoning, multi-step tasks
-  - **Reviewer agents**: `sonnet` — focused evaluation against criteria, lower cost per review round
-  - **Synthesis/editor agents**: `sonnet` — structured transformation of existing content
-  - **Refinement-coordinator**: `sonnet` — artifact analysis and reviewer selection, no generation
-  - A 6-phase pipeline with refinement loops may spawn 15-25 agents per run; model tiers keep cost manageable while preserving quality where it matters most.
-- Do not restrict tools by default — sub-agents inherit all parent tools and should be trusted to use what they need (including Write for continuation files, WebSearch for research, etc.). **Exception:** for agents with known, narrow tool needs (e.g., reviewer agents that only need Read/Grep/Glob/Write), restricting tools is a valid optimization to reduce context overhead from MCP tool definitions (~10-20K tokens per agent turn). Minimum tool set for reviewer agents: Read, Grep, Glob, Write, Bash (needed for `gp status --json` queries).
-- `skills:` lists named skills whose full SKILL.md bodies are injected into the agent's context at spawn time. Each injectable reference (review preamble, output format, CLI conventions) must be a skill directory with a SKILL.md file (`user-invocable: false`). This is NOT an arbitrary file reference — it loads the complete markdown body of the named skill.
+- Default model is `opus` for all agents. We may downgrade specific agents to `sonnet` or `haiku` later based on evidence from the quality validation slice, but start with the highest quality to establish a baseline.
+- Do not restrict tools by default — sub-agents inherit all parent tools and should be trusted to use what they need (including Write for continuation files, WebSearch for research, etc.).
+- **Do NOT use `skills:` frontmatter** for plugin-to-plugin skill injection — it silently fails (issue #25834). Instead, use `@${CLAUDE_PLUGIN_ROOT}/path` references in the agent's markdown body to inject shared content at load time. This is verified to work in plugin agent definitions (prototype tested 2026-04-01).
 
 ### Reviewer Agent Conventions
 
 Each reviewer agent's markdown body contains:
-1. Domain expertise description (what this reviewer specializes in)
-2. Evaluation criteria specific to the domain
-3. Codebase exploration focus (what to look at before reviewing)
-4. Instructions to adapt focus based on review context (architecture, slices, plan, implementation, audit findings)
+1. Shared review preamble via `@${CLAUDE_PLUGIN_ROOT}/skills/_shared/references/review-preamble.md` (output format, severity levels, score rubric)
+2. Domain-specific review criteria via `@${CLAUDE_PLUGIN_ROOT}/skills/_shared/references/review-<domain>.md`
+3. Instructions to adapt focus based on review context (architecture, slices, plan, implementation, audit findings)
 
-The review context and shared preamble (output format, severity levels, score rubric) are injected via `skills:` frontmatter. The orchestrator passes the specific artifact path and review context in the task prompt.
+This keeps each reviewer agent's body small (~20 lines of glue) while the substance lives in shared reference files. The `@` references inject content at load time — no Read permissions needed. The orchestrator passes the specific artifact path and review context in the task prompt.
 
 **`review_context` values** (closed set — use exact strings):
 

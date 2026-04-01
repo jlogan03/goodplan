@@ -44,6 +44,12 @@ MANIFEST
 # Copy skills (rsync matches install-skills.sh convention)
 rsync -a --exclude '.DS_Store' "$REPO_ROOT/skills/" "$PLUGIN_DIR/skills/"
 
+# Copy agent definitions
+if [ -d "$REPO_ROOT/agents/" ]; then
+  mkdir -p "$PLUGIN_DIR/agents"
+  rsync -a --exclude '.DS_Store' "$REPO_ROOT/agents/" "$PLUGIN_DIR/agents/"
+fi
+
 # Copy hook scripts and configuration
 cp "$REPO_ROOT/plugin-hooks/"*.sh "$REPO_ROOT/plugin-hooks/"*.json "$PLUGIN_DIR/hooks/"
 chmod +x "$PLUGIN_DIR/hooks/"*.sh

@@ -198,17 +198,17 @@ After all skills are migrated:
 - `skills/migrate/`
 - `skills/project-status/`
 
-References in `_shared/references/` are handled per the migration table below. Because `skills:` frontmatter injects full SKILL.md bodies (not arbitrary files), any reference that agents need at spawn time must become a skill directory with `user-invocable: false`.
+References in `_shared/references/` are handled per the migration table below. Agent definitions inject shared content via `@${CLAUDE_PLUGIN_ROOT}/skills/_shared/references/<file>.md` — no need to convert reference files to skill directories.
 
 ### `_shared/references/` Migration Table
 
 | Reference File | Disposition | Rationale |
 |---|---|---|
-| Review preamble (output format, severity levels, score rubric) | **Becomes injectable skill** (`skills/_ref-review-preamble/SKILL.md`, `user-invocable: false`) | Injected by all reviewer agents via `skills:` frontmatter |
-| CLI conventions (command patterns, flag usage) | **Becomes injectable skill** (`skills/_ref-cli-conventions/SKILL.md`, `user-invocable: false`) | Injected by phase agents that generate CLI calls |
-| Output format templates | **Merged into review preamble skill** | Already part of the review output contract |
+| Review preamble (output format, severity levels, score rubric) | **Stays as reference file** — injected into reviewer agents via `@` references | Shared by all reviewer agents |
+| CLI conventions (command patterns, flag usage) | **Stays as reference file** — injected into phase agents via `@` references | Shared by phase agents that generate CLI calls |
+| Output format templates | **Merged into review preamble** | Already part of the review output contract |
+| Reviewer domain prompts (e.g., `reviewers-cross-cutting.md`) | **Split into per-domain files** (`review-holistic.md`, `review-typescript.md`, etc.) — injected into each reviewer agent via `@` references | Each reviewer agent composes: shared preamble + domain-specific criteria |
 | Skill-specific references (only used by one deleted skill) | **Deleted** | No remaining consumer after skill consolidation |
-| Reviewer domain prompts (e.g., `reviewers-cross-cutting.md`) | **Become markdown body** of `agents/reviewer-*.md` files | Each reviewer agent's body contains its domain-specific instructions |
-| Large reference docs (architecture guides, style guides) | **Stay as Read-accessed files** in `_shared/references/` | Too large for context injection; sub-agents Read them when needed |
+| Large reference docs (architecture guides, style guides) | **Stay as reference files** — sub-agents Read them when needed | Too large for context injection |
 
-The injectable skills above are NOT counted in the 12 user-facing skills. The total skill directory count will be 12 user-facing + N non-user-invocable reference skills. Enumerate the exact set during the first skill consolidation slice that creates injectable skills (likely the `plan-slice` proof-of-concept slice, which will need the review preamble skill for its refinement loop). Inventory `_shared/references/` contents at that point to determine the full set of injectable skills needed.
+The total skill directory count remains 12 user-facing skills. No non-user-invocable skills are needed — the `@` reference pattern replaces the `skills:` injection pattern entirely. Inventory `_shared/references/` during the `plan-slice` proof-of-concept slice to finalize the split.

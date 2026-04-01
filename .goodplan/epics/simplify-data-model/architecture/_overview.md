@@ -37,14 +37,16 @@ Three categories of change:
 
 Two distribution mechanisms:
 
-**Agent definitions** (`agents/` directory) — for phase-level sub-agents that need full instruction sets. Content loaded by Claude Code at spawn time. The `skills:` frontmatter injects full SKILL.md bodies from named skills into the agent's context at startup — each injectable reference must be a skill directory with its own SKILL.md (use `user-invocable: false` for non-user-facing references).
+**Agent definitions** (`agents/` directory) — for phase-level sub-agents that need full instruction sets. Content loaded by Claude Code at spawn time. Shared content is composed into agents via `@${CLAUDE_PLUGIN_ROOT}/path` references in the agent's markdown body — this injects file content at load time, bypassing Read permission issues. **Verified via prototype: `@` references in agent `.md` files work correctly in plugin context.**
 
-**Skill-level shared content** (`skills/_shared/`) — for content injected into orchestrator skills via `@` references at SKILL.md load time. Kept minimal to avoid bloating orchestrator context.
+Note: `skills:` frontmatter injection from plugin agents → plugin skills is broken (issue #25834, silent failure). Do NOT use `skills:` for plugin-to-plugin injection. Use `@` references instead.
+
+**Skill-level shared content** (`skills/_shared/references/`) — shared reference files consumed by agent definitions via `@` references. These stay as regular `.md` files (no need to convert to skill directories). Also injected into orchestrator skills via `@` references at SKILL.md load time — kept minimal in orchestrators to avoid bloating context.
 
 Key shared agents:
 - **explore-phase** — research/brainstorm/prototype loop. Spawned by `/gp:create-epic` (phase 2), `/gp:create-side-quest` (phase 2), and `/gp:explore` (standalone wraps the same agent).
 - **refinement-coordinator** — reads an artifact, selects relevant reviewers, returns spawn plan. Spawned before each refinement round by any orchestrator running a review loop.
-- **reviewer-*** — one agent per reviewer domain (holistic, software-architecture, typescript, ci-github-workflows, backend, frontend, etc.). Each agent's markdown body contains domain-specific review instructions; `skills:` frontmatter injects the shared review preamble (output format, severity levels, score rubric). Defined once, used by all skills that run reviews: `/gp:create-epic` (architecture + slices), `/gp:plan-slice`, `/gp:implement`, `/gp:create-side-quest`, and `/gp:audit`.
+- **reviewer-*** — one agent per reviewer domain (holistic, software-architecture, typescript, ci-github-workflows, backend, frontend, etc.). Each agent's markdown body contains domain-specific review criteria + shared review preamble (output format, severity levels, score rubric) composed via `@` references. Defined once, used by all skills that run reviews: `/gp:create-epic` (architecture + slices), `/gp:plan-slice`, `/gp:implement`, `/gp:create-side-quest`, and `/gp:audit`.
 - **synthesis** — merges multiple reviewer outputs, deduplicates, resolves contradictions.
 - **editor** — applies review feedback to an artifact (plan, architecture, slices).
 - **implement-phase** — implements a plan phase, reports changed files and status.
