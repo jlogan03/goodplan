@@ -34,6 +34,14 @@ epics/simplify-data-model
 
 7. **Context budget is not a concern**: 6-phase orchestrator uses ~96K tokens (~10% of 1M window). Critical discipline: orchestrator never reads files.
 
+## Testing Strategy
+
+- **Structural tests (haiku + minimal fixtures)**: verify file creation, pipeline phase advancement, re-entry, CLI state transitions. Run on every change. ~$0.50-1 per skill.
+- **Pipeline flow tests (haiku + minimal fixtures)**: verify full pipeline runs end-to-end. Run on every pipeline skill change. ~$2-3.
+- **Quality validation (opus + realistic fixture)**: final epic slice. Full workflow end-to-end with opus. Fix issues found before epic completion. ~$10-15.
+- **Simulated user responses**: replace auto-first-option with LLM-generated contextual answers in the test harness's `canUseTool` interceptor. Haiku for structural tests, sonnet for quality tests.
+- **Test harness**: extend existing Agent SDK pattern (`tools/dogfood/`).
+
 ## Open Questions
 
 - Migration path for existing .goodplan/ state with 19-skill artifacts → 12-skill format
