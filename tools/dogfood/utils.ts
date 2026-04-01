@@ -148,7 +148,7 @@ export function gpJson<T>(
 
 export function gpForce(
 	args: string[],
-	opts?: { cwd?: string; gpBin?: string },
+	opts?: { cwd?: string; gpBin?: string; stdin?: string },
 ): CliResult & { retried: boolean } {
 	const r = gp(args, opts);
 	if (r.exitCode !== 0 && r.stdout.includes("CONCURRENT_MODIFICATION")) {

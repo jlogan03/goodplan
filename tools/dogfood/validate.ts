@@ -1,8 +1,8 @@
 /**
- * Full workflow validation — runs 2 epics + 2 quests with Opus 4.6.
- * Monitors for direct .project/ access violations.
+ * Full workflow validation — runs 2 epics + 2 quests.
+ * Monitors for direct .goodplan/ access violations.
  *
- * Usage: bun tools/dogfood/validate.ts
+ * Usage: bun tools/dogfood/validate.ts [--model <model>]
  *
  * Project: ~/Repos/flashcards — a CLI flashcard study app
  * Epic 1: Core flashcard engine (load cards, quiz mode, score tracking)
@@ -14,118 +14,33 @@
 import { execFileSync } from "node:child_process";
 import {
 	appendFileSync,
-	cpSync,
 	existsSync,
 	mkdirSync,
-	readFileSync,
 	rmSync,
 	writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import { query } from "@anthropic-ai/claude-agent-sdk";
-import type { AskUserQuestionInput } from "@anthropic-ai/claude-agent-sdk/sdk-tools";
+import {
+	createSimulatedUser,
+	gp,
+	gpForce,
+	gpJson,
+	isSuccess,
+	parseModel,
+	runSkillSession,
+	tierDefault,
+	verifyEntityStatus,
+	type CliResult,
+} from "./utils";
 
 // ─── Config ──────────────────────────────────────────────────
 
 const HOME = process.env.HOME!;
 const PROJECT_DIR = join(HOME, "Repos/flashcards");
-const GOODPLAN_BIN = join(HOME, "bin/goodplan");
 const LOG_DIR = join(import.meta.dir, "validate-logs");
-const MODEL = "claude-opus-4-6";
+const MODEL = parseModel(tierDefault("quality"));
 
 mkdirSync(LOG_DIR, { recursive: true });
-
-// ─── Violation Tracking ──────────────────────────────────────
-
-const violations: Array<{ skill: string; tool: string; path: string; detail: string }> = [];
-let currentSkill = "";
-
-function checkViolation(toolName: string, input: Record<string, unknown>, logName: string): void {
-	const filePath = typeof input.file_path === "string" ? input.file_path : "";
-	const command = typeof input.command === "string" ? input.command : "";
-
-	// Check Read/Write/Edit on .project/ structured state files
-	if (filePath && filePath.includes(".project/")) {
-		const isStructuredState =
-			filePath.endsWith(".json") ||
-			filePath.endsWith(".jsonl") ||
-			filePath.endsWith("/state.md");
-
-		if (isStructuredState && ["Read", "Write", "Edit"].includes(toolName)) {
-			const v = { skill: currentSkill, tool: toolName, path: filePath, detail: "Direct structured state access" };
-			violations.push(v);
-			log(logName, `[VIOLATION] ${toolName} on ${filePath}`);
-			console.warn(`  │  ⚠ VIOLATION: ${toolName} on ${filePath.split(".project/")[1]}`);
-		}
-	}
-
-	// Check Bash for direct .project/ file manipulation
-	if (toolName === "Bash" && command) {
-		const patterns = [
-			{ re: /cat\s+[^|]*\.project\/.*\.json/, desc: "cat on .project/ JSON" },
-			{ re: /echo\s+.*>>\s*.*\.project\/.*\.jsonl/, desc: "append to .project/ JSONL" },
-			{ re: /echo\s+.*>\s*.*\.project\/.*\.json/, desc: "write to .project/ JSON" },
-			{ re: /mv\s+.*\.project\/.*~~archived~~/, desc: "mv with ~~archived~~ rename" },
-			{ re: /mv\s+.*\.project\/.*__active__/, desc: "mv with __active__ rename" },
-		];
-		for (const { re, desc } of patterns) {
-			if (re.test(command)) {
-				const v = { skill: currentSkill, tool: "Bash", path: command.slice(0, 120), detail: desc };
-				violations.push(v);
-				log(logName, `[VIOLATION] Bash: ${desc} — ${command.slice(0, 120)}`);
-				console.warn(`  │  ⚠ VIOLATION: ${desc}`);
-				break;
-			}
-		}
-	}
-}
-
-// ─── CLI Helper ──────────────────────────────────────────────
-
-interface CliResult {
-	ok: boolean;
-	stdout: string;
-	exitCode: number;
-}
-
-function gp(args: string[], opts: { stdin?: string } = {}): CliResult {
-	try {
-		const stdout = execFileSync(GOODPLAN_BIN, args, {
-			cwd: PROJECT_DIR,
-			encoding: "utf-8",
-			stdio: ["pipe", "pipe", "pipe"],
-			input: opts.stdin ?? "",
-		});
-		return { ok: true, stdout, exitCode: 0 };
-	} catch (e: unknown) {
-		const err = e as { stdout?: string; stderr?: string; status?: number };
-		return { ok: false, stdout: String(err.stdout ?? err.stderr ?? ""), exitCode: err.status ?? 1 };
-	}
-}
-
-function gpJson<T>(args: string[], opts?: { stdin?: string }): T {
-	const r = gp(args, opts);
-	if (!r.ok) throw new Error(`goodplan ${args.join(" ")} failed (exit ${r.exitCode}): ${r.stdout.slice(0, 200)}`);
-	return JSON.parse(r.stdout) as T;
-}
-
-function gpForce(args: string[], opts: { stdin?: string } = {}): CliResult {
-	const r = gp(args, opts);
-	if (!r.ok && r.stdout.includes("CONCURRENT_MODIFICATION")) {
-		console.log("  [--force recovery]");
-		return gp([...args, "--force"], opts);
-	}
-	return r;
-}
-
-function entityStatus(type: "epic" | "slice" | "quest", name: string): string {
-	try {
-		const data = gpJson<{ status: string }>([`${type}:show`, `--${type}`, name, "--json"]);
-		return data.status;
-	} catch {
-		return "not-found";
-	}
-}
 
 // ─── Logging ─────────────────────────────────────────────────
 
@@ -133,7 +48,28 @@ function log(file: string, content: string): void {
 	appendFileSync(join(LOG_DIR, file), `${content}\n`);
 }
 
+// ─── Simulated User ─────────────────────────────────────────
+
+const SIMULATED_USER_PROMPT = `You are a developer building a CLI flashcard study app with TypeScript + Bun.
+When asked questions, make reasonable choices:
+- For architecture questions: keep it simple (3-4 modules, TypeScript, Bun, JSON output, CLI only)
+- For naming: use descriptive kebab-case names
+- For approval prompts: approve and continue
+- For "is this ready?" questions: yes, proceed
+- Keep all work focused and concise — this is a small CLI app.
+Always complete CLI state transitions (submit-explore, submit-architecture, etc.) before finishing.`;
+
+// ─── Entity Status Helper ───────────────────────────────────
+
+function entityStatus(type: "epic" | "slice" | "quest", name: string): string {
+	const result = verifyEntityStatus(type, name, "", { cwd: PROJECT_DIR });
+	return result.actual;
+}
+
 // ─── Skill Runner ────────────────────────────────────────────
+
+// Accumulate violations across all skill runs for end-of-run summary
+const allViolations: string[] = [];
 
 async function runSkill(
 	skillName: string,
@@ -143,20 +79,23 @@ async function runSkill(
 	const { maxTurns = 300, maxBudgetUsd = 25, logFile } = opts;
 	const logName = logFile ?? `${skillName}-${Date.now()}.log`;
 	const startTime = Date.now();
-	currentSkill = skillName;
+	const transcriptFile = join(LOG_DIR, `${logName.replace(".log", "")}-transcript.jsonl`);
 
 	console.log(`\n  ┌─ ${skillName}`);
 	console.log(`  │  model=${MODEL}, maxTurns=${maxTurns}, budget=$${maxBudgetUsd}`);
 
 	log(logName, `\n${"=".repeat(50)}\n[${new Date().toISOString()}] ${skillName}\n${"=".repeat(50)}\nPrompt: ${prompt}\n`);
 
+	const simulatedUser = createSimulatedUser({
+		systemPrompt: SIMULATED_USER_PROMPT,
+		transcriptFile,
+	});
+
 	let result = "";
-	let msgs = 0;
-	let tools = 0;
 	let costUsd = 0;
 
 	try {
-		for await (const message of query({
+		const session = await runSkillSession({
 			prompt,
 			options: {
 				cwd: PROJECT_DIR,
@@ -170,45 +109,47 @@ async function runSkill(
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",
-					append: SYSTEM_APPEND,
-				},
-				canUseTool: async (toolName: string, input: Record<string, unknown>) => {
-					// AskUserQuestion auto-responder
-					if (toolName === "AskUserQuestion") {
-						if ("questions" in input && Array.isArray(input.questions)) {
-							const typed = input as unknown as AskUserQuestionInput;
-							const answers: Record<string, string> = {};
-							for (const q of typed.questions) {
-								answers[q.question] = q.options[0]?.label ?? "Proceed";
-							}
-							log(logName, `[AskUserQuestion] ${typed.questions.map((q) => q.question).join("; ")}`);
-							console.log(`  │  [Q] ${typed.questions.map((q) => q.question).join("; ").slice(0, 80)}`);
-							return { behavior: "allow" as const, updatedInput: { questions: typed.questions, answers } };
-						}
-					}
-					// Violation detection
-					checkViolation(toolName, input, logName);
-					return { behavior: "allow" as const, updatedInput: input };
+					append: `Project: flashcards — a CLI flashcard study app built with TypeScript + Bun.
+Always complete CLI state transitions (submit-explore, submit-architecture, etc.) before finishing.`,
 				},
 			},
-		})) {
-			msgs++;
-			if (message.type === "result" && message.subtype === "success") {
-				result = message.result;
-				costUsd = message.total_cost_usd;
-				log(logName, `\n--- RESULT ($${costUsd.toFixed(2)}) ---\n${result.slice(0, 1000)}`);
-			} else if (message.type === "assistant") {
-				for (const block of message.message.content) {
-					if (block.type === "tool_use") tools++;
+			transcriptFile,
+			simulatedUser,
+			checkViolations: true,
+			onMessage: (message) => {
+				if (message.type === "assistant") {
+					const msg = message as { message: { content: Array<{ type: string; name?: string }> } };
+					for (const block of msg.message.content) {
+						if (block.type === "tool_use") {
+							log(logName, `[tool_use] ${block.name}`);
+						}
+					}
+				} else if (message.type === "system") {
+					const sysMsg = message as Record<string, unknown>;
+					if (sysMsg.subtype === "task_started") {
+						const desc = typeof sysMsg.description === "string" ? sysMsg.description : "";
+						console.log(`  │  [agent] ${desc.slice(0, 70)}`);
+					} else if (sysMsg.subtype === "task_notification") {
+						const status = typeof sysMsg.status === "string" ? sysMsg.status : "";
+						console.log(`  │  [agent] ${status}`);
+					}
 				}
-			} else if (message.type === "system") {
-				if (message.subtype === "task_started") {
-					const desc = "description" in message ? String(message.description) : "";
-					console.log(`  │  [agent] ${desc.slice(0, 70)}`);
-				} else if (message.subtype === "task_notification") {
-					const status = "status" in message ? String(message.status) : "";
-					console.log(`  │  [agent] ${status}`);
-				}
+			},
+		});
+
+		costUsd = session.totalCost;
+
+		if (isSuccess(session.result)) {
+			result = session.result.result;
+			log(logName, `\n--- RESULT ($${costUsd.toFixed(2)}) ---\n${result.slice(0, 1000)}`);
+		}
+
+		if (session.violations.length > 0) {
+			console.log(`  │  VIOLATIONS: ${session.violations.length}`);
+			for (const v of session.violations) {
+				log(logName, `[VIOLATION] ${v}`);
+				console.warn(`  │  VIOLATION: ${v}`);
+				allViolations.push(`[${skillName}] ${v}`);
 			}
 		}
 	} catch (err) {
@@ -218,81 +159,72 @@ async function runSkill(
 	}
 
 	const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);
-	console.log(`  └─ ${msgs} msgs, ${tools} tools, ${elapsed}s, $${costUsd.toFixed(2)}`);
-	log(logName, `--- STATS: ${msgs} msgs, ${tools} tools, ${elapsed}s, $${costUsd.toFixed(2)} ---\n`);
+	console.log(`  └─ ${elapsed}s, $${costUsd.toFixed(2)}`);
+	log(logName, `--- STATS: ${elapsed}s, $${costUsd.toFixed(2)} ---\n`);
 	return { result, costUsd };
 }
-
-const SYSTEM_APPEND = `
-AUTONOMOUS MODE — You are running in a test harness. Do NOT use AskUserQuestion.
-Make all decisions autonomously. Keep work focused and concise.
-Project: flashcards — a CLI flashcard study app built with TypeScript + Bun.
-Always complete CLI state transitions (submit-explore, submit-architecture, etc.) before finishing.
-`;
 
 // ─── Workflow Helpers ────────────────────────────────────────
 
 async function runEpicLifecycle(epicName: string, goal: string, description: string): Promise<void> {
-	console.log(`\n${"═".repeat(60)}`);
+	console.log(`\n${"=".repeat(60)}`);
 	console.log(`  EPIC: ${epicName} — ${description}`);
-	console.log(`${"═".repeat(60)}`);
+	console.log(`${"=".repeat(60)}`);
 
 	// Create epic
-	const createResult = gpForce(["epic:create", "--json"], { stdin: JSON.stringify({ name: epicName, goal }) });
-	console.log(`  epic:create: ${createResult.ok ? "OK" : `FAIL ${createResult.exitCode}`}`);
+	const createResult = gpForce(["epic:create", "--json"], { cwd: PROJECT_DIR, stdin: JSON.stringify({ name: epicName, goal }) });
+	console.log(`  epic:create: ${createResult.exitCode === 0 ? "OK" : `FAIL ${createResult.exitCode}`}`);
 
 	// Explore
-	gpForce(["epic:explore", "--epic", epicName, "--json"]);
+	gpForce(["epic:explore", "--epic", epicName, "--json"], { cwd: PROJECT_DIR });
 	await runSkill("explore", `Use the Skill tool to invoke 'explore'. Epic: ${epicName}. Research what's needed for: ${description}. Write 1-2 concise research files. Then write explore-complete.md and call submit-explore.`, { logFile: `${epicName}-explore.log` });
 
 	let status = entityStatus("epic", epicName);
 	if (status === "exploring") {
-		const ecPath = join(PROJECT_DIR, `.project/epics/${epicName}/explore-complete.md`);
+		const ecPath = join(PROJECT_DIR, `.goodplan/epics/${epicName}/explore-complete.md`);
 		if (!existsSync(ecPath)) writeFileSync(ecPath, "# Explore Complete\n");
-		gpForce(["submit-explore", "--epic", epicName, "--json"]);
+		gpForce(["submit-explore", "--epic", epicName, "--json"], { cwd: PROJECT_DIR });
 	}
 	console.log(`  Status after explore: ${entityStatus("epic", epicName)}`);
 
 	// Architecture
-	gpForce(["epic:define-architecture", "--epic", epicName, "--json"]);
+	gpForce(["epic:define-architecture", "--epic", epicName, "--json"], { cwd: PROJECT_DIR });
 	await runSkill("create-architecture", `Use the Skill tool to invoke 'create-architecture'. Epic: ${epicName}. Design a simple architecture for: ${description}. Keep it to 2-3 modules. Then call submit-architecture.`, { logFile: `${epicName}-arch.log` });
 
 	status = entityStatus("epic", epicName);
-	if (status === "defining-architecture") gpForce(["submit-architecture", "--epic", epicName, "--json"]);
+	if (status === "defining-architecture") gpForce(["submit-architecture", "--epic", epicName, "--json"], { cwd: PROJECT_DIR });
 	console.log(`  Status after architecture: ${entityStatus("epic", epicName)}`);
 
 	// Refine architecture
-	gpForce(["epic:refine-architecture", "--epic", epicName, "--json"]);
+	gpForce(["epic:refine-architecture", "--epic", epicName, "--json"], { cwd: PROJECT_DIR });
 	await runSkill("refine-architecture", `Use the Skill tool to invoke 'refine-architecture'. Epic: ${epicName}. Quick review — 1-2 iterations max.`, { logFile: `${epicName}-refine-arch.log` });
 
 	status = entityStatus("epic", epicName);
-	if (status === "refining-architecture") gpForce(["submit-refine-architecture", "--epic", epicName, "--json"], { stdin: '{"scores":{"overall":8}}' });
+	if (status === "refining-architecture") gpForce(["submit-refine-architecture", "--epic", epicName, "--json"], { cwd: PROJECT_DIR, stdin: JSON.stringify({ scores: { overall: 8 } }) });
 	console.log(`  Status after refine-arch: ${entityStatus("epic", epicName)}`);
 
 	// Slices
-	gpForce(["epic:define-slices", "--epic", epicName, "--json"]);
+	gpForce(["epic:define-slices", "--epic", epicName, "--json"], { cwd: PROJECT_DIR });
 	await runSkill("create-slices", `Use the Skill tool to invoke 'create-slices'. Epic: ${epicName}. Define 2 small slices for: ${description}. Remember to call slice:create for each slice AND submit-slices when done.`, { logFile: `${epicName}-slices.log` });
 
 	status = entityStatus("epic", epicName);
-	if (status === "defining-slices") gpForce(["submit-slices", "--epic", epicName, "--json"]);
+	if (status === "defining-slices") gpForce(["submit-slices", "--epic", epicName, "--json"], { cwd: PROJECT_DIR });
 
 	// Refine slices
-	gpForce(["epic:refine-slices", "--epic", epicName, "--json"]);
+	gpForce(["epic:refine-slices", "--epic", epicName, "--json"], { cwd: PROJECT_DIR });
 	await runSkill("refine-slices", `Use the Skill tool to invoke 'refine-slices'. Epic: ${epicName}. Quick review — 1 iteration. Focus on goal.md quality, don't run code/tests.`, { logFile: `${epicName}-refine-slices.log` });
 
 	status = entityStatus("epic", epicName);
-	if (status === "refining-slices") gpForce(["submit-refine-slices", "--epic", epicName, "--json"], { stdin: '{"scores":{"overall":8}}' });
+	if (status === "refining-slices") gpForce(["submit-refine-slices", "--epic", epicName, "--json"], { cwd: PROJECT_DIR, stdin: JSON.stringify({ scores: { overall: 8 } }) });
 	console.log(`  Status after slices: ${entityStatus("epic", epicName)}`);
 
 	// Activate
-	gpForce(["epic:add-verification", "--epic", epicName, "--json"], {
-		stdin: JSON.stringify({ verification: { description: "All slices pass bun tsc --noEmit", status: "pending", addedDuring: "slices", modifiedDuring: null } }),
-	});
-	gpForce(["epic:activate", "--epic", epicName, "--json"]);
+	gpForce(["epic:add-verification", "--epic", epicName, "--json"], { cwd: PROJECT_DIR, stdin: JSON.stringify({ verification: [{ description: "All tests pass", command: "bun test" }] }) });
+	gpForce(["epic:activate", "--epic", epicName, "--json"], { cwd: PROJECT_DIR });
 	console.log(`  Activated: ${entityStatus("epic", epicName)}`);
 
 	// Per-slice cycle
-	const slices = gpJson<{ items: Array<{ name: string }> }>(["slice:list", "--json"]);
+	const slices = gpJson<{ items: Array<{ name: string }> }>(["slice:list", "--json"], { cwd: PROJECT_DIR });
 	const activeSlices = slices.items.filter((s) => entityStatus("slice", s.name) !== "completed");
 	console.log(`  Slices to process: ${activeSlices.map((s) => s.name).join(", ")}`);
 
@@ -305,32 +237,30 @@ async function runEpicLifecycle(epicName: string, goal: string, description: str
 
 	status = entityStatus("epic", epicName);
 	if (status !== "completed") {
-		gpForce(["epic:complete", "--epic", epicName, "--json"], {
-			stdin: JSON.stringify({ verificationResults: [{ index: 0, passed: true, notes: "Automated" }] }),
-		});
+		gpForce(["epic:complete", "--epic", epicName, "--json"], { cwd: PROJECT_DIR, stdin: JSON.stringify({ verificationResults: [{ index: 0, passed: true, notes: "Automated verification" }] }) });
 	}
 	console.log(`  Epic ${epicName} final: ${entityStatus("epic", epicName)}`);
 }
 
 async function runSliceCycle(sliceName: string, epicName: string): Promise<void> {
-	console.log(`\n  ── Slice: ${sliceName}`);
+	console.log(`\n  -- Slice: ${sliceName}`);
 
 	// Plan
-	gpForce(["slice:plan", "--slice", sliceName, "--json"]);
+	gpForce(["slice:plan", "--slice", sliceName, "--json"], { cwd: PROJECT_DIR });
 	await runSkill("create-plan", `Use the Skill tool to invoke 'create-plan' for slice "${sliceName}". Create a simple 2-phase plan. Then call submit-plan.`, { logFile: `${sliceName}-plan.log` });
 
 	let status = entityStatus("slice", sliceName);
-	if (status === "planning") gpForce(["submit-plan", "--slice", sliceName, "--json"]);
+	if (status === "planning") gpForce(["submit-plan", "--slice", sliceName, "--json"], { cwd: PROJECT_DIR });
 
 	// Refine
-	gpForce(["slice:refine-plan", "--slice", sliceName, "--json"]);
+	gpForce(["slice:refine-plan", "--slice", sliceName, "--json"], { cwd: PROJECT_DIR });
 	await runSkill("refine-plan", `Use the Skill tool to invoke 'refine-plan' for slice "${sliceName}". Quick review — 1-2 iterations. Then rename plan-refining.md to plan-refined.md and call submit-refinement.`, { logFile: `${sliceName}-refine.log` });
 
 	status = entityStatus("slice", sliceName);
-	if (status === "refining") gpForce(["submit-refinement", "--slice", sliceName, "--json"], { stdin: '{"scores":{"overall":8}}' });
+	if (status === "refining") gpForce(["submit-refinement", "--slice", sliceName, "--json"], { cwd: PROJECT_DIR, stdin: JSON.stringify({ scores: { overall: 8 } }) });
 
 	// Ensure plan-refined.md exists
-	const sliceDir = join(PROJECT_DIR, ".project/slices", sliceName);
+	const sliceDir = join(PROJECT_DIR, ".goodplan/slices", sliceName);
 	const refinedPath = join(sliceDir, "plan-refined.md");
 	if (!existsSync(refinedPath)) {
 		const refiningPath = join(sliceDir, "plan-refining.md");
@@ -341,48 +271,44 @@ async function runSliceCycle(sliceName: string, epicName: string): Promise<void>
 	}
 
 	// Implement
-	gpForce(["slice:implement", "--slice", sliceName, "--json"]);
+	gpForce(["slice:implement", "--slice", sliceName, "--json"], { cwd: PROJECT_DIR });
 	await runSkill("implement-plan", `Use the Skill tool to invoke 'implement-plan' for slice "${sliceName}". Write TypeScript code. Then call submit-implementation.`, { logFile: `${sliceName}-impl.log`, maxBudgetUsd: 30 });
 
 	status = entityStatus("slice", sliceName);
-	if (status === "implementing") gpForce(["submit-implementation", "--slice", sliceName, "--json"]);
+	if (status === "implementing") gpForce(["submit-implementation", "--slice", sliceName, "--json"], { cwd: PROJECT_DIR });
 
 	// Complete
 	status = entityStatus("slice", sliceName);
 	if (status === "implementation-complete") {
-		gpForce(["slice:complete", "--slice", sliceName, "--json"], {
-			stdin: JSON.stringify({ verificationPassed: true, deferred: [], learnings: [], architectureDelta: [] }),
-		});
+		gpForce(["slice:complete", "--slice", sliceName, "--json"], { cwd: PROJECT_DIR, stdin: JSON.stringify({ verificationPassed: true, deferred: [], learnings: [], architectureDelta: [] }) });
 	}
 	console.log(`  Slice ${sliceName} final: ${entityStatus("slice", sliceName)}`);
 }
 
 async function runQuestLifecycle(questName: string, goal: string): Promise<void> {
-	console.log(`\n${"═".repeat(60)}`);
+	console.log(`\n${"=".repeat(60)}`);
 	console.log(`  QUEST: ${questName} — ${goal}`);
-	console.log(`${"═".repeat(60)}`);
+	console.log(`${"=".repeat(60)}`);
 
-	gpForce(["quest:create", "--json"], { stdin: JSON.stringify({ name: questName, goal }) });
-	gpForce(["quest:plan", "--quest", questName, "--json"]);
+	gpForce(["quest:create", "--json"], { cwd: PROJECT_DIR, stdin: JSON.stringify({ name: questName, goal }) });
+	gpForce(["quest:plan", "--quest", questName, "--json"], { cwd: PROJECT_DIR });
 
 	await runSkill("create-plan", `Use the Skill tool to invoke 'create-plan' for quest "${questName}". Goal: ${goal}. Simple 1-2 phase plan. Then call submit-plan.`, { logFile: `${questName}-plan.log` });
 
 	let status = entityStatus("quest", questName);
-	if (status === "planning") gpForce(["submit-plan", "--quest", questName, "--json"]);
+	if (status === "planning") gpForce(["submit-plan", "--quest", questName, "--json"], { cwd: PROJECT_DIR });
 
 	// Skip refine for quests — test direct plan-to-implement path
-	gpForce(["quest:implement", "--quest", questName, "--json"]);
+	gpForce(["quest:implement", "--quest", questName, "--json"], { cwd: PROJECT_DIR });
 
 	await runSkill("implement-plan", `Use the Skill tool to invoke 'implement-plan' for quest "${questName}". Write the code. Then call submit-implementation.`, { logFile: `${questName}-impl.log`, maxBudgetUsd: 20 });
 
 	status = entityStatus("quest", questName);
-	if (status === "implementing") gpForce(["submit-implementation", "--quest", questName, "--json"]);
+	if (status === "implementing") gpForce(["submit-implementation", "--quest", questName, "--json"], { cwd: PROJECT_DIR });
 
 	status = entityStatus("quest", questName);
 	if (status === "implementation-complete") {
-		gpForce(["quest:complete", "--quest", questName, "--json"], {
-			stdin: JSON.stringify({ verificationPassed: true, learnings: [], architectureDelta: [] }),
-		});
+		gpForce(["quest:complete", "--quest", questName, "--json"], { cwd: PROJECT_DIR, stdin: JSON.stringify({ verificationPassed: true, learnings: [], architectureDelta: [] }) });
 	}
 	console.log(`  Quest ${questName} final: ${entityStatus("quest", questName)}`);
 }
@@ -391,18 +317,17 @@ async function runQuestLifecycle(questName: string, goal: string): Promise<void>
 
 async function main(): Promise<void> {
 	const startTime = Date.now();
-	let totalCost = 0;
 
-	console.log("\n" + "═".repeat(60));
-	console.log("  FULL WORKFLOW VALIDATION — Opus 4.6");
+	console.log("\n" + "=".repeat(60));
+	console.log(`  FULL WORKFLOW VALIDATION — ${MODEL}`);
 	console.log("  Project: flashcards (CLI flashcard study app)");
-	console.log("═".repeat(60));
+	console.log("=".repeat(60));
 
 	// Reset
 	console.log("\n[setup] Resetting project...");
-	const projectDir = join(PROJECT_DIR, ".project");
-	if (existsSync(projectDir)) rmSync(projectDir, { recursive: true, force: true });
-	gp(["init", "--name", "flashcards", "--json"]);
+	const goodplanDir = join(PROJECT_DIR, ".goodplan");
+	if (existsSync(goodplanDir)) rmSync(goodplanDir, { recursive: true, force: true });
+	gp(["init", "--name", "flashcards", "--json"], { cwd: PROJECT_DIR });
 	console.log("[setup] Project initialized");
 
 	// Epic 1: Core flashcard engine
@@ -434,9 +359,9 @@ async function main(): Promise<void> {
 	// ─── Summary ─────────────────────────────────────────────
 	const elapsed = ((Date.now() - startTime) / 1000 / 60).toFixed(1);
 
-	console.log(`\n${"═".repeat(60)}`);
+	console.log(`\n${"=".repeat(60)}`);
 	console.log("  VALIDATION SUMMARY");
-	console.log(`${"═".repeat(60)}`);
+	console.log(`${"=".repeat(60)}`);
 	console.log(`  Duration:  ${elapsed} min`);
 	console.log(`  Model:     ${MODEL}`);
 
@@ -448,21 +373,20 @@ async function main(): Promise<void> {
 		console.log(`    Quest ${quest}: ${entityStatus("quest", quest)}`);
 	}
 
-	const slices = gpJson<{ items: Array<{ name: string }> }>(["slice:list", "--json"]);
+	const slices = gpJson<{ items: Array<{ name: string }> }>(["slice:list", "--json"], { cwd: PROJECT_DIR });
 	for (const s of slices.items) {
 		console.log(`    Slice ${s.name}: ${entityStatus("slice", s.name)}`);
 	}
 
-	if (violations.length > 0) {
-		console.log(`\n  ⚠ VIOLATIONS: ${violations.length}`);
-		for (const v of violations) {
-			console.log(`    [${v.skill}] ${v.tool}: ${v.detail}`);
+	// Violation summary
+	console.log(`\n  Violations: ${allViolations.length}`);
+	if (allViolations.length > 0) {
+		for (const v of allViolations) {
+			console.log(`    - ${v}`);
 		}
-	} else {
-		console.log("\n  ✓ ZERO .project/ access violations");
 	}
 
-	console.log(`${"═".repeat(60)}\n`);
+	console.log(`${"=".repeat(60)}\n`);
 }
 
 main()

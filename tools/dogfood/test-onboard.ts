@@ -2,7 +2,7 @@
  * Onboard-repo test harness — runs /onboard-repo skill against a generated
  * fixture repo using the Claude Agent SDK for programmatic control.
  *
- * Usage: bun tools/dogfood/test-onboard.ts
+ * Usage: bun tools/dogfood/test-onboard.ts [--model <model>]
  *
  * Generates a fixture TypeScript project at /tmp/goodplan-onboard-test/,
  * installs skills into the fixture's project-level .claude/skills/,
@@ -11,7 +11,6 @@
 
 import { execFileSync } from "node:child_process";
 import {
-	appendFileSync,
 	cpSync,
 	existsSync,
 	mkdirSync,
@@ -19,8 +18,16 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import { query } from "@anthropic-ai/claude-agent-sdk";
-import type { AskUserQuestionInput } from "@anthropic-ai/claude-agent-sdk/sdk-tools";
+import {
+	createLogger,
+	createSimulatedUser,
+	gp,
+	gpJson,
+	isSuccess,
+	parseModel,
+	runSkillSession,
+	tierDefault,
+} from "./utils";
 
 // ─── Environment ─────────────────────────────────────────────
 
@@ -31,10 +38,11 @@ if (!HOME) {
 }
 
 const GOODPLAN_DIR = join(import.meta.dir, "../..");
-const GOODPLAN_BIN = join(HOME, ".local/bin/goodplan");
 const TEST_DIR = "/tmp/goodplan-onboard-test";
 const FIXTURE_SCRIPT = join(GOODPLAN_DIR, "scripts/generate-onboard-fixture.sh");
 const LOG_FILE = join(GOODPLAN_DIR, "tools/dogfood/onboard-test.log");
+const TRANSCRIPT_FILE = join(GOODPLAN_DIR, "tools/dogfood/onboard-transcript.jsonl");
+const MODEL = parseModel(tierDefault("quality"));
 
 // ─── Setup ───────────────────────────────────────────────────
 
@@ -58,50 +66,39 @@ console.log(`[test-onboard] Skills installed to: ${fixtureSkillsDir}`);
 
 // Verify goodplan CLI is available
 try {
-	const versionOutput = execFileSync(GOODPLAN_BIN, ["--version", "--json"], {
-		encoding: "utf-8",
-		input: "",
-	});
-	console.log(`[test-onboard] CLI version: ${versionOutput.trim()}`);
+	const versionResult = gp(["--version", "--json"]);
+	if (versionResult.exitCode !== 0) throw new Error(`exit ${versionResult.exitCode}`);
+	console.log(`[test-onboard] CLI version: ${versionResult.stdout.trim()}`);
 } catch (e) {
-	console.error("[test-onboard] FATAL: goodplan CLI not found at", GOODPLAN_BIN);
+	console.error("[test-onboard] FATAL: goodplan CLI not available");
 	console.error(e instanceof Error ? e.message : String(e));
 	process.exit(1);
 }
 
 // ─── Logging ─────────────────────────────────────────────────
 
-writeFileSync(LOG_FILE, `# Onboard Test Log\nStarted: ${new Date().toISOString()}\n\n`);
+const logger = createLogger(LOG_FILE);
 
-function log(content: string): void {
-	appendFileSync(LOG_FILE, `${content}\n`);
-	console.log(content);
-}
+// ─── Simulated User ─────────────────────────────────────────
+
+const simulatedUser = createSimulatedUser({
+	systemPrompt: `You are a developer testing the /onboard-repo skill on a TypeScript fixture project.
+When asked questions, choose reasonable defaults:
+- For project name: use whatever is suggested
+- For confirmation prompts: approve and continue
+- For regenerate vs keep: choose to regenerate
+- The goal is to onboard the fixture repo and create a .goodplan/ directory with idea.md.`,
+	transcriptFile: TRANSCRIPT_FILE,
+});
 
 // ─── Run /onboard-repo skill ─────────────────────────────────
 
-const AUTONOMOUS_PROMPT = `
-IMPORTANT OVERRIDE — AUTONOMOUS MODE:
-You are running inside an automated test harness for testing the /onboard-repo skill.
-
-1. Do NOT use AskUserQuestion. Make all decisions autonomously.
-2. When a skill asks for confirmation, approve and continue.
-3. When a skill asks whether to regenerate or keep existing content, choose to regenerate.
-4. Use reasonable defaults for all decisions.
-5. The goal is to onboard the fixture repo and create a .project/ directory with idea.md.
-`;
-
 async function main(): Promise<void> {
 	const startTime = Date.now();
-	log("\n[test-onboard] Running /onboard-repo skill...\n");
-
-	let result = "";
-	let messageCount = 0;
-	let toolCalls = 0;
-	let costUsd = 0;
+	logger.log("\n[test-onboard] Running /onboard-repo skill...\n");
 
 	try {
-		for await (const message of query({
+		const session = await runSkillSession({
 			prompt: "/onboard-repo",
 			options: {
 				cwd: TEST_DIR,
@@ -109,7 +106,7 @@ async function main(): Promise<void> {
 				allowDangerouslySkipPermissions: true,
 				maxTurns: 300,
 				maxBudgetUsd: 15,
-				model: "claude-opus-4-6",
+				model: MODEL,
 				settingSources: ["user", "project"],
 				env: {
 					...process.env,
@@ -118,119 +115,97 @@ async function main(): Promise<void> {
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",
-					append: AUTONOMOUS_PROMPT,
-				},
-				canUseTool: async (toolName: string, input: Record<string, unknown>) => {
-					if (toolName === "AskUserQuestion") {
-						if (!("questions" in input) || !Array.isArray(input.questions)) {
-							return { behavior: "allow" as const, updatedInput: input };
-						}
-						const typed = input as unknown as AskUserQuestionInput;
-						const answers: Record<string, string> = {};
-						for (const q of typed.questions) {
-							const firstOption = q.options[0];
-							answers[q.question] = firstOption?.label ?? "Proceed";
-						}
-						log(`  [AskUserQuestion] ${typed.questions.map((q) => q.question).join("; ")} → auto: ${Object.values(answers).join(", ")}`);
-						return {
-							behavior: "allow" as const,
-							updatedInput: { questions: typed.questions, answers },
-						};
-					}
-					return { behavior: "allow" as const, updatedInput: input };
 				},
 			},
-		})) {
-			messageCount++;
-
-			if (message.type === "result" && message.subtype === "success") {
-				result = message.result;
-				costUsd = message.total_cost_usd;
-				log(`\n--- RESULT ($${costUsd.toFixed(4)}) ---\n${result.slice(0, 3000)}`);
-				break;
-			} else if (message.type === "result") {
-				log(`\n--- ERROR (${message.subtype}) ---\n${JSON.stringify("errors" in message ? message.errors : "unknown").slice(0, 1000)}`);
-				if ("total_cost_usd" in message) {
-					costUsd = message.total_cost_usd;
-				}
-				break;
-			} else if (message.type === "assistant") {
-				for (const block of message.message.content) {
-					if (block.type === "tool_use") {
-						toolCalls++;
-						if (block.name === "Bash") {
-							const cmd = typeof block.input === "object" && block.input && "command" in block.input
-								? String(block.input.command).slice(0, 100)
-								: "?";
-							log(`  [${block.name}] ${cmd}`);
-						} else {
-							log(`  [${block.name}]`);
+			transcriptFile: TRANSCRIPT_FILE,
+			simulatedUser,
+			checkViolations: true,
+			onMessage: (message) => {
+				if (message.type === "assistant") {
+					const msg = message as { message: { content: Array<{ type: string; name?: string; input?: unknown }> } };
+					for (const block of msg.message.content) {
+						if (block.type === "tool_use") {
+							if (block.name === "Bash") {
+								const cmd = typeof block.input === "object" && block.input && "command" in block.input
+									? String((block.input as Record<string, unknown>).command).slice(0, 100)
+									: "?";
+								logger.log(`  [${block.name}] ${cmd}`);
+							} else {
+								logger.log(`  [${block.name}]`);
+							}
 						}
 					}
+				} else if (message.type === "system") {
+					const sysMsg = message as Record<string, unknown>;
+					if (sysMsg.subtype === "task_started") {
+						const desc = typeof sysMsg.description === "string" ? sysMsg.description : "unknown";
+						logger.log(`  [subagent] started: ${desc.slice(0, 100)}`);
+					} else if (sysMsg.subtype === "task_notification") {
+						const status = typeof sysMsg.status === "string" ? sysMsg.status : "unknown";
+						const summary = typeof sysMsg.summary === "string" ? sysMsg.summary : "";
+						logger.log(`  [subagent] ${status}: ${summary.slice(0, 100)}`);
+					}
 				}
-			} else if (message.type === "system") {
-				if (message.subtype === "task_started") {
-					const desc = "description" in message ? String(message.description) : "unknown";
-					log(`  [subagent] started: ${desc.slice(0, 100)}`);
-				} else if (message.subtype === "task_notification") {
-					const status = "status" in message ? String(message.status) : "unknown";
-					const summary = "summary" in message ? String(message.summary) : "";
-					log(`  [subagent] ${status}: ${summary.slice(0, 100)}`);
-				}
+			},
+		});
+
+		if (isSuccess(session.result)) {
+			logger.log(`\n--- RESULT ($${session.totalCost.toFixed(4)}) ---\n${session.result.result.slice(0, 3000)}`);
+		} else {
+			logger.log(`\n--- ERROR (${session.result.subtype}) ---`);
+		}
+
+		const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+		logger.log("\n--- STATS ---");
+		logger.log(`Elapsed: ${elapsed}s`);
+		logger.log(`Cost: $${session.totalCost.toFixed(4)}`);
+		logger.log(`Violations: ${session.violations.length}`);
+
+		if (session.violations.length > 0) {
+			for (const v of session.violations) {
+				logger.log(`  VIOLATION: ${v}`);
 			}
 		}
 	} catch (err) {
 		const errMsg = err instanceof Error ? err.message : String(err);
-		log(`\n[ERROR] ${errMsg}`);
+		logger.log(`\n[ERROR] ${errMsg}`);
 	}
-
-	const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-	log("\n--- STATS ---");
-	log(`Messages: ${messageCount}`);
-	log(`Tool calls: ${toolCalls}`);
-	log(`Elapsed: ${elapsed}s`);
-	log(`Cost: $${costUsd.toFixed(4)}`);
 
 	// ─── Post-onboard verification ───────────────────────────
 
-	log("\n--- POST-ONBOARD VERIFICATION ---\n");
+	logger.log("\n--- POST-ONBOARD VERIFICATION ---\n");
 
-	// Check .project/ exists
-	const hasProject = existsSync(join(TEST_DIR, ".project"));
-	log(`PASS: .project/ exists: ${hasProject}`);
+	// Check .goodplan/ exists
+	const hasGoodplan = existsSync(join(TEST_DIR, ".goodplan"));
+	logger.log(`PASS: .goodplan/ exists: ${hasGoodplan}`);
 
 	// Check idea.md exists and is non-empty
-	const ideaPath = join(TEST_DIR, ".project/idea.md");
+	const ideaPath = join(TEST_DIR, ".goodplan/idea.md");
 	const hasIdea = existsSync(ideaPath);
 	let ideaSize = 0;
 	if (hasIdea) {
 		ideaSize = readFileSync(ideaPath, "utf-8").length;
 	}
-	log(`PASS: .project/idea.md exists: ${hasIdea}, size: ${ideaSize} bytes`);
+	logger.log(`PASS: idea.md exists: ${hasIdea}, size: ${ideaSize} bytes`);
 
 	// Check goodplan status works
 	try {
-		const statusOutput = execFileSync(GOODPLAN_BIN, ["status", "--json"], {
-			cwd: TEST_DIR,
-			encoding: "utf-8",
-			input: "",
-		});
-		const status = JSON.parse(statusOutput);
-		log(`PASS: goodplan status: ${JSON.stringify(status).slice(0, 500)}`);
+		const status = gpJson<Record<string, unknown>>(["status", "--json"], { cwd: TEST_DIR });
+		logger.log(`PASS: goodplan status: ${JSON.stringify(status).slice(0, 500)}`);
 	} catch (e) {
-		log(`FAIL: goodplan status failed: ${e instanceof Error ? e.message : String(e)}`);
+		logger.log(`FAIL: goodplan status failed: ${e instanceof Error ? e.message : String(e)}`);
 	}
 
-	log(`\n[test-onboard] Done. Test directory preserved at: ${TEST_DIR}`);
-	log(`[test-onboard] Log file: ${LOG_FILE}`);
+	logger.log(`\n[test-onboard] Done. Test directory preserved at: ${TEST_DIR}`);
+	logger.log(`[test-onboard] Log file: ${LOG_FILE}`);
 }
 
-// ─── Negative test: existing .project/ ───────────────────
+// ─── Negative test: existing .goodplan/ ───────────────────
 
 const NEGATIVE_TEST_DIR = "/tmp/goodplan-onboard-test-negative";
 
 async function negativeTest(): Promise<void> {
-	log("\n--- NEGATIVE TEST: existing .project/ ---\n");
+	logger.log("\n--- NEGATIVE TEST: existing .goodplan/ ---\n");
 
 	// Generate a fresh fixture
 	execFileSync("bash", [FIXTURE_SCRIPT, NEGATIVE_TEST_DIR], {
@@ -243,21 +218,22 @@ async function negativeTest(): Promise<void> {
 	mkdirSync(negSkillsDir, { recursive: true });
 	cpSync(join(GOODPLAN_DIR, "skills"), negSkillsDir, { recursive: true });
 
-	// Pre-create .project/ to simulate a fully-onboarded repo
-	const negProjectDir = join(NEGATIVE_TEST_DIR, ".project");
-	mkdirSync(join(negProjectDir, "architecture"), { recursive: true });
-	writeFileSync(join(negProjectDir, "project.json"), '{"name":"taskflow"}');
-	writeFileSync(join(negProjectDir, "idea.md"), "# TaskFlow\n\nA task management API.");
-	writeFileSync(join(negProjectDir, "conventions.md"), "# Conventions\n\nTypeScript + Express.");
-	writeFileSync(join(negProjectDir, "architecture", "_overview.md"), "# Architecture\n\nOverview.");
+	// Pre-create .goodplan/ to simulate a fully-onboarded repo
+	const negGoodplanDir = join(NEGATIVE_TEST_DIR, ".goodplan");
+	mkdirSync(join(negGoodplanDir, "architecture"), { recursive: true });
+	writeFileSync(join(negGoodplanDir, "project.json"), '{"name":"taskflow"}');
+	writeFileSync(join(negGoodplanDir, "idea.md"), "# TaskFlow\n\nA task management API.");
+	writeFileSync(join(negGoodplanDir, "conventions.md"), "# Conventions\n\nTypeScript + Express.");
+	writeFileSync(join(negGoodplanDir, "architecture", "_overview.md"), "# Architecture\n\nOverview.");
 
-	log("[negative-test] .project/ pre-created with idea.md, conventions.md, architecture");
+	logger.log("[negative-test] .goodplan/ pre-created with idea.md, conventions.md, architecture");
 
 	let stopped = false;
 	let crashed = false;
 
 	try {
-		for await (const message of query({
+		const negTranscript = join(GOODPLAN_DIR, "tools/dogfood/onboard-negative-transcript.jsonl");
+		const session = await runSkillSession({
 			prompt: "/onboard-repo",
 			options: {
 				cwd: NEGATIVE_TEST_DIR,
@@ -265,7 +241,7 @@ async function negativeTest(): Promise<void> {
 				allowDangerouslySkipPermissions: true,
 				maxTurns: 30,
 				maxBudgetUsd: 2,
-				model: "claude-opus-4-6",
+				model: MODEL,
 				settingSources: ["user", "project"],
 				env: {
 					...process.env,
@@ -274,33 +250,32 @@ async function negativeTest(): Promise<void> {
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",
-					append: AUTONOMOUS_PROMPT,
 				},
 			},
-		})) {
-			if (message.type === "result" && message.subtype === "success") {
-				const text = message.result.toLowerCase();
-				if (text.includes("already has") || text.includes("migrate") || text.includes("project-status") || text.includes("fully onboarded")) {
-					stopped = true;
-				}
-				log(`[negative-test] Result: ${message.result.slice(0, 500)}`);
-				break;
-			} else if (message.type === "result") {
-				log(`[negative-test] Error result: ${message.subtype}`);
-				break;
+			transcriptFile: negTranscript,
+			simulatedUser,
+		});
+
+		if (isSuccess(session.result)) {
+			const text = session.result.result.toLowerCase();
+			if (text.includes("already has") || text.includes("migrate") || text.includes("project-status") || text.includes("fully onboarded")) {
+				stopped = true;
 			}
+			logger.log(`[negative-test] Result: ${session.result.result.slice(0, 500)}`);
+		} else {
+			logger.log(`[negative-test] Error result: ${session.result.subtype}`);
 		}
 	} catch (err) {
 		crashed = true;
-		log(`[negative-test] CRASH: ${err instanceof Error ? err.message : String(err)}`);
+		logger.log(`[negative-test] CRASH: ${err instanceof Error ? err.message : String(err)}`);
 	}
 
 	if (crashed) {
-		log("FAIL: Skill crashed on existing .project/");
+		logger.log("FAIL: Skill crashed on existing .goodplan/");
 	} else if (stopped) {
-		log("PASS: Skill detected existing project and stopped gracefully");
+		logger.log("PASS: Skill detected existing project and stopped gracefully");
 	} else {
-		log("FAIL: Skill did not detect existing .project/ or did not stop gracefully");
+		logger.log("FAIL: Skill did not detect existing .goodplan/ or did not stop gracefully");
 	}
 }
 

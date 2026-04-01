@@ -119,24 +119,24 @@ Update all 5 existing harness scripts to use shared utilities, the simulated use
 ### Expected Behavior
 
 **Before implementation** (should fail / show absence):
-- [ ] Each harness script defines its own inline `log()`, `gp()`, `canUseTool` handler, stats tracking — duplicated across files
+- [x] Each harness script defines its own inline `log()`, `gp()`, `canUseTool` handler, stats tracking — duplicated across files
 
 **After implementation** (should pass / show presence):
-- [ ] `bun tools/dogfood/test-plugin-skills.ts` — runs successfully using shared utils, no inline duplicates
-- [ ] `bun tools/dogfood/test-onboard.ts --model claude-haiku-4-5` — uses model override, simulated user answers questions contextually
-- [ ] `grep -c "AUTONOMOUS" tools/dogfood/*.ts` — returns 0 (removed from all files)
-- [ ] `grep -c "firstOption" tools/dogfood/*.ts` — returns 0 (auto-first-option removed)
-- [ ] Each script's log output shows simulated user responses, not "Proceed"
+- [x] `bun tools/dogfood/test-plugin-skills.ts` — runs successfully using shared utils, no inline duplicates
+- [x] `bun tools/dogfood/test-onboard.ts --model claude-haiku-4-5` — uses model override, simulated user answers questions contextually
+- [x] `grep -c "AUTONOMOUS" tools/dogfood/*.ts` — returns 0 (removed from all files)
+- [x] `grep -c "firstOption" tools/dogfood/*.ts` — returns 0 (auto-first-option removed)
+- [x] Each script's log output shows simulated user responses, not "Proceed"
 
 ### Tasks
 
 Migrate in order of complexity (simplest first, most complex last). **Rollback guidance**: if a migration breaks a script, revert that script to its pre-migration state (`git restore tools/dogfood/<script>.ts`) and file an issue describing the failure before continuing with the next script.
 
-- [ ] **1. test-plugin-skills.ts** (simplest): Replace inline logging with `createLogger()`. Replace inline query loop with `runSkillSession()`. Add `parseModel()` for model selection. Replace hardcoded sonnet with `parseModel(tierDefault("structural"))`. Plugin discovery and project-status tests don't use AskUserQuestion, so simulated user is optional here — add it if the test evolves to need it.
-- [ ] **2. test-onboard.ts**: Replace inline query loop with `runSkillSession()` using `simulatedUser` param. Replace inline logging, CLI helpers. Remove `AUTONOMOUS_SYSTEM_PROMPT` from the system prompt append. Add `parseModel()`. Transcript writing handled by `runSkillSession()`.
-- [ ] **3. test-migrate.ts**: Same pattern as test-onboard. Replace inline query loop with `runSkillSession()` using `simulatedUser` param. Replace inline logging, CLI helpers. Add `parseModel()`.
-- [ ] **4. validate.ts**: Replace `gp()`/`gpJson()`/`gpForce()` with shared versions. Replace `checkViolation()` with shared version (this fixes stale `.project/` path references to `.goodplan/`). Replace `MODEL` constant with `parseModel(tierDefault("quality"))`. Replace inline query loop with `runSkillSession()` using `simulatedUser` + `checkViolations: true`. Keep violation tracking via `runSkillSession`'s internal composition.
-- [ ] **5. harness.ts** (most complex, ~600+ lines): Break into sub-steps:
+- [x] **1. test-plugin-skills.ts** (simplest): Replace inline logging with `createLogger()`. Replace inline query loop with `runSkillSession()`. Add `parseModel()` for model selection. Replace hardcoded sonnet with `parseModel(tierDefault("structural"))`. Plugin discovery and project-status tests don't use AskUserQuestion, so simulated user is optional here — add it if the test evolves to need it.
+- [x] **2. test-onboard.ts**: Replace inline query loop with `runSkillSession()` using `simulatedUser` param. Replace inline logging, CLI helpers. Remove `AUTONOMOUS_SYSTEM_PROMPT` from the system prompt append. Add `parseModel()`. Transcript writing handled by `runSkillSession()`.
+- [x] **3. test-migrate.ts**: Same pattern as test-onboard. Replace inline query loop with `runSkillSession()` using `simulatedUser` param. Replace inline logging, CLI helpers. Add `parseModel()`.
+- [x] **4. validate.ts**: Replace `gp()`/`gpJson()`/`gpForce()` with shared versions. Replace `checkViolation()` with shared version (this fixes stale `.project/` path references to `.goodplan/`). Replace `MODEL` constant with `parseModel(tierDefault("quality"))`. Replace inline query loop with `runSkillSession()` using `simulatedUser` + `checkViolations: true`. Keep violation tracking via `runSkillSession`'s internal composition.
+- [x] **5. harness.ts** (most complex, ~600+ lines): Break into sub-steps:
   1. Replace `goodplan()`/`goodplanJson()` with shared `gp()`/`gpJson()`
   2. Replace `logFriction()` to use shared logger via `createLogger()`
   3. Replace `canUseTool` auto-first-option — pass `simulatedUser` + `checkViolations: true` to `runSkillSession()` instead of manual handler composition
@@ -145,7 +145,7 @@ Migrate in order of complexity (simplest first, most complex last). **Rollback g
   6. Replace inline query loops with `runSkillSession()`
   7. Move `LOG_DIR` from `.goodplan/` (or `.project/`) to `tools/dogfood/logs/` — logs must not be written into state directories
   8. Truncated verification: run at least one phase to confirm the migration works
-- [ ] **6. Cross-cutting cleanup**:
+- [x] **6. Cross-cutting cleanup**:
   - Remove all instances of `AUTONOMOUS_SYSTEM_PROMPT` or equivalent autonomous-mode system prompt additions across all scripts
   - Update all remaining `.project/` references to `.goodplan/` across all harness scripts
   - Verify: `grep -rn "\.project/" tools/dogfood/*.ts --exclude=test-migrate.ts` — zero matches. Note: `test-migrate.ts` may have legitimate `.project/` references in fixture setup/verification (it tests migration *from* `.project/` to `.goodplan/`) — exclude that file from this check.
