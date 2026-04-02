@@ -333,6 +333,9 @@ export function tierDefault(
 /**
  * Simple async queue implementing AsyncIterable. Push items in; iterate to pull them out.
  * Used to feed user messages into a persistent Agent SDK query() session.
+ *
+ * **Single-consumer only.** The `next()` method stores a single pending resolve callback,
+ * so concurrent consumers would race and only one would receive each item.
  */
 class AsyncQueue<T> implements AsyncIterable<T> {
 	private queue: T[] = [];
@@ -362,9 +365,9 @@ class AsyncQueue<T> implements AsyncIterable<T> {
 	[Symbol.asyncIterator](): AsyncIterator<T> {
 		return {
 			next: (): Promise<IteratorResult<T>> => {
-				const queued = this.queue.shift();
-				if (queued !== undefined) {
-					return Promise.resolve({ value: queued, done: false });
+				if (this.queue.length > 0) {
+					// Non-null assertion safe: length > 0 guarantees shift() returns T
+					return Promise.resolve({ value: this.queue.shift()!, done: false });
 				}
 				if (this.done) {
 					return Promise.resolve({ value: undefined as unknown as T, done: true });
@@ -453,27 +456,42 @@ export function createSimulatedUser(opts: {
 		try {
 			for await (const message of session) {
 				if (message.type === "assistant" && "message" in message) {
-					const msg = message as { message?: { content?: Array<{ type: string; text?: string }> } };
-					const textBlock = msg.message?.content?.find((b) => b.type === "text");
-					if (textBlock?.text && responseResolve) {
+					// TODO: SDK types don't expose message.content on the union — narrow via runtime check
+					const msg = message as Record<string, unknown>;
+					const innerMsg = typeof msg.message === "object" && msg.message !== null ? msg.message as Record<string, unknown> : null;
+					const content = Array.isArray(innerMsg?.content) ? innerMsg.content as Array<Record<string, unknown>> : null;
+					const textBlock = content?.find((b) => b.type === "text");
+					if (textBlock && typeof textBlock.text === "string" && textBlock.text && responseResolve) {
 						const r = responseResolve;
 						responseResolve = null;
 						r(textBlock.text.trim());
 					}
 				}
 				if (message.type === "result" && "subtype" in message) {
-					const result = message as { subtype: string; total_cost_usd?: number };
-					if (result.total_cost_usd) {
-						const incrementalCost = result.total_cost_usd - lastCostUsd;
+					// TODO: SDK types don't expose total_cost_usd on the base union — narrow via runtime check
+					const result = message as Record<string, unknown>;
+					const totalCost = typeof result.total_cost_usd === "number" ? result.total_cost_usd : 0;
+					if (totalCost > 0) {
+						const incrementalCost = totalCost - lastCostUsd;
 						if (incrementalCost > 0) {
 							costTracker.add(incrementalCost);
 						}
-						lastCostUsd = result.total_cost_usd;
+						lastCostUsd = totalCost;
 					}
 				}
 			}
-		} catch {
-			// Session ended (abort or error) — expected during close()
+		} catch (err: unknown) {
+			// Resolve any pending ask() so it doesn't hang forever
+			if (responseResolve) {
+				const r = responseResolve;
+				responseResolve = null;
+				r("");
+			}
+			// AbortError is expected during close() — only log unexpected errors
+			const isAbort = err instanceof Error && (err.name === "AbortError" || err.message.includes("aborted"));
+			if (!isAbort) {
+				console.warn(`[simulatedUser] drainLoop error: ${err instanceof Error ? err.message : String(err)}`);
+			}
 		}
 	})();
 
@@ -492,6 +510,10 @@ export function createSimulatedUser(opts: {
 			return costTracker.total();
 		},
 
+		/**
+		 * Sequential calls only. Concurrent calls will race on `sessionReady`,
+		 * causing both to push messages before the prior response resolves.
+		 */
 		async ask(
 			question: string,
 			options: Array<{ label: string; description: string }>,
@@ -550,8 +572,8 @@ export function createSimulatedUser(opts: {
 		close(): void {
 			messageQueue.end();
 			abortController.abort();
-			// drainLoop will exit naturally when the session ends
-			void drainLoop;
+			// Suppress unhandled rejection — drainLoop catch handles errors internally
+			drainLoop.catch(() => {});
 		},
 	};
 }

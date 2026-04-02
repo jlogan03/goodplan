@@ -206,7 +206,7 @@ async function main(): Promise<void> {
 }
 
 main()
-	.then(() => { simulatedUser.close(); })
+	.finally(() => { simulatedUser.close(); })
 	.catch((err) => {
 		console.error("Fatal error:", err);
 		process.exit(1);

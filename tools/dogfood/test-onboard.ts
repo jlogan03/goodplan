@@ -282,7 +282,7 @@ async function negativeTest(): Promise<void> {
 
 main()
 	.then(() => negativeTest())
-	.then(() => { simulatedUser.close(); })
+	.finally(() => { simulatedUser.close(); })
 	.catch((err) => {
 		console.error("Fatal error:", err);
 		process.exit(1);
