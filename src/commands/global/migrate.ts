@@ -2,7 +2,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { defineCommand } from "citty";
 import { LEGACY_DIR_NAME, PROJECT_DIR_NAME } from "../../core/data/project.js";
-import { rpcMigrate } from "../../core/rpc/migrate.js";
+import { migrateOverviewConsolidation, rpcMigrate } from "../../core/rpc/migrate.js";
 import { GoodplanError } from "../../util/errors.js";
 import { output } from "../../util/output.js";
 import { readStdin } from "../../util/stdin.js";
@@ -59,6 +59,17 @@ export const migrateCommand = defineCommand({
 				"DATA_NO_PROJECT",
 				`No ${PROJECT_DIR_NAME}/ or ${LEGACY_DIR_NAME}/ directory found. Cannot migrate without existing project artifacts.`,
 			);
+		}
+
+		// ── Automatic overview consolidation ────────────────────────
+		// For already-initialized projects with old-style separate overview files,
+		// consolidate into unified overview.json before entering the Q&A protocol.
+		const projectJsonPath = path.join(projectDir, "project.json");
+		if (fs.existsSync(projectJsonPath)) {
+			const consolidated = migrateOverviewConsolidation(projectDir);
+			if (consolidated) {
+				process.stderr.write("[gp] Overview files consolidated into unified overview.json\n");
+			}
 		}
 
 		// Read stdin — empty object means no input (TTY or empty pipe)

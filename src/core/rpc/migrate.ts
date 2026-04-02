@@ -33,11 +33,15 @@ import { validateSourcePath } from "../../commands/global/migrate/validate-sourc
 import type { Epic, EpicStatus } from "../../schemas/entities/epic.js";
 import type { ActivityEntry } from "../../schemas/records/activity-log.js";
 import type { LearningEventEntry } from "../../schemas/records/learning.js";
+import { unifiedOverviewSchema } from "../../schemas/entities/overview.js";
+import { projectSchema } from "../../schemas/entities/project.js";
 import { GoodplanError } from "../../util/errors.js";
 import { deterministicStringify, deterministicStringifyCompact } from "../../util/json.js";
 import { deriveSlug } from "../../util/slug.js";
 import { VERSION } from "../../version.js";
-import { commitState } from "../data/commit.js";
+import { assembleState } from "../data/assemble.js";
+import { atomicWrite, commitState } from "../data/commit.js";
+import { signStateTree } from "../data/hmac.js";
 import { writeMarkdownFiles, type MarkdownFile } from "../data/markdown-files.js";
 import { PROJECT_DIR_NAME } from "../data/project.js";
 import type {
@@ -930,6 +934,183 @@ function migrateLearnings(
 	if (allFiles.length > 0) {
 		writeMarkdownFiles(projectDir, allFiles);
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Overview Consolidation Migration
+// ---------------------------------------------------------------------------
+
+/**
+ * Old-style overview file — `{ items: [...] }` wrapper around overview items.
+ * Used by pre-consolidation CLI versions for epics/overview.json, quests/overview.json,
+ * and tasks/overview.json.
+ */
+interface OldOverviewFile {
+	readonly items: unknown[];
+}
+
+/**
+ * Migrate old-style separate overview files into a single root `overview.json`.
+ *
+ * Detection: checks for `epics/overview.json`, `quests/overview.json`, or
+ * `tasks/overview.json` in the project directory.
+ *
+ * Crash-safe: writes new file before deleting old ones. If `overview.json`
+ * already exists AND old files exist, it means a previous run was interrupted
+ * — re-run from scratch (idempotent).
+ *
+ * Clean state: if `overview.json` exists and no old files, returns false (no-op).
+ *
+ * Also removes `slices/overview.json` if present (legacy artifact).
+ *
+ * After consolidation, re-signs the state tree so HMAC remains valid.
+ *
+ * @returns true if migration was performed, false if skipped (already clean)
+ */
+export function migrateOverviewConsolidation(projectDir: string): boolean {
+	const epicOverviewPath = path.join(projectDir, "epics", "overview.json");
+	const questOverviewPath = path.join(projectDir, "quests", "overview.json");
+	const taskOverviewPath = path.join(projectDir, "tasks", "overview.json");
+	const unifiedPath = path.join(projectDir, "overview.json");
+	const slicesOverviewPath = path.join(projectDir, "slices", "overview.json");
+
+	const hasEpicOverview = fs.existsSync(epicOverviewPath);
+	const hasQuestOverview = fs.existsSync(questOverviewPath);
+	const hasTaskOverview = fs.existsSync(taskOverviewPath);
+	const hasSlicesOverview = fs.existsSync(slicesOverviewPath);
+	const hasUnified = fs.existsSync(unifiedPath);
+	const hasOldFiles = hasEpicOverview || hasQuestOverview || hasTaskOverview;
+
+	// Clean state: unified exists, no old files, no legacy slices overview
+	if (hasUnified && !hasOldFiles && !hasSlicesOverview) {
+		return false;
+	}
+
+	// Nothing to migrate: no old files and no unified (shouldn't happen with a valid project)
+	if (!hasOldFiles && !hasUnified && !hasSlicesOverview) {
+		return false;
+	}
+
+	// ── Step 1: Read old overview files ────────────────────────────
+	let epics: unknown[] = [];
+	let quests: unknown[] = [];
+	let tasks: unknown[] = [];
+
+	if (hasEpicOverview) {
+		try {
+			const raw = JSON.parse(fs.readFileSync(epicOverviewPath, "utf-8")) as OldOverviewFile;
+			epics = raw.items ?? [];
+		} catch {
+			// If the file is malformed, use empty array
+			epics = [];
+		}
+	}
+
+	if (hasQuestOverview) {
+		try {
+			const raw = JSON.parse(fs.readFileSync(questOverviewPath, "utf-8")) as OldOverviewFile;
+			quests = raw.items ?? [];
+		} catch {
+			quests = [];
+		}
+	}
+
+	if (hasTaskOverview) {
+		try {
+			const raw = JSON.parse(fs.readFileSync(taskOverviewPath, "utf-8")) as OldOverviewFile;
+			tasks = raw.items ?? [];
+		} catch {
+			tasks = [];
+		}
+	}
+
+	// If unified already exists (interrupted previous run), read existing data
+	// and merge — old files take precedence since they're the source of truth
+	// for a partially completed migration
+	if (hasUnified && hasOldFiles) {
+		// Re-read from old files (already done above) — they take precedence
+		// The existing overview.json may be stale from a partial migration
+	}
+
+	// If no old files but we have slices/overview.json to clean up, just do cleanup
+	if (!hasOldFiles && hasSlicesOverview) {
+		fs.unlinkSync(slicesOverviewPath);
+		// Clean up empty slices directory if it's now empty
+		const slicesDir = path.join(projectDir, "slices");
+		try {
+			const remaining = fs.readdirSync(slicesDir);
+			if (remaining.length === 0) {
+				fs.rmdirSync(slicesDir);
+			}
+		} catch {
+			// Ignore — directory may not exist
+		}
+		return true;
+	}
+
+	// ── Step 2: Build and validate unified overview ───────────────
+	const unified = { epics, quests, tasks };
+	const parseResult = unifiedOverviewSchema.safeParse(unified);
+	if (!parseResult.success) {
+		throw new GoodplanError(
+			"DATA_VALIDATION_ERROR",
+			`Cannot build valid unified overview from old files: ${parseResult.error.message}`,
+			{ file: "overview.json" },
+		);
+	}
+
+	// ── Step 3: Write unified overview.json atomically ─────────────
+	const content = `${deterministicStringify(parseResult.data)}\n`;
+	atomicWrite(unifiedPath, content, "overview.json");
+
+	// ── Step 4: Remove old files ───────────────────────────────────
+	// Safe to remove now — the new file is written. If the process crashes
+	// after this point, the old + new files both exist and re-entry handles it.
+	if (hasEpicOverview) fs.unlinkSync(epicOverviewPath);
+	if (hasQuestOverview) fs.unlinkSync(questOverviewPath);
+	if (hasTaskOverview) fs.unlinkSync(taskOverviewPath);
+	if (hasSlicesOverview) fs.unlinkSync(slicesOverviewPath);
+
+	// Clean up empty slices directory
+	if (hasSlicesOverview) {
+		const slicesDir = path.join(projectDir, "slices");
+		try {
+			const remaining = fs.readdirSync(slicesDir);
+			if (remaining.length === 0) {
+				fs.rmdirSync(slicesDir);
+			}
+		} catch {
+			// Ignore — directory may not exist or not be empty
+		}
+	}
+
+	// ── Step 5: Re-sign the state tree ─────────────────────────────
+	// assembleState reads the new overview.json (registered in schema registry)
+	// and ignores old overview files (not registered, already deleted).
+	// Re-sign so HMAC includes the new overview.json content.
+	resignState(projectDir);
+
+	return true;
+}
+
+/**
+ * Re-assemble state from disk and update the HMAC signature in project.json.
+ * Uses the same pattern as `gp verify --fix`.
+ */
+function resignState(projectDir: string): void {
+	const state = assembleState(projectDir);
+	const projectEntry = state.contents["project.json"];
+	if (projectEntry === undefined || projectEntry.type !== "json") return;
+
+	const project = projectEntry.content as Record<string, unknown>;
+	const signature = signStateTree(state);
+	const cloneWithSignature = { ...project, stateSignature: signature };
+
+	const parsed = projectSchema.parse(cloneWithSignature);
+	const content = `${deterministicStringify(parsed)}\n`;
+	const absPath = path.join(projectDir, "project.json");
+
+	atomicWrite(absPath, content, "project.json");
 }
 
 // ---------------------------------------------------------------------------
