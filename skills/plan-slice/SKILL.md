@@ -318,7 +318,7 @@ Check exit conditions:
 2. **Stagnation**: if this is not the first round and `netScore === previous netScore` (exactly equal) → increment `stagnationCount`. If `stagnationCount >= 2` (two consecutive no-change rounds) → exit loop, submit best version. If `stagnationCount === 1`, log a warning but continue.
 3. **Reduction**: if `netScore < previous netScore` → reset `stagnationCount` to 0 and increment `reductionCount`. If `reductionCount >= 2` (two total reduction rounds, any position) → exit loop, submit best version.
 4. **Improvement**: if `netScore > previous netScore` → reset `stagnationCount` to 0. Continue.
-5. **Hard cap**: if `iteration >= 9` (0-indexed, so 10 rounds) → exit loop, submit best version.
+5. **Hard cap**: if `iteration >= maxIterations - 1` → exit loop, submit best version. Default `maxIterations` is 10. If `$GP_PLAN_SLICE_MAX_ITERATIONS` env var is set, use that value instead (enables cost control in test harness).
 
 If none triggered → proceed to editor.
 
