@@ -77,6 +77,7 @@ When you need to test skills or plugins in a live Claude Code session, use the A
 | `test-onboard.ts` | `/onboard-repo` skill end-to-end | `bun tools/dogfood/test-onboard.ts` |
 | `test-migrate.ts` | `/migrate` skill end-to-end | `bun tools/dogfood/test-migrate.ts` |
 | `test-plan-slice.ts` | `/gp:plan-slice` orchestrator end-to-end | `bun tools/dogfood/test-plan-slice.ts [--model <model>] [--max-iterations <n>]` |
+| `test-create-epic.ts` | `/gp:create-epic` orchestrator end-to-end | `bun tools/dogfood/test-create-epic.ts [--model <model>] [--max-iterations <n>]` |
 | `validate.ts` | Full workflow (2 epics + 2 quests) | `bun tools/dogfood/validate.ts` |
 | `harness.ts` | Multi-phase dogfooding | `bun tools/dogfood/harness.ts [phase] [step]` |
 
