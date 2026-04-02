@@ -1,5 +1,8 @@
 # Plan: Test Harness Foundation
 
+Status: COMPLETE
+Completed: 2026-04-01
+
 ## Overview
 
 Upgrade the Agent SDK test harness at `tools/dogfood/` to support the new consolidated skill model. The harness currently auto-selects the first option for every AskUserQuestion and hardcodes models per-file. This plan introduces four capabilities: shared utilities (extracted from duplicated code across 5 harness scripts), a stateless simulated-user that answers skill questions like a real user would (using `canUseTool` + `messages.create()` + raw transcript file), configurable model selection with tier-based defaults, and minimal fixture creation with real source code.
