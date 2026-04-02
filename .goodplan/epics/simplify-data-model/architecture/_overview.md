@@ -66,7 +66,7 @@ The orchestrator flow:
 4. If autonomous phase: spawn a named agent, receive compact summary
 5. Advance to next phase or exit
 
-**Agent definitions** live in `agents/` at the plugin root. Each `.md` file's body becomes the sub-agent's system prompt, loaded by Claude Code at spawn time — no Read permission needed. The `skills:` frontmatter field lists named skills whose full SKILL.md bodies are injected into the agent's context at startup. Each injectable reference (review preamble, output format, CLI conventions) must therefore be a skill directory with a SKILL.md file (`user-invocable: false`).
+**Agent definitions** live in `agents/` at the plugin root. Each `.md` file's body becomes the sub-agent's system prompt, loaded by Claude Code at spawn time — no Read permission needed. Shared content (review preamble, output format, CLI conventions) is injected via `@${CLAUDE_PLUGIN_ROOT}/path` references in the agent's markdown body. These references are resolved at agent load time by Claude Code, replacing the `@` line with the referenced file's content. This avoids the need for a separate `skills:` frontmatter injection mechanism (see issue #25834).
 
 ```
 goodplan-plugin/
@@ -132,7 +132,7 @@ This enables the user to start a skill, step away, and return to completed work 
 - Each phase must write its output to disk before the orchestrator advances (crash recovery)
 - Budget: ~25K tokens typical orchestrator context (Q&A + summaries). Worst-case estimate for `create-epic` (longest pipeline): ~15K Q&A (deep design tree) + ~5K CLI status calls + ~30K sub-agent return summaries (30 spawns x ~1K avg) + ~60K spawn overhead (tool definitions, system prompt injection at ~2-3K per spawn) = **~110K total session context** (~11% of 1M window). Shorter pipelines (`plan-slice`, `create-side-quest`) stay well under 50K. The key constraint is that orchestrator-owned context (Q&A + summaries + CLI output, excluding spawn overhead) should stay under ~50K to leave ample budget for sub-agent work.
 - Use Agent tool directly to spawn named agents (not `context: fork` + `agent:` which has open bug #16803)
-- Agent definitions solve the plugin file permission issue: shared references are injected via `skills:` frontmatter, not Read tool calls
+- Agent definitions solve the plugin file permission issue: shared references are injected via `@${CLAUDE_PLUGIN_ROOT}/path` references in the agent's markdown body at load time, not Read tool calls (see note above re: `skills:` frontmatter being broken — issue #25834)
 
 ### Re-entry Protocol
 
