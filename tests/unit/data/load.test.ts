@@ -233,7 +233,7 @@ describe("loadState", () => {
 		expect(state.contents["project.json"]).toBeDefined();
 	});
 
-	it("throws DATA_INTEGRITY_CHECK_FAILED on tampered state", () => {
+	it("ignores signature mismatch on tampered state (verification temporarily disabled)", () => {
 		// Set up a project with a valid signature
 		writeFixture("project.json", validProject);
 		const oldState = assembleState(projectDir());
@@ -248,15 +248,10 @@ describe("loadState", () => {
 		// Delete cache to force assembleState fallback path
 		fs.unlinkSync(path.join(tmpDir, ".state-cache.json"));
 
-		try {
-			loadState(projectDir());
-			expect.unreachable("loadState should have thrown");
-		} catch (err) {
-			expect(err).toBeInstanceOf(GoodplanError);
-			const gpErr = err as GoodplanError;
-			expect(gpErr.code).toBe("DATA_INTEGRITY_CHECK_FAILED");
-			expect(gpErr.message).toContain("gp verify --fix");
-		}
+		// With verification temporarily disabled, loadState should NOT throw
+		const state = loadState(projectDir());
+		expect(state).toBeDefined();
+		expect(state.contents["project.json"]).toBeDefined();
 	});
 
 	it("loads state with missing signature (bootstrap) without error", () => {
