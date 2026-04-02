@@ -11,6 +11,7 @@ export const learningEntrySchema = z.object({
 	source: z.string().min(1),
 	rollup: z.boolean(),
 	rollupTo: z.array(z.string()),
+	validUntil: z.array(z.string()).optional(),
 });
 export type LearningEntry = z.infer<typeof learningEntrySchema>;
 
@@ -30,5 +31,6 @@ export const learningInputSchema = z.object({
 	detail: z.string().min(1),
 	tags: z.array(z.string()),
 	rollupTo: z.array(z.enum(["epic", "project"])),
+	validUntil: z.array(z.string()).optional(),
 });
 export type LearningInput = z.infer<typeof learningInputSchema>;

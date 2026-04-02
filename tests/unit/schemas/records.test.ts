@@ -174,6 +174,29 @@ describe("learningEntrySchema", () => {
 		const { file: _, ...legacy } = validLearning;
 		expect(learningEntrySchema.safeParse({ ...legacy, detail: "some detail" }).success).toBe(false);
 	});
+
+	it("accepts learning with validUntil", () => {
+		expect(
+			learningEntrySchema.safeParse({
+				...validLearning,
+				validUntil: ["Build pipeline migrates to TypeScript"],
+			}).success,
+		).toBe(true);
+	});
+
+	it("accepts learning with empty validUntil array", () => {
+		expect(
+			learningEntrySchema.safeParse({
+				...validLearning,
+				validUntil: [],
+			}).success,
+		).toBe(true);
+	});
+
+	it("accepts learning without validUntil (backward compat)", () => {
+		// validLearning has no validUntil — should still parse
+		expect(learningEntrySchema.safeParse(validLearning).success).toBe(true);
+	});
 });
 
 // --- Architecture Delta ---

@@ -149,6 +149,7 @@ function mapLearningInputs(
 			source,
 			rollup: input.rollupTo.length > 0,
 			rollupTo: input.rollupTo,
+			...(input.validUntil !== undefined ? { validUntil: input.validUntil } : {}),
 		});
 
 		// Scope-relative file path resolved to .goodplan/ path

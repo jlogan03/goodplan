@@ -246,6 +246,77 @@ describe("complete — learnings directory pattern", () => {
 	});
 });
 
+describe("complete — validUntil field", () => {
+	it("roundtrips validUntil through slice completion", () => {
+		setupSliceInImplementationComplete();
+
+		complete(
+			projectDir,
+			{ type: "slice", name: "s1", epic: "e1" },
+			{
+				type: "slice",
+				verificationPassed: true,
+				learnings: [
+					{
+						category: "domain",
+						summary: "Shell escaping matters",
+						detail: "Always use arrays for subprocess args",
+						tags: ["shell"],
+						rollupTo: ["epic", "project"],
+						validUntil: ["Build pipeline migrates to TypeScript"],
+					},
+				],
+			},
+		);
+
+		// Verify slice-level JSONL has validUntil
+		const sliceJsonl = path.join(projectDir, "epics", "e1", "slices", "s1", "learnings.jsonl");
+		const sliceContent = fs.readFileSync(sliceJsonl, "utf-8");
+		const sliceEntries = sliceContent.trim().split("\n").map((line) => JSON.parse(line));
+		expect(sliceEntries[sliceEntries.length - 1].validUntil).toEqual(["Build pipeline migrates to TypeScript"]);
+
+		// Verify epic-level rollup also has validUntil
+		const epicJsonl = path.join(projectDir, "epics", "e1", "learnings.jsonl");
+		const epicContent = fs.readFileSync(epicJsonl, "utf-8");
+		const epicEntries = epicContent.trim().split("\n").map((line) => JSON.parse(line));
+		expect(epicEntries[epicEntries.length - 1].validUntil).toEqual(["Build pipeline migrates to TypeScript"]);
+
+		// Verify project-level rollup also has validUntil
+		const projectJsonl = path.join(projectDir, "learnings.jsonl");
+		const projectContent = fs.readFileSync(projectJsonl, "utf-8");
+		const projectEntries = projectContent.trim().split("\n").map((line) => JSON.parse(line));
+		expect(projectEntries[projectEntries.length - 1].validUntil).toEqual(["Build pipeline migrates to TypeScript"]);
+	});
+
+	it("omits validUntil when not provided (backward compat)", () => {
+		setupSliceInImplementationComplete();
+
+		complete(
+			projectDir,
+			{ type: "slice", name: "s1", epic: "e1" },
+			{
+				type: "slice",
+				verificationPassed: true,
+				learnings: [
+					{
+						category: "domain",
+						summary: "No validity constraint",
+						detail: "This learning has no expiration",
+						tags: [],
+						rollupTo: [],
+					},
+				],
+			},
+		);
+
+		const sliceJsonl = path.join(projectDir, "epics", "e1", "slices", "s1", "learnings.jsonl");
+		const sliceContent = fs.readFileSync(sliceJsonl, "utf-8");
+		const sliceEntries = sliceContent.trim().split("\n").map((line) => JSON.parse(line));
+		const lastEntry = sliceEntries[sliceEntries.length - 1];
+		expect(lastEntry).not.toHaveProperty("validUntil");
+	});
+});
+
 describe("complete — quest learnings directory pattern", () => {
 	function setupQuestInImplementationComplete() {
 		rpcInit(projectDir, "test");
