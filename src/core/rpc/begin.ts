@@ -46,6 +46,15 @@ export function begin<P extends BeginPhase>(
 	options?: WorkflowOptions,
 ): P extends "rollup" ? RollupResult : BeginResult {
 	const oldState = loadState(projectDir);
+
+	// Validate entityPath for create-decision before building event
+	if (phase === "create-decision") {
+		const cdPayload = payload as BeginPayloadMap["create-decision"];
+		if (cdPayload.entityPath !== undefined) {
+			validateEntityPath(oldState, cdPayload.entityPath);
+		}
+	}
+
 	const ts = new Date().toISOString();
 	const event = buildBeginEvent(phase, target, payload, ts);
 
@@ -189,6 +198,8 @@ function buildBeginEvent<P extends BeginPhase>(
 				domain: cdp.domain,
 				title: cdp.title,
 				summary: cdp.summary,
+				...(cdp.entityPath !== undefined ? { entityPath: cdp.entityPath } : {}),
+				...(cdp.reconsiderWhen !== undefined ? { reconsiderWhen: cdp.reconsiderWhen } : {}),
 				ts,
 			};
 		}
@@ -476,6 +487,48 @@ function collectRollupMarkdownCopies(
 }
 
 // ── Helpers ──────────────────────────────────────────────────
+
+/**
+ * Validate that entityPath resolves to an existing entity in the state tree.
+ * Acceptable paths: epics/<name>, epics/<name>/slices/<name>, quests/<name>, tasks/<name>.
+ * Validation uses getJson() against the in-memory state tree — no filesystem I/O.
+ */
+function validateEntityPath(state: ProjectState, entityPath: string): void {
+	const segments = entityPath.split("/").filter((s) => s.length > 0);
+	const first = segments[0];
+
+	// Determine which JSON file to look up based on path structure
+	let jsonPath: string | undefined;
+
+	if (first === "epics" && segments.length === 2) {
+		// epics/<name> → epic.json
+		jsonPath = `${entityPath}/epic.json`;
+	} else if (first === "epics" && segments.length === 4 && segments[2] === "slices") {
+		// epics/<name>/slices/<name> → slice.json
+		jsonPath = `${entityPath}/slice.json`;
+	} else if (first === "quests" && segments.length === 2) {
+		// quests/<name> → quest.json
+		jsonPath = `${entityPath}/quest.json`;
+	} else if (first === "tasks" && segments.length === 2) {
+		// tasks/<name> → task.json
+		jsonPath = `${entityPath}/task.json`;
+	}
+
+	if (jsonPath === undefined) {
+		throw new GoodplanError(
+			"VALIDATION_INVALID_INPUT",
+			`Invalid entityPath "${entityPath}": must be epics/<name>, epics/<name>/slices/<name>, quests/<name>, or tasks/<name>`,
+		);
+	}
+
+	const entry = getJson(state, jsonPath);
+	if (entry === undefined) {
+		throw new GoodplanError(
+			"VALIDATION_INVALID_INPUT",
+			`entityPath "${entityPath}" does not resolve to an existing entity`,
+		);
+	}
+}
 
 function requireEpicName(target: Target): string {
 	if (target.type !== "epic") {

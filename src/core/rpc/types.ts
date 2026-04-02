@@ -88,7 +88,7 @@ export interface WorkflowOptions {
  */
 export interface BeginPayloadMap {
 	create: { name: string; goal?: string; epic?: string };
-	"create-decision": { id: string; domain: string; title: string; summary: string };
+	"create-decision": { id: string; domain: string; title: string; summary: string; entityPath?: string; reconsiderWhen?: string[] };
 	"create-task": { name: string; title: string; description?: string; context?: TaskContext };
 	"drop-task": { reason: string };
 	"convert-task": { to: "quest" | "epic"; name?: string; goal?: string };

@@ -12,5 +12,7 @@ export const decisionEntrySchema = z.object({
 	summary: z.string().min(1),
 	date: z.string().date(),
 	supersededBy: z.string().nullable(),
+	entityPath: z.string().min(1).optional(),
+	reconsiderWhen: z.array(z.string().min(1)).optional(),
 });
 export type DecisionEntry = z.infer<typeof decisionEntrySchema>;

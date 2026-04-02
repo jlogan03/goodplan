@@ -125,6 +125,8 @@ export type StateEvent =
 			domain: string;
 			title: string;
 			summary: string;
+			entityPath?: string;
+			reconsiderWhen?: string[];
 			ts: string;
 	  }
 	| {

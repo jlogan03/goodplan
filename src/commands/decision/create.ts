@@ -39,6 +39,8 @@ export const decisionCreateCommand = defineCommand({
 				domain: input.domain,
 				title: input.title,
 				summary: input.summary,
+				...(input.entityPath !== undefined ? { entityPath: input.entityPath } : {}),
+				...(input.reconsiderWhen !== undefined ? { reconsiderWhen: input.reconsiderWhen } : {}),
 			},
 		);
 

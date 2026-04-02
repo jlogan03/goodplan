@@ -54,6 +54,15 @@ export const decisionShowCommand = defineCommand({
 			if (decision.supersededBy != null) {
 				lines.push(`  Superseded by: ${decision.supersededBy}`);
 			}
+			if (decision.entityPath !== undefined) {
+				lines.push(`  Scope: ${decision.entityPath}`);
+			}
+			if (decision.reconsiderWhen !== undefined && decision.reconsiderWhen.length > 0) {
+				lines.push(`  Reconsider when:`);
+				for (const condition of decision.reconsiderWhen) {
+					lines.push(`    - ${condition}`);
+				}
+			}
 			output(lines.join("\n"), args);
 		}
 	},

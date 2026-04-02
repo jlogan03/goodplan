@@ -34,6 +34,8 @@ export function handleCreateDecision(
 		summary: event.summary,
 		date: event.ts.slice(0, 10), // ISO 8601 date portion
 		supersededBy: null,
+		...(event.entityPath !== undefined ? { entityPath: event.entityPath } : {}),
+		...(event.reconsiderWhen !== undefined ? { reconsiderWhen: event.reconsiderWhen } : {}),
 	};
 
 	let tree = setEntry(state, "decisions.jsonl", {

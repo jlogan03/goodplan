@@ -370,3 +370,153 @@ describe("begin — paths field", () => {
 		expect(result.paths).toEqual({});
 	});
 });
+
+describe("begin — create-decision with provenance fields", () => {
+	it("creates decision with entityPath and reconsiderWhen", () => {
+		initProject();
+		begin(projectDir, "create", { type: "epic", name: "my-epic" }, { name: "my-epic", goal: "Build things" });
+
+		const result = begin(
+			projectDir,
+			"create-decision",
+			{ type: "decision", id: "dec-prov" },
+			{
+				id: "dec-prov",
+				domain: "architecture",
+				title: "Provenance Test",
+				summary: "Decision with provenance",
+				entityPath: "epics/my-epic",
+				reconsiderWhen: ["Binary exceeds 100MB"],
+			},
+		);
+
+		expect(result.entity).toBe("dec-prov");
+		expect(result.newStatus).toBe("active");
+
+		// Verify persisted data includes new fields
+		const decisionsPath = path.join(projectDir, "decisions.jsonl");
+		const lines = fs.readFileSync(decisionsPath, "utf-8").trim().split("\n");
+		const decision = JSON.parse(lines[lines.length - 1]!);
+		expect(decision.entityPath).toBe("epics/my-epic");
+		expect(decision.reconsiderWhen).toEqual(["Binary exceeds 100MB"]);
+	});
+
+	it("creates decision without provenance fields (backward compat)", () => {
+		initProject();
+
+		const result = begin(
+			projectDir,
+			"create-decision",
+			{ type: "decision", id: "dec-noprov" },
+			{
+				id: "dec-noprov",
+				domain: "testing",
+				title: "No Provenance",
+				summary: "Test backward compat",
+			},
+		);
+
+		expect(result.entity).toBe("dec-noprov");
+		expect(result.newStatus).toBe("active");
+
+		const decisionsPath = path.join(projectDir, "decisions.jsonl");
+		const lines = fs.readFileSync(decisionsPath, "utf-8").trim().split("\n");
+		const decision = JSON.parse(lines[lines.length - 1]!);
+		expect(decision.entityPath).toBeUndefined();
+		expect(decision.reconsiderWhen).toBeUndefined();
+	});
+
+	it("rejects invalid entityPath (nonexistent entity)", () => {
+		initProject();
+
+		expect(() =>
+			begin(
+				projectDir,
+				"create-decision",
+				{ type: "decision", id: "dec-bad" },
+				{
+					id: "dec-bad",
+					domain: "testing",
+					title: "Bad Path",
+					summary: "Invalid entity path",
+					entityPath: "epics/nonexistent",
+				},
+			),
+		).toThrow(GoodplanError);
+
+		expect(() =>
+			begin(
+				projectDir,
+				"create-decision",
+				{ type: "decision", id: "dec-bad" },
+				{
+					id: "dec-bad",
+					domain: "testing",
+					title: "Bad Path",
+					summary: "Invalid entity path",
+					entityPath: "epics/nonexistent",
+				},
+			),
+		).toThrow(/does not resolve/);
+	});
+
+	it("rejects malformed entityPath (invalid structure)", () => {
+		initProject();
+
+		expect(() =>
+			begin(
+				projectDir,
+				"create-decision",
+				{ type: "decision", id: "dec-bad2" },
+				{
+					id: "dec-bad2",
+					domain: "testing",
+					title: "Bad Structure",
+					summary: "Invalid path structure",
+					entityPath: "decisions/foo",
+				},
+			),
+		).toThrow(GoodplanError);
+
+		expect(() =>
+			begin(
+				projectDir,
+				"create-decision",
+				{ type: "decision", id: "dec-bad2" },
+				{
+					id: "dec-bad2",
+					domain: "testing",
+					title: "Bad Structure",
+					summary: "Invalid path structure",
+					entityPath: "some/deep/nested/path/that/is/wrong",
+				},
+			),
+		).toThrow(/Invalid entityPath/);
+	});
+
+	it("accepts valid slice entityPath", () => {
+		initProject();
+		begin(projectDir, "create", { type: "epic", name: "e1" }, { name: "e1", goal: "G" });
+		begin(projectDir, "create", { type: "slice", name: "s1", epic: "e1" }, { name: "s1", goal: "S", epic: "e1" });
+
+		const result = begin(
+			projectDir,
+			"create-decision",
+			{ type: "decision", id: "dec-slice" },
+			{
+				id: "dec-slice",
+				domain: "testing",
+				title: "Slice Scope",
+				summary: "Scoped to a slice",
+				entityPath: "epics/e1/slices/s1",
+			},
+		);
+
+		expect(result.entity).toBe("dec-slice");
+
+		const decisionsPath = path.join(projectDir, "decisions.jsonl");
+		const lines = fs.readFileSync(decisionsPath, "utf-8").trim().split("\n");
+		const decision = JSON.parse(lines[lines.length - 1]!);
+		expect(decision.entityPath).toBe("epics/e1/slices/s1");
+	});
+});
