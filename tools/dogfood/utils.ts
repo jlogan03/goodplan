@@ -165,10 +165,14 @@ export function verifyEntityStatus(
 	type: "epic" | "slice" | "quest",
 	name: string,
 	expected: string,
-	opts?: { cwd?: string; gpBin?: string },
+	opts?: { cwd?: string; gpBin?: string; epic?: string },
 ): { ok: boolean; actual: string } {
 	try {
-		const data = gpJson<{ status: string }>([`${type}:show`, `--${type}`, name, "--json"], opts);
+		const args = [`${type}:show`, `--${type}`, name, "--json"];
+		if (opts?.epic && type === "slice") {
+			args.push("--epic", opts.epic);
+		}
+		const data = gpJson<{ status: string }>(args, opts);
 		return { ok: data.status === expected, actual: data.status };
 	} catch {
 		return { ok: false, actual: "not-found" };
@@ -794,6 +798,8 @@ export async function createMinimalFixture(opts?: {
 	epicName?: string;
 	sliceName?: string;
 	withSource?: boolean;
+	/** Fast-track the epic through the full lifecycle to 'activated' status (default: false). Required for slice operations that need an active epic. */
+	activateEpic?: boolean;
 	/** Custom goal text for the slice (default: "Test slice goal") */
 	sliceGoal?: string;
 	/** Number of slices to create (default: 1). Names are <sliceName>, <sliceName>-2, etc. */
@@ -896,7 +902,50 @@ export async function createMinimalFixture(opts?: {
 			}
 		}
 
-		// Write pre-existing architecture files if provided
+		// Fast-track epic to 'activated' status if requested
+		if (opts?.activateEpic) {
+			// Explore → explored
+			gp(["epic:explore", "--epic", epicName, "--json"], { cwd: tmpDir });
+			const ecDir = join(tmpDir, ".goodplan", "epics", epicName);
+			mkdirSync(ecDir, { recursive: true });
+			writeFileSync(join(ecDir, "explore-complete.md"), "# Explore Complete\n");
+			gp(["submit-explore", "--epic", epicName, "--json"], { cwd: tmpDir });
+
+			// Architecture → architecture-defined → architecture-refined
+			gp(["epic:define-architecture", "--epic", epicName, "--json"], { cwd: tmpDir });
+			const epicArchDir = join(ecDir, "architecture");
+			mkdirSync(epicArchDir, { recursive: true });
+			writeFileSync(join(epicArchDir, "_overview.md"), "# Architecture Overview\n\nMinimal fixture architecture.\n");
+			gp(["submit-architecture", "--epic", epicName, "--json"], { cwd: tmpDir });
+			gp(["submit-refine-architecture", "--epic", epicName, "--json"], {
+				cwd: tmpDir,
+				stdin: JSON.stringify({ scores: { overall: 9 } }),
+			});
+
+			// Slices → slices-defined → slices-refined
+			gp(["epic:define-slices", "--epic", epicName, "--json"], { cwd: tmpDir });
+			gp(["submit-slices", "--epic", epicName, "--json"], { cwd: tmpDir });
+			gp(["submit-refine-slices", "--epic", epicName, "--json"], {
+				cwd: tmpDir,
+				stdin: JSON.stringify({ scores: { overall: 9 } }),
+			});
+
+			// Add verification + activate
+			gp(["epic:add-verification", "--epic", epicName, "--json"], {
+				cwd: tmpDir,
+				stdin: JSON.stringify({
+					verification: {
+						description: "Fixture verification",
+						status: "pending",
+						addedDuring: "fixture-setup",
+						modifiedDuring: null,
+					},
+				}),
+			});
+			gp(["epic:activate", "--epic", epicName, "--json"], { cwd: tmpDir });
+		}
+
+		// Write pre-existing architecture files if provided (after activation so they don't conflict)
 		if (opts?.architectureFiles) {
 			const archDir = join(tmpDir, ".goodplan", "architecture");
 			mkdirSync(archDir, { recursive: true });

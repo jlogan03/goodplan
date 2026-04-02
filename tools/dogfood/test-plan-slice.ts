@@ -16,7 +16,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import {
@@ -94,6 +94,39 @@ if (!existsSync(GP_BIN)) {
 	process.exit(1);
 }
 
+// Sync new skills from dist to installed cache so the Agent SDK can discover them.
+// The Agent SDK loads plugin skills from the installed cache, not from the local dist.
+const installedSkillsDir = join(
+	HOME,
+	".claude/plugins/cache/goodplan-marketplace/goodplan",
+);
+try {
+	const versions = readdirSync(installedSkillsDir)
+		.filter((d: string) => statSync(join(installedSkillsDir, d)).isDirectory())
+		.sort()
+		.reverse();
+	const latestVersion = versions[0];
+	if (latestVersion) {
+		const installedPluginDir = join(installedSkillsDir, latestVersion);
+		// Sync plan-slice skill to installed cache
+		const srcSkill = join(PLUGIN_DIR, "skills", "plan-slice");
+		const dstSkill = join(installedPluginDir, "skills", "plan-slice");
+		if (existsSync(srcSkill) && !existsSync(dstSkill)) {
+			execFileSync("cp", ["-r", srcSkill, dstSkill]);
+			console.log("[test-plan-slice] Synced plan-slice skill to installed cache");
+		}
+		// Sync agents to installed cache
+		const srcAgents = join(PLUGIN_DIR, "agents");
+		const dstAgents = join(installedPluginDir, "agents");
+		if (existsSync(srcAgents)) {
+			execFileSync("rsync", ["-a", "--exclude", ".DS_Store", `${srcAgents}/`, `${dstAgents}/`]);
+			console.log("[test-plan-slice] Synced agents to installed cache");
+		}
+	}
+} catch (err) {
+	console.warn("[test-plan-slice] WARN: Could not sync to installed cache:", err instanceof Error ? err.message : String(err));
+}
+
 // ─── Logging ────────────────────────────────────────────────
 
 const logger = createLogger(LOG_FILE);
@@ -111,6 +144,7 @@ async function main(): Promise<void> {
 		sliceName: SLICE_NAME,
 		sliceGoal: SLICE_GOAL,
 		withSource: true,
+		activateEpic: true,
 		architectureFiles: {
 			"_overview.md": [
 				"# Architecture Overview",
@@ -143,6 +177,7 @@ async function main(): Promise<void> {
 	const preStatus = verifyEntityStatus("slice", SLICE_NAME, "created", {
 		cwd: fixtureDir,
 		gpBin: GP_BIN,
+		epic: EPIC_NAME,
 	});
 	if (!preStatus.ok) {
 		logger.log(`FAIL: Slice not in 'created' status (got: ${preStatus.actual})`);
@@ -237,6 +272,17 @@ async function main(): Promise<void> {
 		}
 	};
 
+	// ─── Load SKILL.md for injection ───────────────────────
+
+	const skillMdPath = join(PLUGIN_DIR, "skills", "plan-slice", "SKILL.md");
+	if (!existsSync(skillMdPath)) {
+		logger.log("FATAL: plan-slice SKILL.md not found in dist");
+		process.exit(1);
+	}
+	const skillContent = readFileSync(skillMdPath, "utf-8");
+	// Strip frontmatter — the LLM doesn't need it
+	const skillBody = skillContent.replace(/^---[\s\S]*?---\n/, "");
+
 	// ─── Run /gp:plan-slice ─────────────────────────────────
 
 	logger.log(
@@ -247,7 +293,7 @@ async function main(): Promise<void> {
 
 	try {
 		sessionResult = await runSkillSession({
-			prompt: `/gp:plan-slice ${SLICE_NAME}`,
+			prompt: `Execute the plan-slice skill for slice "${SLICE_NAME}". Follow the skill instructions in your system prompt completely through all phases.`,
 			options: {
 				cwd: fixtureDir,
 				permissionMode: "bypassPermissions",
@@ -265,9 +311,14 @@ async function main(): Promise<void> {
 					type: "preset",
 					preset: "claude_code",
 					append: [
-						"You are in an automated test harness. Execute the skill faithfully.",
+						"You are in an automated test harness. Execute the skill below faithfully.",
 						`Use at most ${MAX_ITERATIONS} refinement iterations for cost control.`,
 						"Do not ask the user to confirm — proceed automatically through all phases.",
+						"When AskUserQuestion is needed, use it (the harness has a simulated user).",
+						"",
+						"# Plan-Slice Skill Instructions",
+						"",
+						skillBody,
 					].join("\n"),
 				},
 			},
@@ -299,6 +350,7 @@ async function main(): Promise<void> {
 	const postStatus = verifyEntityStatus("slice", SLICE_NAME, "plan-refined", {
 		cwd: fixtureDir,
 		gpBin: GP_BIN,
+		epic: EPIC_NAME,
 	});
 	if (postStatus.ok) {
 		logger.log("PASS: Slice reached 'plan-refined' status");
