@@ -19,8 +19,7 @@ import type { StateError } from "../../../src/core/state/types.js";
 import type { ProjectState } from "../../../src/core/tree.js";
 import { ZERO_STATE, getJson, getJsonl, setEntry } from "../../../src/core/tree.js";
 import type { Epic } from "../../../src/schemas/entities/epic.js";
-import type { EpicOverview } from "../../../src/schemas/entities/overview.js";
-import type { Overview } from "../../../src/schemas/entities/overview.js";
+import type { UnifiedOverview } from "../../../src/schemas/entities/overview.js";
 import type { Quest } from "../../../src/schemas/entities/quest.js";
 import type { Slice } from "../../../src/schemas/entities/slice.js";
 import type { LearningEventEntry } from "../../../src/schemas/records/learning.js";
@@ -72,11 +71,13 @@ function makeQuest(overrides?: Partial<Quest>): Quest {
 function stateWithEpicAndOverview(epic: Epic): ProjectState {
 	let s: ProjectState = ZERO_STATE;
 	s = setEntry(s, "epics/e1/epic.json", { type: "json", content: epic });
-	s = setEntry(s, "epics/overview.json", {
+	s = setEntry(s, "overview.json", {
 		type: "json",
 		content: {
-			items: [{ name: "e1", status: epic.status, created: TS, completed: null, slices: [] }],
-		} satisfies EpicOverview,
+			epics: [{ name: "e1", status: epic.status, created: TS, completed: null, slices: [] }],
+			quests: [],
+			tasks: [],
+		} satisfies UnifiedOverview,
 	});
 	return s;
 }
@@ -86,13 +87,13 @@ function stateWithSliceAndOverview(slice: Slice): ProjectState {
 	let s = stateWithEpicAndOverview(epic);
 	s = setEntry(s, "epics/e1/slices/s1/slice.json", { type: "json", content: slice });
 	// Add slice to overview
-	const overview = getJson<EpicOverview>(s, "epics/overview.json");
+	const overview = getJson<UnifiedOverview>(s, "overview.json");
 	if (overview === undefined) throw new Error("overview.json not found in test fixture");
-	s = setEntry(s, "epics/overview.json", {
+	s = setEntry(s, "overview.json", {
 		type: "json",
 		content: {
 			...overview,
-			items: overview.items.map((item) =>
+			epics: overview.epics.map((item) =>
 				item.name === "e1"
 					? {
 							...item,
@@ -108,11 +109,13 @@ function stateWithSliceAndOverview(slice: Slice): ProjectState {
 function stateWithQuestAndOverview(quest: Quest): ProjectState {
 	let s: ProjectState = ZERO_STATE;
 	s = setEntry(s, "quests/q1/quest.json", { type: "json", content: quest });
-	s = setEntry(s, "quests/overview.json", {
+	s = setEntry(s, "overview.json", {
 		type: "json",
 		content: {
-			items: [{ name: "q1", status: quest.status, created: TS, completed: null }],
-		} satisfies Overview,
+			epics: [],
+			quests: [{ name: "q1", status: quest.status, created: TS, completed: null }],
+			tasks: [],
+		} satisfies UnifiedOverview,
 	});
 	return s;
 }
@@ -398,8 +401,8 @@ describe("setSliceStatus", () => {
 		expect(updated?.status).toBe("implementing");
 		expect(updated?.updated).toBe(TS2);
 
-		const overview = getJson<EpicOverview>(result, "epics/overview.json");
-		const epicItem = overview?.items.find((i) => i.name === "e1");
+		const overview = getJson<UnifiedOverview>(result, "overview.json");
+		const epicItem = overview?.epics.find((i) => i.name === "e1");
 		const sliceItem = epicItem?.slices.find((s) => s.name === "s1");
 		expect(sliceItem?.status).toBe("implementing");
 	});
@@ -418,8 +421,8 @@ describe("setQuestStatus", () => {
 		expect(updated?.status).toBe("planning");
 		expect(updated?.updated).toBe(TS2);
 
-		const overview = getJson<Overview>(result, "quests/overview.json");
-		const questItem = overview?.items.find((i) => i.name === "q1");
+		const overview = getJson<UnifiedOverview>(result, "overview.json");
+		const questItem = overview?.quests.find((i) => i.name === "q1");
 		expect(questItem?.status).toBe("planning");
 	});
 });
@@ -438,8 +441,8 @@ describe("setEpicStatus", () => {
 		expect(updated?.updated).toBe(TS2);
 
 		// Overview is NOT updated by setEpicStatus (that's updateOverviewStatus)
-		const overview = getJson<EpicOverview>(result, "epics/overview.json");
-		const item = overview?.items.find((i) => i.name === "e1");
+		const overview = getJson<UnifiedOverview>(result, "overview.json");
+		const item = overview?.epics.find((i) => i.name === "e1");
 		expect(item?.status).toBe("created");
 	});
 });

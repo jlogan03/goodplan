@@ -31,17 +31,9 @@ function createSignedProject(): string {
 		type: "directory",
 		contents: {
 			"project.json": { type: "json", content: projectContent },
-			epics: {
-				type: "directory",
-				contents: { "overview.json": { type: "json", content: { items: [] } } },
-			},
-			quests: {
-				type: "directory",
-				contents: { "overview.json": { type: "json", content: { items: [] } } },
-			},
-			tasks: {
-				type: "directory",
-				contents: { "overview.json": { type: "json", content: { items: [] } } },
+			"overview.json": {
+				type: "json",
+				content: { epics: [], quests: [], tasks: [] },
 			},
 			"activity-log.jsonl": { type: "jsonl", content: [] },
 			"decisions.jsonl": { type: "jsonl", content: [] },
@@ -61,20 +53,9 @@ function createUnsignedProject(): string {
 		path.join(projectDir, "project.json"),
 		`${deterministicStringify(projectContent)}\n`,
 	);
-	fs.mkdirSync(path.join(projectDir, "epics"), { recursive: true });
 	fs.writeFileSync(
-		path.join(projectDir, "epics/overview.json"),
-		`${deterministicStringify({ items: [] })}\n`,
-	);
-	fs.mkdirSync(path.join(projectDir, "quests"), { recursive: true });
-	fs.writeFileSync(
-		path.join(projectDir, "quests/overview.json"),
-		`${deterministicStringify({ items: [] })}\n`,
-	);
-	fs.mkdirSync(path.join(projectDir, "tasks"), { recursive: true });
-	fs.writeFileSync(
-		path.join(projectDir, "tasks/overview.json"),
-		`${deterministicStringify({ items: [] })}\n`,
+		path.join(projectDir, "overview.json"),
+		`${deterministicStringify({ epics: [], quests: [], tasks: [] })}\n`,
 	);
 	fs.writeFileSync(path.join(projectDir, "activity-log.jsonl"), "");
 	fs.writeFileSync(path.join(projectDir, "decisions.jsonl"), "");

@@ -36,23 +36,9 @@ function makeState(overrides?: Partial<typeof projectContent>): ProjectState {
 				type: "json",
 				content: { ...projectContent, ...overrides },
 			},
-			epics: {
-				type: "directory",
-				contents: {
-					"overview.json": { type: "json", content: { items: [] } },
-				},
-			},
-			quests: {
-				type: "directory",
-				contents: {
-					"overview.json": { type: "json", content: { items: [] } },
-				},
-			},
-			tasks: {
-				type: "directory",
-				contents: {
-					"overview.json": { type: "json", content: { items: [] } },
-				},
+			"overview.json": {
+				type: "json",
+				content: { epics: [], quests: [], tasks: [] },
 			},
 			"activity-log.jsonl": { type: "jsonl", content: [] },
 			"decisions.jsonl": { type: "jsonl", content: [] },

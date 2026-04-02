@@ -102,19 +102,24 @@ describe("assembleState", () => {
 	});
 
 	it("assembles nested directories", () => {
-		writeFixture("epics/overview.json", JSON.stringify({
-			items: [],
+		writeFixture("epics/test-epic/epic.json", JSON.stringify({
+			name: "test-epic",
+			goal: "Test",
+			status: "created",
+			verifications: [],
+			refinement: null,
 			created: "2026-01-01T00:00:00.000Z",
 			updated: "2026-01-01T00:00:00.000Z",
+			activated: null,
 		}));
 
 		const state = assembleState(projectDir());
 		const epicsDir = state.contents["epics"];
 		expect(epicsDir).toBeDefined();
 		expect(epicsDir!.type).toBe("directory");
-		const overview = (epicsDir as DirectoryEntry).contents["overview.json"];
-		expect(overview).toBeDefined();
-		expect(overview!.type).toBe("json");
+		const testEpicDir = (epicsDir as DirectoryEntry).contents["test-epic"];
+		expect(testEpicDir).toBeDefined();
+		expect(testEpicDir!.type).toBe("directory");
 	});
 
 	it("silently skips unregistered .json files", () => {
@@ -241,10 +246,10 @@ describe("assembleState", () => {
 		writeFixture("activity-log.jsonl", `${validActivityEntry}\n`);
 		writeFixture("decisions.jsonl", "");
 		writeFixture("learnings.jsonl", "");
-		writeFixture("epics/overview.json", JSON.stringify({
-			items: [],
-			created: "2026-01-01T00:00:00.000Z",
-			updated: "2026-01-01T00:00:00.000Z",
+		writeFixture("overview.json", JSON.stringify({
+			epics: [],
+			quests: [],
+			tasks: [],
 		}));
 		writeFixture("notes.md", "# Notes");
 
@@ -256,9 +261,6 @@ describe("assembleState", () => {
 		expect(state.contents["decisions.jsonl"]?.type).toBe("jsonl");
 		expect(state.contents["learnings.jsonl"]?.type).toBe("jsonl");
 		expect(state.contents["notes.md"]?.type).toBe("markdown");
-
-		const epics = state.contents["epics"] as DirectoryEntry;
-		expect(epics.type).toBe("directory");
-		expect(epics.contents["overview.json"]?.type).toBe("json");
+		expect(state.contents["overview.json"]?.type).toBe("json");
 	});
 });

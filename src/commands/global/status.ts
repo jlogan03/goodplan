@@ -6,7 +6,7 @@ import { getDir, getJson, getJsonl } from "../../core/data/tree.js";
 import type { DirectoryEntry, ProjectState } from "../../core/tree.js";
 import type { Artifacts, StatusResult } from "../../schemas/commands/status.js";
 import type { Epic } from "../../schemas/entities/epic.js";
-import type { EpicOverview, Overview } from "../../schemas/entities/overview.js";
+import type { UnifiedOverview } from "../../schemas/entities/overview.js";
 import type { Project } from "../../schemas/entities/project.js";
 import type { Quest } from "../../schemas/entities/quest.js";
 import type { Slice } from "../../schemas/entities/slice.js";
@@ -117,12 +117,12 @@ function countArtifacts(project: Project, state: ProjectState): Artifacts {
 	const decisions = getJsonl<DecisionEntry>(state, "decisions.jsonl");
 	const learnings = getJsonl<LearningEntry>(state, "learnings.jsonl");
 
-	// Slice overview for completed/total counts — aggregate across all epics
-	const epicOverview = getJson<EpicOverview>(state, "epics/overview.json");
+	// Unified overview for slice and task counts
+	const overview = getJson<UnifiedOverview>(state, "overview.json");
 	let completedSlices = 0;
 	let totalSlices = 0;
-	if (epicOverview !== undefined) {
-		for (const epicItem of epicOverview.items) {
+	if (overview !== undefined) {
+		for (const epicItem of overview.epics) {
 			for (const slice of epicItem.slices) {
 				totalSlices++;
 				if (slice.status === "completed") {
@@ -133,12 +133,11 @@ function countArtifacts(project: Project, state: ProjectState): Artifacts {
 	}
 
 	// Task overview for open/total counts
-	const taskOverview = getJson<Overview>(state, "tasks/overview.json");
 	let openTasks = 0;
 	let totalTasks = 0;
-	if (taskOverview !== undefined) {
-		totalTasks = taskOverview.items.length;
-		for (const item of taskOverview.items) {
+	if (overview !== undefined) {
+		totalTasks = overview.tasks.length;
+		for (const item of overview.tasks) {
 			if (item.status === "open") {
 				openTasks++;
 			}

@@ -6,7 +6,7 @@ import { reduce } from "../../../src/core/state/reduce.js";
 import { isStateError } from "../../../src/core/state/types.js";
 import type { StateError } from "../../../src/core/state/types.js";
 import type { Epic } from "../../../src/schemas/entities/epic.js";
-import type { EpicOverview } from "../../../src/schemas/entities/overview.js";
+import type { UnifiedOverview } from "../../../src/schemas/entities/overview.js";
 
 const TS = "2026-01-01T00:00:00.000Z";
 
@@ -56,7 +56,7 @@ describe("reduce — CREATE_EPIC", () => {
 		expect(getDir(result, "epics/my-epic/prototypes")).toBeDefined();
 	});
 
-	it("updates epics/overview.json", () => {
+	it("updates overview.json epics", () => {
 		const state = initProject();
 		const result = reduce(state, {
 			type: "CREATE_EPIC",
@@ -65,12 +65,12 @@ describe("reduce — CREATE_EPIC", () => {
 			ts: "2026-01-02T00:00:00.000Z",
 		}) as ProjectState;
 
-		const overview = getJson<EpicOverview>(result, "epics/overview.json");
+		const overview = getJson<UnifiedOverview>(result, "overview.json");
 		expect(overview).toBeDefined();
-		expect(overview!.items).toHaveLength(1);
-		expect(overview!.items[0]!.name).toBe("my-epic");
-		expect(overview!.items[0]!.status).toBe("created");
-		expect(overview!.items[0]!.slices).toEqual([]);
+		expect(overview!.epics).toHaveLength(1);
+		expect(overview!.epics[0]!.name).toBe("my-epic");
+		expect(overview!.epics[0]!.status).toBe("created");
+		expect(overview!.epics[0]!.slices).toEqual([]);
 	});
 
 	it("appends activity log entry", () => {

@@ -5,5 +5,6 @@
 	"created": "2026-01-01T00:00:00.000Z",
 	"name": "test-project",
 	"updated": "2026-01-01T00:00:00.000Z",
-	"version": "1.0.0"
+	"version": "1.0.0",
+	"stateSignature": "6e834985bedf78e046c1ad685f0c8a61261330ba7445e091343970f02660af44"
 }

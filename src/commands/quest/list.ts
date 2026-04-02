@@ -3,7 +3,7 @@ import pc from "picocolors";
 import { loadState } from "../../core/data/load.js";
 import { resolveProjectDir } from "../../core/data/project.js";
 import { getJson } from "../../core/tree.js";
-import type { Overview } from "../../schemas/entities/overview.js";
+import type { UnifiedOverview } from "../../schemas/entities/overview.js";
 import { output } from "../../util/output.js";
 import { applyPagination, formatPaginationFooter } from "../../util/pagination.js";
 import { globalArgs, listArgs } from "../global-args.js";
@@ -12,7 +12,7 @@ import { globalArgs, listArgs } from "../global-args.js";
  * `gp quest:list` — list all quests.
  *
  * Read-only: goes directly to the data layer, no RPC.
- * Returns { items: Array<{ name, status, created, completed }> } from quests/overview.json.
+ * Returns { items: Array<{ name, status, created, completed }> } from overview.json.
  */
 export const questListCommand = defineCommand({
 	meta: {
@@ -29,8 +29,8 @@ export const questListCommand = defineCommand({
 		const state = loadState(projectDir);
 
 		// Treat missing overview.json as empty list (supports projects with no quests yet)
-		const overview = getJson<Overview>(state, "quests/overview.json") ?? { items: [] };
-		const paginated = applyPagination(overview.items, args);
+		const overview = getJson<UnifiedOverview>(state, "overview.json");
+		const paginated = applyPagination(overview?.quests ?? [], args);
 
 		if (args.json || args.query) {
 			output(paginated, args);

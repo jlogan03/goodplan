@@ -174,15 +174,17 @@ describe("migrate: full flow", () => {
 			expect(projectJson.activeEpic).toBeNull(); // no active epics
 			expect(projectJson.activeQuest).toBeNull(); // fix-typos is "created", not active
 
-			// Epic overview
-			const epicOverviewPath = path.join(outputDir, "epics", "overview.json");
-			expect(fs.existsSync(epicOverviewPath)).toBe(true);
-			const epicOverview = JSON.parse(fs.readFileSync(epicOverviewPath, "utf-8")) as {
-				items: Array<{ name: string; status: string }>;
+			// Unified overview
+			const overviewPath = path.join(outputDir, "overview.json");
+			expect(fs.existsSync(overviewPath)).toBe(true);
+			const overview = JSON.parse(fs.readFileSync(overviewPath, "utf-8")) as {
+				epics: Array<{ name: string; status: string; slices?: Array<{ name: string }> }>;
+				quests: Array<{ name: string; status: string }>;
+				tasks: Array<unknown>;
 			};
-			expect(epicOverview.items).toHaveLength(1);
-			expect(epicOverview.items[0]?.name).toBe("test-epic");
-			expect(epicOverview.items[0]?.status).toBe("completed");
+			expect(overview.epics).toHaveLength(1);
+			expect(overview.epics[0]?.name).toBe("test-epic");
+			expect(overview.epics[0]?.status).toBe("completed");
 
 			// Slices nested under epic (no top-level slices/ directory)
 			const epicSlicesDir = path.join(outputDir, "epics", "test-epic", "slices");
@@ -190,20 +192,14 @@ describe("migrate: full flow", () => {
 			expect(fs.existsSync(path.join(epicSlicesDir, "first-slice", "slice.json"))).toBe(true);
 			expect(fs.existsSync(path.join(epicSlicesDir, "second-slice", "slice.json"))).toBe(true);
 			// Slice info embedded in epic overview
-			const epicOverviewSlices = epicOverview.items[0] as { slices?: Array<{ name: string }> };
-			expect(epicOverviewSlices.slices).toHaveLength(2);
-			const sliceNames = (epicOverviewSlices.slices ?? []).map((s) => s.name);
+			expect(overview.epics[0]?.slices).toHaveLength(2);
+			const sliceNames = (overview.epics[0]?.slices ?? []).map((s) => s.name);
 			expect(sliceNames).toContain("first-slice");
 			expect(sliceNames).toContain("second-slice");
 
 			// Quest overview
-			const questOverviewPath = path.join(outputDir, "quests", "overview.json");
-			expect(fs.existsSync(questOverviewPath)).toBe(true);
-			const questOverview = JSON.parse(fs.readFileSync(questOverviewPath, "utf-8")) as {
-				items: Array<{ name: string; status: string }>;
-			};
-			expect(questOverview.items).toHaveLength(2);
-			const questNames = questOverview.items.map((q) => q.name);
+			expect(overview.quests).toHaveLength(2);
+			const questNames = overview.quests.map((q) => q.name);
 			expect(questNames).toContain("fix-typos");
 			expect(questNames).toContain("cleanup-deps");
 
@@ -437,17 +433,17 @@ describe("buildMigrationState", () => {
 		expect(pj.activeEpic).toBeNull(); // completed, not active
 		expect(pj.activeQuest).toBeNull(); // created, not active
 
-		// Epics overview
+		// Unified overview
+		const overviewEntry = state.contents["overview.json"];
+		expect(overviewEntry).toBeDefined();
+		if (overviewEntry?.type !== "json") throw new Error("expected json");
+		const overviewContent = overviewEntry.content as { epics: unknown[]; quests: unknown[]; tasks: unknown[] };
+		expect(overviewContent.epics).toHaveLength(1);
+
+		// Epic entity
 		const epicsDir = state.contents.epics;
 		expect(epicsDir).toBeDefined();
 		if (epicsDir?.type !== "directory") throw new Error("expected dir");
-		const epicOverview = epicsDir.contents["overview.json"];
-		expect(epicOverview).toBeDefined();
-		if (epicOverview?.type !== "json") throw new Error("expected json");
-		const items = (epicOverview.content as { items: unknown[] }).items;
-		expect(items).toHaveLength(1);
-
-		// Epic entity
 		const epicDir = epicsDir.contents["epic-one"];
 		expect(epicDir).toBeDefined();
 		if (epicDir?.type !== "directory") throw new Error("expected dir");
@@ -470,13 +466,8 @@ describe("buildMigrationState", () => {
 		expect(sj.status).toBe("completed");
 		expect(sj.epic).toBe("epic-one");
 
-		// Quests overview
-		const questsDir = state.contents.quests;
-		if (questsDir?.type !== "directory") throw new Error("expected dir");
-		const questOverview = questsDir.contents["overview.json"];
-		if (questOverview?.type !== "json") throw new Error("expected json");
-		const questItems = (questOverview.content as { items: unknown[] }).items;
-		expect(questItems).toHaveLength(1);
+		// Quests in unified overview
+		expect(overviewContent.quests).toHaveLength(1);
 
 		// Activity log
 		const activityLog = state.contents["activity-log.jsonl"];
@@ -620,17 +611,15 @@ describe("buildMigrationState", () => {
 		};
 
 		const state = buildMigrationState(answers);
-		const epicsDir = state.contents.epics;
-		if (epicsDir?.type !== "directory") throw new Error("expected dir");
-		const overview = epicsDir.contents["overview.json"];
-		if (overview?.type !== "json") throw new Error("expected json");
-		const items = (overview.content as { items: Array<{ name: string; completed: string | null }> })
-			.items;
+		const overviewEntry = state.contents["overview.json"];
+		if (overviewEntry?.type !== "json") throw new Error("expected json");
+		const epics = (overviewEntry.content as { epics: Array<{ name: string; completed: string | null }> })
+			.epics;
 
-		const doneEpic = items.find((i) => i.name === "done-epic");
+		const doneEpic = epics.find((i) => i.name === "done-epic");
 		expect(doneEpic?.completed).not.toBeNull();
 
-		const wipEpic = items.find((i) => i.name === "wip-epic");
+		const wipEpic = epics.find((i) => i.name === "wip-epic");
 		expect(wipEpic?.completed).toBeNull();
 	});
 });

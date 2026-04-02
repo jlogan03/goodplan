@@ -37,10 +37,10 @@ export function handleCreateEpic(
 	tree = createEpicSubdirectories(tree, event.name);
 
 	// Guard: overview must exist
-	if (getJson(tree, "epics/overview.json") === undefined) {
+	if (getJson(tree, "overview.json") === undefined) {
 		return {
 			code: "STATE_INVALID_TRANSITION",
-			message: "epics/overview.json not found — is the project initialized?",
+			message: "overview.json not found — is the project initialized?",
 		};
 	}
 

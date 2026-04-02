@@ -25,8 +25,7 @@ describe("workflow: init", () => {
 			expect(fs.existsSync(projectDir)).toBe(true);
 			expect(fs.existsSync(path.join(projectDir, "project.json"))).toBe(true);
 			expect(fs.existsSync(path.join(projectDir, "activity-log.jsonl"))).toBe(true);
-			expect(fs.existsSync(path.join(projectDir, "epics", "overview.json"))).toBe(true);
-			expect(fs.existsSync(path.join(projectDir, "quests", "overview.json"))).toBe(true);
+			expect(fs.existsSync(path.join(projectDir, "overview.json"))).toBe(true);
 		});
 	});
 

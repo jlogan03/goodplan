@@ -40,18 +40,10 @@ export function handleInitProject(
 		},
 	});
 
-	// Collection directories with overview.json files
-	tree = setEntry(tree, "epics/overview.json", {
+	// Consolidated overview.json at root
+	tree = setEntry(tree, "overview.json", {
 		type: "json",
-		content: { items: [] },
-	});
-	tree = setEntry(tree, "quests/overview.json", {
-		type: "json",
-		content: { items: [] },
-	});
-	tree = setEntry(tree, "tasks/overview.json", {
-		type: "json",
-		content: { items: [] },
+		content: { epics: [], quests: [], tasks: [] },
 	});
 
 	// Activity log with init entry

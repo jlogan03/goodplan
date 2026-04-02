@@ -274,11 +274,7 @@ export function buildMigrationState(
 		epicsContents[epic.name] = { type: "directory", contents: epicDirContents };
 	}
 
-	const epicsOverview: JsonEntry<unknown> = {
-		type: "json",
-		content: { items: epicOverviewItems },
-	};
-	epicsContents["overview.json"] = epicsOverview;
+	// Epic overview items collected — will be merged into root overview.json later
 
 	// ── Slices (nested under epics) ──────────────────────────────
 
@@ -383,11 +379,7 @@ export function buildMigrationState(
 		questsContents[quest.name] = { type: "directory", contents: questDirContents };
 	}
 
-	const questsOverview: JsonEntry<unknown> = {
-		type: "json",
-		content: { items: questOverviewItems },
-	};
-	questsContents["overview.json"] = questsOverview;
+	// Quest overview items collected — will be merged into root overview.json
 
 	// ── Root tree ───────────────────────────────────────────────
 
@@ -395,6 +387,10 @@ export function buildMigrationState(
 		type: "directory",
 		contents: {
 			"project.json": projectJson,
+			"overview.json": {
+				type: "json",
+				content: { epics: epicOverviewItems, quests: questOverviewItems, tasks: [] },
+			},
 			"activity-log.jsonl": activityLog,
 			"decisions.jsonl": decisionsJsonl,
 			"learnings.jsonl": learningsJsonl,

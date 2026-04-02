@@ -34,18 +34,12 @@ describe("reduce — INIT_PROJECT", () => {
 		expect(project!.created).toBeDefined();
 		expect(project!.updated).toBeDefined();
 
-		// Overview files exist with empty items arrays
-		const epicsOverview = getJson<{ items: unknown[] }>(state, "epics/overview.json");
-		expect(epicsOverview).toBeDefined();
-		expect(epicsOverview!.items).toEqual([]);
-
-		const questsOverview = getJson<{ items: unknown[] }>(state, "quests/overview.json");
-		expect(questsOverview).toBeDefined();
-		expect(questsOverview!.items).toEqual([]);
-
-		// Collection directories exist
-		expect(getDir(state, "epics")).toBeDefined();
-		expect(getDir(state, "quests")).toBeDefined();
+		// Consolidated overview.json exists with empty arrays
+		const overview = getJson<{ epics: unknown[]; quests: unknown[]; tasks: unknown[] }>(state, "overview.json");
+		expect(overview).toBeDefined();
+		expect(overview!.epics).toEqual([]);
+		expect(overview!.quests).toEqual([]);
+		expect(overview!.tasks).toEqual([]);
 
 		// JSONL files exist
 		const activityLog = getJsonl<unknown>(state, "activity-log.jsonl");

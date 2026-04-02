@@ -213,9 +213,8 @@ describe("rpcMigrate — Confirmation round", () => {
 		expect(projectJson.activeEpic).toBe("my-epic");
 		expect(projectJson.activeQuest).toBe("my-quest");
 
-		// Verify overview files
-		expect(fs.existsSync(path.join(outputDir, "epics", "overview.json"))).toBe(true);
-		expect(fs.existsSync(path.join(outputDir, "quests", "overview.json"))).toBe(true);
+		// Verify unified overview file
+		expect(fs.existsSync(path.join(outputDir, "overview.json"))).toBe(true);
 
 		// Verify entity directories
 		expect(fs.existsSync(path.join(outputDir, "epics", "my-epic", "epic.json"))).toBe(true);

@@ -63,7 +63,7 @@ const implementationSources: ContentSource[] = [
 /** complete: entity goal, slices overview, current architecture, target architecture */
 const completeSources: ContentSource[] = [
 	{ key: "entity-goal", path: (rt) => resolveEntityJsonPath(rt.target), sourceType: "markdown" },
-	{ key: "slices-overview", path: "epics/overview.json", sourceType: "markdown" },
+	{ key: "slices-overview", path: "overview.json", sourceType: "markdown" },
 	{ key: "current-architecture", path: "architecture", sourceType: "directory" },
 	{ key: "target-architecture", path: (rt) => { const e = epicName(rt); return e ? `epics/${e}/architecture` : undefined; }, sourceType: "directory" },
 ];
@@ -74,8 +74,8 @@ const exploreSources: ContentSource[] = [
 	{ key: "research", path: (rt) => { const e = epicName(rt); return e ? `epics/${e}/research` : undefined; }, sourceType: "directory" },
 	{ key: "brainstorm", path: (rt) => { const e = epicName(rt); return e ? `epics/${e}/brainstorm` : undefined; }, sourceType: "directory" },
 	{ key: "conventions", path: "conventions.md", sourceType: "markdown" },
-	{ key: "completed-epics", path: "epics/overview.json", sourceType: "markdown" },
-	{ key: "completed-quests", path: "quests/overview.json", sourceType: "markdown" },
+	{ key: "completed-epics", path: "overview.json", sourceType: "markdown" },
+	{ key: "completed-quests", path: "overview.json", sourceType: "markdown" },
 	{ key: "pending-quests", path: "quests", sourceType: "directory" },
 ];
 

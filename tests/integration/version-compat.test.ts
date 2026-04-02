@@ -24,14 +24,11 @@ function createProjectWithVersion(tmpDir: string, version: string): Record<strin
 
 	fs.writeFileSync(path.join(projectDir, "project.json"), JSON.stringify(project, null, "\t"));
 
-	// Minimal overviews needed for status command
-	const emptyOverview = JSON.stringify({ items: [] });
-	fs.mkdirSync(path.join(projectDir, "epics"), { recursive: true });
-	fs.mkdirSync(path.join(projectDir, "slices"), { recursive: true });
-	fs.mkdirSync(path.join(projectDir, "quests"), { recursive: true });
-	fs.writeFileSync(path.join(projectDir, "epics", "overview.json"), emptyOverview);
-	fs.writeFileSync(path.join(projectDir, "slices", "overview.json"), emptyOverview);
-	fs.writeFileSync(path.join(projectDir, "quests", "overview.json"), emptyOverview);
+	// Consolidated overview
+	fs.writeFileSync(
+		path.join(projectDir, "overview.json"),
+		JSON.stringify({ epics: [], quests: [], tasks: [] }),
+	);
 
 	// Empty JSONL files
 	fs.writeFileSync(path.join(projectDir, "activity-log.jsonl"), "");
@@ -150,7 +147,7 @@ describe("version compatibility checking", () => {
 			const result = runCommand(bin, ["--version", "--json"], { env });
 			expect(result.exitCode).toBe(0);
 			const data = JSON.parse(result.stdout);
-			expect(data.version).toBe("1.0.2");
+			expect(data.version).toBe("1.0.3");
 		} finally {
 			fs.rmSync(tmpDir, { recursive: true, force: true });
 		}

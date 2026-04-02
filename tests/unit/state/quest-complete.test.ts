@@ -7,7 +7,7 @@ import { isStateError } from "../../../src/core/state/types.js";
 import type { StateError } from "../../../src/core/state/types.js";
 import type { Quest } from "../../../src/schemas/entities/quest.js";
 import type { Project } from "../../../src/schemas/entities/project.js";
-import type { Overview } from "../../../src/schemas/entities/overview.js";
+import type { UnifiedOverview } from "../../../src/schemas/entities/overview.js";
 import type { LearningEntry } from "../../../src/schemas/records/learning.js";
 import type { ArchitectureDelta } from "../../../src/schemas/records/architecture-delta.js";
 
@@ -64,8 +64,8 @@ describe("reduce — COMPLETE_QUEST", () => {
 		expect(quest!.updated).toBe(TS2);
 
 		// Overview synced
-		const overview = getJson<Overview>(newState, "quests/overview.json");
-		const item = overview!.items.find((i) => i.name === "q1");
+		const overview = getJson<UnifiedOverview>(newState, "overview.json");
+		const item = overview!.quests.find((i) => i.name === "q1");
 		expect(item!.status).toBe("completed");
 
 		// Per-quest learnings

@@ -11,23 +11,24 @@ export const overviewItemSchema = z.object({
 });
 export type OverviewItem = z.infer<typeof overviewItemSchema>;
 
-export const overviewSchema = z.object({
-	items: z.array(overviewItemSchema),
-});
-export type Overview = z.infer<typeof overviewSchema>;
-
-// ── Epic overview (consolidated with embedded slices) ────
+// ── Slice overview item ────
 
 /** Slice overview item — derives from overviewItemSchema minus epic/title (path encodes epic; slices have no title). */
 export const sliceOverviewItemSchema = overviewItemSchema.omit({ epic: true, title: true });
 export type SliceOverviewItem = z.infer<typeof sliceOverviewItemSchema>;
+
+// ── Epic overview item (with embedded slices) ────
 
 export const epicOverviewItemSchema = overviewItemSchema.extend({
 	slices: z.array(sliceOverviewItemSchema).default([]),
 });
 export type EpicOverviewItem = z.infer<typeof epicOverviewItemSchema>;
 
-export const epicOverviewSchema = z.object({
-	items: z.array(epicOverviewItemSchema),
+// ── Unified overview (single overview.json at root) ────
+
+export const unifiedOverviewSchema = z.object({
+	epics: z.array(epicOverviewItemSchema),
+	quests: z.array(overviewItemSchema),
+	tasks: z.array(overviewItemSchema),
 });
-export type EpicOverview = z.infer<typeof epicOverviewSchema>;
+export type UnifiedOverview = z.infer<typeof unifiedOverviewSchema>;

@@ -3,7 +3,7 @@ import pc from "picocolors";
 import { loadState } from "../../core/data/load.js";
 import { resolveProjectDir } from "../../core/data/project.js";
 import { getJson } from "../../core/tree.js";
-import type { EpicOverview, SliceOverviewItem } from "../../schemas/entities/overview.js";
+import type { SliceOverviewItem, UnifiedOverview } from "../../schemas/entities/overview.js";
 import type { Project } from "../../schemas/entities/project.js";
 import { output } from "../../util/output.js";
 import { applyPagination, formatPaginationFooter } from "../../util/pagination.js";
@@ -15,7 +15,7 @@ type SliceWithEpic = SliceOverviewItem & { epic: string };
  * `gp slice:list [--epic <name>] [--all]` — list slices.
  *
  * Read-only: goes directly to the data layer, no RPC.
- * Reads epics/overview.json and returns embedded slice arrays.
+ * Reads overview.json and returns embedded slice arrays from epics.
  * Default: slices for --epic (or active epic). --all: all slices across all epics.
  */
 export const sliceListCommand = defineCommand({
@@ -42,13 +42,14 @@ export const sliceListCommand = defineCommand({
 		const projectDir = resolveProjectDir();
 		const state = loadState(projectDir);
 
-		const epicOverview = getJson<EpicOverview>(state, "epics/overview.json") ?? { items: [] };
+		const overview = getJson<UnifiedOverview>(state, "overview.json");
+		const epicItems = overview?.epics ?? [];
 
 		const allItems: SliceWithEpic[] = [];
 
 		if (args.all) {
 			// Flatten all epics' slices
-			for (const epicItem of epicOverview.items) {
+			for (const epicItem of epicItems) {
 				for (const slice of epicItem.slices) {
 					allItems.push({ ...slice, epic: epicItem.name });
 				}
@@ -62,7 +63,7 @@ export const sliceListCommand = defineCommand({
 				epicName = project?.activeEpic ?? undefined;
 			}
 			if (epicName !== undefined) {
-				const epicEntry = epicOverview.items.find((e) => e.name === epicName);
+				const epicEntry = epicItems.find((e) => e.name === epicName);
 				if (epicEntry !== undefined) {
 					for (const slice of epicEntry.slices) {
 						allItems.push({ ...slice, epic: epicName });

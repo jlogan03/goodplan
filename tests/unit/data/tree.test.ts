@@ -37,13 +37,13 @@ const fixture: ProjectState = {
 			type: "markdown",
 			content: "# My Project\n\nA great idea.",
 		} satisfies MarkdownEntry,
+		"overview.json": {
+			type: "json",
+			content: { epics: [], quests: [], tasks: [] },
+		} satisfies JsonEntry<{ epics: unknown[]; quests: unknown[]; tasks: unknown[] }>,
 		epics: {
 			type: "directory",
 			contents: {
-				"overview.json": {
-					type: "json",
-					content: { items: [] },
-				},
 				"my-epic": {
 					type: "directory",
 					contents: {
@@ -61,15 +61,6 @@ const fixture: ProjectState = {
 							},
 						},
 					},
-				},
-			},
-		} satisfies DirectoryEntry,
-		slices: {
-			type: "directory",
-			contents: {
-				"overview.json": {
-					type: "json",
-					content: { items: [] },
 				},
 			},
 		} satisfies DirectoryEntry,
@@ -192,7 +183,7 @@ describe("getDir", () => {
 		const dir = getDir(fixture, "epics");
 		expect(dir).toBeDefined();
 		expect(dir!.type).toBe("directory");
-		expect(dir!.contents["overview.json"]).toBeDefined();
+		expect(dir!.contents["my-epic"]).toBeDefined();
 	});
 
 	it("returns root for empty path", () => {
@@ -298,21 +289,21 @@ describe("setEntry", () => {
 	});
 
 	it("adds a nested entry within existing directory", () => {
-		const newSlice: JsonEntry<{ name: string }> = {
+		const newEpicJson: JsonEntry<{ name: string }> = {
 			type: "json",
-			content: { name: "01-data" },
+			content: { name: "new-epic" },
 		};
 		const result = setEntry(
 			fixture,
-			"slices/01-data/slice.json",
-			newSlice,
+			"epics/new-epic/epic.json",
+			newEpicJson,
 		);
 
-		expect(resolve(result, "slices/01-data/slice.json")).toEqual(newSlice);
+		expect(resolve(result, "epics/new-epic/epic.json")).toEqual(newEpicJson);
 		// Intermediate directory was created
-		expect(getDir(result, "slices/01-data")).toBeDefined();
+		expect(getDir(result, "epics/new-epic")).toBeDefined();
 		// Existing sibling preserved
-		expect(resolve(result, "slices/overview.json")).toBeDefined();
+		expect(resolve(result, "epics/my-epic/epic.json")).toBeDefined();
 	});
 
 	it("auto-creates intermediate directories for deep paths", () => {
@@ -349,7 +340,7 @@ describe("setEntry", () => {
 		// New entry present
 		expect(resolve(result, "epics/another.json")).toEqual(entry);
 		// Siblings preserved
-		expect(resolve(result, "epics/overview.json")).toBeDefined();
+		expect(resolve(result, "epics/my-epic/epic.json")).toBeDefined();
 		expect(resolve(result, "epics/my-epic/epic.json")).toBeDefined();
 	});
 

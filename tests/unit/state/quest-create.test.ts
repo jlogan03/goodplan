@@ -6,7 +6,7 @@ import { reduce } from "../../../src/core/state/reduce.js";
 import { isStateError } from "../../../src/core/state/types.js";
 import type { StateError } from "../../../src/core/state/types.js";
 import type { Quest } from "../../../src/schemas/entities/quest.js";
-import type { Overview } from "../../../src/schemas/entities/overview.js";
+import type { UnifiedOverview } from "../../../src/schemas/entities/overview.js";
 
 const TS = "2026-01-01T00:00:00.000Z";
 const TS2 = "2026-01-02T00:00:00.000Z";
@@ -38,7 +38,7 @@ describe("reduce — CREATE_QUEST", () => {
 		expect(quest!.updated).toBe(TS2);
 	});
 
-	it("updates quests/overview.json with created and completed fields, no epic field", () => {
+	it("updates overview.json quests with created and completed fields, no epic field", () => {
 		const state = initProject();
 		const result = reduce(state, {
 			type: "CREATE_QUEST",
@@ -47,15 +47,15 @@ describe("reduce — CREATE_QUEST", () => {
 			ts: TS2,
 		}) as ProjectState;
 
-		const overview = getJson<Overview>(result, "quests/overview.json");
+		const overview = getJson<UnifiedOverview>(result, "overview.json");
 		expect(overview).toBeDefined();
-		expect(overview!.items).toHaveLength(1);
-		expect(overview!.items[0]!.name).toBe("q1");
-		expect(overview!.items[0]!.status).toBe("created");
-		expect(overview!.items[0]!.created).toBe(TS2);
-		expect(overview!.items[0]!.completed).toBeNull();
+		expect(overview!.quests).toHaveLength(1);
+		expect(overview!.quests[0]!.name).toBe("q1");
+		expect(overview!.quests[0]!.status).toBe("created");
+		expect(overview!.quests[0]!.created).toBe(TS2);
+		expect(overview!.quests[0]!.completed).toBeNull();
 		// No epic field — quests are project-scoped
-		expect(overview!.items[0]!.epic).toBeUndefined();
+		expect(overview!.quests[0]!.epic).toBeUndefined();
 	});
 
 	it("appends activity log entry", () => {
@@ -94,7 +94,7 @@ describe("reduce — CREATE_QUEST", () => {
 		expect((result as StateError).code).toBe("STATE_INVALID_TRANSITION");
 	});
 
-	it("rejects when quests/overview.json is missing", () => {
+	it("rejects when overview.json is missing", () => {
 		// Use bare ZERO_STATE (no INIT_PROJECT) — overview.json won't exist
 		const result = reduce(ZERO_STATE, {
 			type: "CREATE_QUEST",
@@ -112,7 +112,7 @@ describe("reduce — CREATE_QUEST", () => {
 		s = reduce(s, { type: "CREATE_QUEST", name: "q1", goal: "First", ts: TS }) as ProjectState;
 		s = reduce(s, { type: "CREATE_QUEST", name: "q2", goal: "Second", ts: TS2 }) as ProjectState;
 
-		const overview = getJson<Overview>(s, "quests/overview.json");
-		expect(overview!.items).toHaveLength(2);
+		const overview = getJson<UnifiedOverview>(s, "overview.json");
+		expect(overview!.quests).toHaveLength(2);
 	});
 });

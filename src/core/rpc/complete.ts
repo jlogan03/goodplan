@@ -4,7 +4,7 @@
  */
 
 import type { Epic } from "../../schemas/entities/epic.js";
-import type { EpicOverview } from "../../schemas/entities/overview.js";
+import type { UnifiedOverview } from "../../schemas/entities/overview.js";
 import type { Quest } from "../../schemas/entities/quest.js";
 import type { Slice } from "../../schemas/entities/slice.js";
 import type { LearningEntry, LearningEventEntry, LearningInput } from "../../schemas/records/learning.js";
@@ -306,9 +306,9 @@ function buildSliceCompleteResult(
 
 	if (newSlice === undefined) return result;
 
-	// Derive epicComplete: check all sibling slices in the epic via epics/overview.json
-	const epicOverview = getJson<EpicOverview>(newState, "epics/overview.json");
-	const epicEntry = epicOverview?.items.find((e) => e.name === newSlice.epic);
+	// Derive epicComplete: check all sibling slices in the epic via overview.json
+	const overview = getJson<UnifiedOverview>(newState, "overview.json");
+	const epicEntry = overview?.epics.find((e) => e.name === newSlice.epic);
 	if (epicEntry !== undefined) {
 		const allDone = epicEntry.slices.every(
 			(item) => item.status === "completed" || item.status === "abandoned",
@@ -322,8 +322,8 @@ function buildSliceCompleteResult(
 		let skippedCount = 0;
 
 		const allSliceTuples: Array<{ itemEpicName: string; name: string }> = [];
-		if (epicOverview !== undefined) {
-			for (const epic of epicOverview.items) {
+		if (overview !== undefined) {
+			for (const epic of overview.epics) {
 				for (const s of epic.slices) {
 					allSliceTuples.push({ itemEpicName: epic.name, name: s.name });
 				}

@@ -1,9 +1,9 @@
-import type { Overview } from "../../../schemas/entities/overview.js";
+import type { UnifiedOverview } from "../../../schemas/entities/overview.js";
 import type { QuestStatus } from "../../../schemas/entities/quest.js";
 /**
  * CREATE_QUEST transition handler.
  * Guard: quest name must not already exist in tree.
- * Apply: create quest.json, update quests/overview.json, append activity log.
+ * Apply: create quest.json, update overview.json, append activity log.
  * Pure function, no I/O.
  */
 import type { ProjectState } from "../../tree.js";
@@ -26,12 +26,12 @@ export function handleCreateQuest(
 		};
 	}
 
-	// Guard: quests/overview.json must exist (init.ts creates it unconditionally)
-	const overview = getJson<Overview>(state, "quests/overview.json");
+	// Guard: overview.json must exist (init.ts creates it unconditionally)
+	const overview = getJson<UnifiedOverview>(state, "overview.json");
 	if (overview === undefined) {
 		return {
 			code: "STATE_INVALID_TRANSITION",
-			message: "quests/overview.json not found — is the project initialized?",
+			message: "overview.json not found — is the project initialized?",
 		};
 	}
 
@@ -44,7 +44,7 @@ export function handleCreateQuest(
 		content: buildInitialQuestJson(event.name, event.goal, now),
 	});
 
-	// Update quests/overview.json — no epic field (quests are project-scoped)
+	// Update overview.json — no epic field (quests are project-scoped)
 	tree = addQuestToOverview(tree, event.name, "created", now);
 
 	// Append activity log

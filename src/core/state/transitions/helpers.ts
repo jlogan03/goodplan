@@ -1,5 +1,5 @@
 import type { Epic, EpicStatus, Verification } from "../../../schemas/entities/epic.js";
-import type { EpicOverview, Overview, SliceOverviewItem } from "../../../schemas/entities/overview.js";
+import type { SliceOverviewItem, UnifiedOverview } from "../../../schemas/entities/overview.js";
 import type { Project } from "../../../schemas/entities/project.js";
 import type { Quest, QuestStatus } from "../../../schemas/entities/quest.js";
 import type { Slice, SliceStatus } from "../../../schemas/entities/slice.js";
@@ -84,7 +84,7 @@ export function setEpicJson(state: ProjectState, name: string, content: Epic): P
 // ── Overview sync ────────────────────────────────────────────
 
 /**
- * Update the epic's status in epics/overview.json.
+ * Update the epic's status in overview.json.
  * Called on every epic status change to keep overview in sync.
  */
 export function updateOverviewStatus(
@@ -92,13 +92,13 @@ export function updateOverviewStatus(
 	epicName: string,
 	newStatus: EpicStatus,
 ): ProjectState {
-	const overview = getJson<EpicOverview>(state, "epics/overview.json");
+	const overview = getJson<UnifiedOverview>(state, "overview.json");
 	if (overview === undefined) return state;
-	return setEntry(state, "epics/overview.json", {
+	return setEntry(state, "overview.json", {
 		type: "json",
 		content: {
 			...overview,
-			items: overview.items.map((item) =>
+			epics: overview.epics.map((item) =>
 				item.name === epicName ? { ...item, status: newStatus } : item,
 			),
 		},
@@ -170,7 +170,7 @@ export function setSliceStatus(
 }
 
 /**
- * Update the slice's status in the epic's embedded slices array in epics/overview.json.
+ * Update the slice's status in the epic's embedded slices array in overview.json.
  */
 export function updateSliceOverviewStatus(
 	state: ProjectState,
@@ -179,14 +179,14 @@ export function updateSliceOverviewStatus(
 	newStatus: SliceStatus,
 	ts: string,
 ): ProjectState {
-	const overview = getJson<EpicOverview>(state, "epics/overview.json");
+	const overview = getJson<UnifiedOverview>(state, "overview.json");
 	if (overview === undefined) return state;
 	const completed = isSliceTerminal(newStatus) ? ts : null;
-	return setEntry(state, "epics/overview.json", {
+	return setEntry(state, "overview.json", {
 		type: "json",
 		content: {
 			...overview,
-			items: overview.items.map((item) =>
+			epics: overview.epics.map((item) =>
 				item.name === epicName
 					? {
 							...item,
@@ -358,7 +358,7 @@ export function setQuestStatus(
 }
 
 /**
- * Update the quest's status in quests/overview.json.
+ * Update the quest's status in overview.json.
  * Called on every quest status change to keep overview in sync.
  */
 export function updateQuestOverviewStatus(
@@ -366,13 +366,13 @@ export function updateQuestOverviewStatus(
 	questName: string,
 	newStatus: QuestStatus,
 ): ProjectState {
-	const overview = getJson<Overview>(state, "quests/overview.json");
+	const overview = getJson<UnifiedOverview>(state, "overview.json");
 	if (overview === undefined) return state;
-	return setEntry(state, "quests/overview.json", {
+	return setEntry(state, "overview.json", {
 		type: "json",
 		content: {
 			...overview,
-			items: overview.items.map((item) =>
+			quests: overview.quests.map((item) =>
 				item.name === questName ? { ...item, status: newStatus } : item,
 			),
 		},
@@ -380,7 +380,7 @@ export function updateQuestOverviewStatus(
 }
 
 /**
- * Add a new quest entry to quests/overview.json.
+ * Add a new quest entry to overview.json.
  * Centralises the overview item shape for quest creation.
  */
 export function addQuestToOverview(
@@ -389,15 +389,15 @@ export function addQuestToOverview(
 	status: QuestStatus,
 	ts: string,
 ): ProjectState {
-	const overview = getJson<Overview>(state, "quests/overview.json");
+	const overview = getJson<UnifiedOverview>(state, "overview.json");
 	if (overview === undefined) {
-		throw new Error("quests/overview.json not found — is the project initialized?");
+		throw new Error("overview.json not found — is the project initialized?");
 	}
-	return setEntry(state, "quests/overview.json", {
+	return setEntry(state, "overview.json", {
 		type: "json",
 		content: {
 			...overview,
-			items: [...overview.items, { name: questName, status, created: ts, completed: null }],
+			quests: [...overview.quests, { name: questName, status, created: ts, completed: null }],
 		},
 	});
 }
@@ -413,7 +413,7 @@ export function isQuestTerminal(status: QuestStatus): boolean {
 // ── Epic overview helper ────────────────────────────────────
 
 /**
- * Add a new epic entry to epics/overview.json.
+ * Add a new epic entry to overview.json.
  * Centralises the overview item shape for epic creation.
  * Parallels addQuestToOverview for quests.
  */
@@ -423,21 +423,21 @@ export function addEpicToOverview(
 	status: EpicStatus,
 	ts: string,
 ): ProjectState {
-	const overview = getJson<EpicOverview>(state, "epics/overview.json");
+	const overview = getJson<UnifiedOverview>(state, "overview.json");
 	if (overview === undefined) {
-		throw new Error("epics/overview.json not found — is the project initialized?");
+		throw new Error("overview.json not found — is the project initialized?");
 	}
-	return setEntry(state, "epics/overview.json", {
+	return setEntry(state, "overview.json", {
 		type: "json",
 		content: {
 			...overview,
-			items: [...overview.items, { name: epicName, status, created: ts, completed: null, slices: [] }],
+			epics: [...overview.epics, { name: epicName, status, created: ts, completed: null, slices: [] }],
 		},
 	});
 }
 
 /**
- * Add a new slice entry to its epic's embedded slices array in epics/overview.json.
+ * Add a new slice entry to its epic's embedded slices array in overview.json.
  * The epic must already exist in the overview.
  */
 export function addSliceToOverview(
@@ -445,15 +445,15 @@ export function addSliceToOverview(
 	epicName: string,
 	sliceItem: SliceOverviewItem,
 ): ProjectState {
-	const overview = getJson<EpicOverview>(state, "epics/overview.json");
+	const overview = getJson<UnifiedOverview>(state, "overview.json");
 	if (overview === undefined) {
-		throw new Error("epics/overview.json not found — is the project initialized?");
+		throw new Error("overview.json not found — is the project initialized?");
 	}
-	return setEntry(state, "epics/overview.json", {
+	return setEntry(state, "overview.json", {
 		type: "json",
 		content: {
 			...overview,
-			items: overview.items.map((item) =>
+			epics: overview.epics.map((item) =>
 				item.name === epicName
 					? { ...item, slices: [...item.slices, sliceItem] }
 					: item,
@@ -524,7 +524,7 @@ export function isTaskTerminal(status: TaskStatus): boolean {
 }
 
 /**
- * Update the task's status in tasks/overview.json.
+ * Update the task's status in overview.json.
  * Sets `completed` timestamp on terminal transitions (dropped/converted).
  */
 export function updateTaskOverviewStatus(
@@ -533,14 +533,14 @@ export function updateTaskOverviewStatus(
 	newStatus: TaskStatus,
 	ts?: string,
 ): ProjectState {
-	const overview = getJson<Overview>(state, "tasks/overview.json");
+	const overview = getJson<UnifiedOverview>(state, "overview.json");
 	if (overview === undefined) return state;
 	const completed = isTaskTerminal(newStatus) && ts ? ts : null;
-	return setEntry(state, "tasks/overview.json", {
+	return setEntry(state, "overview.json", {
 		type: "json",
 		content: {
 			...overview,
-			items: overview.items.map((item) =>
+			tasks: overview.tasks.map((item) =>
 				item.name === taskName
 					? { ...item, status: newStatus, ...(completed ? { completed } : {}) }
 					: item,

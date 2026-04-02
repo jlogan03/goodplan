@@ -61,7 +61,7 @@ describe("init command", () => {
 		expect(result.success).toBe(true);
 		if (result.success) {
 			expect(result.data.name).toBe("test-project");
-			expect(result.data.version).toBe("1.0.2");
+			expect(result.data.version).toBe("1.0.3");
 			expect(result.data.activeEpic).toBeNull();
 			expect(result.data.activeSlice).toBeNull();
 			expect(result.data.activeQuest).toBeNull();
@@ -77,9 +77,8 @@ describe("init command", () => {
 
 		const projectDir = path.join(tmpDir, ".goodplan");
 
-		// Overview files
-		expect(fs.existsSync(path.join(projectDir, "epics", "overview.json"))).toBe(true);
-		expect(fs.existsSync(path.join(projectDir, "quests", "overview.json"))).toBe(true);
+		// Consolidated overview file
+		expect(fs.existsSync(path.join(projectDir, "overview.json"))).toBe(true);
 
 		// JSONL files
 		expect(fs.existsSync(path.join(projectDir, "activity-log.jsonl"))).toBe(true);
@@ -160,7 +159,7 @@ describe("init command", () => {
 		const outputStr = chunks.join("");
 		const parsed = JSON.parse(outputStr);
 		expect(parsed.name).toBe("json-test");
-		expect(parsed.version).toBe("1.0.2");
+		expect(parsed.version).toBe("1.0.3");
 	});
 
 	it("outputs human-readable message when --json is not set", async () => {

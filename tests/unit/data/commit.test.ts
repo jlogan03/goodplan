@@ -59,14 +59,9 @@ describe("commitState", () => {
 			type: "directory",
 			contents: {
 				"project.json": { type: "json", content: projectContent },
-				epics: {
-					type: "directory",
-					contents: {
-						"overview.json": {
-							type: "json",
-							content: { items: [] },
-						},
-					},
+				"overview.json": {
+					type: "json",
+					content: { epics: [], quests: [], tasks: [] },
 				},
 			},
 		};
@@ -74,7 +69,7 @@ describe("commitState", () => {
 		commitState(projectDir(), ZERO_STATE, newState);
 
 		expect(fileExists("project.json")).toBe(true);
-		expect(fileExists("epics/overview.json")).toBe(true);
+		expect(fileExists("overview.json")).toBe(true);
 
 		const parsed = JSON.parse(readFile("project.json"));
 		expect(parsed.name).toBe("test-project");
@@ -292,14 +287,9 @@ describe("commitState", () => {
 					type: "jsonl",
 					content: [activityEntry],
 				},
-				epics: {
-					type: "directory",
-					contents: {
-						"overview.json": {
-							type: "json",
-							content: { items: [] },
-						},
-					},
+				"overview.json": {
+					type: "json",
+					content: { epics: [], quests: [], tasks: [] },
 				},
 			},
 		};
@@ -309,7 +299,7 @@ describe("commitState", () => {
 		// Snapshot file contents after first write
 		const projectJsonBefore = readFile("project.json");
 		const activityLogBefore = readFile("activity-log.jsonl");
-		const overviewBefore = readFile("epics/overview.json");
+		const overviewBefore = readFile("overview.json");
 
 		// Round-trip: assemble from disk, then commit unchanged state
 		const assembled = assembleState(projectDir());
@@ -318,7 +308,7 @@ describe("commitState", () => {
 		// Files should be byte-identical (no rewrites for unchanged state)
 		expect(readFile("project.json")).toBe(projectJsonBefore);
 		expect(readFile("activity-log.jsonl")).toBe(activityLogBefore);
-		expect(readFile("epics/overview.json")).toBe(overviewBefore);
+		expect(readFile("overview.json")).toBe(overviewBefore);
 	});
 
 	it("writes .state-cache.json after all entity writes", () => {
@@ -577,14 +567,9 @@ describe("HMAC state signature", () => {
 					type: "jsonl",
 					content: [activityEntry],
 				},
-				epics: {
-					type: "directory",
-					contents: {
-						"overview.json": {
-							type: "json",
-							content: { items: [] },
-						},
-					},
+				"overview.json": {
+					type: "json",
+					content: { epics: [], quests: [], tasks: [] },
 				},
 			},
 		};
@@ -607,19 +592,14 @@ describe("HMAC state signature", () => {
 	});
 
 	it("embeds signature even when only child entities changed", () => {
-		// First commit: project + epics
+		// First commit: project + overview
 		const state1: ProjectState = {
 			type: "directory",
 			contents: {
 				"project.json": { type: "json", content: projectContent },
-				epics: {
-					type: "directory",
-					contents: {
-						"overview.json": {
-							type: "json",
-							content: { items: [] },
-						},
-					},
+				"overview.json": {
+					type: "json",
+					content: { epics: [], quests: [], tasks: [] },
 				},
 			},
 		};
@@ -630,7 +610,7 @@ describe("HMAC state signature", () => {
 		// Read back assembled state (includes embedded stateSignature)
 		const assembled = assembleState(projectDir());
 
-		// Second commit: change only epic overview, project.json content unchanged
+		// Second commit: change only overview, project.json content unchanged
 		const state2: ProjectState = {
 			type: "directory",
 			contents: {
@@ -639,15 +619,12 @@ describe("HMAC state signature", () => {
 					content: (assembled.contents["project.json"] as { type: "json"; content: unknown })
 						.content,
 				},
-				epics: {
-					type: "directory",
-					contents: {
-						"overview.json": {
-							type: "json",
-							content: {
-								items: [{ name: "New Epic", status: "active", created: ts, completed: null }],
-							},
-						},
+				"overview.json": {
+					type: "json",
+					content: {
+						epics: [{ name: "New Epic", status: "active", created: ts, completed: null, slices: [] }],
+						quests: [],
+						tasks: [],
 					},
 				},
 			},

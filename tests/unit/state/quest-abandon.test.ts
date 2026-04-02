@@ -7,7 +7,7 @@ import { isStateError } from "../../../src/core/state/types.js";
 import type { StateError } from "../../../src/core/state/types.js";
 import type { Quest } from "../../../src/schemas/entities/quest.js";
 import type { Project } from "../../../src/schemas/entities/project.js";
-import type { Overview } from "../../../src/schemas/entities/overview.js";
+import type { UnifiedOverview } from "../../../src/schemas/entities/overview.js";
 
 const TS = "2026-01-01T00:00:00.000Z";
 const TS2 = "2026-01-02T00:00:00.000Z";
@@ -57,8 +57,8 @@ describe("reduce — ABANDON_QUEST", () => {
 		const s = initWithQuest();
 		const result = reduce(s, { type: "ABANDON_QUEST", quest: "q1", ts: TS2, reason: "Done" }) as ProjectState;
 
-		const overview = getJson<Overview>(result, "quests/overview.json");
-		const item = overview!.items.find((i) => i.name === "q1");
+		const overview = getJson<UnifiedOverview>(result, "overview.json");
+		const item = overview!.quests.find((i) => i.name === "q1");
 		expect(item!.status).toBe("abandoned");
 	});
 

@@ -7,7 +7,7 @@ import { isStateError } from "../../../src/core/state/types.js";
 import type { StateError } from "../../../src/core/state/types.js";
 import type { Slice } from "../../../src/schemas/entities/slice.js";
 import type { Project } from "../../../src/schemas/entities/project.js";
-import type { EpicOverview } from "../../../src/schemas/entities/overview.js";
+import type { UnifiedOverview } from "../../../src/schemas/entities/overview.js";
 
 const TS = "2026-01-01T00:00:00.000Z";
 const TS2 = "2026-01-02T00:00:00.000Z";
@@ -58,8 +58,8 @@ describe("reduce — ABANDON_SLICE", () => {
 		const s = initWithSlice();
 		const result = reduce(s, { type: "ABANDON_SLICE", epic: "e1", slice: "s1", ts: TS2, reason: "Done" }) as ProjectState;
 
-		const overview = getJson<EpicOverview>(result, "epics/overview.json");
-		const epicItem = overview!.items.find((i) => i.name === "e1");
+		const overview = getJson<UnifiedOverview>(result, "overview.json");
+		const epicItem = overview!.epics.find((i) => i.name === "e1");
 		const item = epicItem!.slices.find((s) => s.name === "s1");
 		expect(item!.status).toBe("abandoned");
 	});
@@ -68,8 +68,8 @@ describe("reduce — ABANDON_SLICE", () => {
 		const s = initWithSlice();
 		const result = reduce(s, { type: "ABANDON_SLICE", epic: "e1", slice: "s1", ts: TS2, reason: "Done" }) as ProjectState;
 
-		const overview = getJson<EpicOverview>(result, "epics/overview.json");
-		const epicItem = overview!.items.find((i) => i.name === "e1");
+		const overview = getJson<UnifiedOverview>(result, "overview.json");
+		const epicItem = overview!.epics.find((i) => i.name === "e1");
 		const item = epicItem!.slices.find((s) => s.name === "s1");
 		expect(item!.completed).not.toBeNull();
 	});

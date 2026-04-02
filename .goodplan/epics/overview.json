@@ -244,22 +244,22 @@
 			"name": "simplify-data-model",
 			"slices": [
 				{
-					"completed": null,
+					"completed": "2026-04-02T01:07:22.750Z",
 					"created": "2026-04-01T19:27:30.041Z",
 					"name": "01-test-harness",
-					"status": "plan-created"
+					"status": "completed"
 				},
 				{
-					"completed": null,
+					"completed": "2026-04-02T13:00:59.876Z",
 					"created": "2026-04-01T19:27:35.722Z",
 					"name": "02-plan-slice-poc",
-					"status": "created"
+					"status": "completed"
 				},
 				{
 					"completed": null,
 					"created": "2026-04-01T19:27:35.903Z",
 					"name": "03-data-model",
-					"status": "created"
+					"status": "plan-refined"
 				},
 				{
 					"completed": null,

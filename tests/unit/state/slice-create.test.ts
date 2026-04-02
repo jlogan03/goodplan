@@ -7,7 +7,7 @@ import { isStateError } from "../../../src/core/state/types.js";
 import type { StateError } from "../../../src/core/state/types.js";
 import type { Slice } from "../../../src/schemas/entities/slice.js";
 import type { Epic } from "../../../src/schemas/entities/epic.js";
-import type { EpicOverview } from "../../../src/schemas/entities/overview.js";
+import type { UnifiedOverview } from "../../../src/schemas/entities/overview.js";
 
 const TS = "2026-01-01T00:00:00.000Z";
 const TS2 = "2026-01-02T00:00:00.000Z";
@@ -44,7 +44,7 @@ describe("reduce — CREATE_SLICE", () => {
 		expect(slice!.updated).toBe(TS2);
 	});
 
-	it("adds slice to epic's embedded slices array in epics/overview.json", () => {
+	it("adds slice to epic's embedded slices array in overview.json", () => {
 		const state = initWithEpic();
 		const result = reduce(state, {
 			type: "CREATE_SLICE",
@@ -54,9 +54,9 @@ describe("reduce — CREATE_SLICE", () => {
 			ts: TS2,
 		}) as ProjectState;
 
-		const overview = getJson<EpicOverview>(result, "epics/overview.json");
+		const overview = getJson<UnifiedOverview>(result, "overview.json");
 		expect(overview).toBeDefined();
-		const epicItem = overview!.items.find((i) => i.name === "e1");
+		const epicItem = overview!.epics.find((i) => i.name === "e1");
 		expect(epicItem).toBeDefined();
 		expect(epicItem!.slices).toHaveLength(1);
 		expect(epicItem!.slices[0]!.name).toBe("s1");
@@ -135,8 +135,8 @@ describe("reduce — CREATE_SLICE", () => {
 		s = reduce(s, { type: "CREATE_SLICE", name: "s1", epic: "e1", goal: "First", ts: TS }) as ProjectState;
 		s = reduce(s, { type: "CREATE_SLICE", name: "s2", epic: "e1", goal: "Second", ts: TS2 }) as ProjectState;
 
-		const overview = getJson<EpicOverview>(s, "epics/overview.json");
-		const epicItem = overview!.items.find((i) => i.name === "e1");
+		const overview = getJson<UnifiedOverview>(s, "overview.json");
+		const epicItem = overview!.epics.find((i) => i.name === "e1");
 		expect(epicItem!.slices).toHaveLength(2);
 	});
 });

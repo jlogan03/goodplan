@@ -41,6 +41,13 @@
 			"name": "harness-observability-instrumentation",
 			"status": "dropped",
 			"title": "Add comprehensive instrumentation to test harness: message tracing, tool call tracking, context usage monitoring"
+		},
+		{
+			"completed": null,
+			"created": "2026-04-02T04:07:59.223Z",
+			"name": "refine-plan-per-reviewer-scores",
+			"status": "open",
+			"title": "Update installed /gp:refine-plan to per-reviewer score format"
 		}
 	]
 }

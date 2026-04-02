@@ -8,7 +8,7 @@ import type { StateError } from "../../../src/core/state/types.js";
 import type { Epic } from "../../../src/schemas/entities/epic.js";
 import type { Project } from "../../../src/schemas/entities/project.js";
 import type { Verification } from "../../../src/schemas/entities/epic.js";
-import type { Overview } from "../../../src/schemas/entities/overview.js";
+import type { UnifiedOverview } from "../../../src/schemas/entities/overview.js";
 
 const TS = "2026-01-01T00:00:00.000Z";
 const TS2 = "2026-02-01T00:00:00.000Z";
@@ -40,8 +40,8 @@ function stateReadyToActivate(): ProjectState {
 }
 
 function overviewStatus(state: ProjectState, name: string): string | undefined {
-	const overview = getJson<Overview>(state, "epics/overview.json");
-	return overview?.items.find((i) => i.name === name)?.status;
+	const overview = getJson<UnifiedOverview>(state, "overview.json");
+	return overview?.epics.find((i) => i.name === name)?.status;
 }
 
 describe("reduce — ACTIVATE_EPIC", () => {

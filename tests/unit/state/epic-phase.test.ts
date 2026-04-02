@@ -6,7 +6,7 @@ import { reduce } from "../../../src/core/state/reduce.js";
 import { isStateError } from "../../../src/core/state/types.js";
 import type { StateError } from "../../../src/core/state/types.js";
 import type { Epic } from "../../../src/schemas/entities/epic.js";
-import type { Overview } from "../../../src/schemas/entities/overview.js";
+import type { UnifiedOverview } from "../../../src/schemas/entities/overview.js";
 
 const TS = "2026-01-01T00:00:00.000Z";
 const TS2 = "2026-01-02T00:00:00.000Z";
@@ -26,8 +26,8 @@ function epicUpdated(state: ProjectState, name: string): string | undefined {
 }
 
 function overviewStatus(state: ProjectState, name: string): string | undefined {
-	const overview = getJson<Overview>(state, "epics/overview.json");
-	return overview?.items.find((i) => i.name === name)?.status;
+	const overview = getJson<UnifiedOverview>(state, "overview.json");
+	return overview?.epics.find((i) => i.name === name)?.status;
 }
 
 describe("reduce — BEGIN_EXPLORE", () => {

@@ -44,8 +44,8 @@ describe("Concurrent modification detection", () => {
 			return;
 		}
 
-		// Externally modify the epics/overview.json on disk
-		const overviewPath = path.join(projectDir, "epics", "overview.json");
+		// Externally modify the overview.json on disk
+		const overviewPath = path.join(projectDir, "overview.json");
 		const original = fs.readFileSync(overviewPath, "utf-8");
 		const modified = JSON.parse(original) as Record<string, unknown>;
 		modified["tampered"] = true;
@@ -72,15 +72,14 @@ describe("Concurrent modification detection", () => {
 		// Verify warning was emitted
 		const stderrOutput = stderrChunks.join("");
 		expect(stderrOutput).toContain("--force: overwriting externally modified file");
-		expect(stderrOutput).toContain("epics/overview.json");
+		expect(stderrOutput).toContain("overview.json");
 	});
 
 	it("detects external modification of project.json between read and write", () => {
 		// Assemble initial state
 		const oldState = assembleState(projectDir);
 
-		// Create a new state by applying an event that modifies project.json
-		// We'll create an epic which modifies epics/overview.json
+		// Create a new state by applying an event that modifies overview.json
 		const event: StateEvent = {
 			type: "CREATE_EPIC",
 			name: "concurrent-test",
@@ -93,8 +92,8 @@ describe("Concurrent modification detection", () => {
 			return;
 		}
 
-		// Externally modify the epics/overview.json on disk
-		const overviewPath = path.join(projectDir, "epics", "overview.json");
+		// Externally modify the overview.json on disk
+		const overviewPath = path.join(projectDir, "overview.json");
 		const original = fs.readFileSync(overviewPath, "utf-8");
 		const modified = JSON.parse(original) as Record<string, unknown>;
 		modified["tampered"] = true;

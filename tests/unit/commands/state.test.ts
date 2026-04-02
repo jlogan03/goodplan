@@ -70,10 +70,8 @@ function writeMarkdown(projectDir: string, relPath: string, content: string) {
 function createPopulatedProject() {
 	const projectDir = createProject("state-test");
 
-	// Slices overview (needed for schema validation)
-	writeJson(projectDir, "slices/overview.json", { items: [] });
-	writeJson(projectDir, "quests/overview.json", { items: [] });
-	writeJson(projectDir, "epics/overview.json", { items: [] });
+	// Unified overview (needed for schema validation)
+	writeJson(projectDir, "overview.json", { epics: [], quests: [], tasks: [] });
 
 	// Decisions
 	writeJsonl(projectDir, "decisions.jsonl", [

@@ -78,9 +78,9 @@ function createPopulatedProject() {
 		activeQuest: null,
 	});
 
-	// Epic (with embedded slices in overview)
-	writeJson(projectDir, "epics/overview.json", {
-		items: [{
+	// Unified overview with epics, quests, tasks
+	writeJson(projectDir, "overview.json", {
+		epics: [{
 			name: "my-epic", status: "activated", created: NOW, completed: null,
 			slices: [
 				{ name: "01-auth", status: "implementing", created: NOW, completed: null },
@@ -88,6 +88,12 @@ function createPopulatedProject() {
 				{ name: "03-ui", status: "completed", created: NOW, completed: NOW },
 			],
 		}],
+		quests: [],
+		tasks: [
+			{ name: "fix-bug", status: "open", title: "Fix bug", created: NOW, completed: null },
+			{ name: "add-tests", status: "open", title: "Add tests", created: NOW, completed: null },
+			{ name: "old-task", status: "dropped", title: "Old task", created: NOW, completed: NOW },
+		],
 	});
 	writeJson(projectDir, "epics/my-epic/epic.json", {
 		name: "my-epic",
@@ -106,15 +112,6 @@ function createPopulatedProject() {
 	writeMarkdown(projectDir, "epics/my-epic/architecture/data-model.md", "# Data");
 	writeMarkdown(projectDir, "epics/my-epic/research/topic.md", "# Topic");
 	writeMarkdown(projectDir, "epics/my-epic/brainstorm/ideas.md", "# Ideas");
-
-	// Tasks
-	writeJson(projectDir, "tasks/overview.json", {
-		items: [
-			{ name: "fix-bug", status: "open", title: "Fix bug", created: NOW, completed: null },
-			{ name: "add-tests", status: "open", title: "Add tests", created: NOW, completed: null },
-			{ name: "old-task", status: "dropped", title: "Old task", created: NOW, completed: NOW },
-		],
-	});
 
 	// Slice data (nested under epic)
 	writeJson(projectDir, "epics/my-epic/slices/01-auth/slice.json", {
@@ -175,9 +172,6 @@ function createPopulatedProject() {
 			summary: "Started impl",
 		},
 	]);
-
-	// Quests (empty)
-	writeJson(projectDir, "quests/overview.json", { items: [] });
 
 	return projectDir;
 }
@@ -258,8 +252,10 @@ describe("buildStatusResult", () => {
 
 	it("detects active quest", () => {
 		const projectDir = createProject("quest-proj", { activeQuest: "fix-logging" });
-		writeJson(projectDir, "quests/overview.json", {
-			items: [{ name: "fix-logging", status: "planning", created: NOW, completed: null }],
+		writeJson(projectDir, "overview.json", {
+			epics: [],
+			quests: [{ name: "fix-logging", status: "planning", created: NOW, completed: null }],
+			tasks: [],
 		});
 		writeJson(projectDir, "quests/fix-logging/quest.json", {
 			name: "fix-logging",
@@ -297,13 +293,15 @@ describe("buildStatusResult", () => {
 			activeEpic: "my-epic",
 			activeSlice: "01-stale",
 		});
-		writeJson(projectDir, "epics/overview.json", {
-			items: [{
+		writeJson(projectDir, "overview.json", {
+			epics: [{
 				name: "my-epic", status: "activated", created: NOW, completed: null,
 				slices: [
 					{ name: "01-stale", status: "implementing", created: NOW, completed: null },
 				],
 			}],
+			quests: [],
+			tasks: [],
 		});
 		writeJson(projectDir, "epics/my-epic/epic.json", {
 			name: "my-epic", status: "activated", goal: "Test stale",
@@ -370,8 +368,10 @@ describe("buildStatusResult", () => {
 			activeSlice: null,
 			activeQuest: null,
 		});
-		writeJson(projectDir, "epics/overview.json", {
-			items: [{ name: "my-epic", status: "activated", created: NOW, completed: null, slices: [] }],
+		writeJson(projectDir, "overview.json", {
+			epics: [{ name: "my-epic", status: "activated", created: NOW, completed: null, slices: [] }],
+			quests: [],
+			tasks: [],
 		});
 		writeJson(projectDir, "epics/my-epic/epic.json", {
 			name: "my-epic",

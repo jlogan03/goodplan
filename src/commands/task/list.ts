@@ -3,7 +3,7 @@ import pc from "picocolors";
 import { loadState } from "../../core/data/load.js";
 import { resolveProjectDir } from "../../core/data/project.js";
 import { getJson } from "../../core/tree.js";
-import type { Overview, OverviewItem } from "../../schemas/entities/overview.js";
+import type { OverviewItem, UnifiedOverview } from "../../schemas/entities/overview.js";
 import { output } from "../../util/output.js";
 import { applyPagination, formatPaginationFooter } from "../../util/pagination.js";
 import { globalArgs, listArgs } from "../global-args.js";
@@ -35,9 +35,9 @@ export const taskListCommand = defineCommand({
 		const projectDir = resolveProjectDir();
 		const state = loadState(projectDir);
 
-		const overview = getJson<Overview>(state, "tasks/overview.json") ?? { items: [] };
+		const overview = getJson<UnifiedOverview>(state, "overview.json");
 
-		const allItems = overview.items;
+		const allItems = overview?.tasks ?? [];
 		const filter = args.all ? "all" : "open";
 		const filtered: OverviewItem[] =
 			filter === "open" ? allItems.filter((item) => item.status === "open") : allItems;

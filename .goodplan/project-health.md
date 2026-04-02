@@ -8,13 +8,14 @@
 - goodplan CLI main runner (`src/index.ts`): integration tests cover unknown commands, --help, --version, --json error mode, NO_COLOR, stdin validation, version compatibility checking (4 variants), --quiet suppression of warnings.
 
 ### Undertested areas
-- Runtime behavior of migrated planning/execution skills (create-plan, create-slices, refine-plan, implement-plan, refine-slices): CLI integration paths verified via grep + 19-step smoke test; refine-plan and implement-plan exercised on 01-rename-gp slice with full review loops
+- Runtime behavior of migrated planning/execution skills (create-plan, create-slices, refine-plan, implement-plan, refine-slices): CLI integration paths verified via grep + 19-step smoke test; refine-plan and implement-plan exercised on 01-rename-gp slice and 01-test-harness slice with full review loops
 - Signal tracking algorithm (Step 6d in complete): requires 3+ completed slices to produce data
 - Refactor Intelligence Protocol (Step 9 in complete): new detection algorithm, batch table presentation, inline fix application, side quest proposal — all untested on a real codebase
 - Maturity/invariants/fitness workflow: Steps 8f/8g/8h in define-architecture, Steps 3b/3c/3d in audit-architecture, maturity evaluation in refine-architecture, reviewer criteria 12/13 — all untested on a real project
 - Epic completion mode in /complete: new epic scope type, architecture reconciliation, artifact promotion, archive numbering — all untested on a real epic
 - Install script (`scripts/install-skills.sh`): verified manually via `bun run install:skills` + diff; no automated test
-- Plugin build script (`scripts/build-plugin.sh`): verified via `bun run build:plugin` + `claude plugin validate` + Agent SDK integration test (`tools/dogfood/test-plugin-skills.ts`) verifying skill discovery, auto-namespacing, and execution
+- Plugin build script (`scripts/build-plugin.sh`): verified via `bun run build:plugin` + `claude plugin validate` + Agent SDK integration test (`tools/dogfood/test-plugin-skills.ts`) verifying skill discovery, auto-namespacing, and execution. Agent validation (frontmatter + @ reference path resolution) added by 02-plan-slice-poc.
+- Orchestrator context discipline (`verifyNoArtifactReads`): 24 unit tests covering violations, fixture exclusions, malformed input. Function tested structurally but not yet validated at opus tier for accurate instruction following.
 - Plugin hook scripts (`plugin-hooks/protect-state.sh`, `warn-bash-state.sh`): verified via manual stdin-piped tests (14 checks including edge cases), shellcheck passes, CI smoke tests in publish-plugin.yml
 - CI release pipeline (`.github/workflows/publish-plugin.yml`): verified via live v1.0.0–v1.0.2 releases — build, post-build assertion, hook smoke tests, tarball, GitHub Release, release branch publish all exercised
 
@@ -25,11 +26,11 @@
 - epic-conventions.md is consumed by 12+ skills: changes require updating all consumers
 - citty + `exactOptionalPropertyTypes`: requires `as unknown as CommandDef` casts in `src/index.ts`. May break on citty upgrade.
 
-<!-- Last updated by: complete for 07-ci-distribution, 2026-03-31 -->
+<!-- Last updated by: complete for 02-plan-slice-poc, 2026-04-02 -->
 
 ## Performance Characteristics
 
-- Full test suite (1659 tests, 110 files): ~6.5s total including binary compilation (~50ms cached)
+- Full test suite (1693 tests, 111 files): ~10.7s total including binary compilation (~50ms cached)
 - Integration tests (~50 tests): ~10s (dominated by binary spawning)
 - Fitness tests (~350 tests): ~4s (mix of source parsing, module imports, and binary spawning)
 
@@ -71,13 +72,14 @@
 
 ### Systemic items
 - shared-preamble.md divergence risk: refine-plan's copy is plan-framed but borrowed by refine-architecture and refine-slices. As those skills mature, their needs may diverge. Noted as tech debt — revisit when it causes a real problem.
+- HMAC verification temporarily disabled: `verifyHmacOrThrow` logs mismatch via debug() instead of throwing. Root cause: 16 of 18 installed skills instruct agents to write directly into `.goodplan/` directories (research/, refinement/, implementation/, etc.), which invalidates the state signature. Signature is still written on every commit. Re-enable after skills are updated to only write to CLI-provided paths.
 
 <!-- Last updated by: complete for epics/__active__skills-cli-integration/slices/01-state-command-convention-doc-tracer, 2026-03-23 -->
 
 ## Recent Changes
 
+- **02-plan-slice-poc** (2026-04-02): Agent infrastructure + plan-slice orchestrator PoC — 7 agent definitions (plan-phase, refinement-coordinator, synthesis, editor, 3 reviewers), 6 shared reference files (review-preamble, 3 domain review criteria, plan-format, sub-agent-return-format), build pipeline agent validation with @ reference path verification, plan-slice SKILL.md orchestrator (395 lines, 2-phase pipeline), test-plan-slice.ts e2e test + verifyNoArtifactReads + 24 unit tests. End-to-end test proved pipeline mechanics at haiku tier ($0.60).
+- **01-test-harness** (2026-04-01): Test harness upgrade — shared utilities (utils.ts with 15+ exports), persistent Agent SDK simulated user session (AsyncQueue + query()), per-test model selection (4 tiers), all 5 harness scripts migrated to shared utils. Net -375 lines, 34 new unit tests, AUTONOMOUS_SYSTEM_PROMPT removed. HMAC verification temporarily disabled due to skills writing to .goodplan/.
 - **07-ci-distribution** (2026-03-31): GitHub Actions release pipeline — tag-triggered build, post-build version assertion, hook smoke tests (.goodplan-dev sentinel removal), tarball + GitHub Release, force-push to release branch with marketplace layout. Post-impl: plugin rename (gp→goodplan), gp: namespace prefixing, binary path fix, hooks field removal, git history cleanup (238M→36M).
-- **06-skill-packaging** (2026-03-30): Skill packaging into plugin — rsync skills into `dist/gp-plugin/skills/`, build-time assertions (frontmatter validation via awk, old CLI name regression guard, .DS_Store exclusion), Agent SDK integration test confirming auto-namespacing and skill execution. 3 new/modified files, 18 skills packaged.
-- **05-next-commands** (2026-03-30): `nextCommands` feature — `commandMappings` registry, `computeNextCommands()`, RPC-layer integration. Every mutation's `--json` output includes `nextCommands`. 6 new/modified source files, 148 new tests.
 
-<!-- Last updated by: complete for 07-ci-distribution, 2026-03-31 -->
+<!-- Last updated by: complete for 02-plan-slice-poc, 2026-04-02 -->

@@ -3,7 +3,7 @@ import pc from "picocolors";
 import { loadState } from "../../core/data/load.js";
 import { resolveProjectDir } from "../../core/data/project.js";
 import { getJson } from "../../core/tree.js";
-import type { Overview } from "../../schemas/entities/overview.js";
+import type { UnifiedOverview } from "../../schemas/entities/overview.js";
 import { output } from "../../util/output.js";
 import { applyPagination, formatPaginationFooter } from "../../util/pagination.js";
 import { globalArgs, listArgs } from "../global-args.js";
@@ -12,7 +12,7 @@ import { globalArgs, listArgs } from "../global-args.js";
  * `gp epic:list` — list all epics.
  *
  * Read-only: goes directly to the data layer, no RPC.
- * Returns { items: Array<{ name, status, created, completed }> } from epics/overview.json.
+ * Returns { items: Array<{ name, status, created, completed }> } from overview.json.
  */
 export const epicListCommand = defineCommand({
 	meta: {
@@ -29,8 +29,8 @@ export const epicListCommand = defineCommand({
 		const state = loadState(projectDir);
 
 		// Treat missing overview.json as empty list (supports fresh projects with no epics yet)
-		const overview = getJson<Overview>(state, "epics/overview.json") ?? { items: [] };
-		const paginated = applyPagination(overview.items, args);
+		const overview = getJson<UnifiedOverview>(state, "overview.json");
+		const paginated = applyPagination(overview?.epics ?? [], args);
 
 		if (args.json || args.query) {
 			output(paginated, args);

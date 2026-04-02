@@ -1,10 +1,10 @@
 /**
  * CREATE_TASK transition handler.
  * Guard: task name must not already exist in tree.
- * Apply: create task.json, update tasks/overview.json (lazily created if missing), append activity log.
+ * Apply: create task.json, update overview.json, append activity log.
  * Pure function, no I/O.
  */
-import type { Overview } from "../../../schemas/entities/overview.js";
+import type { UnifiedOverview } from "../../../schemas/entities/overview.js";
 import type { TaskStatus } from "../../../schemas/entities/task.js";
 import type { ProjectState } from "../../tree.js";
 import { getJson, hasChild, setEntry } from "../../tree.js";
@@ -29,14 +29,14 @@ export function handleCreateTask(
 	const now = event.ts;
 	let tree = state;
 
-	// Lazy overview creation for existing projects without tasks/overview.json
-	let overview = getJson<Overview>(tree, "tasks/overview.json");
+	// Lazy overview creation for existing projects without overview.json
+	let overview = getJson<UnifiedOverview>(tree, "overview.json");
 	if (overview === undefined) {
-		tree = setEntry(tree, "tasks/overview.json", {
+		tree = setEntry(tree, "overview.json", {
 			type: "json",
-			content: { items: [] },
+			content: { epics: [], quests: [], tasks: [] },
 		});
-		overview = { items: [] };
+		overview = { epics: [], quests: [], tasks: [] };
 	}
 
 	// Create task.json — omit optional fields entirely (exactOptionalPropertyTypes)
@@ -52,13 +52,13 @@ export function handleCreateTask(
 		},
 	});
 
-	// Update tasks/overview.json — include title for display
-	tree = setEntry(tree, "tasks/overview.json", {
+	// Update overview.json — include title for display
+	tree = setEntry(tree, "overview.json", {
 		type: "json",
 		content: {
 			...overview,
-			items: [
-				...overview.items,
+			tasks: [
+				...overview.tasks,
 				{
 					name: event.name,
 					status: "open",

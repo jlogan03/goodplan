@@ -54,7 +54,7 @@ export function handleCreateSlice(
 		},
 	});
 
-	// Add slice to epic's embedded slices array in epics/overview.json
+	// Add slice to epic's embedded slices array in overview.json
 	tree = addSliceToOverview(tree, event.epic, {
 		name: event.name,
 		status: "created",

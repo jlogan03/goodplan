@@ -14,9 +14,8 @@ import {
 } from "../../../src/schemas/entities/quest.js";
 import {
 	epicOverviewItemSchema,
-	epicOverviewSchema,
-	overviewSchema,
 	sliceOverviewItemSchema,
+	unifiedOverviewSchema,
 } from "../../../src/schemas/entities/overview.js";
 
 // --- Epic ---
@@ -304,55 +303,61 @@ describe("questSchema", () => {
 
 // --- Overview ---
 
-const validOverview = {
-	items: [
-		{
-			name: "01-data-layer",
-			status: "completed",
-			created: "2026-03-20T00:00:00Z",
-			completed: "2026-03-21T00:00:00Z",
-		},
-		{
-			name: "02-state-machine",
-			status: "implementing",
-			created: "2026-03-20T00:00:00Z",
-			completed: null,
-		},
-	],
-};
-
-describe("overviewSchema", () => {
-	it("accepts a valid overview", () => {
-		expect(overviewSchema.safeParse(validOverview).success).toBe(true);
-	});
-
-	it("accepts empty items array", () => {
-		expect(overviewSchema.safeParse({ items: [] }).success).toBe(true);
-	});
-
-	it("accepts any string as item status (not enum-locked)", () => {
+describe("unifiedOverviewSchema", () => {
+	it("accepts a valid unified overview", () => {
 		expect(
-			overviewSchema.safeParse({
-				items: [
+			unifiedOverviewSchema.safeParse({
+				epics: [
 					{
-						name: "test",
-						status: "any-arbitrary-status",
+						name: "my-epic",
+						status: "activated",
+						created: "2026-03-20T00:00:00Z",
+						completed: null,
+						slices: [],
+					},
+				],
+				quests: [
+					{
+						name: "fix-bug",
+						status: "implementing",
 						created: "2026-03-20T00:00:00Z",
 						completed: null,
 					},
 				],
+				tasks: [],
 			}).success,
 		).toBe(true);
 	});
 
-	it("rejects missing items", () => {
-		expect(overviewSchema.safeParse({}).success).toBe(false);
+	it("accepts empty arrays", () => {
+		expect(
+			unifiedOverviewSchema.safeParse({ epics: [], quests: [], tasks: [] }).success,
+		).toBe(true);
+	});
+
+	it("rejects missing epics", () => {
+		expect(
+			unifiedOverviewSchema.safeParse({ quests: [], tasks: [] }).success,
+		).toBe(false);
+	});
+
+	it("rejects missing quests", () => {
+		expect(
+			unifiedOverviewSchema.safeParse({ epics: [], tasks: [] }).success,
+		).toBe(false);
+	});
+
+	it("rejects missing tasks", () => {
+		expect(
+			unifiedOverviewSchema.safeParse({ epics: [], quests: [] }).success,
+		).toBe(false);
 	});
 
 	it("rejects item with empty name", () => {
 		expect(
-			overviewSchema.safeParse({
-				items: [
+			unifiedOverviewSchema.safeParse({
+				epics: [],
+				quests: [
 					{
 						name: "",
 						status: "active",
@@ -360,14 +365,16 @@ describe("overviewSchema", () => {
 						completed: null,
 					},
 				],
+				tasks: [],
 			}).success,
 		).toBe(false);
 	});
 
 	it("rejects item with invalid timestamp", () => {
 		expect(
-			overviewSchema.safeParse({
-				items: [
+			unifiedOverviewSchema.safeParse({
+				epics: [],
+				quests: [
 					{
 						name: "test",
 						status: "active",
@@ -375,6 +382,7 @@ describe("overviewSchema", () => {
 						completed: null,
 					},
 				],
+				tasks: [],
 			}).success,
 		).toBe(false);
 	});
@@ -469,52 +477,4 @@ describe("epicOverviewItemSchema", () => {
 	});
 });
 
-// --- EpicOverview ---
-
-describe("epicOverviewSchema", () => {
-	it("accepts a valid epic overview", () => {
-		expect(
-			epicOverviewSchema.safeParse({
-				items: [
-					{
-						name: "my-epic",
-						status: "activated",
-						created: "2026-03-20T00:00:00Z",
-						completed: null,
-						slices: [
-							{
-								name: "01-data-layer",
-								status: "implementing",
-								created: "2026-03-20T00:00:00Z",
-								completed: null,
-							},
-						],
-					},
-				],
-			}).success,
-		).toBe(true);
-	});
-
-	it("accepts empty items array", () => {
-		expect(
-			epicOverviewSchema.safeParse({ items: [] }).success,
-		).toBe(true);
-	});
-
-	it("defaults slices to empty array when omitted from items", () => {
-		const result = epicOverviewSchema.safeParse({
-			items: [
-				{
-					name: "my-epic",
-					status: "activated",
-					created: "2026-03-20T00:00:00Z",
-					completed: null,
-				},
-			],
-		});
-		expect(result.success).toBe(true);
-		if (result.success) {
-			expect(result.data.items[0]?.slices).toEqual([]);
-		}
-	});
-});
+// epicOverviewSchema has been replaced by unifiedOverviewSchema — tested above.

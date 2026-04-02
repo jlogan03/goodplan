@@ -4,7 +4,7 @@
  * CONVERT_TASK: atomically converts task to quest or epic, inlining entity creation.
  * Pure functions, no I/O.
  */
-import type { Overview } from "../../../schemas/entities/overview.js";
+import type { UnifiedOverview } from "../../../schemas/entities/overview.js";
 import type { TaskStatus } from "../../../schemas/entities/task.js";
 import type { ProjectState } from "../../tree.js";
 import { getJson, hasChild, setEntry } from "../../tree.js";
@@ -104,12 +104,12 @@ export function handleConvertTask(
 		};
 	}
 
-	// Guard: target overview must exist
-	const targetOverview = getJson<Overview>(state, `${targetNamespace}/overview.json`);
+	// Guard: overview.json must exist
+	const targetOverview = getJson<UnifiedOverview>(state, "overview.json");
 	if (targetOverview === undefined) {
 		return {
 			code: "STATE_INVALID_TRANSITION",
-			message: `${targetNamespace}/overview.json not found — is the project initialized?`,
+			message: "overview.json not found — is the project initialized?",
 		};
 	}
 

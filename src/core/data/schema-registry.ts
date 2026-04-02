@@ -1,6 +1,6 @@
 import type { z } from "zod";
 import { epicSchema } from "../../schemas/entities/epic.js";
-import { epicOverviewSchema, overviewSchema } from "../../schemas/entities/overview.js";
+import { unifiedOverviewSchema } from "../../schemas/entities/overview.js";
 import { projectSchema } from "../../schemas/entities/project.js";
 import { questSchema } from "../../schemas/entities/quest.js";
 import { sliceSchema } from "../../schemas/entities/slice.js";
@@ -19,10 +19,8 @@ export const schemaRegistry: SchemaRegistryEntry[] = [
 	// Project-level JSON
 	{ pattern: /^project\.json$/, schema: projectSchema },
 
-	// Overview JSON (one per collection)
-	{ pattern: /^epics\/overview\.json$/, schema: epicOverviewSchema },
-	{ pattern: /^quests\/overview\.json$/, schema: overviewSchema },
-	{ pattern: /^tasks\/overview\.json$/, schema: overviewSchema },
+	// Overview JSON (single consolidated file)
+	{ pattern: /^overview\.json$/, schema: unifiedOverviewSchema },
 
 	// Entity JSON (per-instance)
 	{ pattern: /^epics\/[^/]+\/epic\.json$/, schema: epicSchema },

@@ -4,7 +4,7 @@ import { projectSchema } from "../../../src/schemas/entities/project.js";
 import { epicSchema } from "../../../src/schemas/entities/epic.js";
 import { sliceSchema } from "../../../src/schemas/entities/slice.js";
 import { questSchema } from "../../../src/schemas/entities/quest.js";
-import { epicOverviewSchema, overviewSchema } from "../../../src/schemas/entities/overview.js";
+import { unifiedOverviewSchema } from "../../../src/schemas/entities/overview.js";
 import { activityEntrySchema } from "../../../src/schemas/records/activity-log.js";
 import { decisionEntrySchema } from "../../../src/schemas/records/decision.js";
 import { learningEntrySchema } from "../../../src/schemas/records/learning.js";
@@ -16,12 +16,8 @@ describe("findSchema", () => {
 		expect(findSchema("project.json")).toBe(projectSchema);
 	});
 
-	it("resolves epics/overview.json to epicOverviewSchema", () => {
-		expect(findSchema("epics/overview.json")).toBe(epicOverviewSchema);
-	});
-
-	it("resolves quests/overview.json", () => {
-		expect(findSchema("quests/overview.json")).toBe(overviewSchema);
+	it("resolves overview.json to unifiedOverviewSchema", () => {
+		expect(findSchema("overview.json")).toBe(unifiedOverviewSchema);
 	});
 
 	it("resolves epics/<name>/epic.json", () => {
@@ -94,7 +90,7 @@ describe("findSchema", () => {
 describe("schemaRegistry", () => {
 	it("has entries for all expected patterns", () => {
 		// Ensure the registry has a reasonable number of entries
-		expect(schemaRegistry.length).toBeGreaterThanOrEqual(12);
+		expect(schemaRegistry.length).toBeGreaterThanOrEqual(10);
 	});
 
 	it("all entries have pattern and schema", () => {

@@ -189,7 +189,7 @@ describe("checkViolation", () => {
 
 	it("detects Edit on .goodplan/ .json files", () => {
 		const violations: string[] = [];
-		checkViolation("Edit", { file_path: "/path/.goodplan/epics/overview.json" }, violations);
+		checkViolation("Edit", { file_path: "/path/.goodplan/overview.json" }, violations);
 		expect(violations).toHaveLength(1);
 	});
 

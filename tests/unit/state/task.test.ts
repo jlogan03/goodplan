@@ -6,7 +6,7 @@ import { reduce } from "../../../src/core/state/reduce.js";
 import { isStateError } from "../../../src/core/state/types.js";
 import type { StateError } from "../../../src/core/state/types.js";
 import type { Epic } from "../../../src/schemas/entities/epic.js";
-import type { Overview } from "../../../src/schemas/entities/overview.js";
+import type { UnifiedOverview } from "../../../src/schemas/entities/overview.js";
 import type { Quest } from "../../../src/schemas/entities/quest.js";
 import type { Task } from "../../../src/schemas/entities/task.js";
 
@@ -87,7 +87,7 @@ describe("reduce — CREATE_TASK", () => {
 		expect(task?.context).toEqual({});
 	});
 
-	it("updates tasks/overview.json with title", () => {
+	it("updates overview.json tasks with title", () => {
 		const state = initProject();
 		const result = reduce(state, {
 			type: "CREATE_TASK",
@@ -96,14 +96,14 @@ describe("reduce — CREATE_TASK", () => {
 			ts: TS2,
 		}) as ProjectState;
 
-		const overview = getJson<Overview>(result, "tasks/overview.json");
+		const overview = getJson<UnifiedOverview>(result, "overview.json");
 		expect(overview).toBeDefined();
-		expect(overview?.items).toHaveLength(1);
-		expect(overview?.items[0]?.name).toBe("t1");
-		expect(overview?.items[0]?.status).toBe("open");
-		expect(overview?.items[0]?.title).toBe("Test task");
-		expect(overview?.items[0]?.created).toBe(TS2);
-		expect(overview?.items[0]?.completed).toBeNull();
+		expect(overview?.tasks).toHaveLength(1);
+		expect(overview?.tasks[0]?.name).toBe("t1");
+		expect(overview?.tasks[0]?.status).toBe("open");
+		expect(overview?.tasks[0]?.title).toBe("Test task");
+		expect(overview?.tasks[0]?.created).toBe(TS2);
+		expect(overview?.tasks[0]?.completed).toBeNull();
 	});
 
 	it("appends activity log entry", () => {
@@ -142,17 +142,17 @@ describe("reduce — CREATE_TASK", () => {
 		expect((result as StateError).code).toBe("STATE_INVALID_TRANSITION");
 	});
 
-	it("lazily creates tasks/overview.json for existing projects without it", () => {
-		// Build a state that has project.json but no tasks/overview.json,
-		// simulating a project initialized before the task feature existed.
+	it("lazily creates overview.json for existing projects without it", () => {
+		// Build a state that has project.json but no overview.json,
+		// simulating a project initialized before the overview consolidation.
 		const fullState = initProject();
-		const stateWithoutTaskOverview = deleteEntry(fullState, "tasks/overview.json");
+		const stateWithoutOverview = deleteEntry(fullState, "overview.json");
 
-		// Verify tasks/overview.json is indeed absent
-		expect(getJson<Overview>(stateWithoutTaskOverview, "tasks/overview.json")).toBeUndefined();
+		// Verify overview.json is indeed absent
+		expect(getJson<UnifiedOverview>(stateWithoutOverview, "overview.json")).toBeUndefined();
 
-		// CREATE_TASK should lazily create tasks/overview.json and succeed
-		const result = reduce(stateWithoutTaskOverview, {
+		// CREATE_TASK should lazily create overview.json and succeed
+		const result = reduce(stateWithoutOverview, {
 			type: "CREATE_TASK",
 			name: "t1",
 			title: "Test",
@@ -161,10 +161,10 @@ describe("reduce — CREATE_TASK", () => {
 
 		expect(isStateError(result)).toBe(false);
 		const newState = result as ProjectState;
-		const overview = getJson<Overview>(newState, "tasks/overview.json");
+		const overview = getJson<UnifiedOverview>(newState, "overview.json");
 		expect(overview).toBeDefined();
-		expect(overview?.items).toHaveLength(1);
-		expect(overview?.items[0]?.name).toBe("t1");
+		expect(overview?.tasks).toHaveLength(1);
+		expect(overview?.tasks[0]?.name).toBe("t1");
 	});
 });
 
@@ -202,9 +202,9 @@ describe("reduce — DROP_TASK", () => {
 			ts: TS2,
 		}) as ProjectState;
 
-		const overview = getJson<Overview>(result, "tasks/overview.json");
-		expect(overview?.items[0]?.status).toBe("dropped");
-		expect(overview?.items[0]?.completed).toBe(TS2);
+		const overview = getJson<UnifiedOverview>(result, "overview.json");
+		expect(overview?.tasks[0]?.status).toBe("dropped");
+		expect(overview?.tasks[0]?.completed).toBe(TS2);
 	});
 
 	it("rejects drop on non-existent task", () => {
@@ -302,7 +302,7 @@ describe("reduce — CONVERT_TASK to quest", () => {
 		expect(quest?.updated).toBe(TS2);
 	});
 
-	it("adds quest to quests/overview.json", () => {
+	it("adds quest to overview.json", () => {
 		const state = createTask(initProject());
 		const result = reduce(state, {
 			type: "CONVERT_TASK",
@@ -312,13 +312,13 @@ describe("reduce — CONVERT_TASK to quest", () => {
 			ts: TS2,
 		}) as ProjectState;
 
-		const overview = getJson<Overview>(result, "quests/overview.json");
-		expect(overview?.items).toHaveLength(1);
-		expect(overview?.items[0]?.name).toBe("q1");
-		expect(overview?.items[0]?.status).toBe("created");
+		const overview = getJson<UnifiedOverview>(result, "overview.json");
+		expect(overview?.quests).toHaveLength(1);
+		expect(overview?.quests[0]?.name).toBe("q1");
+		expect(overview?.quests[0]?.status).toBe("created");
 	});
 
-	it("updates tasks/overview.json status to converted", () => {
+	it("updates overview.json task status to converted", () => {
 		const state = createTask(initProject());
 		const result = reduce(state, {
 			type: "CONVERT_TASK",
@@ -328,9 +328,9 @@ describe("reduce — CONVERT_TASK to quest", () => {
 			ts: TS2,
 		}) as ProjectState;
 
-		const overview = getJson<Overview>(result, "tasks/overview.json");
-		expect(overview?.items[0]?.status).toBe("converted");
-		expect(overview?.items[0]?.completed).toBe(TS2);
+		const overview = getJson<UnifiedOverview>(result, "overview.json");
+		expect(overview?.tasks[0]?.status).toBe("converted");
+		expect(overview?.tasks[0]?.completed).toBe(TS2);
 	});
 
 	it("appends two activity log entries", () => {
@@ -464,7 +464,7 @@ describe("reduce — CONVERT_TASK to epic", () => {
 		expect(epic?.updated).toBe(TS2);
 	});
 
-	it("adds epic to epics/overview.json", () => {
+	it("adds epic to overview.json", () => {
 		const state = createTask(initProject());
 		const result = reduce(state, {
 			type: "CONVERT_TASK",
@@ -474,10 +474,10 @@ describe("reduce — CONVERT_TASK to epic", () => {
 			ts: TS2,
 		}) as ProjectState;
 
-		const overview = getJson<Overview>(result, "epics/overview.json");
-		expect(overview?.items).toHaveLength(1);
-		expect(overview?.items[0]?.name).toBe("e1");
-		expect(overview?.items[0]?.status).toBe("created");
+		const overview = getJson<UnifiedOverview>(result, "overview.json");
+		expect(overview?.epics).toHaveLength(1);
+		expect(overview?.epics[0]?.name).toBe("e1");
+		expect(overview?.epics[0]?.status).toBe("created");
 	});
 
 	it("rejects conversion when epic name already exists", () => {

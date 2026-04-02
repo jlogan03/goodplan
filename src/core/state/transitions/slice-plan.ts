@@ -1,4 +1,4 @@
-import type { EpicOverview } from "../../../schemas/entities/overview.js";
+import type { UnifiedOverview } from "../../../schemas/entities/overview.js";
 import type { SliceStatus } from "../../../schemas/entities/slice.js";
 /**
  * BEGIN_PLAN transition handler.
@@ -30,8 +30,8 @@ export function handleBeginPlan(
 	if (isStateError(sliceOrErr)) return sliceOrErr;
 
 	// Sequential enforcement: find this slice's position in the epic's embedded slices array
-	const epicOverview = getJson<EpicOverview>(state, "epics/overview.json");
-	const epicItem = epicOverview?.items.find((e) => e.name === event.epic);
+	const overview = getJson<UnifiedOverview>(state, "overview.json");
+	const epicItem = overview?.epics.find((e) => e.name === event.epic);
 	if (epicItem === undefined) {
 		return {
 			code: "STATE_INVALID_TRANSITION",

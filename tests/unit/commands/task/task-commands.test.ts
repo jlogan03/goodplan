@@ -12,7 +12,7 @@ import { getJson } from "../../../../src/core/data/tree.js";
 import { reduce } from "../../../../src/core/state/reduce.js";
 import { isStateError } from "../../../../src/core/state/types.js";
 import type { StateError } from "../../../../src/core/state/types.js";
-import type { Overview } from "../../../../src/schemas/entities/overview.js";
+import type { UnifiedOverview } from "../../../../src/schemas/entities/overview.js";
 import type { Quest } from "../../../../src/schemas/entities/quest.js";
 import type { Task } from "../../../../src/schemas/entities/task.js";
 
@@ -53,11 +53,11 @@ describe("task command cycle: create → list → show → drop", () => {
 		expect(task?.title).toBe("Fix the bug");
 
 		// List — should show the task in overview
-		const overview = getJson<Overview>(state, "tasks/overview.json");
-		expect(overview?.items).toHaveLength(1);
-		expect(overview?.items[0]?.name).toBe("fix-bug");
-		expect(overview?.items[0]?.status).toBe("open");
-		expect(overview?.items[0]?.title).toBe("Fix the bug");
+		const overview = getJson<UnifiedOverview>(state, "overview.json");
+		expect(overview?.tasks).toHaveLength(1);
+		expect(overview?.tasks[0]?.name).toBe("fix-bug");
+		expect(overview?.tasks[0]?.status).toBe("open");
+		expect(overview?.tasks[0]?.title).toBe("Fix the bug");
 
 		// Show — task has all fields
 		expect(task?.description).toBe("The bug in auth module");
@@ -77,8 +77,8 @@ describe("task command cycle: create → list → show → drop", () => {
 		expect(droppedTask?.droppedReason).toBe("duplicate of another task");
 
 		// Overview should reflect dropped status
-		const updatedOverview = getJson<Overview>(state, "tasks/overview.json");
-		expect(updatedOverview?.items[0]?.status).toBe("dropped");
+		const updatedOverview = getJson<UnifiedOverview>(state, "overview.json");
+		expect(updatedOverview?.tasks[0]?.status).toBe("dropped");
 	});
 });
 
@@ -136,9 +136,9 @@ describe("status includes task counts", () => {
 		}) as ProjectState;
 
 		// Count from overview
-		const overview = getJson<Overview>(state, "tasks/overview.json");
-		expect(overview?.items).toHaveLength(3);
-		const openCount = overview?.items.filter((i) => i.status === "open").length;
+		const overview = getJson<UnifiedOverview>(state, "overview.json");
+		expect(overview?.tasks).toHaveLength(3);
+		const openCount = overview?.tasks.filter((i) => i.status === "open").length;
 		expect(openCount).toBe(2);
 	});
 });

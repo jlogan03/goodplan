@@ -7,7 +7,7 @@ import { isStateError } from "../../../src/core/state/types.js";
 import type { StateError } from "../../../src/core/state/types.js";
 import type { Slice } from "../../../src/schemas/entities/slice.js";
 import type { Project } from "../../../src/schemas/entities/project.js";
-import type { EpicOverview } from "../../../src/schemas/entities/overview.js";
+import type { UnifiedOverview } from "../../../src/schemas/entities/overview.js";
 import type { LearningEntry } from "../../../src/schemas/records/learning.js";
 import type { ArchitectureDelta } from "../../../src/schemas/records/architecture-delta.js";
 
@@ -71,8 +71,8 @@ describe("reduce — COMPLETE_SLICE", () => {
 		expect(slice!.updated).toBe(TS2);
 
 		// Overview synced (embedded in epic)
-		const overview = getJson<EpicOverview>(newState, "epics/overview.json");
-		const epicItem = overview!.items.find((i) => i.name === "e1");
+		const overview = getJson<UnifiedOverview>(newState, "overview.json");
+		const epicItem = overview!.epics.find((i) => i.name === "e1");
 		const s1Item = epicItem!.slices.find((s) => s.name === "s1");
 		expect(s1Item!.status).toBe("completed");
 
@@ -261,8 +261,8 @@ describe("reduce — COMPLETE_SLICE", () => {
 		}) as ProjectState;
 
 		// Verify the state: all slices in epic are completed
-		const overview = getJson<EpicOverview>(result, "epics/overview.json");
-		const epicItem = overview!.items.find((i) => i.name === "e1");
+		const overview = getJson<UnifiedOverview>(result, "overview.json");
+		const epicItem = overview!.epics.find((i) => i.name === "e1");
 		const allDone = epicItem!.slices.every((i) => i.status === "completed" || i.status === "abandoned");
 		expect(allDone).toBe(true);
 	});
@@ -280,8 +280,8 @@ describe("reduce — COMPLETE_SLICE", () => {
 			architectureDelta: [],
 		}) as ProjectState;
 
-		const overview = getJson<EpicOverview>(result, "epics/overview.json");
-		const epicItem = overview!.items.find((i) => i.name === "e1");
+		const overview = getJson<UnifiedOverview>(result, "overview.json");
+		const epicItem = overview!.epics.find((i) => i.name === "e1");
 		const s1Item = epicItem!.slices.find((s) => s.name === "s1");
 		expect(s1Item!.completed).not.toBeNull();
 	});
