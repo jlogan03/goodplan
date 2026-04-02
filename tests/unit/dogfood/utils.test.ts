@@ -21,6 +21,7 @@ import {
 	resetTranscriptState,
 	tierDefault,
 	verifyEntityStatus,
+	verifyNoArtifactReads,
 	writeTranscriptEntry,
 } from "../../../tools/dogfood/utils";
 
@@ -411,5 +412,246 @@ describe("FixtureSetupError", () => {
 		expect(err).toBeInstanceOf(FixtureSetupError);
 		expect(err).toBeInstanceOf(Error);
 		expect(err.name).toBe("FixtureSetupError");
+	});
+});
+
+// ─── verifyNoArtifactReads ─────────────────────────────────
+
+describe("verifyNoArtifactReads", () => {
+	/** Helper to build a synthetic Read tool call. */
+	function readCall(filePath: string): { toolName: string; input: unknown } {
+		return { toolName: "Read", input: { file_path: filePath } };
+	}
+
+	// ─── Clean pass cases ──────────────────────────────────
+
+	it("returns ok: true for empty tool call array", () => {
+		const result = verifyNoArtifactReads([]);
+		expect(result.ok).toBe(true);
+		expect(result.violations).toHaveLength(0);
+	});
+
+	it("returns ok: true when no Read calls present", () => {
+		const result = verifyNoArtifactReads([
+			{ toolName: "Bash", input: { command: "ls" } },
+			{ toolName: "Write", input: { file_path: "/tmp/out.txt", content: "hi" } },
+		]);
+		expect(result.ok).toBe(true);
+		expect(result.violations).toHaveLength(0);
+	});
+
+	it("returns ok: true for Read calls on non-artifact paths", () => {
+		const result = verifyNoArtifactReads([
+			readCall("/Users/ian/project/README.md"),
+			readCall("/Users/ian/project/.goodplan/idea.md"),
+			readCall("/Users/ian/project/package.json"),
+		]);
+		expect(result.ok).toBe(true);
+		expect(result.violations).toHaveLength(0);
+	});
+
+	// ─── Violation: .goodplan/architecture/ ─────────────────
+
+	it("flags Read on .goodplan/architecture/ paths", () => {
+		const result = verifyNoArtifactReads([
+			readCall("/Users/ian/project/.goodplan/architecture/_overview.md"),
+		]);
+		expect(result.ok).toBe(false);
+		expect(result.violations).toHaveLength(1);
+		expect(result.violations[0]).toContain(".goodplan/architecture/");
+	});
+
+	// ─── Violation: .goodplan/epics/ ────────────────────────
+
+	it("flags Read on .goodplan/epics/ paths", () => {
+		const result = verifyNoArtifactReads([
+			readCall("/Users/ian/project/.goodplan/epics/my-epic/epic.json"),
+		]);
+		expect(result.ok).toBe(false);
+		expect(result.violations).toHaveLength(1);
+		expect(result.violations[0]).toContain(".goodplan/epics/");
+	});
+
+	// ─── Violation: plan.md / plan-refined.md / plan-created.md
+
+	it("flags Read on plan.md", () => {
+		const result = verifyNoArtifactReads([
+			readCall("/Users/ian/project/.goodplan/epics/my-epic/slices/01-foo/plan.md"),
+		]);
+		expect(result.ok).toBe(false);
+		expect(result.violations).toHaveLength(1);
+		expect(result.violations[0]).toContain("plan.md");
+	});
+
+	it("flags Read on plan-refined.md", () => {
+		const result = verifyNoArtifactReads([
+			readCall("/Users/ian/project/plan-refined.md"),
+		]);
+		expect(result.ok).toBe(false);
+		expect(result.violations).toHaveLength(1);
+		expect(result.violations[0]).toContain("plan-refined.md");
+	});
+
+	it("flags Read on plan-created.md", () => {
+		const result = verifyNoArtifactReads([
+			readCall("/Users/ian/project/plan-created.md"),
+		]);
+		expect(result.ok).toBe(false);
+		expect(result.violations).toHaveLength(1);
+	});
+
+	// ─── Violation: src/ path ───────────────────────────────
+
+	it("flags Read on src/ path", () => {
+		const result = verifyNoArtifactReads([
+			readCall("/Users/ian/project/src/index.ts"),
+		]);
+		expect(result.ok).toBe(false);
+		expect(result.violations).toHaveLength(1);
+		expect(result.violations[0]).toContain("src/");
+	});
+
+	// ─── Violation: skills/ path ────────────────────────────
+
+	it("flags Read on skills/ path", () => {
+		const result = verifyNoArtifactReads([
+			readCall("/Users/ian/project/skills/create-plan/SKILL.md"),
+		]);
+		expect(result.ok).toBe(false);
+		expect(result.violations).toHaveLength(1);
+		expect(result.violations[0]).toContain("skills/");
+	});
+
+	// ─── Violation: agents/ path ────────────────────────────
+
+	it("flags Read on agents/ path", () => {
+		const result = verifyNoArtifactReads([
+			readCall("/Users/ian/project/agents/reviewer.ts"),
+		]);
+		expect(result.ok).toBe(false);
+		expect(result.violations).toHaveLength(1);
+		expect(result.violations[0]).toContain("agents/");
+	});
+
+	// ─── Fixture exclusion: /tmp/ ───────────────────────────
+
+	it("does NOT flag Read on /tmp/gp-fixture-.../src/ (fixture exclusion)", () => {
+		const result = verifyNoArtifactReads([
+			readCall("/tmp/gp-fixture-1234-abc123/src/index.ts"),
+		]);
+		expect(result.ok).toBe(true);
+		expect(result.violations).toHaveLength(0);
+	});
+
+	it("does NOT flag Read on /tmp/.../skills/ (fixture exclusion)", () => {
+		const result = verifyNoArtifactReads([
+			readCall("/tmp/gp-fixture-1234-abc123/skills/test/SKILL.md"),
+		]);
+		expect(result.ok).toBe(true);
+		expect(result.violations).toHaveLength(0);
+	});
+
+	it("does NOT flag Read on /tmp/.../agents/ (fixture exclusion)", () => {
+		const result = verifyNoArtifactReads([
+			readCall("/tmp/gp-fixture-1234-abc123/agents/reviewer.ts"),
+		]);
+		expect(result.ok).toBe(true);
+		expect(result.violations).toHaveLength(0);
+	});
+
+	// ─── Fixture exclusion: /var/folders/ ───────────────────
+
+	it("does NOT flag Read on /var/folders/.../src/ (fixture exclusion)", () => {
+		const result = verifyNoArtifactReads([
+			readCall("/var/folders/xy/abc123/T/gp-fixture/src/main.ts"),
+		]);
+		expect(result.ok).toBe(true);
+		expect(result.violations).toHaveLength(0);
+	});
+
+	// ─── Fixture exclusion does NOT apply to artifact patterns
+
+	it("still flags .goodplan/architecture/ even under /tmp/", () => {
+		const result = verifyNoArtifactReads([
+			readCall("/tmp/gp-fixture-1234/.goodplan/architecture/_overview.md"),
+		]);
+		expect(result.ok).toBe(false);
+		expect(result.violations).toHaveLength(1);
+	});
+
+	it("still flags .goodplan/epics/ even under /tmp/", () => {
+		const result = verifyNoArtifactReads([
+			readCall("/tmp/gp-fixture-1234/.goodplan/epics/test-epic/epic.json"),
+		]);
+		expect(result.ok).toBe(false);
+		expect(result.violations).toHaveLength(1);
+	});
+
+	// ─── Non-Read tool calls are ignored ────────────────────
+
+	it("ignores non-Read tool calls with artifact paths", () => {
+		const result = verifyNoArtifactReads([
+			{ toolName: "Write", input: { file_path: "/Users/ian/project/src/index.ts" } },
+			{ toolName: "Edit", input: { file_path: "/Users/ian/project/skills/foo/SKILL.md" } },
+			{ toolName: "Bash", input: { command: "cat src/index.ts" } },
+			{ toolName: "Glob", input: { pattern: "src/**/*.ts" } },
+		]);
+		expect(result.ok).toBe(true);
+		expect(result.violations).toHaveLength(0);
+	});
+
+	// ─── Malformed / missing input ──────────────────────────
+
+	it("handles null input gracefully", () => {
+		const result = verifyNoArtifactReads([
+			{ toolName: "Read", input: null },
+		]);
+		expect(result.ok).toBe(true);
+		expect(result.violations).toHaveLength(0);
+	});
+
+	it("handles array input gracefully", () => {
+		const result = verifyNoArtifactReads([
+			{ toolName: "Read", input: [{ file_path: "/Users/ian/project/src/index.ts" }] },
+		]);
+		expect(result.ok).toBe(true);
+		expect(result.violations).toHaveLength(0);
+	});
+
+	it("handles missing file_path gracefully", () => {
+		const result = verifyNoArtifactReads([
+			{ toolName: "Read", input: { content: "hello" } },
+		]);
+		expect(result.ok).toBe(true);
+		expect(result.violations).toHaveLength(0);
+	});
+
+	it("handles empty file_path gracefully", () => {
+		const result = verifyNoArtifactReads([
+			{ toolName: "Read", input: { file_path: "" } },
+		]);
+		expect(result.ok).toBe(true);
+		expect(result.violations).toHaveLength(0);
+	});
+
+	it("handles non-string file_path gracefully", () => {
+		const result = verifyNoArtifactReads([
+			{ toolName: "Read", input: { file_path: 42 } },
+		]);
+		expect(result.ok).toBe(true);
+		expect(result.violations).toHaveLength(0);
+	});
+
+	// ─── Multiple violations ────────────────────────────────
+
+	it("collects multiple violations from one call", () => {
+		const result = verifyNoArtifactReads([
+			readCall("/Users/ian/project/.goodplan/architecture/data-model.md"),
+			readCall("/Users/ian/project/src/cli.ts"),
+			readCall("/Users/ian/project/skills/implement/SKILL.md"),
+			readCall("/Users/ian/project/README.md"), // safe
+		]);
+		expect(result.ok).toBe(false);
+		expect(result.violations).toHaveLength(3);
 	});
 });
