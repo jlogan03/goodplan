@@ -20,6 +20,7 @@ import {
 	createLogger,
 	isSuccess,
 	parseModel,
+	platformBinaryDir,
 	runSkillSession,
 	tierDefault,
 } from "./utils";
@@ -34,7 +35,7 @@ if (!HOME) {
 
 const GOODPLAN_DIR = join(import.meta.dir, "../..");
 const PLUGIN_DIR = resolve(GOODPLAN_DIR, "dist/gp-plugin");
-const GP_BIN = join(PLUGIN_DIR, "binaries/macos-arm64/gp");
+const GP_BIN = join(PLUGIN_DIR, "binaries", platformBinaryDir(), "gp");
 const TEST_DIR = "/tmp/gp-plugin-skills-test";
 const LOG_FILE = join(GOODPLAN_DIR, "tools/dogfood/plugin-skills-test.log");
 const TRANSCRIPT_FILE = join(GOODPLAN_DIR, "tools/dogfood/plugin-skills-transcript.jsonl");
@@ -152,7 +153,7 @@ async function testProjectStatus(): Promise<boolean> {
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
 				env: {
 					...process.env,
-					PATH: `${join(PLUGIN_DIR, "binaries/macos-arm64")}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
+					PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
 				},
 				systemPrompt: {
 					type: "preset",

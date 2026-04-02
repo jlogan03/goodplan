@@ -384,17 +384,27 @@ class AsyncQueue<T> implements AsyncIterable<T> {
  * Creates a persistent simulated user session using Agent SDK `query()` with
  * `AsyncIterable<SDKUserMessage>` as the prompt.
  *
- * The session stays alive for the duration of the test run. Each `ask()` call
- * pushes a new user message into the session via an async queue, so the simulated
- * user naturally accumulates conversational history — it has full context of all
- * prior questions and answers.
+ * **Design: persistent session, not stateless.**
+ * The original plan specified stateless `messages.create()` calls, but this
+ * implementation uses a persistent `query()` session with `AsyncQueue` instead.
+ * This gives better context accumulation (the simulated user sees all prior Q&A)
+ * and avoids needing a separate ANTHROPIC_API_KEY (uses Claude subscription).
+ *
+ * **Lifecycle pattern: create one per skill run (isolation).**
+ * The dominant usage pattern is to create a fresh `SimulatedUser` per skill
+ * invocation, giving each run a clean conversational context. This is the
+ * recommended pattern. Reusing a single instance across multiple skill runs
+ * (accumulation) is possible but not the primary design intent.
+ *
+ * Each `ask()` call pushes a new user message into the session via an async
+ * queue, so the simulated user naturally accumulates conversational history
+ * within that session.
  *
  * The system prompt tells the simulated user about the project, its persona,
  * and the transcript file path (which it can Read for full session context).
  *
- * Uses the Claude subscription via Agent SDK — no ANTHROPIC_API_KEY needed.
- *
- * Call `close()` when done to terminate the session cleanly.
+ * Call `close()` when done to terminate the session cleanly (required — the
+ * persistent session will not terminate on its own).
  */
 export function createSimulatedUser(opts: {
 	cwd: string;

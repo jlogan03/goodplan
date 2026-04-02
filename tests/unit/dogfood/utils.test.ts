@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -147,7 +148,6 @@ describe("verifyEntityStatus", () => {
 			join(tmpDir, "package.json"),
 			JSON.stringify({ name: "test", version: "0.1.0" }),
 		);
-		const { execFileSync } = require("node:child_process");
 		execFileSync("git", ["init"], { cwd: tmpDir, stdio: "pipe" });
 		execFileSync("git", ["add", "-A"], { cwd: tmpDir, stdio: "pipe" });
 		execFileSync("git", ["-c", "user.name=test", "-c", "user.email=test@test.com", "commit", "-m", "init"], {

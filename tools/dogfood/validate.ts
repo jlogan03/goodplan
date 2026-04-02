@@ -35,7 +35,11 @@ import {
 
 // ─── Config ──────────────────────────────────────────────────
 
-const HOME = process.env.HOME!;
+const HOME = process.env.HOME;
+if (!HOME) {
+	console.error("FATAL: HOME environment variable is not set");
+	process.exit(1);
+}
 const PROJECT_DIR = join(HOME, "Repos/flashcards");
 const LOG_DIR = join(import.meta.dir, "validate-logs");
 const MODEL = parseModel(tierDefault("quality"));
