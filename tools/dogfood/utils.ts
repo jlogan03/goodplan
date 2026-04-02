@@ -712,6 +712,81 @@ export async function runSkillSession(opts: {
 	};
 }
 
+// ─── Artifact Read Discipline ──────────────────────────────
+
+/**
+ * Artifact path patterns that the orchestrator must NOT read directly.
+ * These should flow through sub-agents or CLI queries instead.
+ *
+ * Complements `checkViolation()` which guards state write integrity.
+ * Together they form two halves of orchestrator discipline:
+ * - `checkViolation` → state write integrity (no direct .goodplan/*.json writes)
+ * - `verifyNoArtifactReads` → context read discipline (no direct artifact reads)
+ *
+ * Note: `canUseTool` interceptor only fires for orchestrator-level tool calls;
+ * sub-agent calls run in independent sessions. Every Read captured is an
+ * orchestrator violation by definition — no special attribution logic needed.
+ */
+/**
+ * Patterns for artifact paths that the orchestrator should NOT read directly.
+ * These are anchored to the project working directory, not fixture temp dirs.
+ * Fixture paths (under /tmp/) are excluded to avoid false positives.
+ */
+const ARTIFACT_PATH_PATTERNS: RegExp[] = [
+	/\.goodplan\/architecture\//,
+	/\.goodplan\/epics\//,
+	/\/plan\.md$/,
+	/\/plan-refined\.md$/,
+	/\/plan-created\.md$/,
+];
+
+/** Paths that are violations only when NOT under /tmp/ (fixture directories). */
+const PROJECT_ONLY_PATTERNS: RegExp[] = [
+	/\bsrc\//,
+	/\bskills\//,
+	/\bagents\//,
+];
+
+export function verifyNoArtifactReads(
+	toolCalls: Array<{ toolName: string; input: unknown }>,
+): { ok: boolean; violations: string[] } {
+	const violations: string[] = [];
+
+	for (const call of toolCalls) {
+		if (call.toolName !== "Read") continue;
+
+		if (typeof call.input !== "object" || call.input === null || Array.isArray(call.input)) continue;
+
+		const record = call.input as Record<string, unknown>;
+		const filePath = typeof record.file_path === "string" ? record.file_path : "";
+
+		if (!filePath) continue;
+
+		let matched = false;
+		for (const pattern of ARTIFACT_PATH_PATTERNS) {
+			if (pattern.test(filePath)) {
+				violations.push(`Read on ${filePath}`);
+				matched = true;
+				break;
+			}
+		}
+		if (!matched) {
+			// Project-only patterns: skip paths under /tmp/ (fixture directories)
+			const isFixturePath = filePath.startsWith("/tmp/") || filePath.startsWith("/var/folders/");
+			if (!isFixturePath) {
+				for (const pattern of PROJECT_ONLY_PATTERNS) {
+					if (pattern.test(filePath)) {
+						violations.push(`Read on ${filePath}`);
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	return { ok: violations.length === 0, violations };
+}
+
 // ─── Fixture Creation ───────────────────────────────────────
 
 export async function createMinimalFixture(opts?: {
@@ -719,12 +794,20 @@ export async function createMinimalFixture(opts?: {
 	epicName?: string;
 	sliceName?: string;
 	withSource?: boolean;
+	/** Custom goal text for the slice (default: "Test slice goal") */
+	sliceGoal?: string;
+	/** Number of slices to create (default: 1). Names are <sliceName>, <sliceName>-2, etc. */
+	sliceCount?: number;
+	/** Pre-existing architecture files to write to .goodplan/architecture/ (key = filename, value = markdown content). Written to disk only — not registered via CLI. */
+	architectureFiles?: Record<string, string>;
 }): Promise<string> {
 	const tmpDir =
 		opts?.dir ?? join("/tmp", `gp-fixture-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
 	const epicName = opts?.epicName ?? "test-epic";
 	const sliceName = opts?.sliceName ?? "test-slice";
 	const withSource = opts?.withSource ?? false;
+	const sliceGoal = opts?.sliceGoal ?? "Test slice goal";
+	const sliceCount = opts?.sliceCount ?? 1;
 
 	try {
 		mkdirSync(tmpDir, { recursive: true });
@@ -798,15 +881,28 @@ export async function createMinimalFixture(opts?: {
 			);
 		}
 
-		// gp slice:create via stdin
-		const sliceResult = gp(["slice:create", "--epic", epicName, "--json"], {
-			cwd: tmpDir,
-			stdin: JSON.stringify({ name: sliceName, goal: "Test slice goal" }),
-		});
-		if (sliceResult.exitCode !== 0) {
-			throw new FixtureSetupError(
-				`gp slice:create failed (exit ${sliceResult.exitCode}): ${sliceResult.stdout}`,
-			);
+		// Create slices (1 or more)
+		for (let i = 0; i < sliceCount; i++) {
+			const name = i === 0 ? sliceName : `${sliceName}-${i + 1}`;
+			const goal = i === 0 ? sliceGoal : `${sliceGoal} (slice ${i + 1})`;
+			const sliceResult = gp(["slice:create", "--epic", epicName, "--json"], {
+				cwd: tmpDir,
+				stdin: JSON.stringify({ name, goal }),
+			});
+			if (sliceResult.exitCode !== 0) {
+				throw new FixtureSetupError(
+					`gp slice:create failed for ${name} (exit ${sliceResult.exitCode}): ${sliceResult.stdout}`,
+				);
+			}
+		}
+
+		// Write pre-existing architecture files if provided
+		if (opts?.architectureFiles) {
+			const archDir = join(tmpDir, ".goodplan", "architecture");
+			mkdirSync(archDir, { recursive: true });
+			for (const [filename, content] of Object.entries(opts.architectureFiles)) {
+				writeFileSync(join(archDir, filename), content);
+			}
 		}
 
 		return tmpDir;
