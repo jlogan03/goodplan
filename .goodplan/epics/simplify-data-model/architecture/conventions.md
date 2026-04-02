@@ -121,10 +121,14 @@ The CLI status field maps directly to pipeline phases:
 | `created` | Goal capture |
 | `exploring` | Explore |
 | `explored` | Explore complete, ready for architecture |
-| `defining-architecture` | Architecture |
-| `architecture-defined` | Architecture complete, ready for slices |
-| `defining-slices` | Slice definition |
-| `slices-defined` | Slices complete, ready for refinement/activation |
+| `defining-architecture` | Architecture Q&A + draft |
+| `architecture-defined` | Architecture draft complete, ready for refinement |
+| `refining-architecture` | Architecture refinement loop |
+| `architecture-refined` | Architecture refined, ready for slices |
+| `defining-slices` | Slices Q&A + draft |
+| `slices-defined` | Slices draft complete, ready for refinement |
+| `refining-slices` | Slices refinement loop |
+| `slices-refined` | Slices refined, ready for activation |
 | `activated` | Epic active, slices ready for planning/implementation |
 
 Each pipeline skill queries CLI status and resumes from the corresponding phase.
