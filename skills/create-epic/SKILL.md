@@ -6,6 +6,7 @@ description: >
   + refinement. Orchestrates interactive and autonomous phases with sub-agents.
   Common triggers: 'create epic', 'new epic', 'start project', 'new project',
   'I have a new idea', 'add epic', 'start fresh'.
+user-invocable: true
 requires: gp >= 1.0.0
 ---
 

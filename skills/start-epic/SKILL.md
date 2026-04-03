@@ -6,6 +6,8 @@ description: >
   Common triggers: 'start epic', 'activate epic', 'start epic',
   'approve epic', 'let's start building', 'approve the proposal', 'kick off epic',
   'review architecture proposal', 'ready to build', 'let's build this epic', 'activate this'.
+user-invocable: true
+requires: gp >= 1.0.0
 ---
 
 # Start Epic

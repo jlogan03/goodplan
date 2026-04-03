@@ -8,6 +8,7 @@ description: >
   Common triggers: 'I need to research X', 'let's brainstorm', 'what are my options for...',
   'let's explore', 'what should I use for...', 'compare X vs Y', 'help me decide between...',
   'I'm not sure which approach...', 'skip exploration'.
+user-invocable: true
 requires: gp >= 1.0.0
 ---
 
