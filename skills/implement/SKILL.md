@@ -34,10 +34,10 @@ For file copying (e.g., agent-produced files to CLI-managed paths), use shell `c
 
 | Phase | Type | CLI Status Mapping | What Happens |
 |---|---|---|---|
-| 1. Implementation | Autonomous | `implementing` | Per-phase: spawn implement-phase → commit |
+| 1. Implementation | Autonomous | `implementing` | Per-phase: spawn implement-phase → review loop → commit |
 | 2. Slice completion | Autonomous | `implementing` → `implementation-complete` → `completed` | Spawn completion-slice → surface recommendations → CLI submit |
 
-Note: Phase 1 review loop added in Phase 3 of the build plan. Phase 2 completion integration added in Phase 4.
+Note: Phase 2 completion integration added in Phase 4 of the build plan.
 
 ## Step 0 — Setup
 
@@ -188,6 +188,12 @@ Iterate over each plan phase, starting from the resume index determined in Step 
 
 For each phase `i` in `phases` (starting from `resumeIndex`):
 
+Initialize per-phase tracking state:
+- `iteration = 0`
+- `reviewerScores = {}` — map of reviewer name → score history array
+- `stagnationCount = 0`
+- `reductionCount = 0`
+
 ### 5.1. Spawn Implement-Phase Agent
 
 ```
@@ -196,11 +202,12 @@ Task prompt: |
   Slice: {SLICE_NAME}
   Phase: {phases[i].index} of {totalPhases} — "{phases[i].name}"
   Phase content path: {phases[i].path}
-  Iteration: 1
+  Iteration: {iteration + 1}
   Plan slug: {PLAN_SLUG}
   Scope directory: {slice scope directory from slice:show}
   Architecture overview path: {architecture _overview.md path}
   Temp directory: {TMPDIR}
+  {if iteration > 0: "Merged feedback path: {RUN_DIR}/round-{iteration}/merged.md"}
 
   Implement this plan phase. Run Expected Behavior RED checks first (they
   should fail before implementation), then implement, then run GREEN checks
@@ -226,16 +233,97 @@ disallowedTools: ["Agent"]
 
 Parse the return JSON. Check `status`:
 
-- **SUCCESS**: Proceed to commit (5.3).
+- **SUCCESS**: Proceed to review (5.3).
 - **PARTIAL**: Log the `summary` and surface to user via AskUserQuestion: "Phase {i} partially completed: {summary}. Continue / Retry / Stop?"
-  - Continue: proceed to commit with partial work.
+  - Continue: proceed to review with partial work.
   - Retry: re-spawn the agent (loop back to 5.1).
   - Stop: preserve temp directory, stop pipeline.
 - **FAILED**: Stop with error message. Preserve temp directory.
 
-### 5.3. Check for Unexpected RED Passes
+### 5.3. Review Loop
 
-If `redGreenResults.redUnexpectedPasses` is non-empty, surface to user via AskUserQuestion:
+Follow the shared iteration loop pattern defined in `@${CLAUDE_PLUGIN_ROOT}/skills/_shared/references/iteration-loop.md`. The orchestrator-specific parameters are listed in the **Loop Parameters** section below.
+
+#### 5.3a. Write Changed Files Summary
+
+```bash
+git diff --name-only > "${RUN_DIR}/round-${iteration+1}/changed-files.txt"
+```
+
+This file is the "artifact" passed to the refinement-coordinator.
+
+#### 5.3b. Spawn Refinement Coordinator
+
+```
+Agent: refinement-coordinator
+Task prompt: |
+  Artifact path: {RUN_DIR}/round-{iteration+1}/changed-files.txt
+  Review context: code-implementation
+  Available reviewers: see references/reviewer-registry.md
+  {if iteration > 0: "Previous round synthesis: {RUN_DIR}/round-{iteration}/merged.md"}
+
+allowedTools: ["Read", "Grep", "Glob"]
+disallowedTools: ["Agent"]
+```
+
+Parse return JSON. Extract `reviewers` array. If `status` is `FAILED`, stop with error.
+
+#### 5.3c. Spawn Reviewer Agents (Parallel)
+
+For each reviewer name from the coordinator's return, spawn in parallel:
+
+```
+Agent: {reviewer-name}
+Task prompt: |
+  Artifact path: {RUN_DIR}/round-{iteration+1}/changed-files.txt
+  Review context: code-implementation
+  Domain: {domain from reviewer name}
+
+allowedTools: ["Read", "Grep", "Glob"]
+disallowedTools: ["Agent"]
+```
+
+Each reviewer returns JSON with `score`, issues, and review text inline.
+
+#### 5.3d. Write Reviewer Output
+
+Write each reviewer's full return text to `${RUN_DIR}/round-{iteration+1}/reviews/{reviewer-name}.md`.
+
+#### 5.3e. Spawn Synthesis Agent
+
+```
+Agent: synthesis
+Task prompt: |
+  Reviewer output paths: {list of review file paths from 5.3d}
+  Synthesis output path: {RUN_DIR}/round-{iteration+1}/merged.md
+
+allowedTools: ["Read", "Grep", "Glob", "Write"]
+disallowedTools: ["Agent"]
+```
+
+Parse return JSON. Extract `score` (integer).
+
+#### 5.3f. Evaluate Exit Conditions
+
+Extract per-reviewer scores from each reviewer's return JSON. Update `reviewerScores`. Compute `netScore` as the minimum of all reviewer scores for this round.
+
+Log to stderr:
+```
+[implement] Phase {phases[i].index} round {iteration+1}: netScore={netScore}, reviewerScores={reviewerScores}
+```
+
+Check exit conditions (see **Step 5b — Iteration Safeguards** below for full rules):
+
+1. **Pass**: `netScore >= 9` AND no CRITICAL/IMPORTANT issues → exit review loop.
+2. **Early exit**: `iteration >= 4` AND `netScore >= 8` AND no CRITICAL/IMPORTANT → exit with warning.
+3. **Stagnation**: `iteration >= 2` AND no score improvement for 2 consecutive rounds → exit.
+4. **Hard cap**: `iteration >= 11` → exit, submit best version.
+
+If none triggered → spawn `implement-phase` again with merged feedback path, increment `iteration`, loop back to 5.1.
+
+### 5.4. Check for Unexpected RED Passes
+
+If `redGreenResults.redUnexpectedPasses` is non-empty (from any iteration's implement-phase return), surface to user via AskUserQuestion:
 
 "The following Expected Behavior checks passed when they should have FAILED (before implementation). This may indicate the checks are not testing what you expect:
 - {list each unexpected pass}
@@ -244,7 +332,19 @@ Continue anyway / Stop to investigate?"
 
 If the user chooses to stop, preserve temp directory and halt.
 
-### 5.4. Orchestrator Commits
+### 5.5. Post-Phase Checks
+
+After the review loop passes, run lint/build/test checks:
+
+```bash
+# Run project-specific checks — adapt commands to the project
+bun run build 2>&1 | tail -20
+bun test 2>&1 | tail -40
+```
+
+If checks fail, log the failure and surface to user via AskUserQuestion: "Post-phase checks failed: {summary}. Re-enter review loop / Continue anyway / Stop?"
+
+### 5.6. Orchestrator Commits
 
 The orchestrator — not the agent — commits the phase work:
 
@@ -255,7 +355,7 @@ git commit -m "[${PLAN_SLUG}] Phase ${phases[i].index}: ${phases[i].name}"
 
 If `filesChanged` is empty but agent reported SUCCESS, run `git diff --name-only` to detect changes the agent didn't report, and add those instead.
 
-### 5.5. Verify Commit
+### 5.7. Verify Commit
 
 ```bash
 git log --oneline -1
@@ -263,7 +363,7 @@ git log --oneline -1
 
 Confirm the commit message matches the expected format. If the commit failed (e.g., nothing to commit), log a warning but continue — the phase may have been a documentation-only or verification-only phase.
 
-### 5.6. Update Phase Tracking
+### 5.8. Update Phase Tracking
 
 ```bash
 $GP submit-implementation --slice $SLICE_NAME --phase ${phases[i].index}
@@ -271,16 +371,29 @@ $GP submit-implementation --slice $SLICE_NAME --phase ${phases[i].index}
 
 This records the completed phase index in the slice state, enabling re-entry.
 
-### 5.7. Advance
+### 5.9. Advance
 
 Log to stderr:
 ```
-[implement] Phase {phases[i].index}/{totalPhases} complete: {phases[i].name}
+[implement] Phase {phases[i].index}/{totalPhases} complete: {phases[i].name} (rounds: {iteration+1})
 ```
 
 Continue to the next phase.
 
-Note: Review loop (coordinator → reviewers → synthesis → feedback → re-implementation) will be added in Phase 3 of the build plan between steps 5.2 and 5.3.
+## Step 5b — Iteration Safeguards
+
+These safeguards apply per-phase within the review loop (Step 5.3f).
+
+| Condition | Threshold | Action |
+|---|---|---|
+| **Full pass** | All scores >= 9, no CRITICAL/IMPORTANT | Exit review loop |
+| **Early exit** | iteration >= 5 AND all scores >= 8 AND no CRITICAL/IMPORTANT | Exit with warning — log which reviewers scored below 9 |
+| **Stagnation** | iteration >= 3 AND no score improvement for 2 consecutive rounds | Exit — further iterations unlikely to help |
+| **Score reduction** | 2 total rounds with net score decrease | Exit — edits may be introducing issues |
+| **Hard cap** | 12 iterations | Exit — submit best version, present remaining issues |
+| **RESEARCH_NEEDED** | synthesis flags research topics | Spawn research sub-agents per `iteration-loop.md` pattern, append results to merged.md, continue loop |
+
+On early exit or hard cap: warn the user which reviewers scored below 9, their reasons, and whether restructuring may help.
 
 Note: Completion integration (steps 6-8) will be added in Phase 4 of the build plan.
 
@@ -298,13 +411,36 @@ After all phases complete, present:
 
 Note: This summary will be replaced by the full completion flow in Phase 4.
 
+## Loop Parameters
+
+Parameters for `@${CLAUDE_PLUGIN_ROOT}/skills/_shared/references/iteration-loop.md`:
+
+| Parameter | Value |
+|---|---|
+| **Reviewer list** | Determined dynamically by `refinement-coordinator` per phase — reads `references/reviewer-registry.md` and selects based on changed file types/paths |
+| **Exit criteria** | All scores >= 9, no CRITICAL/IMPORTANT issues |
+| **Early exit** | iteration >= 5 AND all scores >= 8 AND no CRITICAL/IMPORTANT |
+| **Max iterations** | 12 (override via `$GP_IMPLEMENT_MAX_ITERATIONS` env var for test harness cost control) |
+| **Editor prompt path** | `agents/implement-phase.md` — re-spawned directly with merged feedback, no separate editor agent |
+| **Score thresholds** | `{ pass: 9, early_exit: 8 }` |
+| **Scope constraints** | Slice scope directory (from `slice:show --json`) |
+| **Working directory** | Repo root |
+| **Run directory** | `<epic>/slices/<slice>/implementation/` |
+| **Backup directory** | Not applicable — git provides history |
+| **review_context** | `"code-implementation"` |
+
+**Coordinator note:** The `refinement-coordinator` agent already handles `review_context: "code-implementation"` as a defined input value. The orchestrator writes changed file paths (from `git diff --name-only`) to a summary file and passes it as the artifact. The coordinator reads the file and selects reviewers by file extensions/paths. No structural coordinator changes are needed.
+
 ## Sub-Agent Tool Restrictions
 
 | Agent | allowedTools | Rationale |
 |---|---|---|
 | implement-phase | Read, Grep, Glob, Write, Edit, Bash | Full implementation: reads plan + code, writes code, runs checks |
+| refinement-coordinator | Read, Grep, Glob | Read-only analysis, returns spawn plan |
+| reviewer-* | Read, Grep, Glob | Read-only, returns JSON inline |
+| synthesis | Read, Grep, Glob, Write | Reads reviews, writes merged output |
 
-Note: Additional agents (refinement-coordinator, reviewer-*, synthesis, completion-slice) will be added in Phases 3 and 4.
+Note: Additional agents (completion-slice) will be added in Phase 4.
 
 All agents: `disallowedTools: ["Agent"]` — enforces flat hierarchy.
 
