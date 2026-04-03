@@ -21,7 +21,7 @@
 |---|---|---|
 | `start-epic` | `/gp:start-epic` | Approve architecture proposal, activate epic |
 | `explore` | `/gp:explore` | Ad-hoc research/brainstorm/prototype. Also invoked internally by create-epic and create-side-quest |
-| `complete-epic` | `/gp:complete-epic` | Epic-level learnings synthesis, architecture reconciliation, artifact promotion. Classified as standalone (not pipeline) because it has no interactive phases and no multi-phase status orchestration — it runs a single logical step. **Agent usage:** spawns `completion-phase` agent for learnings synthesis and architecture reconciliation (parallel sub-agents for cross-slice analysis). Does not use the refinement loop. |
+| `complete-epic` | `/gp:complete-epic` | Epic-level learnings synthesis, architecture reconciliation, artifact promotion. Classified as standalone (not pipeline) because it has no interactive phases and no multi-phase status orchestration — it runs a single logical step. **Agent usage:** spawns `completion-epic` agent for cross-slice learnings synthesis and architecture reconciliation. Does not use the refinement loop. |
 | `audit` | `/gp:audit` | Mode selection (architecture/docs/tests), spawns reviewer agents |
 | `task` | `/gp:task` | Quick task capture |
 | `upgrade` | `/gp:upgrade` | Upgrade `.goodplan/` state format between versions |
@@ -115,8 +115,9 @@ All agent `.md` files live in `agents/` at the plugin root.
 | `architecture-phase.md` | create-epic | Draft architecture files from Q&A output |
 | `slices-phase.md` | create-epic | Draft slice definitions from Q&A output |
 | `plan-phase.md` | plan-slice, create-side-quest | Draft implementation plan from Q&A output |
-| `implement-phase.md` | implement | Implement a plan phase, report changed files |
-| `completion-phase.md` | implement, complete-epic | Synthesize learnings, review architecture. Adapts scope based on task prompt context: slice-level (learnings + arch review for one slice) vs. epic-level (cross-slice synthesis + artifact promotion). |
+| `implement-phase.md` | implement | Implement a plan phase, run RED/GREEN checks, report changed files |
+| `completion-slice.md` | implement | Synthesize slice-level learnings, review architecture delta, propose side quests, update project health |
+| `completion-epic.md` | complete-epic | Synthesize cross-slice learnings, reconcile epic architecture against top-level, promote artifacts, propose side quests |
 
 ### Coordination Agents
 

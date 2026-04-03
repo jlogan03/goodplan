@@ -59,5 +59,8 @@ All sub-agents spawned by pipeline orchestrators return a structured JSON object
 | reviewer-* | `score`, `review` | Score + full review text (orchestrator writes to file) |
 | synthesis | `score` | Aggregate score across all reviewers |
 | editor | `filesWritten` | Modified artifact paths |
+| implement-phase | `filesWritten`, `redGreenResults` | Changed files + RED/GREEN check results (`{ passed: boolean, details: string }`) |
+| completion-slice | `filesWritten`, `recommendations`, `triggeredConditions` | Learnings, architecture delta, side quest proposals |
+| completion-epic | `filesWritten`, `recommendations`, `triggeredConditions` | Cross-slice learnings, architecture reconciliation, promotion list |
 
 <!-- Sync: TypeScript validation schema lives in tools/dogfood/ — update both when changing fields -->

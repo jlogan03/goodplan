@@ -55,7 +55,7 @@ The orchestrator checks `status` first, then reads the relevant fields.
 
 ### `reconsiderWhen` / `validUntil` Evaluation
 
-**Ownership:** Three phase agents evaluate conditions — `architecture-phase`, `plan-phase`, and `completion-phase`. Reviewers and coordinators do NOT evaluate conditions (they focus on artifact quality, not decision/learning validity).
+**Ownership:** Four phase agents evaluate conditions — `architecture-phase`, `plan-phase`, `completion-slice`, and `completion-epic`. Reviewers and coordinators do NOT evaluate conditions (they focus on artifact quality, not decision/learning validity). The split into `completion-slice` and `completion-epic` (instead of a single `completion-phase`) reflects their distinct I/O shapes, non-overlapping callers, and cleaner responsibility boundaries.
 
 **Orchestrator responsibility:** Before spawning these phase agents, the orchestrator loads active conditions via CLI:
 ```bash
