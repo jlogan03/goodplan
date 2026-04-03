@@ -1,0 +1,1 @@
+Reviewer extraction from monolithic files (reviewers-language.md, reviewers-cross-cutting.md) to per-domain review-*.md files worked well. But the source file was only in the installed plugin cache, not the repo — flagged as CRITICAL in round 1. Always verify source material exists in the working repo.

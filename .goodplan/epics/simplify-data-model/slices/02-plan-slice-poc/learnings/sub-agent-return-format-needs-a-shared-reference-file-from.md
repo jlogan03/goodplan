@@ -1,0 +1,1 @@
+Each agent inlined its own return format. Plan called for shared sub-agent-return-format.md + Zod schema. Created as follow-up. When multiple agents share a data contract, extract it to a shared reference from the start.

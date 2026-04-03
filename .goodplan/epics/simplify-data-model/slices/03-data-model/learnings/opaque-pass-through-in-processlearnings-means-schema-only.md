@@ -1,0 +1,1 @@
+processLearnings in helpers.ts spreads LearningEventEntry objects into JSONL content without field-by-field reconstruction. Adding validUntil to the schema was sufficient — no handler changes needed. This pattern should be preserved for future additive fields.

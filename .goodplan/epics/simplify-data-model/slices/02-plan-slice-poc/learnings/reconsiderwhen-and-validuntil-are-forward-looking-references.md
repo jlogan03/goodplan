@@ -1,0 +1,1 @@
+Skills referencing future schema fields must gate access behind field-presence checks. The plan-slice orchestrator references fields from slice 03 that don't exist yet.

@@ -1,0 +1,1 @@
+Reviewer agents return review content inline as JSON; orchestrator writes to temp files. Giving reviewers Write access contradicts context discipline. All 4 code reviewers caught this in Phase 1.

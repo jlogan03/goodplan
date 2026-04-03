@@ -1,0 +1,1 @@
+Round 1 reviewers caught gp upgrade (nonexistent) vs gp migrate (correct), missing CREATE_DECISION event schema, and missing RPC plumbing. Without refinement, all 3 would have been runtime failures during implementation.

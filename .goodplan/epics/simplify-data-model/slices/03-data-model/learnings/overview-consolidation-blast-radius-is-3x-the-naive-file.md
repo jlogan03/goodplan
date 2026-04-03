@@ -1,0 +1,1 @@
+Plan estimated ~36 files; actual was 102. Test fixtures (6 dirs x 4 overview files each = 24 files deleted) and cascading test assertion updates accounted for 2/3 of changes. Future plans touching cross-cutting file structures should multiply the source-file estimate by 3x for total effort.

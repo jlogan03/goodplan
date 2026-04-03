@@ -1,0 +1,1 @@
+Splitting Phase 2 into 3 sub-phases (skeleton, review loop, completion) made each independently verifiable. The skeleton proved re-entry and single-pass mechanics before review complexity was added.

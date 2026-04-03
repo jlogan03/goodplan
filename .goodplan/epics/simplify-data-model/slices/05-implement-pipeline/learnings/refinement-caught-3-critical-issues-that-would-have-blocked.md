@@ -1,0 +1,1 @@
+Missing state transitions (slice:implement + submit-implementation), inline review loop violating orchestrator pattern, and ambiguous RED/GREEN boundary. Without refinement, the skill would have failed on slice:complete.

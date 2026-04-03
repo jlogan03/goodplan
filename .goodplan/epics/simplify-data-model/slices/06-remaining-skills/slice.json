@@ -5,6 +5,6 @@
 	"goal": "create-side-quest, audit, init, task, upgrade, status + old skill deletion",
 	"name": "06-remaining-skills",
 	"refinement": null,
-	"status": "created",
-	"updated": "2026-04-01T19:27:36.493Z"
+	"status": "plan-refined",
+	"updated": "2026-04-03T17:32:11.451Z"
 }

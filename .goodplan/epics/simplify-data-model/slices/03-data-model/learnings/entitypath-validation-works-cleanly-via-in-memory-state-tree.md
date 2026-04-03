@@ -1,0 +1,1 @@
+Using getJson(oldState, '<entityPath>/<entityType>.json') in the begin() function validates entity existence against the already-loaded state tree. This avoids filesystem I/O, respects the RPC layer boundary, and is naturally testable. Pattern works for any entity-scoped validation.

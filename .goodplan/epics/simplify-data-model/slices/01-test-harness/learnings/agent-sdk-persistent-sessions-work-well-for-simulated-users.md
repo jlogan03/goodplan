@@ -1,0 +1,1 @@
+The persistent query() session with AsyncQueue<SDKUserMessage> is the right design for simulated users. query() doesn't expose send() — you must pass an AsyncIterable<SDKUserMessage> as prompt and push messages via the queue.

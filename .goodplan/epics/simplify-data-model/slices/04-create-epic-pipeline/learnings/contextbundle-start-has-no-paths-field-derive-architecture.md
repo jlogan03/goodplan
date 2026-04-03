@@ -1,0 +1,1 @@
+start-* commands return ContextBundle {inline, references, decisions, learnings} — no paths field. Mutation responses (epic:define-architecture) return BeginResult which may include paths. For architecture output, derive from convention: .goodplan/epics/<name>/architecture/.

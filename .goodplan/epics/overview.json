@@ -256,28 +256,28 @@
 					"status": "completed"
 				},
 				{
-					"completed": null,
+					"completed": "2026-04-02T19:00:06.973Z",
 					"created": "2026-04-01T19:27:35.903Z",
 					"name": "03-data-model",
-					"status": "plan-refined"
+					"status": "completed"
 				},
 				{
-					"completed": null,
+					"completed": "2026-04-03T00:20:58.948Z",
 					"created": "2026-04-01T19:27:36.112Z",
 					"name": "04-create-epic-pipeline",
-					"status": "created"
+					"status": "completed"
 				},
 				{
-					"completed": null,
+					"completed": "2026-04-03T14:10:23.433Z",
 					"created": "2026-04-01T19:27:36.303Z",
 					"name": "05-implement-pipeline",
-					"status": "created"
+					"status": "completed"
 				},
 				{
 					"completed": null,
 					"created": "2026-04-01T19:27:36.493Z",
 					"name": "06-remaining-skills",
-					"status": "created"
+					"status": "plan-refined"
 				},
 				{
 					"completed": null,

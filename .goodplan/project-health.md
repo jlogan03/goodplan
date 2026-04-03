@@ -78,8 +78,8 @@
 
 ## Recent Changes
 
-- **02-plan-slice-poc** (2026-04-02): Agent infrastructure + plan-slice orchestrator PoC — 7 agent definitions (plan-phase, refinement-coordinator, synthesis, editor, 3 reviewers), 6 shared reference files (review-preamble, 3 domain review criteria, plan-format, sub-agent-return-format), build pipeline agent validation with @ reference path verification, plan-slice SKILL.md orchestrator (395 lines, 2-phase pipeline), test-plan-slice.ts e2e test + verifyNoArtifactReads + 24 unit tests. End-to-end test proved pipeline mechanics at haiku tier ($0.60).
-- **01-test-harness** (2026-04-01): Test harness upgrade — shared utilities (utils.ts with 15+ exports), persistent Agent SDK simulated user session (AsyncQueue + query()), per-test model selection (4 tiers), all 5 harness scripts migrated to shared utils. Net -375 lines, 34 new unit tests, AUTONOMOUS_SYSTEM_PROMPT removed. HMAC verification temporarily disabled due to skills writing to .goodplan/.
-- **07-ci-distribution** (2026-03-31): GitHub Actions release pipeline — tag-triggered build, post-build version assertion, hook smoke tests (.goodplan-dev sentinel removal), tarball + GitHub Release, force-push to release branch with marketplace layout. Post-impl: plugin rename (gp→goodplan), gp: namespace prefixing, binary path fix, hooks field removal, git history cleanup (238M→36M).
+- **05-implement-pipeline** (2026-04-03): Implement orchestrator (490 lines) + complete-epic standalone skill (289 lines). 3 new agents (implement-phase, completion-slice, completion-epic). implementationPhase data model change across 4 layers (12 files). 2 dogfood test scripts. E2E: full pipeline $0.81/9.5min at haiku, re-entry works, mode isolation confirmed. 16 total agents, 1738 unit tests.
+- **04-create-epic-pipeline** (2026-04-02): 6-phase create-epic orchestrator (726 lines replacing 197), 3 phase agents (explore, architecture, slices), 3 reviewer agents (typescript, tui-cli, repo-tooling) + 3 shared reference files, test-create-epic.ts (847 lines, 4 tests). 13 total agents. E2E test: full pipeline $3.12/27min at haiku, re-entry test passed.
+- **03-data-model** (2026-04-02): Three additive data model changes — decision provenance, learning validity, overview consolidation (3→1). 102 files changed. Migration in `gp migrate`.
 
-<!-- Last updated by: complete for 02-plan-slice-poc, 2026-04-02 -->
+<!-- Last updated by: complete for 05-implement-pipeline, 2026-04-03 -->

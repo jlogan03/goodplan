@@ -1,0 +1,1 @@
+The implementationPhase field touched 7 files across 4 layers. Refinement rounds 3-4 caught missing schema and event union updates. Plans must enumerate every layer explicitly — 'add a field' is insufficient specification.

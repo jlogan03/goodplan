@@ -1,0 +1,1 @@
+Phase 7 needed 2 fix commits for incorrect CLI commands (wrong command names, invalid flags, missing plan files, wrong payload format). Future harness work should include CLI cheat sheets or shared fixture-builder utilities.

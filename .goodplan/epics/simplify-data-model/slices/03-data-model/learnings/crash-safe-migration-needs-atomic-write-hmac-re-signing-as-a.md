@@ -1,0 +1,1 @@
+The overview migration must write the consolidated file AND re-sign the entire state tree atomically. Writing without re-signing leaves the project in an HMAC-invalid state. The resignState() helper (assembleState → signStateTree → write project.json) provides this guarantee.

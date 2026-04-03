@@ -1,0 +1,1 @@
+E2E test at haiku ($0.60) proved all pipeline mechanics (Q&A, agent spawning, parallel reviewers, synthesis, CLI transitions). But haiku doesn't follow context discipline instructions reliably — 10 artifact read violations. Use opus for discipline tests.

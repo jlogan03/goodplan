@@ -1,0 +1,1 @@
+The complete-epic skill gates on reconsiderWhen/validUntil field presence before using them. This pattern (from plan-slice) prevents failure when CLI hasn't been upgraded. Every skill reading optional CLI fields should include this gate.

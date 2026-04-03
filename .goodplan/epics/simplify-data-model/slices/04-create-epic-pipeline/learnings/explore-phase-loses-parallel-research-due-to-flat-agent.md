@@ -1,0 +1,1 @@
+The existing explore skill spawns 5 parallel research sub-agents. The explore-phase agent can't do this (agents don't spawn agents). Sequential research is the current trade-off. Future: orchestrator spawns parallel research agents using researchTopics from the explore-phase return.

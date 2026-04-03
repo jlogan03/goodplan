@@ -1,0 +1,1 @@
+gp slice:show requires an active epic. Fast-tracking through explore/architecture/slices/activate takes ~8 CLI calls with minimal artifacts.

@@ -1,0 +1,1 @@
+First implementation omitted stdin from gpForce options. Silently dropped JSON payloads for 14 CLI calls. Every CLI wrapper must forward stdin through all layers.
