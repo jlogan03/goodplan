@@ -1,66 +1,67 @@
 # Reviewer Registry
 
-The orchestrator reads this file to understand the available reviewers and their domains. The orchestrator selects which specialists are relevant based on its understanding of the plan phase content and changed files — no keyword matching required.
+The orchestrator reads this file to understand the available reviewers and their domains. The orchestrator selects which specialists are relevant based on its understanding of the artifact content and changed files — no keyword matching required.
+
+Each reviewer is defined as an agent in `agents/reviewer-*.md` with domain-specific criteria in `skills/_shared/references/review-*.md`. The agent definition includes the shared review preamble and domain criteria via `@` references.
 
 ## Always-On
 
-Select for every phase unless the phase exclusively involves non-code changes (documentation, content, configuration).
+Select for every review round unless the artifact exclusively involves non-code changes (documentation, content, configuration).
 
-| Reviewer | Focus | Prompt File | Section | Context |
-|---|---|---|---|---|
-| Software Architecture | Module boundaries, dependency direction, coupling/cohesion, layering, data flow, testability, module depth | `../../_shared/references/reviewers-cross-cutting.md` | `## Software Architecture Reviewer` | `{review_context}` = `a code implementation` |
+| Reviewer | Focus | Agent | Criteria |
+|---|---|---|---|
+| Holistic | Goal alignment, completeness, coherence, phasing, verification-first, process quality | `agents/reviewer-holistic.md` | `skills/_shared/references/review-holistic.md` |
+| Software Architecture | Module boundaries, dependency direction, coupling/cohesion, layering, data flow, testability, module depth | `agents/reviewer-software-architecture.md` | `skills/_shared/references/review-software-architecture.md` |
 
 ## Language Specialists
 
-Select when the changed files or plan phase involve that language's ecosystem.
+Select when the changed files or artifact involve that language's ecosystem.
 
-| Reviewer | Focus | Prompt File | Section |
+| Reviewer | Focus | Agent | Criteria |
 |---|---|---|---|
-| Python | Python idioms, type safety, packaging, testing, async patterns | `reviewers-language.md` | `## Python Reviewer` |
-| Rust | Ownership, borrowing, error handling, trait design, unsafe usage, Cargo, concurrency | `reviewers-language.md` | `## Rust Reviewer` |
-| C++ | Memory safety, modern C++ idioms, undefined behavior, build systems, templates, ABI | `reviewers-language.md` | `## C++ Reviewer` |
-| TypeScript and JavaScript | Type safety, module design, runtime correctness, framework patterns, bundling, Node.js | `reviewers-language.md` | `## TypeScript and JavaScript Reviewer` |
-
-## Scientific Specialists
-
-Select when the changed files or plan phase involve scientific computing, numerical methods, ML, or data processing.
-
-| Reviewer | Focus | Prompt File | Section |
-|---|---|---|---|
-| Algorithm, Numerical, & Validation | Mathematical correctness, numerical stability, precision, convergence, validation methodology | `reviewers-scientific.md` | `## Algorithm, Numerical, & Validation Reviewer` |
-| Performance & Parallelism | Memory layout, parallelization, GPU utilization, benchmarking, cross-language boundaries | `reviewers-scientific.md` | `## Performance & Parallelism Reviewer` |
-| ML Pipeline | Data leakage, reproducibility, training pipelines, evaluation methodology, experiment tracking | `reviewers-scientific.md` | `## ML Pipeline Reviewer` |
-| Data & I/O | File formats, parsing robustness, serialization, API consumption, 3D data, I/O performance | `reviewers-scientific.md` | `## Data & I/O Reviewer` |
+| TypeScript & JavaScript | Type safety, module design, runtime correctness, framework patterns, bundling, Node.js | `agents/reviewer-typescript.md` | `skills/_shared/references/review-typescript.md` |
+| Python | Type hints (mypy/pyright), packaging (pyproject.toml), async patterns, virtual environments, dependency management | `agents/reviewer-python.md` | `skills/_shared/references/review-python.md` |
+| Rust | Ownership/borrowing, error handling (Result/Option), unsafe blocks, Cargo patterns, trait design, concurrency | `agents/reviewer-rust.md` | `skills/_shared/references/review-rust.md` |
 
 ## Web Specialists
 
-Select when the changed files or plan phase involve web applications, APIs, databases, or infrastructure.
+Select when the changed files or artifact involve web applications, APIs, databases, or infrastructure.
 
-| Reviewer | Focus | Prompt File | Section |
+| Reviewer | Focus | Agent | Criteria |
 |---|---|---|---|
-| Backend | Route/service patterns, error handling, security, observability, API performance | `reviewers-web.md` | `## 1. Backend Reviewer` |
-| Frontend | Component design, state management, accessibility, visual stability, responsive design | `reviewers-web.md` | `## 2. Frontend Reviewer` |
-| Data Layer | Migration safety, schema design, query performance, data integrity, caching | `reviewers-web.md` | `## 3. Data Layer Reviewer` |
-| DevOps and Infra | Deployment pipelines, containers, infrastructure as code, secrets, monitoring | `reviewers-web.md` | `## 4. DevOps and Infra Reviewer` |
-| Background Jobs & Task Processing | Idempotency, retry, concurrency, scheduling, long-running tasks, queues, observability | `reviewers-web.md` | `## 5. Background Jobs & Task Processing Reviewer` |
+| Backend | API design (REST/GraphQL), auth patterns, database access, middleware, error handling, input validation | `agents/reviewer-backend.md` | `skills/_shared/references/review-backend.md` |
+| Frontend | Component patterns, state management, accessibility, performance (bundle size, rendering), responsive design | `agents/reviewer-frontend.md` | `skills/_shared/references/review-frontend.md` |
+| Data Layer | Schema design, migrations, query patterns, indexing, connection pooling, data integrity | `agents/reviewer-data-layer.md` | `skills/_shared/references/review-data-layer.md` |
+| DevOps & Infrastructure | Containerization, infrastructure-as-code, deployment strategies, secrets management, monitoring, scaling | `agents/reviewer-devops.md` | `skills/_shared/references/review-devops.md` |
 
 ## AI Tooling Specialists
 
-Select when the changed files or plan phase involve agent skills or MCP servers.
+Select when the changed files or artifact involve agent skills or MCP servers.
 
-| Reviewer | Focus | Prompt File | Section |
+| Reviewer | Focus | Agent | Criteria |
 |---|---|---|---|
-| Agent Skill | SKILL.md structure, triggering, progressive disclosure, agent compatibility, prompt quality | `reviewers-ai-tooling.md` | `## Agent Skill Reviewer` |
-| MCP Server | Tool schemas, protocol compliance, security, error handling, resource management | `reviewers-ai-tooling.md` | `## MCP Server Reviewer` |
+| Agent & Skill | SKILL.md structure, triggering, progressive disclosure, agent compatibility, prompt quality | `agents/reviewer-agent-skill.md` | `skills/_shared/references/review-agent-skill.md` |
+| MCP Server | MCP protocol compliance, tool definitions, resource handling, transport patterns, security | `agents/reviewer-mcp-server.md` | `skills/_shared/references/review-mcp-server.md` |
 
 ## Cross-Cutting Specialists
 
-Select when the changed files or plan phase touch project-level concerns that span domains, include any user-facing interface (web, mobile, desktop, or terminal), or include CLI/TUI interfaces.
+Select when the changed files or artifact touch project-level concerns, user-facing interfaces, or CI/CD.
 
-| Reviewer | Focus | Prompt File | Section | Context |
-|---|---|---|---|---|
-| UX & Information Architecture | Information architecture, task flow, visual hierarchy, accessibility, feedback, consistency, edge cases | `../../_shared/references/reviewers-cross-cutting.md` | `## UX & Information Architecture Reviewer` | `{review_context}` = `a code implementation` |
-| TUI and CLI | Terminal UI, CLI argument design, input handling, output formatting, cross-platform compatibility | `../../_shared/references/reviewers-cross-cutting.md` | `## TUI and CLI Reviewer` | `{review_context}` = `a code implementation` |
-| Repo, Tooling, & Docs | Project structure, build config, linting, hooks, dependencies, documentation | `../../_shared/references/reviewers-cross-cutting.md` | `## Repo, Tooling, & Docs Reviewer` | `{review_context}` = `a code implementation` |
-| CI & GitHub Workflows | Workflow structure, triggers, pinning, security, caching, artifacts, maintainability | `../../_shared/references/reviewers-cross-cutting.md` | `## CI & GitHub Workflows Reviewer` | `{review_context}` = `a code implementation` |
-| API Contract | Public interfaces, backwards compatibility, versioning, contract testing | `../../_shared/references/reviewers-cross-cutting.md` | `## API Contract Reviewer` | `{review_context}` = `a code implementation` |
+| Reviewer | Focus | Agent | Criteria |
+|---|---|---|---|
+| TUI & CLI | Terminal UI, CLI argument design, input handling, output formatting, cross-platform compatibility | `agents/reviewer-tui-cli.md` | `skills/_shared/references/review-tui-cli.md` |
+| Repo, Tooling, & Docs | Project structure, build config, linting, hooks, dependencies, documentation | `agents/reviewer-repo-tooling.md` | `skills/_shared/references/review-repo-tooling.md` |
+| CI & GitHub Workflows | Workflow structure, triggers, pinning, security, caching, artifacts, maintainability | `agents/reviewer-ci-github-workflows.md` | `skills/_shared/references/review-ci-github-workflows.md` |
+| UX & Information Architecture | Information architecture, user flows, navigation, content hierarchy, interaction patterns | `agents/reviewer-ux-ia.md` | `skills/_shared/references/review-ux-ia.md` |
+| API Contract | Public interfaces, backward compatibility, versioning, contract testing, error response standards | `agents/reviewer-api-contract.md` | `skills/_shared/references/review-api-contract.md` |
+
+## Scientific Specialists
+
+Select when the changed files or artifact involve scientific computing, numerical methods, ML, or data processing.
+
+| Reviewer | Focus | Agent | Criteria |
+|---|---|---|---|
+| Algorithm & Numerical | Algorithmic complexity, numerical stability, precision, edge cases, correctness | `agents/reviewer-algorithm-numerical.md` | `skills/_shared/references/review-algorithm-numerical.md` |
+| Performance | Profiling, memory allocation, concurrency, caching strategies, I/O optimization | `agents/reviewer-performance.md` | `skills/_shared/references/review-performance.md` |
+| ML Pipeline | Data preprocessing, feature engineering, model training, evaluation metrics, deployment, reproducibility | `agents/reviewer-ml-pipeline.md` | `skills/_shared/references/review-ml-pipeline.md` |
+| Data & I/O | Data format handling (CSV, JSON, Parquet), streaming, ETL patterns, data validation, schema evolution | `agents/reviewer-data-io.md` | `skills/_shared/references/review-data-io.md` |

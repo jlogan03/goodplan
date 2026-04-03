@@ -257,7 +257,7 @@ Agent: refinement-coordinator
 Task prompt: |
   Artifact path: {planPath}
   Review context: implementation-plan
-  Available reviewers: ["reviewer-holistic", "reviewer-software-architecture", "reviewer-agent-skill"]
+  Reviewer registry: skills/implement/references/reviewer-registry.md
   {if iteration > 0: "Previous round synthesis: {TMPDIR}/reviews/synthesis.md"}
 
 allowedTools: ["Read", "Grep", "Glob"]

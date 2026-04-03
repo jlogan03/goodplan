@@ -43,14 +43,15 @@ All review artifacts live in a run directory, separate from the files being refi
 
 ## Reviewer Spawn Pattern
 
-1. **Select reviewers**: Read the skill's `references/reviewer-registry.md`. Always-on reviewers run every iteration. Specialists are selected based on the orchestrator's understanding of the content.
+1. **Select reviewers**: Read `skills/implement/references/reviewer-registry.md`. Always-on reviewers run every iteration. Specialists are selected based on the orchestrator's understanding of the artifact content — the `Agent` column in the registry identifies each reviewer's agent definition file (`agents/reviewer-*.md`).
 
-2. **Parallel spawn**: Launch all selected reviewers in a single message using multiple Agent tool calls so they run concurrently in the **foreground** (do NOT use `run_in_background`). The Agent tool returns results when all foreground agents in the same message complete — no polling or sleep needed. Include `model: "opus"` for full reasoning capability.
+2. **Parallel spawn**: Launch all selected reviewers in a single message using multiple Agent tool calls so they run concurrently in the **foreground** (do NOT use `run_in_background`). The Agent tool returns results when all foreground agents in the same message complete — no polling or sleep needed. Include `model: "opus"` for full reasoning capability. Each agent is spawned by name (e.g., `reviewer-holistic`, `reviewer-software-architecture`) — the agent definition includes `@` references to the shared preamble and domain-specific criteria.
 
-3. **Bootstrap each reviewer**: Use the reviewer bootstrap prompt template (from the skill's `references/sub-agent-prompts.md` or inherited from refine-plan). Pass:
-   - Shared preamble path
-   - Prompt file path and section heading (from reviewer-registry.md)
-   - Placeholder values: file paths, confirmed goal, iteration number, run directory, review_context, team defaults, research file paths
+3. **Bootstrap each reviewer**: Pass the reviewer agent name as the Agent tool's agent parameter. Include in the task prompt:
+   - Artifact path(s) to review
+   - Review context (e.g., `architecture-proposal`, `implementation-plan`, `code-implementation`)
+   - Inline context and reference paths from the context bundle
+   - Do not pass full file contents — pass paths only. Reviewers load and explore the codebase themselves.
 
 4. **Context passing**: Reviewers load decisions and codebase context themselves via exploration. Do not pass full file contents in bootstrap — pass paths only.
 
@@ -106,7 +107,7 @@ After feedback is synthesized (and USER_INPUT resolved, research complete):
    - Merged feedback file path
    - File paths being refined
    - Confirmed goal
-   - Editor prompt from the skill's `references/sub-agent-prompts.md`
+   - Editor prompt (skill-specific instructions for how to apply feedback)
 
 2. **Editor reads feedback** and applies edits in priority order:
    - CRITICAL (must address)
