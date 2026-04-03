@@ -9,7 +9,7 @@
  * Tests:
  * 1. Plugin loads without errors
  * 2. Skills are discoverable with /gp: namespace prefix (auto-namespacing)
- * 3. /gp:project-status executes and reads .goodplan/ state
+ * 3. /gp:status executes and reads .goodplan/ state
  * 4. Skills referencing _shared/ resources resolve correctly
  */
 
@@ -116,7 +116,7 @@ async function testSkillDiscovery(): Promise<boolean> {
 		logger.log("PASS: Skills discovered with /gp: namespace prefix");
 
 		// Check for specific expected skills
-		const expectedSkills = ["project-status", "explore", "create-plan", "create-epic"];
+		const expectedSkills = ["audit", "complete-epic", "create-epic", "create-side-quest", "explore", "implement", "init", "plan-slice", "start-epic", "status", "task", "upgrade"];
 		for (const skill of expectedSkills) {
 			if (skillList.includes(`/gp:${skill}`)) {
 				logger.log(`  PASS: /gp:${skill} found`);
@@ -136,13 +136,13 @@ async function testSkillDiscovery(): Promise<boolean> {
 // ─── Test 2: /gp:project-status executes ─────────────────────
 
 async function testProjectStatus(): Promise<boolean> {
-	logger.log("\n--- TEST 2: /gp:project-status execution ---\n");
+	logger.log("\n--- TEST 2: /gp:status execution ---\n");
 
 	let success = false;
 
 	try {
 		const session = await runSkillSession({
-			prompt: "/gp:project-status",
+			prompt: "/gp:status",
 			options: {
 				cwd: TEST_DIR,
 				permissionMode: "bypassPermissions",
@@ -187,12 +187,12 @@ async function testProjectStatus(): Promise<boolean> {
 			const result = session.result.result;
 			logger.log(`Result (first 2000 chars):\n${result.slice(0, 2000)}`);
 
-			// Check for indicators that project-status ran successfully
+			// Check for indicators that status ran successfully
 			if (result.includes("plugin-skill-test") || result.includes("goodplan") || result.includes("project") || result.includes("status")) {
 				success = true;
-				logger.log("\nPASS: /gp:project-status executed and returned project information");
+				logger.log("\nPASS: /gp:status executed and returned project information");
 			} else {
-				logger.log("\nFAIL: /gp:project-status returned unexpected output");
+				logger.log("\nFAIL: /gp:status returned unexpected output");
 			}
 		} else {
 			logger.log(`ERROR: ${session.result.subtype}`);
@@ -217,7 +217,7 @@ async function main(): Promise<void> {
 	logger.log("\n--- SUMMARY ---");
 	logger.log(`Model: ${MODEL}`);
 	logger.log(`Test 1 (skill discovery): ${discoveryPassed ? "PASS" : "FAIL"}`);
-	logger.log(`Test 2 (project-status): ${statusPassed ? "PASS" : "FAIL"}`);
+	logger.log(`Test 2 (status): ${statusPassed ? "PASS" : "FAIL"}`);
 	logger.log(`Elapsed: ${elapsed}s`);
 	logger.log(`Log file: ${LOG_FILE}`);
 

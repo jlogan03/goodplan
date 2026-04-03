@@ -1,6 +1,6 @@
 # Maturity, Invariants, and Fitness Function Conventions
 
-Shared conventions consumed by `/create-architecture`, `/refine-architecture`, `/audit-architecture`, and plan refinement reviewers.
+Shared conventions consumed by `/gp:create-epic` (architecture phase), `/gp:audit`, and plan refinement reviewers.
 
 ## Table of Contents
 
@@ -78,7 +78,7 @@ Promotions move a subsystem up one level. They are always user decisions, captur
 - **Multiple dependents** — other subsystems rely on it, proving the interface works broadly
 - **Generic-enough design** — the subsystem handles known variations without one-off hacks
 
-**Who suggests promotions:** `/complete` (for slices and epics) and `/audit-architecture` suggest promotions when they observe the above signals. The user decides.
+**Who suggests promotions:** `/gp:complete-epic` (for slices and epics) and `/gp:audit` suggest promotions when they observe the above signals. The user decides.
 
 **Demotion criteria:** Subsystems can regress when:
 
@@ -87,7 +87,7 @@ Promotions move a subsystem up one level. They are always user decisions, captur
 - Confidence drops due to significant rework or design uncertainty
 - Dependents report integration issues
 
-**Who suggests demotions:** `/complete` and `/audit-architecture` suggest demotions when they observe the above signals. The user decides.
+**Who suggests demotions:** `/gp:complete-epic` and `/gp:audit` suggest demotions when they observe the above signals. The user decides.
 
 Demotions are also captured as decision records with rationale.
 
@@ -140,7 +140,7 @@ System invariants are documented constraints that must hold across all feature a
 
 **Lifecycle:**
 
-- **Add** — during `/create-architecture` (first epic), epic architecture proposals (subsequent epics), or when a side quest reveals a cross-cutting constraint. New invariants are proposed alongside the architectural changes that motivate them.
+- **Add** — during `/gp:create-epic` (first epic), epic architecture proposals (subsequent epics), or when a side quest reveals a cross-cutting constraint. New invariants are proposed alongside the architectural changes that motivate them.
 - **Amend** — with justification, captured as a decision record. Epic architecture proposals must state which invariants they preserve and justify any amendments.
 - **Retire** — when no longer applicable, with rationale recorded. The invariant entry is kept but marked as retired with the reason.
 
@@ -180,8 +180,8 @@ Fitness functions are automated tests that verify architectural properties — n
 
 **Lifecycle:**
 
-- **Identify candidates** — during `/create-architecture` or epic architecture proposals. Early identification sets expectations: "when this subsystem matures, these properties should be tested."
-- **Convert to real tests** — when subsystems mature enough. `/create-plan` for slices that graduate a subsystem includes writing fitness functions as plan steps.
+- **Identify candidates** — during `/gp:create-epic` or epic architecture proposals. Early identification sets expectations: "when this subsystem matures, these properties should be tested."
+- **Convert to real tests** — when subsystems mature enough. `/gp:plan-slice` for slices that graduate a subsystem includes writing fitness functions as plan steps.
 - **Maintain** — existing fitness functions must continue to pass. If a change intentionally alters an architectural property, the fitness function is updated per the plan, not silently removed.
 
 **Examples of architectural properties fitness functions protect:**
@@ -199,7 +199,7 @@ Which skills read and write each artifact:
 
 | Artifact | Created by | Loaded by | Enforced by | Evaluated by | Promotion suggested by | Audited by | Checked by reviewers |
 |---|---|---|---|---|---|---|---|
-| Maturity table (`architecture/_overview.md`) | `/create-architecture` | `/create-plan`, `/create-slices`, `/complete`, `/implement-plan`, `/refine-plan`, `/refine-slices` | — | `/refine-architecture` | `/complete`, `/audit-architecture` | `/audit-architecture` | SW Architecture reviewer |
-| `architecture/invariants.md` | `/create-architecture` | — | — | `/refine-architecture` | — | `/audit-architecture` | Holistic reviewer |
-| Fitness functions (`<subsystem>-api.md`) | `/create-architecture` (candidates) | — | `/create-plan` | `/complete`, `/refine-architecture` | — | `/audit-architecture` | SW Architecture reviewer, Holistic reviewer |
-| `maturity-conventions.md` | `/create-architecture` | `/complete` | — | `/refine-architecture` | — | `/audit-architecture` | — |
+| Maturity table (`architecture/_overview.md`) | `/gp:create-epic` | `/gp:plan-slice`, `/gp:create-epic`, `/gp:complete-epic`, `/gp:implement` | — | `/gp:create-epic` (refinement) | `/gp:complete-epic`, `/gp:audit` | `/gp:audit` | SW Architecture reviewer |
+| `architecture/invariants.md` | `/gp:create-epic` | — | — | `/gp:create-epic` (refinement) | — | `/gp:audit` | Holistic reviewer |
+| Fitness functions (`<subsystem>-api.md`) | `/gp:create-epic` (candidates) | — | `/gp:plan-slice` | `/gp:complete-epic`, `/gp:create-epic` (refinement) | — | `/gp:audit` | SW Architecture reviewer, Holistic reviewer |
+| `maturity-conventions.md` | `/gp:create-epic` | `/gp:complete-epic` | — | `/gp:create-epic` (refinement) | — | `/gp:audit` | — |

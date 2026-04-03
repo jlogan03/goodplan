@@ -128,9 +128,9 @@ The shared base contains the intersection of all consumers. Each skill extends w
 | `{score_label}` | **Skill-specific.** refine-plan: `plan score`. refine-architecture: `score`. refine-slices: `score`. implement-plan: omit — drop the entire `**Final ...**` line (see Display Rules). |
 | `{min_score}` | Minimum score across all reviewers in the final iteration. |
 | `{N}` | Total iteration count. |
-| `{skill_specific_header_fields}` | **Skill-specific.** refine-plan: `**Path**: {path to -refined file or directory}`. refine-architecture: `**Architecture files**: $ARCH_DIR/`. refine-slices: omit. implement-plan: `**Plan**: {plan name}` + `**Phases completed**: {N}` + `**Total iterations**: {sum across all phases}`. |
-| `{issues_resolved_variant}` | **Skill-specific.** refine-plan: `Per Iteration` (full per-iteration tables). refine-architecture: `Per Iteration` (full per-iteration tables). refine-slices: empty string (use total count for content). implement-plan: omit — drop the entire `### Issues Resolved` and `### Remaining Issues` sections (see Display Rules). |
-| `{issues_resolved_content}` | **Skill-specific.** refine-plan/refine-architecture: per-iteration severity tables. refine-slices: `**Total**: {N} issues ({breakdown by severity})`. implement-plan: omit — section dropped entirely (see Display Rules). |
+| `{skill_specific_header_fields}` | **Skill-specific.** plan-slice (refinement): `**Path**: {path to -refined file or directory}`. create-epic (architecture refinement): `**Architecture files**: $ARCH_DIR/`. create-epic (slice refinement): omit. implement: `**Plan**: {plan name}` + `**Phases completed**: {N}` + `**Total iterations**: {sum across all phases}`. |
+| `{issues_resolved_variant}` | **Skill-specific.** plan-slice (refinement): `Per Iteration` (full per-iteration tables). create-epic (architecture refinement): `Per Iteration` (full per-iteration tables). create-epic (slice refinement): empty string (use total count for content). implement: omit — drop the entire `### Issues Resolved` and `### Remaining Issues` sections (see Display Rules). |
+| `{issues_resolved_content}` | **Skill-specific.** plan-slice/create-epic (architecture refinement): per-iteration severity tables. create-epic (slice refinement): `**Total**: {N} issues ({breakdown by severity})`. implement: omit — section dropped entirely (see Display Rules). |
 | `{skill_specific_extension_sections}` | **Skill-specific.** See each skill's SKILL.md for extension sections. |
 
 ### Display Rules
@@ -172,19 +172,19 @@ For skills that produce structured, predictable output (create-slices, create-pl
 
 | Placeholder | Description |
 |---|---|
-| `{done_heading}` | **Skill-specific.** create-slices: `Slices Defined`. create-plan: `Plan Created`. complete: `Completion Summary`. |
+| `{done_heading}` | **Skill-specific.** create-epic (slices phase): `Slices Defined`. plan-slice: `Plan Created`. complete-epic: `Completion Summary`. |
 | `{done_fields}` | **Skill-specific.** See each skill's SKILL.md for the exact fields. |
-| `{next_step}` | **Skill-specific.** create-slices: `` `/create-plan` for {first unplanned slice name} ``. create-plan: `` `/refine-plan {path}` ``. complete: context-dependent (next slice, next epic phase, etc.). |
+| `{next_step}` | **Skill-specific.** create-epic (slices phase): `` `/gp:plan-slice` for {first unplanned slice name} ``. plan-slice: `` `/gp:implement` ``. complete-epic: context-dependent (next slice, next epic phase, etc.). |
 
 #### Skill-Specific Fields
 
-- **create-slices**: `**Total**: {N} slices`, `**Output**: {path to slices directory}`, `**Slices**: {numbered list of slice names}`
-- **create-plan**: `**Plan**: {path to plan file}`, `**Phases**: {N}`, `**Research files written**: {list or "None"}`
-- **complete**: `**Scope**: {slice/quest/epic name}`, `**Artifacts written**: {list of files written during completion}`, `**Architecture updates**: {count} proposed`, `**Learnings**: {count} recorded`
+- **create-epic (slices phase)**: `**Total**: {N} slices`, `**Output**: {path to slices directory}`, `**Slices**: {numbered list of slice names}`
+- **plan-slice**: `**Plan**: {path to plan file}`, `**Phases**: {N}`, `**Research files written**: {list or "None"}`
+- **complete-epic**: `**Scope**: {slice/quest/epic name}`, `**Artifacts written**: {list of files written during completion}`, `**Architecture updates**: {count} proposed`, `**Learnings**: {count} recorded`
 
 ### Variant B — Loose Checklist
 
-For skills whose output is more prose-oriented and variable (create-architecture, explore).
+For skills whose output is more prose-oriented and variable (create-epic architecture phase, explore).
 
 These skills should display a closing summary that includes the following information (format is flexible — not a rigid fenced block):
 
@@ -195,5 +195,5 @@ These skills should display a closing summary that includes the following inform
 
 #### Skill-Specific Guidance
 
-- **create-architecture**: List all files written (conventions.md + each architecture file), all decisions, CLAUDE.md update confirmation. Recommend `/create-slices`.
-- **explore**: Summarize all decisions written during this run. Recommend next step based on scope (epic: `/create-architecture`, project: `/create-architecture`, slice: `/create-plan`, side quest: `/create-plan`).
+- **create-epic (architecture phase)**: List all files written (conventions.md + each architecture file), all decisions, CLAUDE.md update confirmation. Recommend continuing to slices phase.
+- **explore**: Summarize all decisions written during this run. Recommend next step based on scope (epic: `/gp:create-epic`, slice: `/gp:plan-slice`, side quest: `/gp:plan-slice`).

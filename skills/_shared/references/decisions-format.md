@@ -75,6 +75,6 @@ Additive fields (new optional metadata) are safe to add. Format changes that alt
 
 ## Writer / Reader Lists
 
-**Writers** (skills that create/update decision files): `/explore`, `/create-architecture`, `/create-slices`, `/create-plan`, `/complete`, `/refine-architecture`, `/audit-architecture`
+**Writers** (skills that create/update decision files): `/gp:explore`, `/gp:create-epic`, `/gp:plan-slice`, `/gp:complete-epic`, `/gp:audit`
 
-**Readers** (skills that load active decisions as context): all writers plus `/project-status`, `/create-epic`, `/refine-plan`, `/implement-plan`
+**Readers** (skills that load active decisions as context): all writers plus `/gp:status`, `/gp:implement`

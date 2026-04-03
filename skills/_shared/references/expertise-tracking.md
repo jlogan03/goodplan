@@ -78,4 +78,4 @@ Adjust explanation detail based on the user's expertise level for each topic:
 - **Additive fields** (new metadata in CLAUDE.md or memory files): safe to add without coordination.
 - **Format changes** that alter the CLAUDE.md section structure or memory file convention: require updating all consumer skills.
 
-Current consumers: `/create-epic` (calibration), `/explore`, `/create-architecture`, `/create-slices`, `/create-plan`, `/complete` (expertise check), `/project-status` (display), `/refine-plan`, `/refine-architecture`, `/refine-slices`, `/audit-architecture`, `/onboard-repo`.
+Current consumers: `/gp:create-epic` (calibration), `/gp:explore`, `/gp:plan-slice`, `/gp:complete-epic` (expertise check), `/gp:status` (display), `/gp:audit`, `/gp:init`.

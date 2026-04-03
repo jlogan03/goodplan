@@ -135,7 +135,7 @@ File-existence states. Check in order — **first match wins** (same pattern as 
 
 ### First Epic (`__active__initial/`)
 
-Auto-active, no approval gate. `/create-architecture` writes directly to `architecture/`.
+Auto-active, no approval gate. `/gp:create-epic` writes directly to `architecture/`.
 
 | # | Condition | State |
 |---|---|---|
@@ -166,10 +166,10 @@ Auto-active, no approval gate. `/create-architecture` writes directly to `archit
 | ready-for-exploration | `/explore` | exploring | `/explore` |
 | ready-for-exploration | user skips explore | needs-architecture | writes `explore-skipped.md` |
 | exploring | user marks done | needs-architecture | `/explore` writes `explore-complete.md` |
-| needs-architecture | `/create-architecture` | needs-slice-planning | `/create-architecture` writes to `architecture/` |
-| needs-slice-planning | `/create-slices` | executing-slices | `/create-slices` |
+| needs-architecture | `/gp:create-epic` | needs-slice-planning | `/gp:create-epic` writes to `architecture/` |
+| needs-slice-planning | `/gp:create-epic` | executing-slices | `/gp:create-epic` |
 | executing-slices | all slices complete | needs-completion | automatic |
-| needs-completion | `/complete` | complete | `/complete` |
+| needs-completion | `/gp:complete-epic` | complete | `/gp:complete-epic` |
 | any | user abandons | abandoned | writes `abandoned.md` |
 
 ### Subsequent Epic Transitions
@@ -180,12 +180,12 @@ Auto-active, no approval gate. `/create-architecture` writes directly to `archit
 | ready-for-exploration | `/explore` | exploring | `/explore` |
 | ready-for-exploration | user skips explore | needs-architecture-proposal | writes `explore-skipped.md` |
 | exploring | user marks done | needs-architecture-proposal | `/explore` writes `explore-complete.md` |
-| needs-architecture-proposal | `/create-architecture` | proposal-pending | `/create-architecture` writes to `architecture-proposal/` |
+| needs-architecture-proposal | `/gp:create-epic` | proposal-pending | `/gp:create-epic` writes to `architecture-proposal/` |
 | needs-architecture-proposal | user skips proposal | needs-slice-planning | writes `architecture-proposal-skipped.md` |
-| proposal-pending | `/start-epic` | needs-slice-planning | `/start-epic` writes `approved.md`, renames to `__active__` |
-| needs-slice-planning | `/create-slices` | executing-slices | `/create-slices` |
+| proposal-pending | `/gp:start-epic` | needs-slice-planning | `/gp:start-epic` writes `approved.md`, renames to `__active__` |
+| needs-slice-planning | `/gp:create-epic` | executing-slices | `/gp:create-epic` |
 | executing-slices | all slices complete | needs-completion | automatic |
-| needs-completion | `/complete` | complete | `/complete` |
+| needs-completion | `/gp:complete-epic` | complete | `/gp:complete-epic` |
 | any | user abandons | abandoned | writes `abandoned.md` |
 
 ---
@@ -194,8 +194,8 @@ Auto-active, no approval gate. `/create-architecture` writes directly to `archit
 
 - Auto-named `initial`. Created as `__active__initial/` (starts active — no approval gate).
 - Skips `architecture-proposal/` and `approved.md`.
-- `/create-architecture` writes directly to epic's `architecture/`, not `architecture-proposal/`.
-- No `/start-epic` step required.
+- `/gp:create-epic` writes directly to epic's `architecture/`, not `architecture-proposal/`.
+- No `/gp:start-epic` step required.
 
 ---
 
@@ -205,31 +205,29 @@ Architecture lives in two places with distinct purposes:
 
 | Layer | Location | Purpose | Updated by |
 |---|---|---|---|
-| **Top-level** | `.goodplan/architecture/` | Current reality — what the repo looks like now | `/complete` after each slice/quest |
-| **Epic** | `epics/<name>/architecture/` | Target state — where the epic is headed | `/create-architecture` (first init) or `/start-epic` (subsequent) |
+| **Top-level** | `.goodplan/architecture/` | Current reality — what the repo looks like now | `/gp:complete-epic` after each slice/quest |
+| **Epic** | `epics/<name>/architecture/` | Target state — where the epic is headed | `/gp:create-epic` (first init) or `/gp:start-epic` (subsequent) |
 
 ### Who reads/writes each layer
 
 | Skill | Top-level (current reality) | Epic architecture (target) |
 |---|---|---|
-| `/create-architecture` | Reads (context) | **Writes** (first init: `architecture/`) |
-| `/create-architecture` | Reads (context) | **Writes** (subsequent: `architecture-proposal/`) |
-| `/start-epic` | Reads (baseline) | Reads proposal, **writes** `approved.md` |
-| `/create-slices` | Reads (context) | Reads (target) |
-| `/create-plan` | Reads (current state) | Reads (target) |
-| `/refine-plan` | Reads (context) | Reads (target) |
-| `/implement-plan` | Reads (current state) | Reads (target) |
-| `/refine-architecture` | Reads and **updates** | Reads and **updates** |
-| `/audit-architecture` | Reads, proposes side quests | Reads (comparison) |
-| `/complete` (slice) | **Writes** approved updates | Reads (reconciliation) |
-| `/complete` (epic) | **Writes** final reconciliation | Reads (gaps check) |
-| `/explore` | Reads (context) | N/A (explore precedes arch) |
+| `/gp:create-epic` | Reads (context) | **Writes** (first init: `architecture/`) |
+| `/gp:create-epic` | Reads (context) | **Writes** (subsequent: `architecture-proposal/`) |
+| `/gp:start-epic` | Reads (baseline) | Reads proposal, **writes** `approved.md` |
+| `/gp:create-epic` | Reads (context) | Reads (target) |
+| `/gp:plan-slice` | Reads (current state) | Reads (target) |
+| `/gp:implement` | Reads (current state) | Reads (target) |
+| `/gp:audit` | Reads, proposes side quests | Reads (comparison) |
+| `/gp:complete-epic` (slice) | **Writes** approved updates | Reads (reconciliation) |
+| `/gp:complete-epic` (epic) | **Writes** final reconciliation | Reads (gaps check) |
+| `/gp:explore` | Reads (context) | N/A (explore precedes arch) |
 | Side quest planning | Reads (plan against reality) | Reads active epic arch (compatibility) |
 
 ### Key rules
 
 - Epic architecture does **not** change when side quests update top-level.
-- `/complete` updates top-level incrementally as slices land.
+- `/gp:complete-epic` updates top-level incrementally as slices land.
 - Epic completion reconciles the two layers — gaps between target and reality are surfaced as incomplete work or intentional scope reductions.
 - For the first epic, top-level starts as a scaffold and gets populated as slices complete.
 
@@ -239,7 +237,7 @@ Architecture lives in two places with distinct purposes:
 
 There is no "unapprove" transition. If an approved epic's architecture turns out wrong, the path is abandonment (`abandoned.md`).
 
-Since top-level architecture is only updated by `/complete` as slices land (not at approval time), abandoning an epic leaves top-level intact — no architectural rollback is needed.
+Since top-level architecture is only updated by `/gp:complete-epic` as slices land (not at approval time), abandoning an epic leaves top-level intact — no architectural rollback is needed.
 
 ---
 
@@ -276,16 +274,16 @@ Which skills create, read, or update epic artifacts:
 
 | Artifact | Created by | Read by | Updated by |
 |---|---|---|---|
-| `goal.md` | `/create-epic` | All epic-aware skills | `/complete` (if learnings warrant goal updates) |
-| `research/`, `brainstorm/`, `prototypes/` | `/explore` | `/create-architecture`, `/create-plan` | `/explore` |
-| `explore-complete.md`, `explore-skipped.md` | `/explore`, user skip | State machine checks | — |
-| `architecture/` (first init) | `/create-architecture` | `/create-slices`, `/create-plan`, `/refine-plan`, `/implement-plan`, `/refine-architecture`, `/audit-architecture` | `/refine-architecture` |
-| `architecture-proposal/` (subsequent) | `/create-architecture` | `/start-epic` | `/refine-architecture` |
+| `goal.md` | `/gp:create-epic` | All epic-aware skills | `/gp:complete-epic` (if learnings warrant goal updates) |
+| `research/`, `brainstorm/`, `prototypes/` | `/gp:explore` | `/gp:create-epic`, `/gp:plan-slice` | `/gp:explore` |
+| `explore-complete.md`, `explore-skipped.md` | `/gp:explore`, user skip | State machine checks | — |
+| `architecture/` (first init) | `/gp:create-epic` | `/gp:plan-slice`, `/gp:implement`, `/gp:audit` | `/gp:create-epic` (refinement) |
+| `architecture-proposal/` (subsequent) | `/gp:create-epic` | `/gp:start-epic` | `/gp:create-epic` (refinement) |
 | `architecture-proposal-skipped.md` | User skip | State machine checks | — |
-| `approved.md` | `/start-epic` | State machine checks | — |
-| `architecture/` (subsequent init) | `/start-epic` (from proposal upon approval) | Same as first init | `/refine-architecture` |
-| `slices/` | `/create-slices` | `/create-plan`, `/refine-slices`, `/project-status` | `/refine-slices`, `/complete` |
-| `abandoned.md` | User action | State machine checks, `/complete` (learnings) | — |
-| `completion/` | `/complete` | `/project-status`, future epic planning | — |
+| `approved.md` | `/gp:start-epic` | State machine checks | — |
+| `architecture/` (subsequent init) | `/gp:start-epic` (from proposal upon approval) | Same as first init | `/gp:create-epic` (refinement) |
+| `slices/` | `/gp:create-epic` | `/gp:plan-slice`, `/gp:status` | `/gp:create-epic` (refinement), `/gp:complete-epic` |
+| `abandoned.md` | User action | State machine checks, `/gp:complete-epic` (learnings) | — |
+| `completion/` | `/gp:complete-epic` | `/gp:status`, future epic planning | — |
 
-> **Note**: During epic completion, `/complete` may also copy artifacts from epic `research/`, `brainstorm/`, `prototypes/` to project-level directories (`.goodplan/research/`, etc.) via the artifact promotion step. This is a copy (originals preserved in the archived epic).
+> **Note**: During epic completion, `/gp:complete-epic` may also copy artifacts from epic `research/`, `brainstorm/`, `prototypes/` to project-level directories (`.goodplan/research/`, etc.) via the artifact promotion step. This is a copy (originals preserved in the archived epic).

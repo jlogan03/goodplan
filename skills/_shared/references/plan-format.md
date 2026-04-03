@@ -1,10 +1,10 @@
 # Plan Format Convention
 
-Plans must be compatible with `/refine-plan` and `/implement-plan`. Two formats exist based on size.
+Plans must be compatible with `/gp:plan-slice` (refinement) and `/gp:implement`. Two formats exist based on size.
 
 ## Goal Clarity
 
-Every plan starts with a clear goal statement. `/refine-plan` confirms this with the user before reviewing. The goal should state what the plan accomplishes when implemented — not the process of planning itself.
+Every plan starts with a clear goal statement. `/gp:plan-slice` confirms this with the user before reviewing. The goal should state what the plan accomplishes when implemented — not the process of planning itself.
 
 ## Slug Derivation
 
@@ -19,7 +19,7 @@ The plan plus codebase should be enough for reviewers and implementers. No impli
 - `[ ]` — pending task
 - `[x]` — completed task
 
-`/implement-plan` checks these off as phases complete. `/refine-plan` uses them to detect completion status.
+`/gp:implement` checks these off as phases complete. `/gp:plan-slice` uses them to detect completion status.
 
 ## Size Guideline
 
@@ -134,7 +134,7 @@ Single-file plans use `## Phase N:` (H2 under the plan's `# Plan:` H1). Director
 
 ## Downstream Naming
 
-`/refine-plan` creates a `-refining` working copy, then produces a `-refined` final copy of the plan.
+`/gp:plan-slice` creates a `-refining` working copy, then produces a `-refined` final copy of the plan.
 
 ## Phase Structure Requirements
 

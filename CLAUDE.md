@@ -50,8 +50,8 @@ This repo builds the goodplan workflow system. It contains the source code for b
 ### 1. Repo source code (`skills/`, `src/`)
 This is what we are actively developing. **"Update a skill" always means editing files here.** The `skills/` directory is the **source of truth** for all goodplan skills. The `src/` directory is the source for the CLI. These are NOT installed or active anywhere until explicitly built/installed.
 
-### 2. Installed tools (`~/.claude/skills/`, `gp` on PATH)
-These are installed from the repo via `bun run install:skills`. They are what `/project-status`, `/create-plan`, `/implement-plan`, and all other slash commands actually use. They may have **different capabilities** from what's in the repo — we are actively improving the repo versions. The installed `gp` CLI binary lives at `~/.local/bin/gp`. **Never edit `~/.claude/skills/` directly** — those files get overwritten by `bun run install:skills`.
+### 2. Installed tools (plugin distribution, `gp` on PATH)
+These are installed from the repo via `bun run build:plugin`. They are what `/gp:status`, `/gp:plan-slice`, `/gp:implement`, and all other slash commands actually use. They may have **different capabilities** from what's in the repo — we are actively improving the repo versions. The installed `gp` CLI binary lives at `~/.local/bin/gp`. **Never edit installed plugin files directly** — those files get overwritten by `bun run build:plugin`.
 
 ### 3. This repo's `.goodplan/` directory
 This is managed by the **installed** CLI and skills (#2 above), not the repo source code (#1). It must stay compatible with the installed version. It tracks this repo's own epics, quests, learnings, and architecture.
@@ -65,7 +65,7 @@ This is managed by the **installed** CLI and skills (#2 above), not the repo sou
 | Mutate `.goodplan/` state | `gp quest:complete ...` (installed CLI) | Directly edit `.goodplan/quests/*/quest.json` |
 | Test CLI changes | Run `./gp` against a **fixture repo** in `/tmp` | Run `./gp` against this repo's `.goodplan/` |
 | Test skills/plugins | Use Agent SDK harness in `tools/dogfood/` | Ask user to run manual Claude Code sessions |
-| Install updated skills | `bun run install:skills` (explicit, user-initiated) | Auto-install during development |
+| Build plugin | `bun run build:plugin` (explicit, user-initiated) | Auto-build during development |
 
 ## Agent SDK Test Harness
 
@@ -74,8 +74,8 @@ When you need to test skills or plugins in a live Claude Code session, use the A
 | Harness | Purpose | Usage |
 |---|---|---|
 | `test-plugin-skills.ts` | Plugin skill loading, namespacing, execution | `bun tools/dogfood/test-plugin-skills.ts` |
-| `test-onboard.ts` | `/onboard-repo` skill end-to-end | `bun tools/dogfood/test-onboard.ts` |
-| `test-migrate.ts` | `/migrate` skill end-to-end | `bun tools/dogfood/test-migrate.ts` |
+| `test-init.ts` | `/gp:init` skill end-to-end | `bun tools/dogfood/test-init.ts` |
+| `test-renames.ts` | `/gp:upgrade` skill discoverability | `bun tools/dogfood/test-renames.ts` |
 | `test-plan-slice.ts` | `/gp:plan-slice` orchestrator end-to-end | `bun tools/dogfood/test-plan-slice.ts [--model <model>] [--max-iterations <n>]` |
 | `test-create-epic.ts` | `/gp:create-epic` orchestrator end-to-end | `bun tools/dogfood/test-create-epic.ts [--model <model>] [--max-iterations <n>]` |
 | `validate.ts` | Full workflow (2 epics + 2 quests) | `bun tools/dogfood/validate.ts` |

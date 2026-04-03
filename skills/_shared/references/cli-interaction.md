@@ -156,7 +156,7 @@ Unlike `start-*`, mutation commands (`submit-*`, `epic:create`, `slice:plan`, et
 
 ### Orchestrator Skills
 
-Skills that coordinate workflow phases: `/create-epic`, `/explore`, `/create-architecture`, `/create-slices`, `/project-status`, `/complete`, `/audit-architecture`.
+Skills that coordinate workflow phases: `/gp:create-epic`, `/gp:explore`, `/gp:status`, `/gp:complete-epic`, `/gp:audit`.
 
 **Read state:**
 
@@ -221,7 +221,7 @@ stdin: "" | gp submit-implementation --slice my-slice --json
 
 ### Interactive Orchestrator Skills
 
-Skills that do interactive user work between state transitions: `/create-epic`, `/create-plan`, `/create-architecture`, `/complete`. These need both deep context AND state mutations in a single session.
+Skills that do interactive user work between state transitions: `/gp:create-epic`, `/gp:plan-slice`, `/gp:complete-epic`. These need both deep context AND state mutations in a single session.
 
 **Pattern:**
 
@@ -248,7 +248,7 @@ stdin: "" | gp submit-explore --epic my-epic --json
 
 ### Read-Only Skills
 
-Skills that only query state: `/project-status`, `/audit-architecture` (read phase).
+Skills that only query state: `/gp:status`, `/gp:audit` (read phase).
 
 Use `status --json`, `show --json`, `list --json`, `state --json` commands. These bypass the RPC layer and go directly to the Data Layer — they're fast and side-effect-free.
 
@@ -602,13 +602,13 @@ Skills should drop state machine awareness entirely. Do not replicate transition
 
 ### Filesystem-Backed Accumulation
 
-For multi-step interactive flows (like `/complete`), write intermediate results to disk as each step completes, then read them back to construct the final CLI payload. This pattern:
+For multi-step interactive flows (like `/gp:complete-epic`), write intermediate results to disk as each step completes, then read them back to construct the final CLI payload. This pattern:
 
 - Survives graceful stops — partial progress is on disk, not in memory
 - Enables re-entry detection — `stat` on known artifact paths reveals what was already done
 - Keeps the final CLI call atomic — one `slice:complete` with a fully assembled payload
 
-Example: the `/complete` skill writes `completion/learnings.md` and `completion/architecture-updates.md` during Steps 4-6, then reads both back in Step 10 to construct the `slice:complete` stdin payload.
+Example: the `/gp:complete-epic` skill writes `completion/learnings.md` and `completion/architecture-updates.md` during intermediate steps, then reads both back to construct the final CLI payload.
 
 ### CLI Command Mapping
 

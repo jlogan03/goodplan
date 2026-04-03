@@ -143,6 +143,19 @@ if [[ "$DS_COUNT" -ne 0 ]]; then
 fi
 echo "  .DS_Store check: clean"
 
+# Assert exact skill count
+test "$SKILL_COUNT" -eq 12 || { echo "FAIL: expected 12 skills, got $SKILL_COUNT"; exit 1; }
+
+# Assert none of the 15 deleted skill names exist
+DELETED_SKILLS="create-architecture refine-architecture create-plan refine-plan create-slices refine-slices implement-plan complete audit-architecture audit-docs audit-tests capture onboard-repo migrate project-status"
+for deleted in $DELETED_SKILLS; do
+  if [[ -d "$PLUGIN_DIR/skills/$deleted" ]]; then
+    echo "FAIL: deleted skill '$deleted' still exists in plugin dist"
+    exit 1
+  fi
+done
+echo "  deleted skill guard: clean"
+
 echo "  Packaged $SKILL_COUNT skills"
 
 # Verify agent packaging
