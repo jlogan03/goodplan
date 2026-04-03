@@ -114,6 +114,9 @@ function buildBeginEvent<P extends BeginPhase>(
 		case "create":
 			return buildCreateEvent(target, payload as BeginPayloadMap["create"], ts);
 		case "explore":
+			if (target.type === "quest") {
+				return { type: "BEGIN_QUEST_EXPLORE", quest: target.name, ts };
+			}
 			return { type: "BEGIN_EXPLORE", epic: requireEpicName(target), ts };
 		case "define-architecture":
 			return { type: "BEGIN_ARCHITECTURE", epic: requireEpicName(target), ts };

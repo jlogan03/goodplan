@@ -24,7 +24,7 @@ export function handleBeginQuestPlan(
 	event: BeginQuestPlanEvent,
 ): ProjectState | StateError {
 	const quest = getQuest(state, event.quest);
-	const questOrErr = guardQuestStatus(quest, event.quest, "created", "BEGIN_QUEST_PLAN");
+	const questOrErr = guardQuestStatus(quest, event.quest, ["created", "explored"], "BEGIN_QUEST_PLAN");
 	if (isStateError(questOrErr)) return questOrErr;
 
 	// Guard: no other quest is currently active
@@ -73,4 +73,6 @@ export const beginQuestPlanTransitions: ReadonlyArray<{
 }> = [
 	{ from: "created", event: "BEGIN_QUEST_PLAN", to: "planning" },
 	{ from: "created", event: "BEGIN_QUEST_PLAN", to: "(error)" },
+	{ from: "explored", event: "BEGIN_QUEST_PLAN", to: "planning" },
+	{ from: "explored", event: "BEGIN_QUEST_PLAN", to: "(error)" },
 ] as const;

@@ -45,7 +45,7 @@ export function startContext(
 	const rt: ResolvedTarget = { target, activeEpic };
 
 	// Collect content entries in priority order
-	const priorityTable = getPriorityTable(phase);
+	const priorityTable = getPriorityTable(phase, target);
 	const allEntries: CollectedEntry[] = [];
 
 	for (const source of priorityTable) {

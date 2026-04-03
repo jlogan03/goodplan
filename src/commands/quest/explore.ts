@@ -6,16 +6,20 @@ import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `gp quest:plan --quest <name>` — begin planning phase for a quest.
+ * `gp quest:explore --quest <name>` — begin exploration phase for a quest.
  *
  * Precondition: quest in 'created' status.
- * Transition: created -> planning
+ * Transition: created -> exploring
+ *
+ * Note: BEGIN_QUEST_EXPLORE does NOT set activeQuest, following the epic
+ * pattern where BEGIN_EXPLORE does not set activeEpic. This allows other
+ * quests to remain accessible during potentially long explore phases.
  */
-export const questPlanCommand = defineCommand({
+export const questExploreCommand = defineCommand({
 	meta: {
-		name: "quest:plan",
+		name: "quest:explore",
 		description:
-			"Begin planning phase for a quest. Requires --quest. Precondition: 'created' or 'explored' status. Transition: -> planning.",
+			"Begin exploration phase for a quest. Requires --quest. Precondition: 'created' status. Transition: -> exploring.",
 	},
 	args: {
 		...globalArgs,
@@ -28,7 +32,7 @@ export const questPlanCommand = defineCommand({
 	setup() {},
 	async run({ args }) {
 		const projectDir = resolveProjectDir();
-		const result = await begin(projectDir, "plan", { type: "quest", name: args.quest }, {});
+		const result = await begin(projectDir, "explore", { type: "quest", name: args.quest }, {});
 
 		if (args.json || args.query) {
 			output(result, args);

@@ -88,6 +88,9 @@ function buildSubmitEvent(
 		case "implementation":
 			return buildImplementationEvent(target, ts);
 		case "explore":
+			if (target.type === "quest") {
+				return { type: "COMPLETE_QUEST_EXPLORE", quest: target.name, ts };
+			}
 			return { type: "COMPLETE_EXPLORE", epic: requireEpicName(target), ts };
 		case "architecture":
 			return { type: "COMPLETE_ARCHITECTURE", epic: requireEpicName(target), ts };

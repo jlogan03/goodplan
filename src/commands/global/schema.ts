@@ -294,7 +294,11 @@ registerCommand("quest:show", "Show details for a specific quest.", {
 	...globalArgDefs,
 	quest: { type: "string", description: "Quest name", required: true },
 });
-registerCommand("quest:plan", "Begin planning for a quest.", {
+registerCommand("quest:explore", "Begin exploration phase for a quest.", {
+	...globalArgDefs,
+	quest: { type: "string", description: "Quest name", required: true },
+});
+registerCommand("quest:plan", "Begin planning for a quest. Precondition: 'created' or 'explored' status.", {
 	...globalArgDefs,
 	quest: { type: "string", description: "Quest name", required: true },
 });
@@ -418,9 +422,10 @@ registerCommand("start-implementation", "Get context for implementing a slice or
 	quest: { type: "string", description: "Quest name" },
 	inline: { type: "string", description: "Include inlined content (boolean or byte budget)" },
 });
-registerCommand("start-explore", "Get context for exploring an epic.", {
+registerCommand("start-explore", "Get context for exploring an epic or quest. Requires --epic or --quest (mutually exclusive).", {
 	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
+	epic: { type: "string", description: "Epic name" },
+	quest: { type: "string", description: "Quest name" },
 	inline: { type: "string", description: "Include inlined content (boolean or byte budget)" },
 });
 registerCommand("start-architecture", "Get context for defining epic architecture.", {
@@ -464,9 +469,10 @@ registerCommand("submit-implementation", "Submit implementation results.", {
 	slice: { type: "string", description: "Slice name" },
 	quest: { type: "string", description: "Quest name" },
 });
-registerCommand("submit-explore", "Submit exploration results.", {
+registerCommand("submit-explore", "Submit exploration results. Requires --epic or --quest (mutually exclusive).", {
 	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
+	epic: { type: "string", description: "Epic name" },
+	quest: { type: "string", description: "Quest name" },
 });
 registerCommand("submit-architecture", "Submit architecture definition.", {
 	...globalArgDefs,

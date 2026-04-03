@@ -98,7 +98,11 @@ Quest lifecycle mirrors slice. Quests are project-scoped (no epic field, no sequ
 | From | Event | To | Guard | Error | Orchestrator Returns | Notes |
 |---|---|---|---|---|---|---|
 | (none) | CREATE_QUEST | created | — | — | quest, status | Creates quest.json |
-| created | BEGIN_QUEST_PLAN | planning | activeQuest == null | — | quest, status, previousStatus | No sequential enforcement. Sets project.json activeQuest. |
+| created | BEGIN_QUEST_EXPLORE | exploring | — | — | quest, status, previousStatus | Does NOT set activeQuest — allows other quests to remain accessible during potentially long explore phase. |
+| created | COMPLETE_QUEST_EXPLORE | explored | — | — | quest, status | Skip explore path |
+| exploring | COMPLETE_QUEST_EXPLORE | explored | — | — | quest, status | Normal explore completion |
+| created | BEGIN_QUEST_PLAN | planning | activeQuest == null | — | quest, status, previousStatus | No sequential enforcement. Sets project.json activeQuest. Dual precondition: accepts both `created` (skip explore) and `explored` (after exploration). |
+| explored | BEGIN_QUEST_PLAN | planning | activeQuest == null | — | quest, status, previousStatus | Post-exploration path to planning. |
 | created | BEGIN_QUEST_PLAN | (error) | activeQuest != null | STATE_QUEST_ALREADY_ACTIVE | — | Must complete or abandon active quest first. |
 | planning | COMPLETE_QUEST_PLAN | plan-created | hasChild(state, "quests/<name>", "plan.md") | — | quest, status | submit-plan --quest triggers this |
 | planning | COMPLETE_QUEST_PLAN | (error) | !hasChild(state, "quests/<name>", "plan.md") | STATE_CONTENT_MISSING | — | |
@@ -119,6 +123,7 @@ Quest lifecycle mirrors slice. Quests are project-scoped (no epic field, no sequ
 
 | Phase | Inline Priority (highest first) | References |
 |---|---|---|
+| explore | quest goal, current architecture, target architecture, conventions, completed epics, completed quests, pending quests | — |
 | plan | quest goal, current architecture overview, target architecture overview, conventions, active decisions, recent learnings | architecture/*.md, research/*.md |
 | refinement | plan, quest goal, current architecture, target architecture, conventions, active decisions | architecture/*.md, research/*.md |
 | implementation | refined plan, quest goal, current architecture, target architecture, conventions, relevant learnings | architecture/*.md |

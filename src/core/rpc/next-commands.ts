@@ -23,6 +23,7 @@ import { PRE_ACTIVATED_STATUSES } from "../state/transitions/epic-verify.js";
 import { abandonQuestTransitions } from "../state/transitions/quest-abandon.js";
 import { completeQuestTransitions } from "../state/transitions/quest-complete.js";
 import { createQuestTransitions } from "../state/transitions/quest-create.js";
+import { questExploreTransitions } from "../state/transitions/quest-explore.js";
 import { questImplementTransitions } from "../state/transitions/quest-implement.js";
 import { beginQuestPlanTransitions } from "../state/transitions/quest-plan.js";
 import { abandonSliceTransitions } from "../state/transitions/slice-abandon.js";
@@ -282,6 +283,23 @@ export const commandToEvent = [
 		userFacing: true,
 	},
 	{
+		command: "quest:explore",
+		event: "BEGIN_QUEST_EXPLORE",
+		entityType: "quest",
+		template: "gp quest:explore --quest {name}",
+		description: "Explore this quest",
+		userFacing: true,
+	},
+	// Quest explore submit (subagent — not user-facing)
+	{
+		command: "submit-explore",
+		event: "COMPLETE_QUEST_EXPLORE",
+		entityType: "quest",
+		template: "gp submit-explore --quest {name}",
+		description: "Submit quest exploration results",
+		userFacing: false,
+	},
+	{
 		command: "quest:plan",
 		event: "BEGIN_QUEST_PLAN",
 		entityType: "quest",
@@ -455,6 +473,7 @@ function collectAllTransitions(): TaggedTransition[] {
 	addAll("slice", completeSliceTransitions);
 	addAll("slice", abandonSliceTransitions);
 	addAll("quest", createQuestTransitions);
+	addAll("quest", questExploreTransitions);
 	addAll("quest", beginQuestPlanTransitions);
 	addAll("quest", questImplementTransitions);
 	addAll("quest", questSubmitTransitions);

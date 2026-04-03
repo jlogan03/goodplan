@@ -23,6 +23,7 @@ import { epicVerifyTransitions } from "../../src/core/state/transitions/epic-ver
 import { abandonQuestTransitions } from "../../src/core/state/transitions/quest-abandon.js";
 import { completeQuestTransitions } from "../../src/core/state/transitions/quest-complete.js";
 import { createQuestTransitions } from "../../src/core/state/transitions/quest-create.js";
+import { questExploreTransitions } from "../../src/core/state/transitions/quest-explore.js";
 import { questImplementTransitions } from "../../src/core/state/transitions/quest-implement.js";
 import { beginQuestPlanTransitions } from "../../src/core/state/transitions/quest-plan.js";
 import { abandonSliceTransitions } from "../../src/core/state/transitions/slice-abandon.js";
@@ -56,6 +57,7 @@ function collectAllTransitionEvents(): Set<string> {
 		completeSliceTransitions,
 		abandonSliceTransitions,
 		createQuestTransitions,
+		questExploreTransitions,
 		beginQuestPlanTransitions,
 		questImplementTransitions,
 		questSubmitTransitions,

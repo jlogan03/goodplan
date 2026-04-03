@@ -126,6 +126,8 @@ describe("Transition completeness", () => {
 			},
 			ABANDON_SLICE: { type: "ABANDON_SLICE", epic: "e1", slice: "s1", ts, reason: "test" },
 			CREATE_QUEST: { type: "CREATE_QUEST", name: "q1", goal: "g", ts },
+			BEGIN_QUEST_EXPLORE: { type: "BEGIN_QUEST_EXPLORE", quest: "q1", ts },
+			COMPLETE_QUEST_EXPLORE: { type: "COMPLETE_QUEST_EXPLORE", quest: "q1", ts },
 			BEGIN_QUEST_PLAN: { type: "BEGIN_QUEST_PLAN", quest: "q1", ts },
 			COMPLETE_QUEST_PLAN: { type: "COMPLETE_QUEST_PLAN", quest: "q1", ts },
 			BEGIN_QUEST_REFINEMENT: { type: "BEGIN_QUEST_REFINEMENT", quest: "q1", ts },

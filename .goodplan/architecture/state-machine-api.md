@@ -61,6 +61,8 @@ type StateEvent =
   | { type: 'ABANDON_SLICE'; epic: string; slice: string; ts: string; reason: string }
   // Quest lifecycle
   | { type: 'CREATE_QUEST'; name: string; goal: string; ts: string }
+  | { type: 'BEGIN_QUEST_EXPLORE'; quest: string; ts: string }
+  | { type: 'COMPLETE_QUEST_EXPLORE'; quest: string; ts: string }
   | { type: 'BEGIN_QUEST_PLAN'; quest: string; ts: string }
   | { type: 'COMPLETE_QUEST_PLAN'; quest: string; ts: string }
   | { type: 'BEGIN_QUEST_REFINEMENT'; quest: string; ts: string }
@@ -137,7 +139,7 @@ type EpicStatus = 'created' | 'exploring' | 'explored' | 'defining-architecture'
 type SliceStatus = 'created' | 'planning' | 'plan-created' | 'refining' | 'plan-refined'
   | 'implementing' | 'implementation-complete' | 'completed' | 'abandoned';
 
-type QuestStatus = 'created' | 'planning' | 'plan-created' | 'refining' | 'plan-refined'
+type QuestStatus = 'created' | 'exploring' | 'explored' | 'planning' | 'plan-created' | 'refining' | 'plan-refined'
   | 'implementing' | 'implementation-complete' | 'completed' | 'abandoned';
 ```
 

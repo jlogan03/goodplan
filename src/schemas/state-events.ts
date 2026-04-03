@@ -80,6 +80,8 @@ export type StateEvent =
 	| { type: "ABANDON_SLICE"; epic: string; slice: string; ts: string; reason: string }
 	// Quest lifecycle
 	| { type: "CREATE_QUEST"; name: string; goal: string; ts: string }
+	| { type: "BEGIN_QUEST_EXPLORE"; quest: string; ts: string }
+	| { type: "COMPLETE_QUEST_EXPLORE"; quest: string; ts: string }
 	| { type: "BEGIN_QUEST_PLAN"; quest: string; ts: string }
 	| { type: "COMPLETE_QUEST_PLAN"; quest: string; ts: string }
 	| { type: "BEGIN_QUEST_REFINEMENT"; quest: string; ts: string }

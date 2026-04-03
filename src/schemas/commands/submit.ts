@@ -47,9 +47,14 @@ export type SubmitImplementationInput = z.infer<typeof submitImplementationInput
 
 // ── Epic target schemas (submit-explore, submit-architecture, submit-slices, submit-refine-*) ──
 
-export const submitExploreInputSchema = z.object({
-	epic: z.string().min(1, "epic is required"),
-});
+export const submitExploreInputSchema = z
+	.object({
+		epic: z.string().min(1).optional(),
+		quest: z.string().min(1).optional(),
+	})
+	.refine((d) => (d.epic !== undefined) !== (d.quest !== undefined), {
+		message: "Exactly one of --epic or --quest is required",
+	});
 export type SubmitExploreInput = z.infer<typeof submitExploreInputSchema>;
 
 export const submitArchitectureInputSchema = z.object({

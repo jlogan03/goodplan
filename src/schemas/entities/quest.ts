@@ -3,6 +3,8 @@ import { refinementSchema, timestampSchema } from "../shared.js";
 
 export const questStatusSchema = z.enum([
 	"created",
+	"exploring",
+	"explored",
 	"planning",
 	"plan-created",
 	"refining",

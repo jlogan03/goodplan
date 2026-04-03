@@ -28,6 +28,7 @@ import { learningRollupCommand } from "./learning/rollup.js";
 import { questAbandonCommand } from "./quest/abandon.js";
 import { questCompleteCommand } from "./quest/complete.js";
 import { questCreateCommand } from "./quest/create.js";
+import { questExploreCommand } from "./quest/explore.js";
 import { questImplementCommand } from "./quest/implement.js";
 import { questListCommand } from "./quest/list.js";
 import { questPlanCommand } from "./quest/plan.js";
@@ -104,6 +105,7 @@ export const mainCommand = defineCommand({
 		"quest:create": questCreateCommand,
 		"quest:list": questListCommand,
 		"quest:show": questShowCommand,
+		"quest:explore": questExploreCommand,
 		"quest:plan": questPlanCommand,
 		"quest:refine-plan": questRefinePlanCommand,
 		"quest:implement": questImplementCommand,

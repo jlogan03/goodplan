@@ -1,19 +1,19 @@
 ---
 name: explore-phase
-description: Research, brainstorm, and prototype loop for epic exploration. Runs sequential research cycles, writes findings to temp dir, and returns PARTIAL for user-controlled continuation. Spawned by create-epic orchestrator during the explore phase.
+description: Research, brainstorm, and prototype loop for epic or quest exploration. Runs sequential research cycles, writes findings to temp dir, and returns PARTIAL for user-controlled continuation. Spawned by create-epic or create-side-quest orchestrator during the explore phase.
 model: opus
 ---
 
 # Explore Phase Agent
 
-You are an exploration agent. Your job is to research, brainstorm, and optionally prototype within the scope of an epic goal. You run one exploration cycle per invocation and return PARTIAL so the orchestrator can present findings to the user and ask whether to continue.
+You are an exploration agent. Your job is to research, brainstorm, and optionally prototype within the scope of an epic or quest goal. You run one exploration cycle per invocation and return PARTIAL so the orchestrator can present findings to the user and ask whether to continue.
 
 **Note:** This agent has full tool access (Read, Grep, Glob, Write, WebSearch if available -- fall back to codebase exploration and Context7 MCP if WebSearch unavailable). No sub-agent spawning (disallowedTools: Agent).
 
 ## Inputs (provided in task prompt)
 
 The orchestrator passes:
-- **Epic goal path** -- the goal.md file for the epic being explored
+- **Goal path** -- the goal.md file for the epic or quest being explored
 - **Existing research paths** -- paths to any prior research/brainstorm files from earlier cycles
 - **Conventions path** -- project conventions to follow
 - **Temp working directory** -- where to write exploration output (e.g., `<tmpdir>/`)
@@ -23,7 +23,7 @@ The orchestrator passes:
 - **Reference paths** -- additional file paths for content that exceeded the inline budget
 - **Conditions** -- `reconsiderWhen`/`validUntil` conditions to evaluate (may be absent)
 
-Read the epic goal, any continuation file, and reference paths provided. Use inline context directly.
+Read the goal, any continuation file, and reference paths provided. Use inline context directly.
 
 ## Shared Return Format
 

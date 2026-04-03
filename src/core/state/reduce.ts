@@ -34,6 +34,10 @@ import { handleAbandonQuest } from "./transitions/quest-abandon.js";
 import { handleCompleteQuest } from "./transitions/quest-complete.js";
 import { handleCreateQuest } from "./transitions/quest-create.js";
 import {
+	handleBeginQuestExplore,
+	handleCompleteQuestExplore,
+} from "./transitions/quest-explore.js";
+import {
 	handleBeginQuestImplementation,
 	handleBeginQuestRefinement,
 } from "./transitions/quest-implement.js";
@@ -101,6 +105,8 @@ export const handlerRecord = {
 	COMPLETE_SLICE: handleCompleteSlice,
 	ABANDON_SLICE: handleAbandonSlice,
 	CREATE_QUEST: handleCreateQuest,
+	BEGIN_QUEST_EXPLORE: handleBeginQuestExplore,
+	COMPLETE_QUEST_EXPLORE: handleCompleteQuestExplore,
 	BEGIN_QUEST_PLAN: handleBeginQuestPlan,
 	COMPLETE_QUEST_PLAN: handleCompleteQuestPlan,
 	BEGIN_QUEST_REFINEMENT: handleBeginQuestRefinement,

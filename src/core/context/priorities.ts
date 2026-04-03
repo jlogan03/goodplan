@@ -68,11 +68,22 @@ const completeSources: ContentSource[] = [
 	{ key: "target-architecture", path: (rt) => { const e = epicName(rt); return e ? `epics/${e}/architecture` : undefined; }, sourceType: "directory" },
 ];
 
-/** explore: epic goal, research, brainstorm, conventions, completed epics, completed quests, pending quests */
-const exploreSources: ContentSource[] = [
+/** explore (epic): epic goal, research, brainstorm, conventions, completed epics, completed quests, pending quests */
+/** explore (quest): quest goal, conventions, completed epics, completed quests, pending quests */
+const exploreEpicSources: ContentSource[] = [
 	{ key: "epic-goal", path: (rt) => { const e = epicName(rt); return e ? `epics/${e}/epic.json` : undefined; }, sourceType: "markdown" },
 	{ key: "research", path: (rt) => { const e = epicName(rt); return e ? `epics/${e}/research` : undefined; }, sourceType: "directory" },
 	{ key: "brainstorm", path: (rt) => { const e = epicName(rt); return e ? `epics/${e}/brainstorm` : undefined; }, sourceType: "directory" },
+	{ key: "conventions", path: "conventions.md", sourceType: "markdown" },
+	{ key: "completed-epics", path: "overview.json", sourceType: "markdown" },
+	{ key: "completed-quests", path: "overview.json", sourceType: "markdown" },
+	{ key: "pending-quests", path: "quests", sourceType: "directory" },
+];
+
+const exploreQuestSources: ContentSource[] = [
+	{ key: "entity-goal", path: (rt) => resolveEntityJsonPath(rt.target), sourceType: "markdown" },
+	{ key: "current-architecture", path: "architecture", sourceType: "directory" },
+	{ key: "target-architecture", path: (rt) => { const e = epicName(rt); return e ? `epics/${e}/architecture` : undefined; }, sourceType: "directory" },
 	{ key: "conventions", path: "conventions.md", sourceType: "markdown" },
 	{ key: "completed-epics", path: "overview.json", sourceType: "markdown" },
 	{ key: "completed-quests", path: "overview.json", sourceType: "markdown" },
@@ -118,7 +129,7 @@ const PRIORITY_TABLES: Record<SubmitPhase, ContentSource[]> = {
 	refinement: refinementSources,
 	implementation: implementationSources,
 	complete: completeSources,
-	explore: exploreSources,
+	explore: exploreEpicSources,
 	architecture: architectureSources,
 	slices: slicesSources,
 	"refine-architecture": refineArchitectureSources,
@@ -128,8 +139,13 @@ const PRIORITY_TABLES: Record<SubmitPhase, ContentSource[]> = {
 /**
  * Get the content priority table for a given phase.
  * Returns an ordered list of content sources (highest priority first).
+ * When target is provided and phase is "explore", selects quest-specific
+ * sources for quest targets (quest explore uses different priority ordering).
  */
-export function getPriorityTable(phase: SubmitPhase): ContentSource[] {
+export function getPriorityTable(phase: SubmitPhase, target?: Target): ContentSource[] {
+	if (phase === "explore" && target !== undefined && target.type === "quest") {
+		return exploreQuestSources;
+	}
 	return PRIORITY_TABLES[phase];
 }
 
