@@ -3,7 +3,7 @@ import type { DeferredItem } from "./entities/slice.js";
 import type { TaskContext } from "./entities/task.js";
 import type { ArchitectureDeltaInput } from "./records/architecture-delta.js";
 import type { DecisionEntry } from "./records/decision.js";
-import type { LearningEventEntry, LearningInput } from "./records/learning.js";
+import type { LearningEventEntry } from "./records/learning.js";
 
 // `ts` field is injected by the RPC layer on ALL events to keep the reducer pure (no Date.now() inside).
 // See state-machine-api.md "Timestamp convention" for the documented pattern.
@@ -66,6 +66,7 @@ export type StateEvent =
 	  }
 	| { type: "BEGIN_IMPLEMENTATION"; epic: string; slice: string; ts: string }
 	| { type: "COMPLETE_IMPLEMENTATION"; epic: string; slice: string; ts: string }
+	| { type: "UPDATE_IMPLEMENTATION_PHASE"; epic: string; slice: string; phase: number; ts: string }
 	| {
 			type: "COMPLETE_SLICE";
 			epic: string;

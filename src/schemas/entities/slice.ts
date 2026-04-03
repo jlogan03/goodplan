@@ -28,6 +28,7 @@ export const sliceSchema = z.object({
 	status: sliceStatusSchema,
 	goal: z.string().min(1),
 	deferred: z.array(deferredItemSchema),
+	implementationPhase: z.number().int().min(0).nullable().optional(),
 	refinement: refinementSchema.nullable(),
 	created: timestampSchema,
 	updated: timestampSchema,

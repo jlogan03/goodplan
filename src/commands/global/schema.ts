@@ -460,6 +460,7 @@ registerCommand("submit-refinement", "Submit refinement scores.", {
 });
 registerCommand("submit-implementation", "Submit implementation results.", {
 	...globalArgDefs,
+	phase: { type: "string", description: "Implementation phase number" },
 	slice: { type: "string", description: "Slice name" },
 	quest: { type: "string", description: "Quest name" },
 });

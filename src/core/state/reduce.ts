@@ -42,7 +42,11 @@ import { handleRollupLearnings } from "./transitions/rollup-learnings.js";
 import { handleAbandonSlice } from "./transitions/slice-abandon.js";
 import { handleCompleteSlice } from "./transitions/slice-complete.js";
 import { handleCreateSlice } from "./transitions/slice-create.js";
-import { handleBeginImplementation, handleBeginRefinement } from "./transitions/slice-implement.js";
+import {
+	handleBeginImplementation,
+	handleBeginRefinement,
+	handleUpdateImplementationPhase,
+} from "./transitions/slice-implement.js";
 import { handleBeginPlan } from "./transitions/slice-plan.js";
 import {
 	handleCompleteImplementation,
@@ -93,6 +97,7 @@ export const handlerRecord = {
 	COMPLETE_REFINEMENT_ROUND: handleCompleteRefinementRound,
 	BEGIN_IMPLEMENTATION: handleBeginImplementation,
 	COMPLETE_IMPLEMENTATION: handleCompleteImplementation,
+	UPDATE_IMPLEMENTATION_PHASE: handleUpdateImplementationPhase,
 	COMPLETE_SLICE: handleCompleteSlice,
 	ABANDON_SLICE: handleAbandonSlice,
 	CREATE_QUEST: handleCreateQuest,

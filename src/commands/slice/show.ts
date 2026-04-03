@@ -46,7 +46,11 @@ export const sliceShowCommand = defineCommand({
 		}
 
 		if (args.json || args.query) {
-			const artifacts = detectArtifacts(getDir(state, `epics/${epic}/slices/${args.slice}`), "slice", slice);
+			const artifacts = detectArtifacts(
+				getDir(state, `epics/${epic}/slices/${args.slice}`),
+				"slice",
+				slice,
+			);
 			output({ ...slice, artifacts }, args);
 		} else if (!args.quiet) {
 			const lines: string[] = [];
@@ -56,6 +60,9 @@ export const sliceShowCommand = defineCommand({
 			lines.push(`  Updated: ${slice.updated}`);
 			if (slice.deferred.length > 0) {
 				lines.push(`  Deferred: ${slice.deferred.length}`);
+			}
+			if (slice.implementationPhase != null) {
+				lines.push(`  Implementation phase: ${slice.implementationPhase}`);
 			}
 			if (slice.refinement !== null) {
 				lines.push(`  Refinement: round ${slice.refinement.round}/${slice.refinement.maxRounds}`);

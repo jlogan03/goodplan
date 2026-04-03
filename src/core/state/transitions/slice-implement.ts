@@ -1,6 +1,6 @@
 import type { SliceStatus } from "../../../schemas/entities/slice.js";
 /**
- * BEGIN_REFINEMENT and BEGIN_IMPLEMENTATION transition handlers.
+ * BEGIN_REFINEMENT, BEGIN_IMPLEMENTATION, and UPDATE_IMPLEMENTATION_PHASE transition handlers.
  * Pure functions, no I/O.
  */
 import type { ProjectState } from "../../tree.js";
@@ -12,18 +12,26 @@ import {
 	appendActivityLog,
 	getSlice,
 	guardSliceStatus,
+	setSliceJson,
 	setSliceStatus,
 } from "./helpers.js";
 
 type BeginRefinementEvent = Extract<StateEvent, { type: "BEGIN_REFINEMENT" }>;
 type BeginImplementationEvent = Extract<StateEvent, { type: "BEGIN_IMPLEMENTATION" }>;
+type UpdateImplementationPhaseEvent = Extract<StateEvent, { type: "UPDATE_IMPLEMENTATION_PHASE" }>;
 
 export function handleBeginRefinement(
 	state: ProjectState,
 	event: BeginRefinementEvent,
 ): ProjectState | StateError {
 	const slice = getSlice(state, event.epic, event.slice);
-	const sliceOrErr = guardSliceStatus(slice, event.slice, "plan-created", "BEGIN_REFINEMENT", event.epic);
+	const sliceOrErr = guardSliceStatus(
+		slice,
+		event.slice,
+		"plan-created",
+		"BEGIN_REFINEMENT",
+		event.epic,
+	);
 	if (isStateError(sliceOrErr)) return sliceOrErr;
 
 	// Initialize refinement state and set status + sync overview
@@ -56,7 +64,13 @@ export function handleBeginImplementation(
 	event: BeginImplementationEvent,
 ): ProjectState | StateError {
 	const slice = getSlice(state, event.epic, event.slice);
-	const sliceOrErr = guardSliceStatus(slice, event.slice, "plan-refined", "BEGIN_IMPLEMENTATION", event.epic);
+	const sliceOrErr = guardSliceStatus(
+		slice,
+		event.slice,
+		"plan-refined",
+		"BEGIN_IMPLEMENTATION",
+		event.epic,
+	);
 	if (isStateError(sliceOrErr)) return sliceOrErr;
 
 	// Guard: plan-refined.md must exist
@@ -68,8 +82,15 @@ export function handleBeginImplementation(
 		};
 	}
 
-	// Set status to implementing + sync overview
-	let tree = setSliceStatus(state, event.epic, event.slice, sliceOrErr, "implementing", event.ts);
+	// Set status to implementing, initialize implementationPhase to 0 + sync overview
+	let tree = setSliceStatus(
+		state,
+		event.epic,
+		event.slice,
+		{ ...sliceOrErr, implementationPhase: 0 },
+		"implementing",
+		event.ts,
+	);
 
 	// Append activity log
 	tree = appendActivityLog(
@@ -83,7 +104,53 @@ export function handleBeginImplementation(
 	return tree;
 }
 
-/** Transition table rows for BEGIN_REFINEMENT and BEGIN_IMPLEMENTATION */
+export function handleUpdateImplementationPhase(
+	state: ProjectState,
+	event: UpdateImplementationPhaseEvent,
+): ProjectState | StateError {
+	const slice = getSlice(state, event.epic, event.slice);
+	const sliceOrErr = guardSliceStatus(
+		slice,
+		event.slice,
+		"implementing",
+		"UPDATE_IMPLEMENTATION_PHASE",
+		event.epic,
+	);
+	if (isStateError(sliceOrErr)) return sliceOrErr;
+
+	// Guard: monotonic — new phase must be >= current implementationPhase
+	const current = sliceOrErr.implementationPhase ?? 0;
+	if (event.phase < current) {
+		return {
+			code: "STATE_INVALID_TRANSITION",
+			message: `Cannot set implementationPhase to ${event.phase} — current is ${current} (must be monotonically increasing)`,
+			detail: {
+				slice: event.slice,
+				epic: event.epic,
+				currentPhase: current,
+				requestedPhase: event.phase,
+			},
+		};
+	}
+
+	let tree = setSliceJson(state, event.epic, event.slice, {
+		...sliceOrErr,
+		implementationPhase: event.phase,
+		updated: event.ts,
+	});
+
+	tree = appendActivityLog(
+		tree,
+		event.ts,
+		"update-implementation-phase",
+		`epics/${event.epic}/slices/${event.slice}`,
+		`Slice "${event.slice}" implementation phase updated to ${event.phase}`,
+	);
+
+	return tree;
+}
+
+/** Transition table rows for BEGIN_REFINEMENT, BEGIN_IMPLEMENTATION, and UPDATE_IMPLEMENTATION_PHASE */
 export const sliceImplementTransitions: ReadonlyArray<{
 	from: SliceStatus;
 	event: StateEvent["type"];
@@ -92,4 +159,6 @@ export const sliceImplementTransitions: ReadonlyArray<{
 	{ from: "plan-created", event: "BEGIN_REFINEMENT", to: "refining" },
 	{ from: "plan-refined", event: "BEGIN_IMPLEMENTATION", to: "implementing" },
 	{ from: "plan-refined", event: "BEGIN_IMPLEMENTATION", to: "(error)" },
+	{ from: "implementing", event: "UPDATE_IMPLEMENTATION_PHASE", to: "implementing" },
+	{ from: "implementing", event: "UPDATE_IMPLEMENTATION_PHASE", to: "(error)" },
 ] as const;

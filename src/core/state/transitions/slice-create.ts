@@ -48,6 +48,7 @@ export function handleCreateSlice(
 			status: "created",
 			goal: event.goal,
 			deferred: [],
+			implementationPhase: null,
 			refinement: null,
 			created: now,
 			updated: now,

@@ -13,32 +13,36 @@ import { z } from "zod";
 
 // ── Slice/quest target schemas (submit-plan, submit-refinement, submit-implementation) ──
 
-export const submitPlanInputSchema = z.object({
-	slice: z.string().min(1).optional(),
-	quest: z.string().min(1).optional(),
-}).refine(
-	(d) => (d.slice !== undefined) !== (d.quest !== undefined),
-	{ message: "Exactly one of --slice or --quest is required" },
-);
+export const submitPlanInputSchema = z
+	.object({
+		slice: z.string().min(1).optional(),
+		quest: z.string().min(1).optional(),
+	})
+	.refine((d) => (d.slice !== undefined) !== (d.quest !== undefined), {
+		message: "Exactly one of --slice or --quest is required",
+	});
 export type SubmitPlanInput = z.infer<typeof submitPlanInputSchema>;
 
-export const submitRefinementInputSchema = z.object({
-	slice: z.string().min(1).optional(),
-	quest: z.string().min(1).optional(),
-	scores: z.record(z.string(), z.number()),
-}).refine(
-	(d) => (d.slice !== undefined) !== (d.quest !== undefined),
-	{ message: "Exactly one of --slice or --quest is required" },
-);
+export const submitRefinementInputSchema = z
+	.object({
+		slice: z.string().min(1).optional(),
+		quest: z.string().min(1).optional(),
+		scores: z.record(z.string(), z.number()),
+	})
+	.refine((d) => (d.slice !== undefined) !== (d.quest !== undefined), {
+		message: "Exactly one of --slice or --quest is required",
+	});
 export type SubmitRefinementInput = z.infer<typeof submitRefinementInputSchema>;
 
-export const submitImplementationInputSchema = z.object({
-	slice: z.string().min(1).optional(),
-	quest: z.string().min(1).optional(),
-}).refine(
-	(d) => (d.slice !== undefined) !== (d.quest !== undefined),
-	{ message: "Exactly one of --slice or --quest is required" },
-);
+export const submitImplementationInputSchema = z
+	.object({
+		slice: z.string().min(1).optional(),
+		quest: z.string().min(1).optional(),
+		phase: z.coerce.number().int().min(0).optional(),
+	})
+	.refine((d) => (d.slice !== undefined) !== (d.quest !== undefined), {
+		message: "Exactly one of --slice or --quest is required",
+	});
 export type SubmitImplementationInput = z.infer<typeof submitImplementationInputSchema>;
 
 // ── Epic target schemas (submit-explore, submit-architecture, submit-slices, submit-refine-*) ──

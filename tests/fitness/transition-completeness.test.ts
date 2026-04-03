@@ -113,6 +113,7 @@ describe("Transition completeness", () => {
 			},
 			BEGIN_IMPLEMENTATION: { type: "BEGIN_IMPLEMENTATION", epic: "e1", slice: "s1", ts },
 			COMPLETE_IMPLEMENTATION: { type: "COMPLETE_IMPLEMENTATION", epic: "e1", slice: "s1", ts },
+			UPDATE_IMPLEMENTATION_PHASE: { type: "UPDATE_IMPLEMENTATION_PHASE", epic: "e1", slice: "s1", phase: 1, ts },
 			COMPLETE_SLICE: {
 				type: "COMPLETE_SLICE",
 				epic: "e1",
