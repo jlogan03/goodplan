@@ -249,10 +249,12 @@ async function createCompletedEpicFixture(): Promise<string> {
 	// Advance all slices through the full lifecycle to `completed` status
 	for (const sliceName of SLICE_NAMES) {
 		// plan-created
-		gp(["slice:plan", "--slice", sliceName, "--epic", EPIC_NAME, "--json"], {
+		const planResult = gp(["slice:plan", "--slice", sliceName, "--json"], {
 			cwd: fixtureDir,
-			gpBin: GP_BIN,
 		});
+		if (planResult.exitCode !== 0) {
+			throw new Error(`slice:plan failed for ${sliceName} (exit ${planResult.exitCode}): ${planResult.stdout}`);
+		}
 
 		// Write a minimal plan file so plan submission succeeds
 		const sliceListResult = gp(["slice:list", "--epic", EPIC_NAME, "--json"], {
@@ -270,41 +272,50 @@ async function createCompletedEpicFixture(): Promise<string> {
 
 		const sliceDir = join(fixtureDir, ".goodplan", "epics", EPIC_NAME, "slices", sliceDirName);
 		mkdirSync(sliceDir, { recursive: true });
-		writeFileSync(
-			join(sliceDir, "plan.md"),
-			[
-				`# Plan: ${sliceName}`,
-				"",
-				"## Phase 1: Setup",
-				"Create the basic structure.",
-				"",
-				"## Phase 2: Implementation",
-				"Implement the core functionality.",
-			].join("\n"),
-		);
+		const planContent = [
+			`# Plan: ${sliceName}`,
+			"",
+			"## Phase 1: Setup",
+			"Create the basic structure.",
+			"",
+			"## Phase 2: Implementation",
+			"Implement the core functionality.",
+		].join("\n");
+		// Write both plan.md (for submit-plan) and plan-refined.md (for slice:implement)
+		writeFileSync(join(sliceDir, "plan.md"), planContent);
+		writeFileSync(join(sliceDir, "plan-refined.md"), planContent);
 
-		// submit-plan → plan-refined
-		gp(["submit-plan", "--slice", sliceName, "--epic", EPIC_NAME, "--json"], {
+		// submit-plan → plan-submitted
+		const submitResult = gp(["submit-plan", "--slice", sliceName, "--json"], {
 			cwd: fixtureDir,
-			gpBin: GP_BIN,
 		});
-		gp(["submit-refine-plan", "--slice", sliceName, "--epic", EPIC_NAME, "--json"], {
+		if (submitResult.exitCode !== 0) {
+			throw new Error(`submit-plan failed for ${sliceName} (exit ${submitResult.exitCode}): ${submitResult.stdout}`);
+		}
+		// submit-refinement → plan-refined
+		const refineResult = gp(["submit-refinement", "--slice", sliceName, "--json"], {
 			cwd: fixtureDir,
-			gpBin: GP_BIN,
 			stdin: JSON.stringify({ scores: { overall: 9 } }),
 		});
+		if (refineResult.exitCode !== 0) {
+			throw new Error(`submit-refinement failed for ${sliceName} (exit ${refineResult.exitCode}): ${refineResult.stdout}`);
+		}
 
 		// implement → implementing
-		gp(["slice:implement", "--slice", sliceName, "--epic", EPIC_NAME, "--json"], {
+		const implResult = gp(["slice:implement", "--slice", sliceName, "--json"], {
 			cwd: fixtureDir,
-			gpBin: GP_BIN,
 		});
+		if (implResult.exitCode !== 0) {
+			throw new Error(`slice:implement failed for ${sliceName} (exit ${implResult.exitCode}): ${implResult.stdout}`);
+		}
 
 		// submit-implementation → implementation-complete
-		gp(["submit-implementation", "--slice", sliceName, "--epic", EPIC_NAME, "--json"], {
+		const submitImplResult = gp(["submit-implementation", "--slice", sliceName, "--json"], {
 			cwd: fixtureDir,
-			gpBin: GP_BIN,
 		});
+		if (submitImplResult.exitCode !== 0) {
+			throw new Error(`submit-implementation failed for ${sliceName} (exit ${submitImplResult.exitCode}): ${submitImplResult.stdout}`);
+		}
 
 		// Write completion artifacts before completing
 		const completionDir = join(sliceDir, "completion");
@@ -329,16 +340,26 @@ async function createCompletedEpicFixture(): Promise<string> {
 		);
 
 		// slice:complete → completed
-		gp(["slice:complete", "--slice", sliceName, "--epic", EPIC_NAME, "--json"], {
+		const completeResult = gp(["slice:complete", "--slice", sliceName, "--json"], {
 			cwd: fixtureDir,
-			gpBin: GP_BIN,
 			stdin: JSON.stringify({
 				verificationPassed: true,
-				learnings: [`${sliceName}: Clean implementation with good test coverage`],
+				learnings: [
+					{
+						category: "worked",
+						summary: `${sliceName}: Clean implementation with good test coverage`,
+						detail: `Implementation of ${sliceName} followed established patterns and achieved good test coverage.`,
+						tags: [sliceName],
+						rollupTo: [],
+					},
+				],
 				architectureDelta: [],
 				deferred: [],
 			}),
 		});
+		if (completeResult.exitCode !== 0) {
+			throw new Error(`slice:complete failed for ${sliceName} (exit ${completeResult.exitCode}): ${completeResult.stdout}`);
+		}
 	}
 
 	// Write epic-level architecture files
@@ -384,7 +405,6 @@ async function testFullPipeline(): Promise<boolean> {
 	for (const sliceName of SLICE_NAMES) {
 		const sliceStatus = verifyEntityStatus("slice", sliceName, "completed", {
 			cwd: fixtureDir,
-			gpBin: GP_BIN,
 			epic: EPIC_NAME,
 		});
 		if (!sliceStatus.ok) {
@@ -397,7 +417,6 @@ async function testFullPipeline(): Promise<boolean> {
 	// Verify pre-condition: epic is not yet completed
 	const preEpicStatus = verifyEntityStatus("epic", EPIC_NAME, "activated", {
 		cwd: fixtureDir,
-		gpBin: GP_BIN,
 	});
 	logger.log(`[complete-epic] Epic pre-status: ${preEpicStatus.actual}`);
 
@@ -482,7 +501,6 @@ async function testFullPipeline(): Promise<boolean> {
 	// Test 1a: Epic reached completed status
 	const epicStatus = verifyEntityStatus("epic", EPIC_NAME, "completed", {
 		cwd: fixtureDir,
-		gpBin: GP_BIN,
 	});
 	if (epicStatus.ok) {
 		logger.log("PASS: Epic reached 'completed' status");
