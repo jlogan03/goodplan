@@ -5,18 +5,18 @@ Build the `/gp:audit` skill as a lightweight orchestrator that dispatches to mod
 ### Expected Behavior
 
 **Before implementation** (should fail / show absence):
-- [ ] `ls skills/audit/` — directory does not exist
-- [ ] `ls agents/audit-architecture-phase.md agents/audit-docs-phase.md agents/audit-tests-phase.md` — none exist
-- [ ] `ls tools/dogfood/test-audit.ts` — file does not exist
+- [x] `ls skills/audit/` — directory does not exist
+- [x] `ls agents/audit-architecture-phase.md agents/audit-docs-phase.md agents/audit-tests-phase.md` — none exist
+- [x] `ls tools/dogfood/test-audit.ts` — file does not exist
 
 **After implementation** (should pass / show presence):
-- [ ] `ls skills/audit/SKILL.md` — file exists
-- [ ] `ls agents/audit-architecture-phase.md agents/audit-docs-phase.md agents/audit-tests-phase.md` — all three exist
-- [ ] `bun tools/dogfood/test-audit.ts` — audit runs in each mode (architecture, docs, tests) and produces findings
+- [x] `ls skills/audit/SKILL.md` — file exists
+- [x] `ls agents/audit-architecture-phase.md agents/audit-docs-phase.md agents/audit-tests-phase.md` — all three exist
+- [x] `bun tools/dogfood/test-audit.ts` — audit runs in each mode (architecture, docs, tests) and produces findings
 
 ### Tasks
 
-- [ ] Create `skills/audit/SKILL.md` as a lightweight orchestrator:
+- [x] Create `skills/audit/SKILL.md` as a lightweight orchestrator:
   1. Parse mode from first positional argument: `/gp:audit architecture`, `/gp:audit docs`, `/gp:audit tests` (matching the existing pattern where the first word after the skill name is the mode). If no argument, use AskUserQuestion to select mode.
   2. Load project context via `gp status --json` to determine active epic and architecture paths. Error handling follows the pattern from `create-epic/SKILL.md` Step 0, with distinct messages for each failure mode:
      - CLI binary not found → "gp CLI not found — ensure the goodplan plugin is installed"
@@ -28,24 +28,24 @@ Build the `/gp:audit` skill as a lightweight orchestrator that dispatches to mod
   5. Receive structured JSON findings from agent (format: `{ findings: Array<{ severity, category, description, location, suggestion }>, scores: Record<string, number>, proposedSideQuests: Array<{ title, description }> }`), present to user as formatted report.
   6. Validate agent return shape against the documented schema before rendering the report. If the agent's `status` is `FAILED`, or the returned JSON does not match the expected shape (missing `findings`, `scores`, or `proposedSideQuests` keys, or wrong types), surface the raw agent response with a clear error message and stop gracefully rather than attempting to render a partial or corrupt report.
   7. Offer to create side quests for significant findings.
-- [ ] Frontmatter: `name: audit`, `description:` must trigger for "audit architecture", "audit docs", "audit tests", "review codebase", "check quality". Add `user-invocable: true`, `requires: gp >= 1.0.0`.
-- [ ] Create `agents/audit-architecture-phase.md`:
+- [x] Frontmatter: `name: audit`, `description:` must trigger for "audit architecture", "audit docs", "audit tests", "review codebase", "check quality". Add `user-invocable: true`, `requires: gp >= 1.0.0`.
+- [x] Create `agents/audit-architecture-phase.md`:
   - Adapt content from `skills/audit-architecture/SKILL.md` (Steps 1-8: gap analysis, drift detection, architecture reassessment)
   - Agent reads architecture files + scans codebase, produces gap report and reassessment
   - `allowedTools: ["Read", "Grep", "Glob"]`, `disallowedTools: ["Agent"]`
   - Returns structured JSON with findings, scores, and proposed side quests
   - Inject relevant shared references via `@${CLAUDE_PLUGIN_ROOT}/skills/_shared/references/` (audit-conventions, maturity-conventions)
-- [ ] Create `agents/audit-docs-phase.md`:
+- [x] Create `agents/audit-docs-phase.md`:
   - Adapt content from `skills/audit-docs/SKILL.md` (doc scanning, cross-reference checking, staleness detection)
   - Agent scans docs, checks against codebase, produces findings
   - `allowedTools: ["Read", "Grep", "Glob"]`, `disallowedTools: ["Agent"]`
   - Returns structured JSON with findings and fix proposals
-- [ ] Create `agents/audit-tests-phase.md`:
+- [x] Create `agents/audit-tests-phase.md`:
   - Adapt content from `skills/audit-tests/SKILL.md` (coverage analysis, fragility detection, strategy alignment)
   - Agent analyzes test infrastructure, produces findings
   - `allowedTools: ["Read", "Grep", "Glob"]`, `disallowedTools: ["Agent"]`
   - Returns structured JSON with findings and improvement proposals
-- [ ] Write `tools/dogfood/test-audit.ts`:
+- [x] Write `tools/dogfood/test-audit.ts`:
   - Create fixture with source code, docs, and tests (realistic enough for meaningful audit findings)
   - Test each mode: architecture, docs, tests
   - Verify each mode produces findings (non-empty output)
