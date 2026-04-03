@@ -134,6 +134,10 @@ if (!existsSync(GP_BIN)) {
 	process.exit(1);
 }
 
+// Use dist binary for ALL CLI operations (including createMinimalFixture)
+// to ensure schema consistency between fixture creation and test assertions.
+process.env.GP_CLI_PATH = GP_BIN;
+
 // Sync new skills from dist to installed cache so the Agent SDK can discover them.
 const installedSkillsDir = join(HOME, ".claude/plugins/cache/goodplan-marketplace/goodplan");
 try {
@@ -299,25 +303,36 @@ async function createPlanRefinedFixture(): Promise<string> {
 		throw new Error(`Slice directory not found for ${SLICE_NAME}`);
 	}
 	const slicePath = join(sliceBaseDir, sliceDir);
+	// Write both plan.md (for submit-plan) and plan-refined.md (for submit-refinement)
+	writeFileSync(join(slicePath, "plan.md"), MINIMAL_PLAN);
 	writeFileSync(join(slicePath, "plan-refined.md"), MINIMAL_PLAN);
 
 	// Advance slice to plan-refined status
-	// First plan the slice
-	gp(["slice:plan", "--slice", SLICE_NAME, "--epic", EPIC_NAME, "--json"], {
+	// Use dist binary (GP_BIN) for ALL operations to ensure schema consistency
+	const planResult = gp(["slice:plan", "--slice", SLICE_NAME, "--json"], {
 		cwd: fixtureDir,
 		gpBin: GP_BIN,
 	});
+	if (planResult.exitCode !== 0) {
+		throw new Error(`slice:plan failed (exit ${planResult.exitCode}): ${planResult.stdout}`);
+	}
 	// Submit draft plan
-	gp(["submit-plan", "--slice", SLICE_NAME, "--epic", EPIC_NAME, "--json"], {
+	const submitResult = gp(["submit-plan", "--slice", SLICE_NAME, "--json"], {
 		cwd: fixtureDir,
 		gpBin: GP_BIN,
 	});
+	if (submitResult.exitCode !== 0) {
+		throw new Error(`submit-plan failed (exit ${submitResult.exitCode}): ${submitResult.stdout}`);
+	}
 	// Submit refined plan to advance to plan-refined
-	gp(["submit-refine-plan", "--slice", SLICE_NAME, "--epic", EPIC_NAME, "--json"], {
+	const refineResult = gp(["submit-refinement", "--slice", SLICE_NAME, "--json"], {
 		cwd: fixtureDir,
 		gpBin: GP_BIN,
 		stdin: JSON.stringify({ scores: { overall: 9 } }),
 	});
+	if (refineResult.exitCode !== 0) {
+		throw new Error(`submit-refinement failed (exit ${refineResult.exitCode}): ${refineResult.stdout}`);
+	}
 
 	return fixtureDir;
 }
@@ -327,11 +342,13 @@ async function createPlanRefinedFixture(): Promise<string> {
 async function createReentryFixture(): Promise<string> {
 	const fixtureDir = await createPlanRefinedFixture();
 
-	// Transition to implementing
-	gp(["slice:implement", "--slice", SLICE_NAME, "--epic", EPIC_NAME, "--json"], {
+	// Transition to implementing (use default binary for consistency with fixture)
+	const implResult = gp(["slice:implement", "--slice", SLICE_NAME, "--json"], {
 		cwd: fixtureDir,
-		gpBin: GP_BIN,
 	});
+	if (implResult.exitCode !== 0) {
+		throw new Error(`slice:implement failed (exit ${implResult.exitCode}): ${implResult.stdout}`);
+	}
 
 	// Create the phase 1 implementation file
 	mkdirSync(join(fixtureDir, "src"), { recursive: true });
@@ -358,7 +375,7 @@ async function createReentryFixture(): Promise<string> {
 
 	// Set implementationPhase to 1 via CLI
 	const phaseResult = gp(
-		["submit-implementation", "--slice", SLICE_NAME, "--epic", EPIC_NAME, "--phase", "1", "--json"],
+		["submit-implementation", "--slice", SLICE_NAME, "--phase", "1", "--json"],
 		{ cwd: fixtureDir, gpBin: GP_BIN },
 	);
 
@@ -389,8 +406,6 @@ async function testFullPipeline(): Promise<boolean> {
 	// Verify slice is in plan-refined status
 	const preStatus = verifyEntityStatus("slice", SLICE_NAME, "plan-refined", {
 		cwd: fixtureDir,
-		gpBin: GP_BIN,
-		epic: EPIC_NAME,
 	});
 	if (!preStatus.ok) {
 		logger.log(`FAIL: Slice not in 'plan-refined' status (got: ${preStatus.actual})`);

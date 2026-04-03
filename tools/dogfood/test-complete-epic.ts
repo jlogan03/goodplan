@@ -76,6 +76,10 @@ if (!existsSync(GP_BIN)) {
 	process.exit(1);
 }
 
+// Use dist binary for ALL CLI operations (including createMinimalFixture)
+// to ensure schema consistency between fixture creation and test assertions.
+process.env.GP_CLI_PATH = GP_BIN;
+
 // Sync new skills from dist to installed cache so the Agent SDK can discover them.
 const installedSkillsDir = join(
 	HOME,
