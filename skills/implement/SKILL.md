@@ -37,8 +37,6 @@ For file copying (e.g., agent-produced files to CLI-managed paths), use shell `c
 | 1. Implementation | Autonomous | `implementing` | Per-phase: spawn implement-phase → review loop → commit |
 | 2. Slice completion | Autonomous | `implementing` → `implementation-complete` → `completed` | Spawn completion-slice → surface recommendations → CLI submit |
 
-Note: Phase 2 completion integration added in Phase 4 of the build plan.
-
 ## Step 0 — Setup
 
 ```bash
@@ -79,7 +77,7 @@ Map the `status` field:
 |---|---|
 | `plan-refined` | Transition to `implementing` (Step 2a) |
 | `implementing` | Resume from current phase (Step 2b) |
-| `implementation-complete` | Skip to completion (Phase 2 — added in Phase 4 of build plan) |
+| `implementation-complete` | Skip to Step 6 (slice completion) |
 | `completed` | Already done. Inform user: "Slice is already completed." |
 | Other | Stop: "Slice is in `{status}` status — not ready for implementation." |
 
@@ -109,47 +107,12 @@ Starting from Phase {implementationPhase + 1}.
 
 Load the plan to extract the phase list. This is a **structural parse only** — extracting phase names and content paths, not reading implementation details.
 
-Query the slice to find the plan path:
+Extract plan path from `$GP slice:show --slice $SLICE_NAME --json`. The plan may be a single file (`plan.md`/`plan-refined.md`) or a directory with per-phase files.
 
-```bash
-$GP slice:show --slice $SLICE_NAME --json
-```
+- **Single-file**: read and extract `## Phase N:` headings → build `phases` array with `{ index, name, path }`.
+- **Directory**: `ls <plan-directory>/` → build `phases` from file listing (e.g., `01-phase-name.md`).
 
-Extract the plan path from the response. The plan may be:
-
-### Single-file plan (e.g., `plan.md` or `plan-refined.md`)
-
-The orchestrator reads the plan file and extracts phase headings. Look for `## Phase N:` headings. Build a phases list:
-
-```
-phases = [
-  { index: 1, name: "Phase name from heading", path: "<plan-file-path>#phase-1" },
-  { index: 2, name: "Phase name from heading", path: "<plan-file-path>#phase-2" },
-  ...
-]
-```
-
-### Directory plan (e.g., `plan/` with per-phase files)
-
-List the phase files in the plan directory:
-
-```bash
-ls <plan-directory>/
-```
-
-Build a phases list from the file listing:
-
-```
-phases = [
-  { index: 1, name: "Phase name from file", path: "<plan-directory>/01-phase-name.md" },
-  { index: 2, name: "Phase name from file", path: "<plan-directory>/02-phase-name.md" },
-  ...
-]
-```
-
-Derive `PLAN_SLUG` from the slice name in kebab-case, for use in commit messages.
-
-Store `totalPhases = phases.length`.
+Derive `PLAN_SLUG` from slice name (kebab-case). Store `totalPhases = phases.length`.
 
 ## Step 4 — Pre-Implementation
 
@@ -173,7 +136,15 @@ Extract the active epic name, then construct the path: `.goodplan/epics/{EPIC_NA
 
 If no active epic, fall back to `.goodplan/architecture/_overview.md`.
 
-### 4c. Create Temp Directory
+### 4c. Record Pre-Implementation Commit
+
+```bash
+PRE_IMPL_COMMIT=$(git rev-parse HEAD)
+```
+
+Store this for Step 6.2 — used to compute the full set of changed files across all phases.
+
+### 4d. Create Temp Directory
 
 ```bash
 TMPDIR="/tmp/gp-implement-${SLICE_NAME}-$(date +%s)"
@@ -395,21 +366,76 @@ These safeguards apply per-phase within the review loop (Step 5.3f).
 
 On early exit or hard cap: warn the user which reviewers scored below 9, their reasons, and whether restructuring may help.
 
-Note: Completion integration (steps 6-8) will be added in Phase 4 of the build plan.
+## Step 6 — Slice Completion
 
-## Step 6 — Done Summary (Skeleton)
+After all plan phases complete (Step 5 loop exits), run slice completion.
 
-After all phases complete, present:
+### 6.1. Setup
+
+```bash
+mkdir -p <slice-path>/completion/
+CHANGED_FILES=$(git diff --name-only $PRE_IMPL_COMMIT..HEAD)
+```
+
+### 6.2. Gather Forward-Compat Conditions
+
+Run `$GP decision:list --json` and `$GP learning:list --json`. If entries have `reconsiderWhen` or `validUntil` fields, collect them. If entries lack these fields, skip condition passing entirely — do not error.
+
+### 6.3. Spawn Completion-Slice Agent
 
 ```
-**Implementation Complete (single-pass)**
+Agent: completion-slice
+Task prompt: |
+  Slice path: {slice-path}
+  Plan path: {plan-path from Step 3}
+  Changed files: {CHANGED_FILES}
+  Architecture overview path: {architecture _overview.md path from Step 4b}
+  {if epic: "Epic architecture path: {EPIC_DIR}/architecture/"}
+  {if conditions found: "Decisions with conditions: {JSON}", "Learnings with conditions: {JSON}"}
+  Synthesize learnings, review architecture delta, propose side quests.
+  Write completion/learnings.md and completion/architecture-updates.md.
+  Return JSON: { status, summary, filesWritten, recommendations: [{ type: "architecture-update"|"debt"|"side-quest", description, ... }], triggeredConditions: [{ type, id, condition, reason }], verificationPassed }
+
+allowedTools: ["Read", "Grep", "Glob", "Write", "Edit", "Bash"]
+disallowedTools: ["Agent"]
+```
+
+### 6.4. Surface Recommendations and Conditions
+
+Parse `recommendations` array. Use AskUserQuestion for each:
+- `architecture-update`: "Update top-level architecture? / Flag as tech debt / Skip"
+- `debt`: "Fix now / Propose side quest / Acknowledge and defer / Skip"
+- `side-quest`: "Create side quest? / Defer / Skip"
+
+Track choices — approved updates go to `architectureDelta`, deferred items to `deferred` (both used in Step 7).
+
+If `triggeredConditions` is non-empty, present each: "Condition triggered on {type} `{id}`: {condition} — {reason}. Review now / Defer / Skip"
+
+## Step 7 — CLI Submit
+
+1. Transition: `$GP submit-implementation --slice $SLICE_NAME` (`implementing` → `implementation-complete`)
+2. Complete: pipe `{ verificationPassed, learnings, architectureDelta, deferred }` to `$GP slice:complete --slice $SLICE_NAME --json`
+   - `verificationPassed`: from agent return
+   - `learnings`: constructed from `completion/learnings.md`
+   - `architectureDelta`: approved updates from Step 6.4
+   - `deferred`: deferred items from Step 6.4
+3. Check epic readiness: `$GP slice:list --json` — if all slices `completed` or `abandoned`, present: "All slices complete. Run `/gp:complete-epic` when ready."
+
+## Step 8 — Done Summary
+
+After successful completion, present:
+
+```
+**Implementation Complete**
 - **Slice**: {SLICE_NAME}
 - **Phases completed**: {totalPhases}
 - **Commits**: {totalPhases} (one per phase)
-- **Next step**: Review loop and completion will be added in subsequent phases.
+- **Review rounds**: {total rounds across all phases}
+- **Learnings**: {count from completion-slice agent}
+- **Architecture updates**: {count approved} proposed, {count deferred} deferred
+- **Status**: completed
+- **Next step**: {next unimplemented slice name, or "All slices complete — run /gp:complete-epic"}
 ```
-
-Note: This summary will be replaced by the full completion flow in Phase 4.
 
 ## Loop Parameters
 
@@ -439,8 +465,7 @@ Parameters for `@${CLAUDE_PLUGIN_ROOT}/skills/_shared/references/iteration-loop.
 | refinement-coordinator | Read, Grep, Glob | Read-only analysis, returns spawn plan |
 | reviewer-* | Read, Grep, Glob | Read-only, returns JSON inline |
 | synthesis | Read, Grep, Glob, Write | Reads reviews, writes merged output |
-
-Note: Additional agents (completion-slice) will be added in Phase 4.
+| completion-slice | Read, Grep, Glob, Write, Edit, Bash | Reads artifacts, writes completion files, runs analysis |
 
 All agents: `disallowedTools: ["Agent"]` — enforces flat hierarchy.
 
