@@ -10,37 +10,37 @@ Create `validate-consolidated.ts`, a new test harness that runs the complete 12-
 
 #### Expected Behavior
 **Before implementation** (should fail / show absence):
-- [ ] `tools/dogfood/validate-consolidated.ts` does not exist
-- [ ] No quality proxy metric assertions exist for architecture, plans, reviews, implementation, learnings, or orchestrator discipline in any single harness
+- [x] `tools/dogfood/validate-consolidated.ts` does not exist
+- [x] No quality proxy metric assertions exist for architecture, plans, reviews, implementation, learnings, or orchestrator discipline in any single harness
 
 **After implementation** (should pass / show presence):
-- [ ] `tools/dogfood/validate-consolidated.ts` exists and compiles (`bun build tools/dogfood/validate-consolidated.ts`)
-- [ ] Harness generates a realistic flashcard app fixture (TypeScript, 3-5 source files, package.json with dependencies, at least one test file)
-- [ ] Harness invokes the full pipeline: init -> create-epic -> plan-slice -> implement -> create-side-quest -> audit -> complete-epic
-- [ ] Quality proxy metric checks are present: architecture size (>= 500 chars, >= 3 `##` headings), plan structure (>= 3 phases with file paths), review severity (>= 1 IMPORTANT/CRITICAL), implementation (bun build + lint + test), learnings (>= 2, each >= 100 chars), orchestrator discipline (zero Read violations)
-- [ ] Cost tracking is present and logged per skill run and total
+- [x] `tools/dogfood/validate-consolidated.ts` exists and compiles (`bun build tools/dogfood/validate-consolidated.ts`)
+- [x] Harness generates a realistic flashcard app fixture (TypeScript, 3-5 source files, package.json with dependencies, at least one test file)
+- [x] Harness invokes the full pipeline: init -> create-epic -> plan-slice -> implement -> create-side-quest -> audit -> complete-epic
+- [x] Quality proxy metric checks are present: architecture size (>= 500 chars, >= 3 `##` headings), plan structure (>= 3 phases with file paths), review severity (>= 1 IMPORTANT/CRITICAL), implementation (bun build + lint + test), learnings (>= 2, each >= 100 chars), orchestrator discipline (zero Read violations)
+- [x] Cost tracking is present and logged per skill run and total
 
 #### Tasks
-- [ ] Create `tools/dogfood/validate-consolidated.ts` following the pattern from `validate.ts` and `test-create-epic.ts`
+- [x] Create `tools/dogfood/validate-consolidated.ts` following the pattern from `validate.ts` and `test-create-epic.ts`
   - Import shared utilities from `tools/dogfood/utils.ts` (`createSimulatedUser`, `runSkillSession`, `verifyEntityStatus`, `isSuccess`, `parseModel`, `tierDefault`, `gp`, `gpForce`, `gpJson`, `verifyNoArtifactReads`, `createLogger`). Note: `createToolCallTracker` is defined locally in `test-create-epic.ts`, not in utils.ts — define it locally in validate-consolidated.ts or extract to utils.ts
   - Use `import type` for type-only imports (`CliResult`, `SDKMessage`, `SDKResultMessage`, `SkillSessionResult`) to satisfy `verbatimModuleSyntax: true`
   - Accept `--model` CLI arg (default: `tierDefault("e2e")` which maps to `claude-opus-4-6`)
   - Accept `--max-iterations` CLI arg (default: 1 for cost control)
-- [ ] Preflight: plugin build + cache sync
+- [x] Preflight: plugin build + cache sync
   - Run `bun run build:plugin` to ensure latest skills are compiled
   - Rsync from `dist/` to `~/.claude/plugins/cache/` (matching `test-create-epic.ts` preflight pattern) so the Agent SDK discovers updated skills
-- [ ] Wire tool call tracking and violation checking for all pipeline runs
+- [x] Wire tool call tracking and violation checking for all pipeline runs
   - Define a `createToolCallTracker` function locally (adapted from `test-create-epic.ts` pattern — not in utils.ts) and wire into each `runSkillSession`'s `onMessage` callback via `createLogger` for logging
   - Pass `checkViolations: true` on all `runSkillSession` calls to detect state write violations
   - Feed accumulated tool calls to `verifyNoArtifactReads` at the end for orchestrator discipline verification
-- [ ] Implement realistic flashcard app fixture generation function
+- [x] Implement realistic flashcard app fixture generation function
   - Create temp directory with: `package.json` (name, type:module, dependencies: typescript, devDependencies: `@biomejs/biome`, scripts: `{ "build": "bun build src/index.ts --outdir dist", "lint": "biome check .", "test": "bun test" }`), `tsconfig.json`, `biome.json` (with `{ "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json", "linter": { "enabled": true, "rules": { "recommended": true } }, "organizeImports": { "enabled": true } }`)
   - Run `bun install` in the fixture directory after generating files and before git init
   - 3-5 source files: `src/index.ts` (CLI entry), `src/card.ts` (Card type + loader), `src/quiz.ts` (quiz engine), `src/score.ts` (score tracker)
   - At least one test file: `tests/card.test.ts`
   - Git init + commit
   - Project idea that requires real architectural decisions (multi-module CLI app with persistence, formatting, spaced repetition potential)
-- [ ] Implement the full pipeline invocation sequence with per-step error handling and fallback/recovery
+- [x] Implement the full pipeline invocation sequence with per-step error handling and fallback/recovery
   - Each skill invocation must: (1) run the skill, (2) check entity status after, (3) if failed, log the error, preserve artifacts, and apply `gpForce` fallback to advance state, (4) log whether the skill or the fallback achieved the target state
   - `/gp:init` — onboard the fixture repo; fallback: verify `.goodplan/` directory exists
   - `/gp:create-epic` — full 6-phase pipeline for "add spaced repetition with SM-2 algorithm"; fallback: force-activate epic if stuck in draft
@@ -50,7 +50,7 @@ Create `validate-consolidated.ts`, a new test harness that runs the complete 12-
   - `/gp:create-side-quest` — capture and plan a side quest ("add markdown card import"); fallback: skip to next skill with degraded verification
   - `/gp:audit` — architecture mode audit; fallback: skip to next skill with degraded verification
   - `/gp:complete-epic` — complete the epic after marking remaining slices done; explicitly list `gpForce` commands to mark unimplemented slices as complete before invocation
-- [ ] Implement per-skill simulated user configurations (matching `test-create-epic.ts` pattern)
+- [x] Implement per-skill simulated user configurations (matching `test-create-epic.ts` pattern)
   - Create a separate `createSimulatedUser` instance per skill invocation, each with a skill-specific system prompt
   - Base persona: senior TypeScript developer building a CLI flashcard app
   - `/gp:init` user: answers onboarding questions (project name, description, conventions)
@@ -61,19 +61,19 @@ Create `validate-consolidated.ts`, a new test harness that runs the complete 12-
   - `/gp:audit` user: selects architecture audit mode, approves findings
   - `/gp:complete-epic` user: approves completion, confirms learnings
   - Use `createSimulatedUser` from utils with Opus-tier model for each instance
-- [ ] Implement quality proxy metric assertions (run after full pipeline completes)
+- [x] Implement quality proxy metric assertions (run after full pipeline completes)
   - Architecture: read `_overview.md`, check length >= 500 chars, count `##` headings >= 3
   - Plans: read plan file, check >= 3 phases (count `### Phase` headings), grep for path-like strings in each phase
   - Reviews: after `plan-slice` completes, read `plan-refined.md` (or `plan-refining.md`) from the fixture's `.goodplan/` directory and grep for IMPORTANT/CRITICAL severity strings; alternatively, parse the transcript JSONL written by `writeTranscriptEntry` for severity keywords in serialized messages
   - Implementation: run `bun build`, `bun lint`, `bun test` in fixture dir, assert exit code 0
   - Learnings: use `gp learning:list --json` in fixture dir, check count >= 2 and each body >= 100 chars
   - Orchestrator discipline: use `verifyNoArtifactReads` from utils across all tracked tool calls
-- [ ] Implement cost tracking and reporting
+- [x] Implement cost tracking and reporting
   - Track cost per skill run (returned by `runSkillSession`)
   - Sum total cost, log at end
   - Flag if total exceeds $40 as potential context leak (7 Opus-tier skill runs with sub-agents expected to cost $15-30+)
-- [ ] Add `validate-consolidated.ts` to the harness table in `CLAUDE.md`
-- [ ] Update the test harness API doc if needed (`test-harness-api.md` section 5 table)
+- [x] Add `validate-consolidated.ts` to the harness table in `CLAUDE.md`
+- [x] Update the test harness API doc if needed (`test-harness-api.md` section 5 table)
 
 #### Verification
 - `bun build tools/dogfood/validate-consolidated.ts` compiles without errors

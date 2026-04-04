@@ -170,6 +170,7 @@ Each consolidated skill gets its own test script:
 | `test-audit.ts` | Audit mode selection + reviewer flow | Structural |
 | `test-init.ts` | Empty repo + existing repo initialization | Structural |
 | `test-plugin-skills.ts` | Plugin skill discovery + namespace (existing) | Structural |
+| `validate-consolidated.ts` | Full 7-skill pipeline + quality proxy metrics | E2E (Opus) |
 
 Quality tier tests run as the final epic slice (full validation).
 
