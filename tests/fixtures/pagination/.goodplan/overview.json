@@ -1,0 +1,160 @@
+{
+	"epics": [
+		{
+			"completed": null,
+			"created": "2026-01-01T00:00:00.000Z",
+			"name": "epic-alpha",
+			"slices": [
+				{
+					"completed": null,
+					"created": "2026-01-01T00:00:00.000Z",
+					"name": "slice-a1",
+					"status": "completed"
+				},
+				{
+					"completed": null,
+					"created": "2026-01-02T00:00:00.000Z",
+					"name": "slice-a2",
+					"status": "implementing"
+				}
+			],
+			"status": "activated"
+		},
+		{
+			"completed": null,
+			"created": "2026-01-03T00:00:00.000Z",
+			"name": "epic-beta",
+			"slices": [
+				{
+					"completed": null,
+					"created": "2026-01-03T00:00:00.000Z",
+					"name": "slice-b1",
+					"status": "goal-set"
+				},
+				{
+					"completed": null,
+					"created": "2026-01-04T00:00:00.000Z",
+					"name": "slice-b2",
+					"status": "goal-set"
+				},
+				{
+					"completed": null,
+					"created": "2026-01-05T00:00:00.000Z",
+					"name": "slice-b3",
+					"status": "goal-set"
+				}
+			],
+			"status": "created"
+		},
+		{
+			"completed": null,
+			"created": "2026-01-05T00:00:00.000Z",
+			"name": "epic-gamma",
+			"slices": [],
+			"status": "created"
+		},
+		{
+			"completed": null,
+			"created": "2026-01-06T00:00:00.000Z",
+			"name": "epic-delta",
+			"slices": [],
+			"status": "created"
+		},
+		{
+			"completed": null,
+			"created": "2026-01-07T00:00:00.000Z",
+			"name": "epic-epsilon",
+			"slices": [],
+			"status": "created"
+		},
+		{
+			"completed": "2026-01-10T00:00:00.000Z",
+			"created": "2026-01-08T00:00:00.000Z",
+			"name": "epic-zeta",
+			"slices": [],
+			"status": "completed"
+		}
+	],
+	"quests": [
+		{
+			"completed": null,
+			"created": "2026-01-01T00:00:00.000Z",
+			"name": "quest-one",
+			"status": "created"
+		},
+		{
+			"completed": null,
+			"created": "2026-01-02T00:00:00.000Z",
+			"name": "quest-two",
+			"status": "planning"
+		},
+		{
+			"completed": null,
+			"created": "2026-01-03T00:00:00.000Z",
+			"name": "quest-three",
+			"status": "implementing"
+		},
+		{
+			"completed": "2026-01-05T00:00:00.000Z",
+			"created": "2026-01-04T00:00:00.000Z",
+			"name": "quest-four",
+			"status": "completed"
+		},
+		{
+			"completed": null,
+			"created": "2026-01-05T00:00:00.000Z",
+			"name": "quest-five",
+			"status": "created"
+		},
+		{
+			"completed": null,
+			"created": "2026-01-06T00:00:00.000Z",
+			"name": "quest-six",
+			"status": "created"
+		}
+	],
+	"tasks": [
+		{
+			"completed": null,
+			"created": "2026-01-01T00:00:00.000Z",
+			"name": "task-one",
+			"status": "open",
+			"title": "First task"
+		},
+		{
+			"completed": null,
+			"created": "2026-01-02T00:00:00.000Z",
+			"name": "task-two",
+			"status": "open",
+			"title": "Second task"
+		},
+		{
+			"completed": null,
+			"created": "2026-01-03T00:00:00.000Z",
+			"name": "task-three",
+			"status": "open",
+			"title": "Third task"
+		},
+		{
+			"completed": "2026-01-05T00:00:00.000Z",
+			"created": "2026-01-04T00:00:00.000Z",
+			"name": "task-four",
+			"status": "converted",
+			"title": "Fourth task"
+		},
+		{
+			"completed": null,
+			"created": "2026-01-05T00:00:00.000Z",
+			"name": "task-five",
+			"status": "open",
+			"title": "Fifth task"
+		},
+		{
+			"completed": "2026-01-07T00:00:00.000Z",
+			"created": "2026-01-06T00:00:00.000Z",
+			"name": "task-six",
+			"status": "dropped",
+			"title": "Sixth task"
+		}
+	]
+}
