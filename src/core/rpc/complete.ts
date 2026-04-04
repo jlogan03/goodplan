@@ -183,14 +183,23 @@ function buildCompleteEventWithLearnings(
 					`CompleteInput.type '${input.type}' does not match target.type 'epic'`,
 				);
 			}
+			const epicScopePath = `epics/${target.name}`;
+			const epicSource = epicScopePath;
+			const { entries: epicEntries, markdownFiles: epicMdFiles } = mapLearningInputs(
+				input.learnings ?? [],
+				epicSource,
+				state,
+				epicScopePath,
+			);
 			return {
 				event: {
 					type: "COMPLETE_EPIC",
 					epic: target.name,
 					ts,
 					verificationResults: input.verificationResults,
+					learnings: epicEntries,
 				},
-				markdownFiles: [],
+				markdownFiles: epicMdFiles,
 			};
 		}
 		case "slice": {
@@ -267,11 +276,28 @@ function buildCompleteResult(
 	if (target.type === "epic") {
 		const oldEpic = getJson<Epic>(oldState, entityPath);
 		const newEpic = getJson<Epic>(newState, entityPath);
-		return {
+		const result: Omit<CompleteResult, "nextCommands" | "paths" | "context"> = {
 			entity,
 			previousStatus: oldEpic?.status ?? "none",
 			newStatus: newEpic?.status ?? "unknown",
 		};
+
+		// Derive learningsRolledUp (epics are project-scoped, no parent epic rollup)
+		const epicLearningsOld =
+			getJsonl<LearningEntry>(oldState, `epics/${target.name}/learnings.jsonl`) ?? [];
+		const epicLearningsNew =
+			getJsonl<LearningEntry>(newState, `epics/${target.name}/learnings.jsonl`) ?? [];
+		const projectLearningsOld = getJsonl<LearningEntry>(oldState, "learnings.jsonl") ?? [];
+		const projectLearningsNew = getJsonl<LearningEntry>(newState, "learnings.jsonl") ?? [];
+
+		const epicDelta = epicLearningsNew.length - epicLearningsOld.length;
+		const projectDelta = projectLearningsNew.length - projectLearningsOld.length;
+
+		if (epicDelta > 0 || projectDelta > 0) {
+			result.learningsRolledUp = { epic: epicDelta, project: projectDelta };
+		}
+
+		return result;
 	}
 
 	if (target.type === "slice") {

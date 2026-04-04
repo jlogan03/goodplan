@@ -41,6 +41,7 @@ export type StateEvent =
 			epic: string;
 			ts: string;
 			verificationResults: VerificationResult[];
+			learnings: LearningEventEntry[];
 	  }
 	| { type: "ABANDON_EPIC"; epic: string; ts: string; reason: string }
 	| { type: "ADD_VERIFICATION"; epic: string; ts: string; verification: Verification }

@@ -37,7 +37,7 @@ export const epicCompleteCommand = defineCommand({
 		const result = await complete(
 			projectDir,
 			{ type: "epic", name: input.epic },
-			{ type: "epic", verificationResults: input.verificationResults },
+			{ type: "epic", verificationResults: input.verificationResults, learnings: input.learnings },
 		);
 
 		if (args.json || args.query) {

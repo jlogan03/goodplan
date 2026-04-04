@@ -1,14 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { ZERO_STATE } from "../../../src/core/data/tree.js";
 import type { ProjectState } from "../../../src/core/data/tree.js";
-import { getJson } from "../../../src/core/data/tree.js";
+import { getJson, getJsonl } from "../../../src/core/data/tree.js";
 import { reduce } from "../../../src/core/state/reduce.js";
 import { isStateError } from "../../../src/core/state/types.js";
 import type { StateError } from "../../../src/core/state/types.js";
 import type { Epic } from "../../../src/schemas/entities/epic.js";
-import type { Project } from "../../../src/schemas/entities/project.js";
 import type { Verification } from "../../../src/schemas/entities/epic.js";
 import type { UnifiedOverview } from "../../../src/schemas/entities/overview.js";
+import type { Project } from "../../../src/schemas/entities/project.js";
+import type { LearningEntry } from "../../../src/schemas/records/learning.js";
 
 const TS = "2026-01-01T00:00:00.000Z";
 const TS2 = "2026-02-01T00:00:00.000Z";
@@ -26,10 +27,20 @@ function stateAtSlicesRefined(): ProjectState {
 	s = reduce(s, { type: "CREATE_EPIC", name: "e1", goal: "Goal", ts: TS }) as ProjectState;
 	s = reduce(s, { type: "COMPLETE_EXPLORE", epic: "e1", ts: TS }) as ProjectState;
 	s = reduce(s, { type: "COMPLETE_ARCHITECTURE", epic: "e1", ts: TS }) as ProjectState;
-	s = reduce(s, { type: "COMPLETE_REFINE_ARCHITECTURE", epic: "e1", ts: TS, scores: { q: 10 } }) as ProjectState;
+	s = reduce(s, {
+		type: "COMPLETE_REFINE_ARCHITECTURE",
+		epic: "e1",
+		ts: TS,
+		scores: { q: 10 },
+	}) as ProjectState;
 	s = reduce(s, { type: "BEGIN_SLICING", epic: "e1", ts: TS }) as ProjectState;
 	s = reduce(s, { type: "COMPLETE_SLICING", epic: "e1", ts: TS }) as ProjectState;
-	s = reduce(s, { type: "COMPLETE_REFINE_SLICES", epic: "e1", ts: TS, scores: { q: 10 } }) as ProjectState;
+	s = reduce(s, {
+		type: "COMPLETE_REFINE_SLICES",
+		epic: "e1",
+		ts: TS,
+		scores: { q: 10 },
+	}) as ProjectState;
 	return s;
 }
 
@@ -55,12 +66,12 @@ describe("reduce — ACTIVATE_EPIC", () => {
 		expect(isStateError(result)).toBe(false);
 		const newState = result as ProjectState;
 		const epic = getJson<Epic>(newState, "epics/e1/epic.json");
-		expect(epic!.status).toBe("activated");
-		expect(epic!.activated).toBe(TS2);
-		expect(epic!.updated).toBe(TS2);
+		expect(epic?.status).toBe("activated");
+		expect(epic?.activated).toBe(TS2);
+		expect(epic?.updated).toBe(TS2);
 
 		const project = getJson<Project>(newState, "project.json");
-		expect(project!.activeEpic).toBe("e1");
+		expect(project?.activeEpic).toBe("e1");
 	});
 
 	it("updates overview to activated", () => {
@@ -77,10 +88,20 @@ describe("reduce — ACTIVATE_EPIC", () => {
 		s = reduce(s, { type: "CREATE_EPIC", name: "e2", goal: "Goal2", ts: TS }) as ProjectState;
 		s = reduce(s, { type: "COMPLETE_EXPLORE", epic: "e2", ts: TS }) as ProjectState;
 		s = reduce(s, { type: "COMPLETE_ARCHITECTURE", epic: "e2", ts: TS }) as ProjectState;
-		s = reduce(s, { type: "COMPLETE_REFINE_ARCHITECTURE", epic: "e2", ts: TS, scores: { q: 10 } }) as ProjectState;
+		s = reduce(s, {
+			type: "COMPLETE_REFINE_ARCHITECTURE",
+			epic: "e2",
+			ts: TS,
+			scores: { q: 10 },
+		}) as ProjectState;
 		s = reduce(s, { type: "BEGIN_SLICING", epic: "e2", ts: TS }) as ProjectState;
 		s = reduce(s, { type: "COMPLETE_SLICING", epic: "e2", ts: TS }) as ProjectState;
-		s = reduce(s, { type: "COMPLETE_REFINE_SLICES", epic: "e2", ts: TS, scores: { q: 10 } }) as ProjectState;
+		s = reduce(s, {
+			type: "COMPLETE_REFINE_SLICES",
+			epic: "e2",
+			ts: TS,
+			scores: { q: 10 },
+		}) as ProjectState;
 		s = reduce(s, { type: "ADD_VERIFICATION", epic: "e2", ts: TS, verification }) as ProjectState;
 
 		const result = reduce(s, { type: "ACTIVATE_EPIC", epic: "e2", ts: TS });
@@ -114,12 +135,13 @@ describe("reduce — COMPLETE_EPIC", () => {
 			epic: "e1",
 			ts: TS2,
 			verificationResults: [{ index: 0, passed: true, notes: "Looks good" }],
+			learnings: [],
 		});
 		expect(isStateError(result)).toBe(false);
 		const newState = result as ProjectState;
-		expect(getJson<Epic>(newState, "epics/e1/epic.json")!.status).toBe("completed");
-		expect(getJson<Epic>(newState, "epics/e1/epic.json")!.updated).toBe(TS2);
-		expect(getJson<Project>(newState, "project.json")!.activeEpic).toBeNull();
+		expect(getJson<Epic>(newState, "epics/e1/epic.json")?.status).toBe("completed");
+		expect(getJson<Epic>(newState, "epics/e1/epic.json")?.updated).toBe(TS2);
+		expect(getJson<Project>(newState, "project.json")?.activeEpic).toBeNull();
 		expect(overviewStatus(newState, "e1")).toBe("completed");
 	});
 
@@ -132,9 +154,94 @@ describe("reduce — COMPLETE_EPIC", () => {
 			epic: "e1",
 			ts: TS2,
 			verificationResults: [{ index: 0, passed: false, notes: "Failed" }],
+			learnings: [],
 		});
 		expect(isStateError(result)).toBe(true);
 		expect((result as StateError).code).toBe("STATE_VERIFICATION_FAILED");
+	});
+
+	it("completes with learnings rolled up to epic and project scope", () => {
+		let s = stateReadyToActivate();
+		s = reduce(s, { type: "ACTIVATE_EPIC", epic: "e1", ts: TS }) as ProjectState;
+
+		const result = reduce(s, {
+			type: "COMPLETE_EPIC",
+			epic: "e1",
+			ts: TS2,
+			verificationResults: [{ index: 0, passed: true, notes: "OK" }],
+			learnings: [
+				{
+					category: "domain",
+					summary: "State machines need clear transition tables",
+					file: "learnings/state-machines-need-clear-transition-tables.md",
+					tags: ["architecture"],
+					source: "epics/e1",
+					rollup: true,
+					rollupTo: ["project"],
+				},
+			],
+		});
+		expect(isStateError(result)).toBe(false);
+		const newState = result as ProjectState;
+
+		// Per-epic learnings
+		const epicLearnings = getJsonl<LearningEntry>(newState, "epics/e1/learnings.jsonl");
+		expect(epicLearnings).toHaveLength(1);
+		expect(epicLearnings?.[0]?.source).toBe("epics/e1");
+
+		// Project learnings rollup
+		const projectLearnings = getJsonl<LearningEntry>(newState, "learnings.jsonl");
+		expect(projectLearnings).toHaveLength(1);
+		expect(projectLearnings?.[0]?.summary).toBe("State machines need clear transition tables");
+	});
+
+	it("learnings with rollupTo 'epic' are silently skipped (no parent epic)", () => {
+		let s = stateReadyToActivate();
+		s = reduce(s, { type: "ACTIVATE_EPIC", epic: "e1", ts: TS }) as ProjectState;
+
+		const result = reduce(s, {
+			type: "COMPLETE_EPIC",
+			epic: "e1",
+			ts: TS2,
+			verificationResults: [{ index: 0, passed: true, notes: "OK" }],
+			learnings: [
+				{
+					category: "worked",
+					summary: "Epic-only rollup test",
+					file: "learnings/epic-only-rollup-test.md",
+					tags: [],
+					source: "epics/e1",
+					rollup: true,
+					rollupTo: ["epic"],
+				},
+			],
+		});
+		expect(isStateError(result)).toBe(false);
+		const newState = result as ProjectState;
+
+		// Per-epic learnings should have it (source scope always written)
+		const epicLearnings = getJsonl<LearningEntry>(newState, "epics/e1/learnings.jsonl");
+		expect(epicLearnings).toHaveLength(1);
+
+		// Project learnings should NOT have it (rollupTo was "epic" only, no parent epic available)
+		const projectLearnings = getJsonl<LearningEntry>(newState, "learnings.jsonl");
+		expect(projectLearnings ?? []).toHaveLength(0);
+	});
+
+	it("empty learnings works", () => {
+		let s = stateReadyToActivate();
+		s = reduce(s, { type: "ACTIVATE_EPIC", epic: "e1", ts: TS }) as ProjectState;
+
+		const result = reduce(s, {
+			type: "COMPLETE_EPIC",
+			epic: "e1",
+			ts: TS2,
+			verificationResults: [{ index: 0, passed: true, notes: "OK" }],
+			learnings: [],
+		});
+		expect(isStateError(result)).toBe(false);
+		const newState = result as ProjectState;
+		expect(getJson<Epic>(newState, "epics/e1/epic.json")?.status).toBe("completed");
 	});
 });
 
@@ -143,24 +250,29 @@ describe("reduce — ABANDON_EPIC", () => {
 		let s = reduce(ZERO_STATE, { type: "INIT_PROJECT", name: "test", ts: TS }) as ProjectState;
 		s = reduce(s, { type: "CREATE_EPIC", name: "e1", goal: "Goal", ts: TS }) as ProjectState;
 
-		const result = reduce(s, { type: "ABANDON_EPIC", epic: "e1", ts: TS2, reason: "No longer needed" });
+		const result = reduce(s, {
+			type: "ABANDON_EPIC",
+			epic: "e1",
+			ts: TS2,
+			reason: "No longer needed",
+		});
 		expect(isStateError(result)).toBe(false);
 		const newState = result as ProjectState;
-		expect(getJson<Epic>(newState, "epics/e1/epic.json")!.status).toBe("abandoned");
-		expect(getJson<Epic>(newState, "epics/e1/epic.json")!.updated).toBe(TS2);
+		expect(getJson<Epic>(newState, "epics/e1/epic.json")?.status).toBe("abandoned");
+		expect(getJson<Epic>(newState, "epics/e1/epic.json")?.updated).toBe(TS2);
 		expect(overviewStatus(newState, "e1")).toBe("abandoned");
 	});
 
 	it("abandons from activated and clears activeEpic", () => {
 		let s = stateReadyToActivate();
 		s = reduce(s, { type: "ACTIVATE_EPIC", epic: "e1", ts: TS }) as ProjectState;
-		expect(getJson<Project>(s, "project.json")!.activeEpic).toBe("e1");
+		expect(getJson<Project>(s, "project.json")?.activeEpic).toBe("e1");
 
 		const result = reduce(s, { type: "ABANDON_EPIC", epic: "e1", ts: TS2, reason: "Pivoting" });
 		expect(isStateError(result)).toBe(false);
 		const newState = result as ProjectState;
-		expect(getJson<Epic>(newState, "epics/e1/epic.json")!.status).toBe("abandoned");
-		expect(getJson<Project>(newState, "project.json")!.activeEpic).toBeNull();
+		expect(getJson<Epic>(newState, "epics/e1/epic.json")?.status).toBe("abandoned");
+		expect(getJson<Project>(newState, "project.json")?.activeEpic).toBeNull();
 	});
 
 	it("rejects from terminal status (completed)", () => {
@@ -171,6 +283,7 @@ describe("reduce — ABANDON_EPIC", () => {
 			epic: "e1",
 			ts: TS2,
 			verificationResults: [{ index: 0, passed: true, notes: "OK" }],
+			learnings: [],
 		}) as ProjectState;
 
 		const result = reduce(s, { type: "ABANDON_EPIC", epic: "e1", ts: TS3, reason: "Too late" });
@@ -181,9 +294,19 @@ describe("reduce — ABANDON_EPIC", () => {
 	it("rejects from terminal status (abandoned)", () => {
 		let s = reduce(ZERO_STATE, { type: "INIT_PROJECT", name: "test", ts: TS }) as ProjectState;
 		s = reduce(s, { type: "CREATE_EPIC", name: "e1", goal: "Goal", ts: TS }) as ProjectState;
-		s = reduce(s, { type: "ABANDON_EPIC", epic: "e1", ts: TS, reason: "First abandon" }) as ProjectState;
+		s = reduce(s, {
+			type: "ABANDON_EPIC",
+			epic: "e1",
+			ts: TS,
+			reason: "First abandon",
+		}) as ProjectState;
 
-		const result = reduce(s, { type: "ABANDON_EPIC", epic: "e1", ts: TS, reason: "Double abandon" });
+		const result = reduce(s, {
+			type: "ABANDON_EPIC",
+			epic: "e1",
+			ts: TS,
+			reason: "Double abandon",
+		});
 		expect(isStateError(result)).toBe(true);
 		expect((result as StateError).code).toBe("STATE_INVALID_TRANSITION");
 	});
@@ -195,6 +318,6 @@ describe("reduce — ABANDON_EPIC", () => {
 
 		const result = reduce(s, { type: "ABANDON_EPIC", epic: "e1", ts: TS2, reason: "Changed mind" });
 		expect(isStateError(result)).toBe(false);
-		expect(getJson<Epic>(result as ProjectState, "epics/e1/epic.json")!.status).toBe("abandoned");
+		expect(getJson<Epic>(result as ProjectState, "epics/e1/epic.json")?.status).toBe("abandoned");
 	});
 });

@@ -1,18 +1,19 @@
+import type { EpicStatus } from "../../../schemas/entities/epic.js";
 /**
  * ACTIVATE_EPIC, COMPLETE_EPIC, ABANDON_EPIC handlers.
  * Pure functions, no I/O.
  */
 import type { ProjectState } from "../../tree.js";
 import { setEntry } from "../../tree.js";
-import type { StateEvent, StateError } from "../types.js";
+import type { StateError, StateEvent } from "../types.js";
 import { isStateError } from "../types.js";
-import type { EpicStatus } from "../../../schemas/entities/epic.js";
 import {
 	appendActivityLog,
 	getEpic,
 	getProject,
 	guardEpicStatus,
 	isEpicTerminal,
+	processLearnings,
 	setEpicJson,
 	updateOverviewStatus,
 } from "./helpers.js";
@@ -25,7 +26,12 @@ export function handleActivateEpic(
 	state: ProjectState,
 	event: ActivateEpicEvent,
 ): ProjectState | StateError {
-	const epic = guardEpicStatus(getEpic(state, event.epic), event.epic, "slices-refined", "ACTIVATE_EPIC");
+	const epic = guardEpicStatus(
+		getEpic(state, event.epic),
+		event.epic,
+		"slices-refined",
+		"ACTIVATE_EPIC",
+	);
 	if (isStateError(epic)) return epic;
 
 	const project = getProject(state);
@@ -71,7 +77,13 @@ export function handleActivateEpic(
 	});
 
 	tree = updateOverviewStatus(tree, event.epic, "activated");
-	tree = appendActivityLog(tree, now, "activate-epic", `epics/${event.epic}`, `Epic "${event.epic}" activated`);
+	tree = appendActivityLog(
+		tree,
+		now,
+		"activate-epic",
+		`epics/${event.epic}`,
+		`Epic "${event.epic}" activated`,
+	);
 	return tree;
 }
 
@@ -79,7 +91,12 @@ export function handleCompleteEpic(
 	state: ProjectState,
 	event: CompleteEpicEvent,
 ): ProjectState | StateError {
-	const epic = guardEpicStatus(getEpic(state, event.epic), event.epic, "activated", "COMPLETE_EPIC");
+	const epic = guardEpicStatus(
+		getEpic(state, event.epic),
+		event.epic,
+		"activated",
+		"COMPLETE_EPIC",
+	);
 	if (isStateError(epic)) return epic;
 
 	// Guard: all verification results must pass
@@ -90,9 +107,7 @@ export function handleCompleteEpic(
 			message: `Cannot complete epic "${event.epic}" — one or more verifications failed`,
 			detail: {
 				epic: event.epic,
-				failedIndices: event.verificationResults
-					.filter((r) => !r.passed)
-					.map((r) => r.index),
+				failedIndices: event.verificationResults.filter((r) => !r.passed).map((r) => r.index),
 			},
 		};
 	}
@@ -105,21 +120,34 @@ export function handleCompleteEpic(
 		};
 	}
 
-	// Set epic status to completed
-	let tree = setEpicJson(state, event.epic, {
+	let tree = state;
+
+	// 1. Learnings: LearningEventEntry[] with `file` already set by RPC layer.
+	//    Epics are project-scoped — only roll up to "project" (skip "epic" since there's no parent epic).
+	const source = `epics/${event.epic}`;
+	tree = processLearnings(tree, event.learnings, source, new Set(["project"]));
+
+	// 2. Set epic status to completed
+	tree = setEpicJson(tree, event.epic, {
 		...epic,
 		status: "completed",
 		updated: event.ts,
 	});
 
-	// Clear project.activeEpic
+	// 3. Clear project.activeEpic
 	tree = setEntry(tree, "project.json", {
 		type: "json",
 		content: { ...project, activeEpic: null },
 	});
 
 	tree = updateOverviewStatus(tree, event.epic, "completed");
-	tree = appendActivityLog(tree, event.ts, "complete-epic", `epics/${event.epic}`, `Epic "${event.epic}" completed`);
+	tree = appendActivityLog(
+		tree,
+		event.ts,
+		"complete-epic",
+		`epics/${event.epic}`,
+		`Epic "${event.epic}" completed`,
+	);
 	return tree;
 }
 
@@ -161,7 +189,13 @@ export function handleAbandonEpic(
 	}
 
 	tree = updateOverviewStatus(tree, event.epic, "abandoned");
-	tree = appendActivityLog(tree, event.ts, "abandon-epic", `epics/${event.epic}`, `Epic "${event.epic}" abandoned: ${event.reason}`);
+	tree = appendActivityLog(
+		tree,
+		event.ts,
+		"abandon-epic",
+		`epics/${event.epic}`,
+		`Epic "${event.epic}" abandoned: ${event.reason}`,
+	);
 	return tree;
 }
 

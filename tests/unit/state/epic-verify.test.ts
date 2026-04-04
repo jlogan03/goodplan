@@ -97,6 +97,7 @@ describe("reduce — ADD_VERIFICATION", () => {
 			epic: "e1",
 			ts: TS,
 			verificationResults: [{ index: 0, passed: true, notes: "OK" }],
+			learnings: [],
 		}) as ProjectState;
 
 		const result = reduce(s, { type: "ADD_VERIFICATION", epic: "e1", ts: TS, verification: v2 });

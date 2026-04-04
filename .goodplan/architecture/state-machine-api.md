@@ -48,7 +48,7 @@ type StateEvent =
   | { type: 'COMPLETE_REFINE_SLICES'; epic: string; ts: string; scores: Record<string, number>; override?: boolean }
   | { type: 'ACTIVATE_EPIC'; epic: string; ts: string }
   | { type: 'ABANDON_EPIC'; epic: string; ts: string; reason: string }
-  | { type: 'COMPLETE_EPIC'; epic: string; ts: string; verificationResults: VerificationResult[] }
+  | { type: 'COMPLETE_EPIC'; epic: string; ts: string; verificationResults: VerificationResult[]; learnings: LearningEventEntry[] }
   // Slice lifecycle — all slice events carry `epic: string` for nested path construction
   | { type: 'CREATE_SLICE'; name: string; epic: string; goal: string; ts: string }
   | { type: 'BEGIN_PLAN'; epic: string; slice: string; ts: string }
@@ -244,7 +244,7 @@ All paths below are `resolve()` paths into the `ProjectState` tree.
 | `COMPLETE_PLAN` | `epics/<epic>/slices/<name>/slice.json`, `epics/<epic>/slices/<name>/` | `epics/<epic>/slices/<name>/slice.json`, `activity-log.jsonl` |
 | `COMPLETE_REFINEMENT_ROUND` | `epics/<epic>/slices/<name>/slice.json` | `epics/<epic>/slices/<name>/slice.json`, `activity-log.jsonl` |
 | `COMPLETE_SLICE` | `project.json`, `epics/<epic>/slices/<name>/slice.json`, `epics/<epic>/epic.json` | `project.json`, `epics/<epic>/slices/<name>/slice.json`, `epics/<epic>/epic.json`, `epics/<epic>/slices/<name>/learnings.jsonl`, `epics/<epic>/slices/<name>/architecture-deltas.jsonl`, `learnings.jsonl`, `activity-log.jsonl` |
-| `COMPLETE_EPIC` | `epics/<name>/epic.json`, `project.json` | `epics/<name>/epic.json`, `project.json`, `activity-log.jsonl` |
+| `COMPLETE_EPIC` | `epics/<name>/epic.json`, `project.json` | `epics/<name>/epic.json`, `project.json`, `epics/<name>/learnings.jsonl`, `learnings.jsonl`, `activity-log.jsonl` |
 | `CREATE_DECISION` | `decisions.jsonl` | `decisions.jsonl`, `activity-log.jsonl` |
 | `UPDATE_DECISION` | `decisions.jsonl` | `decisions.jsonl`, `activity-log.jsonl` |
 | `ROLLUP_LEARNINGS` | source `learnings.jsonl` | target `learnings.jsonl`, `activity-log.jsonl` |

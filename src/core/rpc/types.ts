@@ -175,7 +175,7 @@ export interface SubmitResult {
 // ── Complete input ───────────────────────────────────────────
 
 export type CompleteInput =
-	| { type: "epic"; verificationResults: VerificationResult[] }
+	| { type: "epic"; verificationResults: VerificationResult[]; learnings?: LearningInput[] }
 	| {
 			type: "slice";
 			verificationPassed: boolean;

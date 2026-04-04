@@ -49,51 +49,51 @@ Fix 4 independent quality proxy metric failures discovered during Opus-tier E2E 
 
 #### Expected Behavior
 **Before implementation** (should fail / show absence):
-- [ ] `CompleteInput` type for epic (in `src/core/rpc/types.ts` line 178) has no `learnings` field
-- [ ] `COMPLETE_EPIC` event type (in `src/schemas/state-events.ts` line 40-44) has no `learnings` field
-- [ ] `handleCompleteEpic` (in `src/core/state/transitions/epic-lifecycle.ts` lines 78-124) does not process learnings
-- [ ] `completeEpicInputSchema` (in `src/schemas/commands/epic.ts` lines 21-24) has no `learnings` field
-- [ ] `checkLearningsMetrics` only checks `learning:list --json` which may not have project-scope learnings if epic:complete doesn't roll them up
+- [x] `CompleteInput` type for epic (in `src/core/rpc/types.ts` line 178) has no `learnings` field
+- [x] `COMPLETE_EPIC` event type (in `src/schemas/state-events.ts` line 40-44) has no `learnings` field
+- [x] `handleCompleteEpic` (in `src/core/state/transitions/epic-lifecycle.ts` lines 78-124) does not process learnings
+- [x] `completeEpicInputSchema` (in `src/schemas/commands/epic.ts` lines 21-24) has no `learnings` field
+- [x] `checkLearningsMetrics` only checks `learning:list --json` which may not have project-scope learnings if epic:complete doesn't roll them up
 
 **After implementation** (should pass / show presence):
-- [ ] `CompleteInput` for epic includes optional `learnings?: LearningInput[]` field
-- [ ] `COMPLETE_EPIC` event type includes `learnings: LearningEventEntry[]` field
-- [ ] `handleCompleteEpic` calls `processLearnings()` with `new Set(["project"])` to roll up learnings to project scope (epics have no parent epic, so only "project" target)
-- [ ] `completeEpicInputSchema` accepts optional `learnings` array
-- [ ] `buildCompleteEventWithLearnings` in `src/core/rpc/complete.ts` maps `input.learnings` through `mapLearningInputs()` for epic completion (same pattern as slice/quest)
-- [ ] Existing tests still pass; new test covers epic completion with learnings
+- [x] `CompleteInput` for epic includes optional `learnings?: LearningInput[]` field
+- [x] `COMPLETE_EPIC` event type includes `learnings: LearningEventEntry[]` field
+- [x] `handleCompleteEpic` calls `processLearnings()` with `new Set(["project"])` to roll up learnings to project scope (epics have no parent epic, so only "project" target)
+- [x] `completeEpicInputSchema` accepts optional `learnings` array
+- [x] `buildCompleteEventWithLearnings` in `src/core/rpc/complete.ts` maps `input.learnings` through `mapLearningInputs()` for epic completion (same pattern as slice/quest)
+- [x] Existing tests still pass; new test covers epic completion with learnings
 
 #### Tasks
 
 **3a. State event type + RPC layer (atomic — must compile together)**:
-- [ ] Add `learnings: LearningEventEntry[]` to the `COMPLETE_EPIC` union member in `src/schemas/state-events.ts` (line 40-44), following the same pattern as `COMPLETE_QUEST` (line 98-104)
-- [ ] Update epic `CompleteInput` type in `src/core/rpc/types.ts` (line 178): add `learnings?: LearningInput[]`
-- [ ] Update `buildCompleteEventWithLearnings` epic case in `src/core/rpc/complete.ts` (lines 178-194): call `mapLearningInputs()` to convert `input.learnings` to `LearningEventEntry[]` and collect markdown files, same pattern as the slice case (lines 196-230). Apply explicit `input.learnings ?? []` coercion before passing to `mapLearningInputs()` (the event type requires non-optional `learnings`, so undefined must be coerced to `[]`)
-- [ ] Ensure the post-reduce file-writing logic in `complete.ts` handles epic markdown files from `mapLearningInputs` — trace the `markdownFiles` return path to confirm it is consumed generically (not gated by target type). If gated, add an epic branch
-- [ ] Add new import: `import { learningInputSchema } from "../records/learning.js"` (value import, not `import type`, per `verbatimModuleSyntax`)
+- [x] Add `learnings: LearningEventEntry[]` to the `COMPLETE_EPIC` union member in `src/schemas/state-events.ts` (line 40-44), following the same pattern as `COMPLETE_QUEST` (line 98-104)
+- [x] Update epic `CompleteInput` type in `src/core/rpc/types.ts` (line 178): add `learnings?: LearningInput[]`
+- [x] Update `buildCompleteEventWithLearnings` epic case in `src/core/rpc/complete.ts` (lines 178-194): call `mapLearningInputs()` to convert `input.learnings` to `LearningEventEntry[]` and collect markdown files, same pattern as the slice case (lines 196-230). Apply explicit `input.learnings ?? []` coercion before passing to `mapLearningInputs()` (the event type requires non-optional `learnings`, so undefined must be coerced to `[]`)
+- [x] Ensure the post-reduce file-writing logic in `complete.ts` handles epic markdown files from `mapLearningInputs` — trace the `markdownFiles` return path to confirm it is consumed generically (not gated by target type). If gated, add an epic branch
+- [x] Add new import: `import { learningInputSchema } from "../records/learning.js"` (value import, not `import type`, per `verbatimModuleSyntax`)
 
 **3b. Command input schema** (`src/schemas/commands/epic.ts`):
-- [ ] Add optional `learnings` field to `completeEpicInputSchema` (line 21-24), importing `learningInputSchema` from `../records/learning.js` (value import). Use `.default([])` to make it optional with empty array fallback. Add a comment documenting the coercion contract (undefined → []) for consistency with slice/quest variants
+- [x] Add optional `learnings` field to `completeEpicInputSchema` (line 21-24), importing `learningInputSchema` from `../records/learning.js` (value import). Use `.default([])` to make it optional with empty array fallback. Add a comment documenting the coercion contract (undefined → []) for consistency with slice/quest variants
 
 **3c. State machine handler** (`src/core/state/transitions/epic-lifecycle.ts`):
-- [ ] Import `processLearnings` from `./helpers.js`
-- [ ] Import `LearningEventEntry` type from `../../../schemas/records/learning.js`
-- [ ] In `handleCompleteEpic` (after setting epic status to completed, before clearing activeEpic): call `processLearnings(tree, event.learnings, source, new Set(["project"]))` with `source = \`epics/${event.epic}\``
-- [ ] Note: `processLearnings` filters `rollupTo` targets against `availableTargets`. Learnings with `rollupTo: ["epic"]` will be silently skipped since `"epic"` is not in the available set. Verify this is the existing behavior in `processLearnings` (it should filter, not error). If it errors, add a pre-filter to remove `"epic"` from each learning's `rollupTo` before calling
+- [x] Import `processLearnings` from `./helpers.js`
+- [x] Import `LearningEventEntry` type from `../../../schemas/records/learning.js`
+- [x] In `handleCompleteEpic` (after setting epic status to completed, before clearing activeEpic): call `processLearnings(tree, event.learnings, source, new Set(["project"]))` with `source = \`epics/${event.epic}\``
+- [x] Note: `processLearnings` filters `rollupTo` targets against `availableTargets`. Learnings with `rollupTo: ["epic"]` will be silently skipped since `"epic"` is not in the available set. Verify this is the existing behavior in `processLearnings` (it should filter, not error). If it errors, add a pre-filter to remove `"epic"` from each learning's `rollupTo` before calling
 
 **3d. Result builder** (`src/core/rpc/complete.ts`):
-- [ ] Update `buildCompleteResult` for the epic case (lines 267-275) to include `learningsRolledUp` counts derived from the state diff, matching the slice and quest cases. The transition table lists `learningsRolledUp` as an orchestrator return for `COMPLETE_EPIC`
+- [x] Update `buildCompleteResult` for the epic case (lines 267-275) to include `learningsRolledUp` counts derived from the state diff, matching the slice and quest cases. The transition table lists `learningsRolledUp` as an orchestrator return for `COMPLETE_EPIC`
 
 **3e. Documentation alignment**:
-- [ ] Verify `transition-tables.md` already lists `learningsRolledUp` for `COMPLETE_EPIC` (it does per arch review) — no change needed, but confirm code now matches
-- [ ] Update State Key Dependencies table in `state-machine-api.md` (line 247) to show `COMPLETE_EPIC` writes to `epics/<name>/learnings.jsonl` and `learnings.jsonl` (project-scope rollup) in addition to existing keys
+- [x] Verify `transition-tables.md` already lists `learningsRolledUp` for `COMPLETE_EPIC` (it does per arch review) — no change needed, but confirm code now matches
+- [x] Update State Key Dependencies table in `state-machine-api.md` (line 247) to show `COMPLETE_EPIC` writes to `epics/<name>/learnings.jsonl` and `learnings.jsonl` (project-scope rollup) in addition to existing keys
 
 **3f. Harness metric** (`tools/dogfood/validate-consolidated.ts`):
-- [ ] Update `checkLearningsMetrics` to log a warning if `learning:list --json` returns 0 learnings after epic completion, as a diagnostic signal. Do NOT add a filesystem fallback check (that would bypass the CLI as the single interface to `.goodplan/` state)
+- [x] Update `checkLearningsMetrics` to log a warning if `learning:list --json` returns 0 learnings after epic completion, as a diagnostic signal. Do NOT add a filesystem fallback check (that would bypass the CLI as the single interface to `.goodplan/` state)
 
 **3g. Tests**:
-- [ ] Add a test case in the epic-lifecycle transition test file (likely `tests/core/state/transitions/epic-lifecycle.test.ts`) that verifies `handleCompleteEpic` with learnings produces entries in `learnings.jsonl` at both epic scope and project scope
-- [ ] Add a test case verifying that learnings with `rollupTo: ["epic"]` are gracefully handled (silently skipped, not errored) when completing an epic
+- [x] Add a test case in the epic-lifecycle transition test file (likely `tests/core/state/transitions/epic-lifecycle.test.ts`) that verifies `handleCompleteEpic` with learnings produces entries in `learnings.jsonl` at both epic scope and project scope
+- [x] Add a test case verifying that learnings with `rollupTo: ["epic"]` are gracefully handled (silently skipped, not errored) when completing an epic
 
 #### Verification
 - Run `bun run build` to confirm type changes compile

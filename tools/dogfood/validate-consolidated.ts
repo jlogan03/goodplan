@@ -1254,10 +1254,17 @@ function checkLearningsMetrics(fixtureDir: string): MetricResult {
 	}
 
 	const passed = countOk && allLong;
+	const detail = `${count} learnings (>= 2: ${countOk ? "PASS" : "FAIL"}), ${shortCount > 0 ? `${shortCount} under 100 chars` : "all >= 100 chars"}`;
+
+	// Diagnostic: warn if 0 learnings after epic completion (may indicate epic:complete didn't roll up)
+	if (count === 0) {
+		console.warn("  WARNING: 0 learnings found after epic:complete — learnings rollup may not be working");
+	}
+
 	return {
 		name: "Learnings",
 		passed,
-		detail: `${count} learnings (>= 2: ${countOk ? "PASS" : "FAIL"}), ${shortCount > 0 ? `${shortCount} under 100 chars` : "all >= 100 chars"}`,
+		detail,
 	};
 }
 

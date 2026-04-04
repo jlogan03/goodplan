@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { verificationResultSchema, verificationSchema } from "../entities/epic.js";
+import { learningInputSchema } from "../records/learning.js";
 
 /**
  * Zod schemas for epic command stdin inputs.
@@ -20,7 +21,12 @@ export type CreateEpicInput = z.infer<typeof createEpicInputSchema>;
  */
 export const completeEpicInputSchema = z.object({
 	epic: z.string().min(1, "epic is required"),
-	verificationResults: z.array(verificationResultSchema).min(1, "verificationResults must not be empty"),
+	verificationResults: z
+		.array(verificationResultSchema)
+		.min(1, "verificationResults must not be empty"),
+	// Learnings from epic completion — coerced undefined → [] at schema boundary
+	// (event type requires non-optional `learnings`; RPC layer applies ?? [] before dispatch)
+	learnings: z.array(learningInputSchema).default([]),
 });
 export type CompleteEpicInput = z.infer<typeof completeEpicInputSchema>;
 

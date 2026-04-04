@@ -85,7 +85,7 @@ describe("Transition completeness", () => {
 				scores: { quality: 8 },
 			},
 			ACTIVATE_EPIC: { type: "ACTIVATE_EPIC", epic: "e1", ts },
-			COMPLETE_EPIC: { type: "COMPLETE_EPIC", epic: "e1", ts, verificationResults: [] },
+			COMPLETE_EPIC: { type: "COMPLETE_EPIC", epic: "e1", ts, verificationResults: [], learnings: [] },
 			ABANDON_EPIC: { type: "ABANDON_EPIC", epic: "e1", ts, reason: "test" },
 			ADD_VERIFICATION: {
 				type: "ADD_VERIFICATION",
