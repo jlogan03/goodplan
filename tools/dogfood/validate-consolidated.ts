@@ -1105,17 +1105,21 @@ function checkPlanMetrics(fixtureDir: string, epicName: string): MetricResult {
 		return { name: "Plan Structure", passed: false, detail: "No plan file found in any slice" };
 	}
 
-	const phaseCount = (planContent.match(/^### Phase/gm) ?? []).length;
+	// Match phase headings at any markdown level (## Phase 1, ### Phase 2, etc.)
+	// Require "Phase" followed by a digit to avoid false matches like "Phased Rollout"
+	const phaseCount = (planContent.match(/^#{1,6}\s+Phase\s+\d/gm) ?? []).length;
 	const hasFilePaths = /\b(src|tests|lib)\/\S+\.\w+/m.test(planContent);
+	const contentLength = planContent.length;
+	const contentOk = contentLength >= 500;
 
 	const phaseOk = phaseCount >= 3;
 	const pathOk = hasFilePaths;
-	const passed = phaseOk && pathOk;
+	const passed = phaseOk && pathOk && contentOk;
 
 	return {
 		name: "Plan Structure",
 		passed,
-		detail: `${phaseCount} phases (>= 3: ${phaseOk ? "PASS" : "FAIL"}), file paths present: ${pathOk ? "PASS" : "FAIL"}`,
+		detail: `${phaseCount} phases (>= 3: ${phaseOk ? "PASS" : "FAIL"}), file paths present: ${pathOk ? "PASS" : "FAIL"}, content ${contentLength} chars (>= 500: ${contentOk ? "PASS" : "FAIL"})`,
 	};
 }
 

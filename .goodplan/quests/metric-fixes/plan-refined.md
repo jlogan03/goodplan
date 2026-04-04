@@ -14,9 +14,9 @@ Fix 4 independent quality proxy metric failures discovered during Opus-tier E2E 
 - [ ] Plans with H2 or H3 phase headings both pass the metric
 
 #### Tasks
-- [ ] Edit `tools/dogfood/validate-consolidated.ts` line 1108: replace `^### Phase` regex with `^#{1,6}\s+Phase\s+\d` to match phase headings at any heading level while avoiding false matches on unrelated headings containing "Phase" (e.g., "Phased Rollout Strategy")
-- [ ] Add a minimum content length check (>500 chars) as a supplementary quality signal alongside the phase count
-- [ ] Update the detail string (line 1118) to reflect the new check description
+- [x] Edit `tools/dogfood/validate-consolidated.ts` line 1108: replace `^### Phase` regex with `^#{1,6}\s+Phase\s+\d` to match phase headings at any heading level while avoiding false matches on unrelated headings containing "Phase" (e.g., "Phased Rollout Strategy")
+- [x] Add a minimum content length check (>500 chars) as a supplementary quality signal alongside the phase count
+- [x] Update the detail string (line 1118) to reflect the new check description
 
 #### Verification
 - Run `bun run lint` to confirm no lint errors
