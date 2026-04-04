@@ -13,14 +13,15 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import {
 	createLogger,
 	createSimulatedUser,
 	gp,
 	isSuccess,
 	parseModel,
+	platformBinaryDir,
 	runSkillSession,
 	tierDefault,
 } from "./utils";
@@ -34,9 +35,11 @@ if (!HOME) {
 }
 
 const GOODPLAN_DIR = join(import.meta.dir, "../..");
+const PLUGIN_DIR = resolve(GOODPLAN_DIR, "dist/gp-plugin");
+const GP_BIN = join(PLUGIN_DIR, "binaries", platformBinaryDir(), "gp");
 const BASE_TEST_DIR = "/tmp/goodplan-init-test";
 const LOG_FILE = join(GOODPLAN_DIR, "tools/dogfood/init-test.log");
-const TRANSCRIPT_FILE = join(GOODPLAN_DIR, "tools/dogfood/init-transcript.jsonl");
+const _TRANSCRIPT_FILE = join(GOODPLAN_DIR, "tools/dogfood/init-transcript.jsonl");
 const FIXTURE_SCRIPT = join(GOODPLAN_DIR, "scripts/generate-onboard-fixture.sh");
 const MODEL = parseModel(tierDefault("quality"));
 
@@ -46,22 +49,36 @@ const MAX_TURNS =
 		? Number.parseInt(process.argv[maxIterationsIdx + 1] ?? "200", 10)
 		: 200;
 
+// ─── Preflight ──────────────────────────────────────────────
+
+console.log("\n[test-init] Building plugin...");
+try {
+	execFileSync("bun", ["run", "build:plugin"], {
+		cwd: GOODPLAN_DIR,
+		stdio: "pipe",
+		encoding: "utf-8",
+	});
+	console.log("[test-init] Plugin built successfully");
+} catch (err) {
+	console.error("FATAL: Plugin build failed:", err instanceof Error ? err.message : String(err));
+	process.exit(1);
+}
+
+if (!existsSync(PLUGIN_DIR)) {
+	console.error("FATAL: Plugin not built at", PLUGIN_DIR);
+	process.exit(1);
+}
+
+if (!existsSync(GP_BIN)) {
+	console.error("FATAL: Plugin binary not found at", GP_BIN);
+	process.exit(1);
+}
+
 // ─── Logging ─────────────────────────────────────────────────
 
 const logger = createLogger(LOG_FILE);
 
 // ─── Helpers ─────────────────────────────────────────────────
-
-function installSkills(targetDir: string): void {
-	const fixtureSkillsDir = join(targetDir, ".claude/skills");
-	mkdirSync(fixtureSkillsDir, { recursive: true });
-	cpSync(join(GOODPLAN_DIR, "skills"), fixtureSkillsDir, { recursive: true });
-
-	// Also copy agents so the skill can spawn onboard-phase
-	const fixtureAgentsDir = join(targetDir, ".claude/agents");
-	mkdirSync(fixtureAgentsDir, { recursive: true });
-	cpSync(join(GOODPLAN_DIR, "agents"), fixtureAgentsDir, { recursive: true });
-}
 
 function createTestSimulatedUser(
 	cwd: string,
@@ -133,8 +150,6 @@ async function testEmptyDir(): Promise<boolean> {
 			{ cwd: testDir, stdio: "pipe" },
 		);
 
-		installSkills(testDir);
-
 		const transcript = join(GOODPLAN_DIR, "tools/dogfood/init-transcript-test1.jsonl");
 		const simulatedUser = createTestSimulatedUser(testDir, transcript);
 
@@ -148,10 +163,10 @@ async function testEmptyDir(): Promise<boolean> {
 					maxTurns: MAX_TURNS,
 					maxBudgetUsd: 5,
 					model: MODEL,
-					settingSources: ["user", "project"],
+					plugins: [{ type: "local", path: PLUGIN_DIR }],
 					env: {
 						...process.env,
-						PATH: `${HOME}/.local/bin:${HOME}/bin:${process.env.PATH ?? ""}`,
+						PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
 					},
 					systemPrompt: { type: "preset", preset: "claude_code" },
 				},
@@ -205,8 +220,6 @@ async function testOnboardTypescript(): Promise<boolean> {
 			encoding: "utf-8",
 		});
 
-		installSkills(testDir);
-
 		const transcript = join(GOODPLAN_DIR, "tools/dogfood/init-transcript-test2.jsonl");
 		const simulatedUser = createTestSimulatedUser(testDir, transcript);
 
@@ -220,10 +233,10 @@ async function testOnboardTypescript(): Promise<boolean> {
 					maxTurns: MAX_TURNS,
 					maxBudgetUsd: 15,
 					model: MODEL,
-					settingSources: ["user", "project"],
+					plugins: [{ type: "local", path: PLUGIN_DIR }],
 					env: {
 						...process.env,
-						PATH: `${HOME}/.local/bin:${HOME}/bin:${process.env.PATH ?? ""}`,
+						PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
 					},
 					systemPrompt: { type: "preset", preset: "claude_code" },
 				},
@@ -253,7 +266,7 @@ async function testOnboardTypescript(): Promise<boolean> {
 
 			// Check gp status
 			try {
-				const status = gp(["status", "--json"], { cwd: testDir });
+				const status = gp(["status", "--json"], { cwd: testDir, gpBin: GP_BIN });
 				logger.log(`[test2] gp status: exit=${status.exitCode}`);
 			} catch (e) {
 				logger.log(`[test2] gp status failed: ${e instanceof Error ? e.message : String(e)}`);
@@ -287,8 +300,6 @@ async function testModeOverride(): Promise<boolean> {
 			encoding: "utf-8",
 		});
 
-		installSkills(testDir);
-
 		const transcript = join(GOODPLAN_DIR, "tools/dogfood/init-transcript-test3.jsonl");
 		const simulatedUser = createTestSimulatedUser(testDir, transcript);
 
@@ -302,10 +313,10 @@ async function testModeOverride(): Promise<boolean> {
 					maxTurns: MAX_TURNS,
 					maxBudgetUsd: 5,
 					model: MODEL,
-					settingSources: ["user", "project"],
+					plugins: [{ type: "local", path: PLUGIN_DIR }],
 					env: {
 						...process.env,
-						PATH: `${HOME}/.local/bin:${HOME}/bin:${process.env.PATH ?? ""}`,
+						PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
 					},
 					systemPrompt: { type: "preset", preset: "claude_code" },
 				},
@@ -316,7 +327,6 @@ async function testModeOverride(): Promise<boolean> {
 			});
 
 			if (isSuccess(session.result)) {
-				const text = session.result.result.toLowerCase();
 				logger.log(`[test3] Result: ${session.result.result.slice(0, 500)}`);
 
 				// Should have initialized but NOT created conventions.md or architecture
@@ -369,10 +379,11 @@ async function testAlreadyInitialized(): Promise<boolean> {
 			encoding: "utf-8",
 		});
 
-		installSkills(testDir);
-
 		// Pre-initialize .goodplan/ via CLI
-		const initResult = gp(["init", "--name", "already-init", "--json"], { cwd: testDir });
+		const initResult = gp(["init", "--name", "already-init", "--json"], {
+			cwd: testDir,
+			gpBin: GP_BIN,
+		});
 		if (initResult.exitCode !== 0) {
 			logger.log(`FAIL: Test 4 — could not pre-init: ${initResult.stdout}`);
 			return false;
@@ -406,10 +417,10 @@ async function testAlreadyInitialized(): Promise<boolean> {
 					maxTurns: 30,
 					maxBudgetUsd: 2,
 					model: MODEL,
-					settingSources: ["user", "project"],
+					plugins: [{ type: "local", path: PLUGIN_DIR }],
 					env: {
 						...process.env,
-						PATH: `${HOME}/.local/bin:${HOME}/bin:${process.env.PATH ?? ""}`,
+						PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
 					},
 					systemPrompt: { type: "preset", preset: "claude_code" },
 				},
@@ -470,15 +481,16 @@ async function testErrorPath(): Promise<boolean> {
 			{ cwd: testDir, stdio: "pipe" },
 		);
 
-		installSkills(testDir);
-
-		// Sabotage the gp binary by replacing it with a script that always fails
-		const binaryDir = join(testDir, ".claude/skills/binaries/macos-arm64");
-		const binaryPath = join(binaryDir, "gp");
-		mkdirSync(binaryDir, { recursive: true });
-		writeFileSync(binaryPath, '#!/bin/sh\necho "ERROR: gp binary corrupted" >&2\nexit 1\n', {
-			mode: 0o755,
-		});
+		// Sabotage the gp binary by creating a broken one that shadows the real one on PATH
+		const brokenBinaryDir = join(testDir, ".broken-bin");
+		mkdirSync(brokenBinaryDir, { recursive: true });
+		writeFileSync(
+			join(brokenBinaryDir, "gp"),
+			'#!/bin/sh\necho "ERROR: gp binary corrupted" >&2\nexit 1\n',
+			{
+				mode: 0o755,
+			},
+		);
 
 		const transcript = join(GOODPLAN_DIR, "tools/dogfood/init-transcript-test5.jsonl");
 		const simulatedUser = createTestSimulatedUser(testDir, transcript);
@@ -493,10 +505,10 @@ async function testErrorPath(): Promise<boolean> {
 					maxTurns: 30,
 					maxBudgetUsd: 2,
 					model: MODEL,
-					settingSources: ["user", "project"],
+					plugins: [{ type: "local", path: PLUGIN_DIR }],
 					env: {
 						...process.env,
-						PATH: `${HOME}/.local/bin:${HOME}/bin:${process.env.PATH ?? ""}`,
+						PATH: `${brokenBinaryDir}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
 					},
 					systemPrompt: { type: "preset", preset: "claude_code" },
 				},
@@ -548,7 +560,7 @@ async function main(): Promise<void> {
 
 	// Verify CLI is available
 	try {
-		const versionResult = gp(["--version", "--json"]);
+		const versionResult = gp(["--version", "--json"], { gpBin: GP_BIN });
 		if (versionResult.exitCode !== 0) throw new Error(`exit ${versionResult.exitCode}`);
 		logger.log(`[test-init] CLI version: ${versionResult.stdout.trim()}`);
 	} catch (e) {
