@@ -13,28 +13,25 @@
 ## Repo Structure
 
 ```
-scripts/
-└── install-skills.sh     # copies skills/ → ~/.claude/skills/
-skills/                   # source of truth for goodplan workflow skills
+skills/                   # source of truth for goodplan workflow skills (12 skills)
 ├── _shared/
-│   └── references/
-├── audit-architecture/
-├── audit-docs/
-├── audit-tests/
-├── capture/
-├── complete/
-├── create-architecture/
-├── create-epic/
-├── create-plan/
-├── create-slices/
-├── explore/
-├── implement-plan/
-├── migrate/
-├── project-status/
-├── refine-architecture/
-├── refine-plan/
-├── refine-slices/
-└── start-epic/
+│   └── references/       # shared review criteria, preamble, conventions
+├── audit/                # /gp:audit — dispatches to architecture/docs/tests agents
+├── complete-epic/        # /gp:complete-epic — epic completion with learnings rollup
+├── create-epic/          # /gp:create-epic — 6-phase pipeline orchestrator
+├── create-side-quest/    # /gp:create-side-quest — 4-phase pipeline for quests
+├── explore/              # /gp:explore — iterative research/brainstorm/prototype
+├── implement/            # /gp:implement — implement plan with review loops
+├── init/                 # /gp:init — initialize project (onboard or new)
+├── plan-slice/           # /gp:plan-slice — plan creation + refinement pipeline
+├── start-epic/           # /gp:start-epic — approve and activate epic
+├── status/               # /gp:status — project state query
+├── task/                 # /gp:task — quick capture of bugs/ideas
+└── upgrade/              # /gp:upgrade — migrate project state format
+agents/                   # agent definitions spawned by skills (34 total)
+├── explore-phase.md, plan-phase.md, ...  # pipeline phase agents
+├── reviewer-*.md         # 20 domain specialist reviewers
+└── audit-*-phase.md      # audit mode agents
 src/
 ├── commands/
 │   ├── epic/               # epic:create, epic:list, epic:show, epic:explore, epic:define-architecture,
@@ -49,8 +46,8 @@ src/
 │   │                       # (organizational dir; registered as flat top-level commands)
 │   ├── slice/              # slice:create, slice:list, slice:show, slice:plan, slice:refine-plan,
 │   │                       # slice:implement, slice:complete, slice:abandon
-│   ├── quest/              # quest:create, quest:list, quest:show, quest:plan, quest:refine-plan,
-│   │                       # quest:implement, quest:complete, quest:abandon
+│   ├── quest/              # quest:create, quest:list, quest:show, quest:explore, quest:plan,
+│   │                       # quest:refine-plan, quest:implement, quest:complete, quest:abandon
 │   ├── task/               # task:create, task:list, task:show, task:drop, task:convert
 │   ├── decision/           # decision:create, decision:update, decision:list, decision:show
 │   ├── learning/           # learning:rollup, learning:list
@@ -60,7 +57,7 @@ src/
 │   │   └── transitions/    # per-event transition handlers (epic-create, epic-phase, epic-refine,
 │   │                       # epic-lifecycle, epic-verify, slice-create, slice-plan, slice-submit,
 │   │                       # slice-implement, slice-complete, slice-abandon, quest-create,
-│   │                       # quest-plan, quest-implement, quest-complete, quest-abandon,
+│   │                       # quest-explore, quest-plan, quest-implement, quest-complete, quest-abandon,
 │   │                       # task-create, task-lifecycle)
 │   ├── data/               # assemble/commit/load state tree, tree types, schema registry
 │   ├── rpc/                # workflow orchestration: init, begin, complete, submit, status, types
@@ -106,5 +103,5 @@ tests/
 - **JSON output:** deterministic key ordering (alphabetical) for git merge friendliness. JSONL files are append-only.
 - **Environment variables:** `GOODPLAN_DIR` overrides default `.project/` location (useful for testing). `GOODPLAN_DEBUG=1` enables debug logging to stderr (dev/test only — use `--verbose` for production diagnostics).
 - **stdin for content:** mutations accept content via stdin (piped heredocs). Read-only commands use flags only.
-- **Skill development:** All goodplan workflow skills live in `skills/` as the source of truth. Installed to `~/.claude/skills/` via `bun run install:skills` (runs scripts/install-skills.sh). Never edit installed skills directly. Commit skill changes explaining why and what changed (per global CLAUDE.md).
-- **Skill migration:** Existing skills are copied into `skills/` at their current names and transformed in place as consolidation progresses. Git tracks the full evolution. The install script maps old and new skill names to the correct install locations throughout the transition.
+- **Skill development:** All goodplan workflow skills live in `skills/` as the source of truth (12 skills). Distributed as a Claude Code plugin via `bun run build:plugin`. Never edit installed plugin files directly. Commit skill changes explaining why and what changed (per global CLAUDE.md).
+- **Agent definitions:** Agent `.md` files in `agents/` are spawned by orchestrator skills. 20 reviewer agents + pipeline phase agents + audit mode agents (34 total).
