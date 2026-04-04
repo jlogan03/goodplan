@@ -1,10 +1,10 @@
 {
 	"activeEpic": "simplify-data-model",
-	"activeQuest": "list-pagination",
+	"activeQuest": "metric-fixes",
 	"activeSlice": "07-quality-validation",
 	"created": "2026-03-28T00:06:46.961Z",
 	"name": "goodplan",
-	"stateSignature": "b507edb6377267d85099d625e1542c4789ffb4edfcf3f37caa575c72610e8ede",
-	"updated": "2026-04-04T02:19:27.257Z",
+	"stateSignature": "ac07511d1d9de237a654d2995a98fa0c3c0704c1d9a3d85e1f37a58808e97239",
+	"updated": "2026-04-04T17:25:49.402Z",
 	"version": "1.0.3"
 }

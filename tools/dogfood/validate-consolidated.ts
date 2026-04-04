@@ -1226,9 +1226,12 @@ function checkLearningsMetrics(fixtureDir: string): MetricResult {
 		return { name: "Learnings", passed: false, detail: "gp learning:list failed" };
 	}
 
-	let learnings: Array<{ body?: string; content?: string }>;
+	let learnings: Array<{ summary?: string; detail?: string; file?: string }>;
 	try {
-		learnings = JSON.parse(learningsResult.stdout) as Array<{ body?: string; content?: string }>;
+		const parsed = JSON.parse(learningsResult.stdout) as
+			| { items: Array<{ summary?: string; detail?: string; file?: string }> }
+			| Array<{ summary?: string; detail?: string; file?: string }>;
+		learnings = Array.isArray(parsed) ? parsed : (parsed.items ?? []);
 	} catch {
 		return { name: "Learnings", passed: false, detail: "Could not parse learning:list JSON output" };
 	}
@@ -1239,7 +1242,7 @@ function checkLearningsMetrics(fixtureDir: string): MetricResult {
 	let allLong = true;
 	let shortCount = 0;
 	for (const learning of learnings) {
-		const text = learning.body ?? learning.content ?? "";
+		const text = learning.detail ?? learning.summary ?? "";
 		if (text.length < 100) {
 			allLong = false;
 			shortCount++;
