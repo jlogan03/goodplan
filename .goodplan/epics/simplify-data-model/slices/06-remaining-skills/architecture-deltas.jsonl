@@ -1,0 +1,2 @@
+{"description":"Added exploring/explored quest statuses and BEGIN_QUEST_EXPLORE/COMPLETE_QUEST_EXPLORE events. quest:plan now accepts dual precondition (created or explored).","subsystem":"State Machine","ts":"2026-04-04T01:34:43.161Z","type":"modify"}
+{"description":"Added quest-specific explore priority table (exploreQuestSources). getPriorityTable() now accepts optional Target parameter.","subsystem":"Context","ts":"2026-04-04T01:34:43.161Z","type":"modify"}

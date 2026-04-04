@@ -8,33 +8,32 @@
 - goodplan CLI main runner (`src/index.ts`): integration tests cover unknown commands, --help, --version, --json error mode, NO_COLOR, stdin validation, version compatibility checking (4 variants), --quiet suppression of warnings.
 
 ### Undertested areas
-- Runtime behavior of migrated planning/execution skills (create-plan, create-slices, refine-plan, implement-plan, refine-slices): CLI integration paths verified via grep + 19-step smoke test; refine-plan and implement-plan exercised on 01-rename-gp slice and 01-test-harness slice with full review loops
 - Signal tracking algorithm (Step 6d in complete): requires 3+ completed slices to produce data
 - Refactor Intelligence Protocol (Step 9 in complete): new detection algorithm, batch table presentation, inline fix application, side quest proposal — all untested on a real codebase
 - Maturity/invariants/fitness workflow: Steps 8f/8g/8h in define-architecture, Steps 3b/3c/3d in audit-architecture, maturity evaluation in refine-architecture, reviewer criteria 12/13 — all untested on a real project
-- Epic completion mode in /complete: new epic scope type, architecture reconciliation, artifact promotion, archive numbering — all untested on a real epic
-- Install script (`scripts/install-skills.sh`): verified manually via `bun run install:skills` + diff; no automated test
-- Plugin build script (`scripts/build-plugin.sh`): verified via `bun run build:plugin` + `claude plugin validate` + Agent SDK integration test (`tools/dogfood/test-plugin-skills.ts`) verifying skill discovery, auto-namespacing, and execution. Agent validation (frontmatter + @ reference path resolution) added by 02-plan-slice-poc.
-- Orchestrator context discipline (`verifyNoArtifactReads`): 24 unit tests covering violations, fixture exclusions, malformed input. Function tested structurally but not yet validated at opus tier for accurate instruction following.
+- Epic completion mode in /complete: new epic scope type, architecture reconciliation, artifact promotion — untested on a real epic
+- Plugin build script (`scripts/build-plugin.sh`): verified via `bun run build:plugin` with count/name assertions (12 skills, 34 agents). Agent validation (frontmatter + @ reference path resolution) exercised.
+- Orchestrator context discipline (`verifyNoArtifactReads`): 24 unit tests covering violations, fixture exclusions, malformed input. Validated at haiku tier during E2E tests (67 violations in create-side-quest = haiku ignoring discipline, not code bug).
 - Plugin hook scripts (`plugin-hooks/protect-state.sh`, `warn-bash-state.sh`): verified via manual stdin-piped tests (14 checks including edge cases), shellcheck passes, CI smoke tests in publish-plugin.yml
-- CI release pipeline (`.github/workflows/publish-plugin.yml`): verified via live v1.0.0–v1.0.2 releases — build, post-build assertion, hook smoke tests, tarball, GitHub Release, release branch publish all exercised
+- CI release pipeline (`.github/workflows/publish-plugin.yml`): verified via live v1.0.0–v1.0.2 releases
+- New skills (audit, init, create-side-quest, task, upgrade, status): E2E tests run at haiku tier — audit 4/4 passed, init 5/5 passed, create-side-quest error path passed (full pipeline needs opus). Renamed skills (task, upgrade, status) verified via 47-point static checks.
 
 ### Known fragile areas
-- Cross-skill reference paths (e.g., refine-slices references refine-plan's shared-preamble.md): if refine-plan files move, refine-slices breaks silently
-- refine-plan's shared-preamble.md borrowed by refine-architecture and refine-slices: plan-specific framing ("Plan Location") doesn't match non-plan consumers
-- `~~archived~~` prefix sort order: sorts correctly in terminal but may sort above active items in file explorers (VS Code, Finder) due to locale-aware collation (note: archive convention removed — directory renaming no longer used)
+- Agent SDK skill discovery requires both local plugin path AND installed cache sync — if cache is stale, skills silently fail as "Unknown skill"
+- Concurrent E2E test harnesses corrupt `dist/gp-plugin/` via parallel `build:plugin` runs — must run sequentially
 - epic-conventions.md is consumed by 12+ skills: changes require updating all consumers
 - citty + `exactOptionalPropertyTypes`: requires `as unknown as CommandDef` casts in `src/index.ts`. May break on citty upgrade.
 
-<!-- Last updated by: complete for 02-plan-slice-poc, 2026-04-02 -->
+<!-- Last updated by: complete for 06-remaining-skills, 2026-04-03 -->
 
 ## Performance Characteristics
 
-- Full test suite (1693 tests, 111 files): ~10.7s total including binary compilation (~50ms cached)
+- Full test suite (1750 tests, 112 files): ~10.7s total including binary compilation (~50ms cached)
 - Integration tests (~50 tests): ~10s (dominated by binary spawning)
 - Fitness tests (~350 tests): ~4s (mix of source parsing, module imports, and binary spawning)
+- Plugin build: <1s (rsync skills + agents + binary, no compilation)
 
-<!-- Last updated by: complete for 06-skill-packaging, 2026-03-30 -->
+<!-- Last updated by: complete for 06-remaining-skills, 2026-04-03 -->
 
 ## Extensibility
 
@@ -58,7 +57,7 @@
 ## Technical Debt
 
 ### Localized items
-- shared-preamble.md asymmetry: lives in refine-plan/references/ while iteration-loop.md lives in _shared/references/ — candidate for future consolidation
+- shared-preamble.md asymmetry: resolved — old refine-plan/ deleted, review-preamble.md now in _shared/references/
 - `--verbose` flag not wired: defined on all commands via `global-args.ts` but never sets `globalThis.__goodplan_verbose`. Debug logging only works via `GOODPLAN_DEBUG=1` env var. (Note: globalThis flags intentionally kept as `__goodplan_*` per rename scope decisions.)
 - `setEpicStatus` helper in `helpers.ts` is defined but unused — handlers use `setEpicJson` directly for more control. Dead code candidate.
 - loadState cache detects new/removed files but not content changes to existing JSON files. Bounded by commitState always writing fresh cache. HMAC verification on non-cache-hit paths provides a secondary detection layer.
@@ -71,15 +70,14 @@
 - State command `--inline` flag uses citty string type for forward-compatibility with budget form (`--inline=<bytes>`), but this means `--inline --query X` is misparsed (citty consumes `--query` as inline's value). Flag ordering constraint documented in convention doc.
 
 ### Systemic items
-- shared-preamble.md divergence risk: refine-plan's copy is plan-framed but borrowed by refine-architecture and refine-slices. As those skills mature, their needs may diverge. Noted as tech debt — revisit when it causes a real problem.
-- HMAC verification temporarily disabled: `verifyHmacOrThrow` logs mismatch via debug() instead of throwing. Root cause: 16 of 18 installed skills instruct agents to write directly into `.goodplan/` directories (research/, refinement/, implementation/, etc.), which invalidates the state signature. Signature is still written on every commit. Re-enable after skills are updated to only write to CLI-provided paths.
+- HMAC verification temporarily disabled: `verifyHmacOrThrow` logs mismatch via debug() instead of throwing. Root cause: skills instruct agents to write directly into `.goodplan/` directories (research/, refinement/, implementation/, etc.), which invalidates the state signature. Signature is still written on every commit. Re-enable after skills are updated to only write to CLI-provided paths.
 
-<!-- Last updated by: complete for epics/__active__skills-cli-integration/slices/01-state-command-convention-doc-tracer, 2026-03-23 -->
+<!-- Last updated by: complete for 06-remaining-skills, 2026-04-03 -->
 
 ## Recent Changes
 
-- **05-implement-pipeline** (2026-04-03): Implement orchestrator (490 lines) + complete-epic standalone skill (289 lines). 3 new agents (implement-phase, completion-slice, completion-epic). implementationPhase data model change across 4 layers (12 files). 2 dogfood test scripts. E2E: full pipeline $0.81/9.5min at haiku, re-entry works, mode isolation confirmed. 16 total agents, 1738 unit tests.
-- **04-create-epic-pipeline** (2026-04-02): 6-phase create-epic orchestrator (726 lines replacing 197), 3 phase agents (explore, architecture, slices), 3 reviewer agents (typescript, tui-cli, repo-tooling) + 3 shared reference files, test-create-epic.ts (847 lines, 4 tests). 13 total agents. E2E test: full pipeline $3.12/27min at haiku, re-entry test passed.
-- **03-data-model** (2026-04-02): Three additive data model changes — decision provenance, learning validity, overview consolidation (3→1). 102 files changed. Migration in `gp migrate`.
+- **06-remaining-skills** (2026-04-03): 19→12 skill consolidation complete. 6 new skills (create-side-quest, audit, init, task, upgrade, status), 14 new reviewer agents (20 total), 3 new audit agents, 1 new onboard agent. Quest state machine extended with exploring/explored. 15 old skills deleted, install-skills.sh removed. build-plugin.sh has 12-skill count assertion. 151 files changed (+6231/-10409). 1750 tests, 12 skills, 34 agents.
+- **05-implement-pipeline** (2026-04-03): Implement orchestrator (490 lines) + complete-epic standalone skill (289 lines). 3 new agents (implement-phase, completion-slice, completion-epic). implementationPhase data model change across 4 layers (12 files). 2 dogfood test scripts.
+- **04-create-epic-pipeline** (2026-04-02): 6-phase create-epic orchestrator (726 lines replacing 197), 3 phase agents (explore, architecture, slices), 3 reviewer agents (typescript, tui-cli, repo-tooling) + 3 shared reference files, test-create-epic.ts (847 lines, 4 tests). 13 total agents.
 
-<!-- Last updated by: complete for 05-implement-pipeline, 2026-04-03 -->
+<!-- Last updated by: complete for 06-remaining-skills, 2026-04-03 -->

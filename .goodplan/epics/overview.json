@@ -274,10 +274,10 @@
 					"status": "completed"
 				},
 				{
-					"completed": null,
+					"completed": "2026-04-04T01:34:43.161Z",
 					"created": "2026-04-01T19:27:36.493Z",
 					"name": "06-remaining-skills",
-					"status": "implementation-complete"
+					"status": "completed"
 				},
 				{
 					"completed": null,

@@ -1,0 +1,1 @@
+Slash commands like `/gp:init` in the `prompt` field are not reliably resolved by the Agent SDK from local plugin paths. The working pattern is: read the SKILL.md body, inject it into `systemPrompt.append`, and use a natural language prompt.
