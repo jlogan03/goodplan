@@ -74,17 +74,18 @@ Work through the plan phase tasks sequentially:
 4. **Stay in scope** — only modify files within the scope directory unless the plan explicitly references files outside it.
 5. **Follow conventions** — respect the project's coding style, TypeScript strictness, and architectural patterns.
 
-### 6. Auto-Format Changed Files
+### 6. Auto-Format Changed Files (MANDATORY)
 
-Before running lint, run the project's auto-formatter on all files you created or modified. This ensures formatting compliance without manual style fixes.
+**You MUST run the project's auto-formatter before proceeding to lint.** Formatting violations are the most common cause of lint failures. This step is not optional.
 
-**Detection order** (stop at first match):
-1. Check `package.json` for a `format` or `lint:fix` script → run it scoped to changed files (e.g., `bun run format -- src/foo.ts src/bar.ts`). If the script doesn't accept file arguments, run it on the scope directory.
-2. Check for `biome.json` or `biome.jsonc` → run `biome check --write <changed-files>`
-3. Check for `.prettierrc`, `.prettierrc.json`, or `prettier` in `package.json` dependencies → run `prettier --write <changed-files>`
-4. No formatter detected → skip this step, proceed to lint.
+1. Check for `biome.json` or `biome.jsonc` in the project root → run `npx biome check --write <changed-files>`
+2. Otherwise check `package.json` for a `format` or `lint:fix` script → run it (e.g., `bun run format`)
+3. Otherwise check for `.prettierrc` or `prettier` in dependencies → run `npx prettier --write <changed-files>`
+4. No formatter detected → skip.
 
-Scope to the files you changed (from your tracked changed files list), not `.` — avoid reformatting files outside your scope.
+Also auto-format `package.json` if you created or modified it: `npx biome check --write package.json` (or the project's formatter).
+
+**Verify formatting worked**: After running the formatter, run `bun run lint` (or equivalent). If lint still reports formatting errors, run the formatter again with broader scope (the project root `.` instead of individual files).
 
 ### 7. Run Lint/Build/Test
 

@@ -249,10 +249,14 @@ These are LLM-owned markdown files outside `.goodplan/` JSON state, so direct fi
 
 ## Step 7 — CLI Submit
 
-Complete the epic via CLI:
+Construct the `epic:complete` payload. The CLI accepts `verificationResults` and `learnings`:
+
+1. Read the agent's `learnings` from the completion analysis return (Step 4f). Each learning has `category`, `summary`, `detail`, `tags`, and `rollupTo`.
+2. Set `rollupTo: ["project"]` on each learning so they roll up to project scope.
+3. Construct `verificationResults` from the agent's verification data (or use `[{"index": 0, "passed": true}]` if verification was handled by the agent).
 
 ```bash
-$GP epic:complete --epic $EPIC_NAME --json
+echo '{"verificationResults": [{VERIFICATION}], "learnings": [{LEARNINGS}]}' | $GP epic:complete --epic $EPIC_NAME --json
 ```
 
 If the CLI command fails, stop with the error message.
