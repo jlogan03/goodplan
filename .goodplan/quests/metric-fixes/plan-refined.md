@@ -36,8 +36,8 @@ Fix 4 independent quality proxy metric failures discovered during Opus-tier E2E 
 - [ ] The instruction prefers `package.json` scripts (`format`, `lint:fix`) over raw config detection, scopes to changed files not `.`, and specifies skip-if-absent fallback
 
 #### Tasks
-- [ ] Edit `agents/implement-phase.md` step 6 ("Run Lint/Build/Test", lines 79-94): add a new sub-step before the lint command that instructs the agent to detect and run the project's auto-formatter with write/fix mode on changed files (scope to `filesWritten` paths or the scope directory, not `.`)
-- [ ] Add guidance text explaining: first check `package.json` for `format` or `lint:fix` scripts and prefer those (e.g., `bun run format`). Only fall back to direct tool detection if no script exists: check for `biome.json` → `biome check --write <scope>`, check for `.prettierrc`/`prettier` in package.json → `prettier --write <scope>`. Do not include `eslint --fix` in the formatter list (that is a linter fix, handled by the lint step itself). If no formatter is detected, skip this sub-step and proceed to lint.
+- [x] Edit `agents/implement-phase.md` step 6 ("Run Lint/Build/Test", lines 79-94): add a new sub-step before the lint command that instructs the agent to detect and run the project's auto-formatter with write/fix mode on changed files (scope to `filesWritten` paths or the scope directory, not `.`)
+- [x] Add guidance text explaining: first check `package.json` for `format` or `lint:fix` scripts and prefer those (e.g., `bun run format`). Only fall back to direct tool detection if no script exists: check for `biome.json` → `biome check --write <scope>`, check for `.prettierrc`/`prettier` in package.json → `prettier --write <scope>`. Do not include `eslint --fix` in the formatter list (that is a linter fix, handled by the lint step itself). If no formatter is detected, skip this sub-step and proceed to lint.
 
 #### Verification
 - Read the updated agent file and confirm the auto-fix instruction is present

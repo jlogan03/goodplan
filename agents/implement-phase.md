@@ -74,9 +74,21 @@ Work through the plan phase tasks sequentially:
 4. **Stay in scope** — only modify files within the scope directory unless the plan explicitly references files outside it.
 5. **Follow conventions** — respect the project's coding style, TypeScript strictness, and architectural patterns.
 
-### 6. Run Lint/Build/Test
+### 6. Auto-Format Changed Files
 
-After implementing all tasks, run verification commands:
+Before running lint, run the project's auto-formatter on all files you created or modified. This ensures formatting compliance without manual style fixes.
+
+**Detection order** (stop at first match):
+1. Check `package.json` for a `format` or `lint:fix` script → run it scoped to changed files (e.g., `bun run format -- src/foo.ts src/bar.ts`). If the script doesn't accept file arguments, run it on the scope directory.
+2. Check for `biome.json` or `biome.jsonc` → run `biome check --write <changed-files>`
+3. Check for `.prettierrc`, `.prettierrc.json`, or `prettier` in `package.json` dependencies → run `prettier --write <changed-files>`
+4. No formatter detected → skip this step, proceed to lint.
+
+Scope to the files you changed (from your tracked changed files list), not `.` — avoid reformatting files outside your scope.
+
+### 7. Run Lint/Build/Test
+
+After auto-formatting, run verification commands:
 
 ```bash
 # Run in order — stop on first failure
@@ -93,7 +105,7 @@ If any command fails:
 
 If you cannot fix a failure after 3 attempts, report it in your return summary with status PARTIAL.
 
-### 7. Run GREEN After-Checks
+### 8. Run GREEN After-Checks
 
 Execute each "After implementation" Expected Behavior check from the plan phase. All checks should now pass.
 
@@ -103,7 +115,7 @@ If any GREEN check fails:
 3. Re-run the check
 4. If still failing after 3 attempts, report in `redGreenResults` with `passed: false`
 
-### 8. Return Results
+### 9. Return Results
 
 Return a structured JSON as your final message.
 
