@@ -1,5 +1,8 @@
 # Plan: Fix 4 Quality Validation Metric Issues
 
+Status: COMPLETE
+Completed: 2026-04-04
+
 ## Overview
 Fix 4 independent quality proxy metric failures discovered during Opus-tier E2E harness runs: fragile plan structure regex, missing lint auto-fix in implement agent, missing learnings rollup in epic:complete, and false-positive orchestrator discipline violations from sub-agent tool call leakage.
 
