@@ -108,35 +108,35 @@ Fix 4 independent quality proxy metric failures discovered during Opus-tier E2E 
 
 #### Expected Behavior
 **Before implementation** (should fail / show absence):
-- [ ] `checkOrchestratorDiscipline` calls `verifyNoArtifactReads(ctx.allToolCalls)` where `ctx.allToolCalls` is populated from `createToolCallTracker`'s `onMessage` handler — this captures ALL tool calls including sub-agent Read calls, producing false positives
-- [ ] `runSkillSession` in `utils.ts` detects state write violations via `canUseTool` (orchestrator-only) but does not track artifact read violations there
+- [x] `checkOrchestratorDiscipline` calls `verifyNoArtifactReads(ctx.allToolCalls)` where `ctx.allToolCalls` is populated from `createToolCallTracker`'s `onMessage` handler — this captures ALL tool calls including sub-agent Read calls, producing false positives
+- [x] `runSkillSession` in `utils.ts` detects state write violations via `canUseTool` (orchestrator-only) but does not track artifact read violations there
 
 **After implementation** (should pass / show presence):
-- [ ] `runSkillSession` in `utils.ts` tracks artifact read violations via `canUseTool` interceptor (orchestrator-level only), storing them in the returned `SkillSessionResult`
-- [ ] `SkillSessionResult` includes a new `artifactReadViolations: string[]` field
-- [ ] `checkOrchestratorDiscipline` in validate-consolidated.ts uses accumulated `artifactReadViolations` from `SkillSessionResult` instead of running `verifyNoArtifactReads` on the full `allToolCalls` list
-- [ ] Sub-agent Read calls no longer produce false positive violations
+- [x] `runSkillSession` in `utils.ts` tracks artifact read violations via `canUseTool` interceptor (orchestrator-level only), storing them in the returned `SkillSessionResult`
+- [x] `SkillSessionResult` includes a new `artifactReadViolations: string[]` field
+- [x] `checkOrchestratorDiscipline` in validate-consolidated.ts uses accumulated `artifactReadViolations` from `SkillSessionResult` instead of running `verifyNoArtifactReads` on the full `allToolCalls` list
+- [x] Sub-agent Read calls no longer produce false positive violations
 
 #### Tasks
 
 **4a. Diagnostic step** (before implementing):
-- [ ] Add temporary logging in `createToolCallTracker`'s `onMessage` handler to confirm sub-agent tool calls are indeed appearing in `allToolCalls`. If they are NOT, the root cause analysis is wrong and Phase 4 is unnecessary. Proceed only if confirmed
+- [x] Add temporary logging in `createToolCallTracker`'s `onMessage` handler to confirm sub-agent tool calls are indeed appearing in `allToolCalls`. If they are NOT, the root cause analysis is wrong and Phase 4 is unnecessary. Proceed only if confirmed
 
 **4b. Utils artifact read detection** (`tools/dogfood/utils.ts`):
-- [ ] Add a new function `checkArtifactRead(toolName: string, input: unknown): string | null` that checks if a tool call is an artifact read violation (extract the matching logic from `verifyNoArtifactReads` into a single-call version that returns the violation string or null)
-- [ ] Add `artifactReadViolations: string[]` to the `SkillSessionResult` interface
-- [ ] In `runSkillSession`, add artifact read violation detection to the `composedCanUseTool` handler (alongside the existing `checkViolation` call): when `checkArtifactRead` returns a non-null string, push it to a local `artifactReadViolations` array
-- [ ] Include `artifactReadViolations` in the returned `SkillSessionResult`
+- [x] Add a new function `checkArtifactRead(toolName: string, input: unknown): string | null` that checks if a tool call is an artifact read violation (extract the matching logic from `verifyNoArtifactReads` into a single-call version that returns the violation string or null)
+- [x] Add `artifactReadViolations: string[]` to the `SkillSessionResult` interface
+- [x] In `runSkillSession`, add artifact read violation detection to the `composedCanUseTool` handler (alongside the existing `checkViolation` call): when `checkArtifactRead` returns a non-null string, push it to a local `artifactReadViolations` array
+- [x] Include `artifactReadViolations` in the returned `SkillSessionResult`
 
 **4c. Harness metric — validate-consolidated.ts**:
-- [ ] Add `allArtifactReadViolations: string[]` to the `PipelineContext` interface
-- [ ] After each `runSkill` call, push `result.sessionResult.artifactReadViolations` into `ctx.allArtifactReadViolations`
-- [ ] Update `checkOrchestratorDiscipline` to accept `artifactReadViolations: string[]` instead of `allToolCalls`, and check that array's length instead of calling `verifyNoArtifactReads`
-- [ ] Update the metrics section to pass `ctx.allArtifactReadViolations` to `checkOrchestratorDiscipline`
+- [x] Add `allArtifactReadViolations: string[]` to the `PipelineContext` interface
+- [x] After each `runSkill` call, push `result.sessionResult.artifactReadViolations` into `ctx.allArtifactReadViolations`
+- [x] Update `checkOrchestratorDiscipline` to accept `artifactReadViolations: string[]` instead of `allToolCalls`, and check that array's length instead of calling `verifyNoArtifactReads`
+- [x] Update the metrics section to pass `ctx.allArtifactReadViolations` to `checkOrchestratorDiscipline`
 
 **4d. Update all other harness consumers**:
-- [ ] Update all other harness files that call `verifyNoArtifactReads(tracker.toolCalls)` to use `artifactReadViolations` from `SkillSessionResult` instead. Known consumers: `test-implement.ts` (lines 567, 768), `test-plan-slice.ts` (line 363), `test-create-epic.ts` (lines 447, 636), `test-complete-epic.ts` (line 570), `test-create-side-quest.ts` (lines 347, 547)
-- [ ] Keep `verifyNoArtifactReads` exported from utils.ts but mark with a `@deprecated` JSDoc comment pointing to `SkillSessionResult.artifactReadViolations`
+- [x] Update all other harness files that call `verifyNoArtifactReads(tracker.toolCalls)` to use `artifactReadViolations` from `SkillSessionResult` instead. Known consumers: `test-implement.ts` (lines 567, 768), `test-plan-slice.ts` (line 363), `test-create-epic.ts` (lines 447, 636), `test-complete-epic.ts` (line 570), `test-create-side-quest.ts` (lines 347, 547)
+- [x] Keep `verifyNoArtifactReads` exported from utils.ts but mark with a `@deprecated` JSDoc comment pointing to `SkillSessionResult.artifactReadViolations`
 
 #### Verification
 - Run `bun run lint` to confirm no lint errors

@@ -32,7 +32,6 @@ import {
 	runSkillSession,
 	tierDefault,
 	verifyEntityStatus,
-	verifyNoArtifactReads,
 } from "./utils";
 import type { CliResult, SkillSessionResult } from "./utils";
 
@@ -579,6 +578,7 @@ interface PipelineContext {
 	fixtureDir: string;
 	allToolCalls: Array<{ toolName: string; input: unknown }>;
 	allViolations: string[];
+	allArtifactReadViolations: string[];
 	skillCosts: Array<{ skill: string; cost: number }>;
 }
 
@@ -607,6 +607,7 @@ async function stepInit(ctx: PipelineContext): Promise<boolean> {
 	ctx.allToolCalls.push(...result.tracker.toolCalls);
 	if (result.sessionResult) {
 		ctx.allViolations.push(...result.sessionResult.violations);
+		ctx.allArtifactReadViolations.push(...result.sessionResult.artifactReadViolations);
 		ctx.skillCosts.push({ skill: "init", cost: result.sessionResult.totalCost });
 	}
 
@@ -659,6 +660,7 @@ async function stepCreateEpic(ctx: PipelineContext): Promise<boolean> {
 	ctx.allToolCalls.push(...result.tracker.toolCalls);
 	if (result.sessionResult) {
 		ctx.allViolations.push(...result.sessionResult.violations);
+		ctx.allArtifactReadViolations.push(...result.sessionResult.artifactReadViolations);
 		ctx.skillCosts.push({ skill: "create-epic", cost: result.sessionResult.totalCost });
 	}
 
@@ -848,6 +850,7 @@ async function stepPlanSlice(ctx: PipelineContext): Promise<boolean> {
 	ctx.allToolCalls.push(...result.tracker.toolCalls);
 	if (result.sessionResult) {
 		ctx.allViolations.push(...result.sessionResult.violations);
+		ctx.allArtifactReadViolations.push(...result.sessionResult.artifactReadViolations);
 		ctx.skillCosts.push({ skill: "plan-slice", cost: result.sessionResult.totalCost });
 	}
 
@@ -901,6 +904,7 @@ async function stepImplement(ctx: PipelineContext): Promise<boolean> {
 	ctx.allToolCalls.push(...result.tracker.toolCalls);
 	if (result.sessionResult) {
 		ctx.allViolations.push(...result.sessionResult.violations);
+		ctx.allArtifactReadViolations.push(...result.sessionResult.artifactReadViolations);
 		ctx.skillCosts.push({ skill: "implement", cost: result.sessionResult.totalCost });
 	}
 
@@ -938,6 +942,7 @@ async function stepCreateSideQuest(ctx: PipelineContext): Promise<boolean> {
 	ctx.allToolCalls.push(...result.tracker.toolCalls);
 	if (result.sessionResult) {
 		ctx.allViolations.push(...result.sessionResult.violations);
+		ctx.allArtifactReadViolations.push(...result.sessionResult.artifactReadViolations);
 		ctx.skillCosts.push({ skill: "create-side-quest", cost: result.sessionResult.totalCost });
 	}
 
@@ -974,6 +979,7 @@ async function stepAudit(ctx: PipelineContext): Promise<boolean> {
 	ctx.allToolCalls.push(...result.tracker.toolCalls);
 	if (result.sessionResult) {
 		ctx.allViolations.push(...result.sessionResult.violations);
+		ctx.allArtifactReadViolations.push(...result.sessionResult.artifactReadViolations);
 		ctx.skillCosts.push({ skill: "audit", cost: result.sessionResult.totalCost });
 	}
 
@@ -1033,6 +1039,7 @@ async function stepCompleteEpic(ctx: PipelineContext): Promise<boolean> {
 	ctx.allToolCalls.push(...result.tracker.toolCalls);
 	if (result.sessionResult) {
 		ctx.allViolations.push(...result.sessionResult.violations);
+		ctx.allArtifactReadViolations.push(...result.sessionResult.artifactReadViolations);
 		ctx.skillCosts.push({ skill: "complete-epic", cost: result.sessionResult.totalCost });
 	}
 
@@ -1269,15 +1276,15 @@ function checkLearningsMetrics(fixtureDir: string): MetricResult {
 }
 
 function checkOrchestratorDiscipline(
-	allToolCalls: Array<{ toolName: string; input: unknown }>,
+	artifactReadViolations: string[],
 ): MetricResult {
-	const artifactCheck = verifyNoArtifactReads(allToolCalls);
+	const ok = artifactReadViolations.length === 0;
 	return {
 		name: "Orchestrator Discipline",
-		passed: artifactCheck.ok,
-		detail: artifactCheck.ok
+		passed: ok,
+		detail: ok
 			? "No artifact read violations detected"
-			: `${artifactCheck.violations.length} violation(s): ${artifactCheck.violations.slice(0, 3).join(", ")}`,
+			: `${artifactReadViolations.length} violation(s): ${artifactReadViolations.slice(0, 3).join(", ")}`,
 	};
 }
 
@@ -1326,6 +1333,7 @@ async function main(): Promise<void> {
 		fixtureDir,
 		allToolCalls: [],
 		allViolations: [],
+		allArtifactReadViolations: [],
 		skillCosts: [],
 	};
 
@@ -1366,7 +1374,7 @@ async function main(): Promise<void> {
 		checkReviewMetrics(fixtureDir, EPIC_NAME),
 		checkImplementationMetrics(fixtureDir),
 		checkLearningsMetrics(fixtureDir),
-		checkOrchestratorDiscipline(ctx.allToolCalls),
+		checkOrchestratorDiscipline(ctx.allArtifactReadViolations),
 	];
 
 	for (const metric of metrics) {

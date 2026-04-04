@@ -631,6 +631,8 @@ export function createAskUserHandler(simulatedUser: SimulatedUser): CanUseTool {
 export interface SkillSessionResult {
 	result: SDKResultMessage;
 	violations: string[];
+	/** Artifact read violations detected at the orchestrator level via `canUseTool`. */
+	artifactReadViolations: string[];
 	totalCost: number;
 }
 
@@ -643,6 +645,7 @@ export async function runSkillSession(opts: {
 	onMessage?: (msg: SDKMessage) => void;
 }): Promise<SkillSessionResult> {
 	const violations: string[] = [];
+	const artifactReadViolations: string[] = [];
 	const costTracker = createCostTracker();
 
 	// Compose canUseTool from simulatedUser + violation detection
@@ -652,9 +655,16 @@ export async function runSkillSession(opts: {
 	const askUserHandler = opts.simulatedUser ? createAskUserHandler(opts.simulatedUser) : undefined;
 
 	const composedCanUseTool: CanUseTool = async (toolName, input, toolOpts) => {
-		// Violation detection first
+		// Violation detection first (state write integrity)
 		if (opts.checkViolations) {
 			checkViolation(toolName, input, violations);
+		}
+
+		// Artifact read discipline (orchestrator-level only — canUseTool
+		// does not fire for sub-agent calls, avoiding false positives)
+		const artifactViolation = checkArtifactRead(toolName, input);
+		if (artifactViolation) {
+			artifactReadViolations.push(artifactViolation);
 		}
 
 		// Simulated user handling
@@ -712,6 +722,7 @@ export async function runSkillSession(opts: {
 	return {
 		result: resultMessage,
 		violations,
+		artifactReadViolations,
 		totalCost: costTracker.total(),
 	};
 }
@@ -751,6 +762,48 @@ const PROJECT_ONLY_PATTERNS: RegExp[] = [
 	/\bagents\//,
 ];
 
+/**
+ * Check if a single tool call is an artifact read violation.
+ * Returns a violation description string, or null if no violation.
+ *
+ * Extracted from `verifyNoArtifactReads` for use in the `canUseTool` interceptor
+ * where tool calls are checked one at a time (orchestrator-level only).
+ */
+export function checkArtifactRead(toolName: string, input: unknown): string | null {
+	if (toolName !== "Read") return null;
+
+	if (typeof input !== "object" || input === null || Array.isArray(input)) return null;
+
+	const record = input as Record<string, unknown>;
+	const filePath = typeof record.file_path === "string" ? record.file_path : "";
+
+	if (!filePath) return null;
+
+	for (const pattern of ARTIFACT_PATH_PATTERNS) {
+		if (pattern.test(filePath)) {
+			return `Read on ${filePath}`;
+		}
+	}
+
+	// Project-only patterns: skip paths under /tmp/ (fixture directories)
+	const isFixturePath = filePath.startsWith("/tmp/") || filePath.startsWith("/var/folders/");
+	if (!isFixturePath) {
+		for (const pattern of PROJECT_ONLY_PATTERNS) {
+			if (pattern.test(filePath)) {
+				return `Read on ${filePath}`;
+			}
+		}
+	}
+
+	return null;
+}
+
+/**
+ * @deprecated Use `SkillSessionResult.artifactReadViolations` instead, which captures
+ * violations at the orchestrator level via `canUseTool`. This function operates on
+ * the full `onMessage` tool call stream which includes sub-agent calls, producing
+ * false positives.
+ */
 export function verifyNoArtifactReads(
 	toolCalls: Array<{ toolName: string; input: unknown }>,
 ): { ok: boolean; violations: string[] } {

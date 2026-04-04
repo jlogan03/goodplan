@@ -31,7 +31,6 @@ import {
 	runSkillSession,
 	tierDefault,
 	verifyEntityStatus,
-	verifyNoArtifactReads,
 } from "./utils";
 
 // ─── CLI Arg Parsing ────────────────────────────────────────
@@ -564,12 +563,12 @@ async function testFullPipeline(): Promise<boolean> {
 	}
 
 	// Test 1d: Orchestrator discipline — no artifact reads
-	const artifactCheck = verifyNoArtifactReads(tracker.toolCalls);
-	if (artifactCheck.ok) {
+	const artifactViolations = sessionResult?.artifactReadViolations ?? [];
+	if (artifactViolations.length === 0) {
 		logger.log("PASS: No orchestrator-level artifact reads detected");
 	} else {
-		logger.log(`FAIL: ${artifactCheck.violations.length} artifact read violation(s):`);
-		for (const v of artifactCheck.violations) {
+		logger.log(`FAIL: ${artifactViolations.length} artifact read violation(s):`);
+		for (const v of artifactViolations) {
 			logger.log(`  - ${v}`);
 		}
 		allPassed = false;
@@ -765,12 +764,12 @@ async function testReentry(): Promise<boolean> {
 	}
 
 	// Discipline check
-	const artifactCheck = verifyNoArtifactReads(tracker.toolCalls);
-	if (artifactCheck.ok) {
+	const artifactViolations = sessionResult?.artifactReadViolations ?? [];
+	if (artifactViolations.length === 0) {
 		logger.log("PASS: No orchestrator-level artifact reads detected");
 	} else {
-		logger.log(`FAIL: ${artifactCheck.violations.length} artifact read violation(s):`);
-		for (const v of artifactCheck.violations) {
+		logger.log(`FAIL: ${artifactViolations.length} artifact read violation(s):`);
+		for (const v of artifactViolations) {
 			logger.log(`  - ${v}`);
 		}
 		allPassed = false;

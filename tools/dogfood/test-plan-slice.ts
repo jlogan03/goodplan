@@ -29,7 +29,6 @@ import {
 	runSkillSession,
 	tierDefault,
 	verifyEntityStatus,
-	verifyNoArtifactReads,
 } from "./utils";
 
 // ─── CLI Arg Parsing ────────────────────────────────────────
@@ -360,12 +359,12 @@ async function main(): Promise<void> {
 	}
 
 	// Test 2: Orchestrator discipline — no artifact reads
-	const artifactCheck = verifyNoArtifactReads(toolCalls);
-	if (artifactCheck.ok) {
+	const artifactViolations = sessionResult?.artifactReadViolations ?? [];
+	if (artifactViolations.length === 0) {
 		logger.log("PASS: No orchestrator-level artifact reads detected");
 	} else {
-		logger.log(`FAIL: ${artifactCheck.violations.length} artifact read violation(s):`);
-		for (const v of artifactCheck.violations) {
+		logger.log(`FAIL: ${artifactViolations.length} artifact read violation(s):`);
+		for (const v of artifactViolations) {
 			logger.log(`  - ${v}`);
 		}
 		allPassed = false;
