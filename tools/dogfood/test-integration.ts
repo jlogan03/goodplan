@@ -105,6 +105,7 @@ async function main(): Promise<void> {
 				maxTurns: 50,
 				maxBudgetUsd: 2,
 				model: MODEL,
+				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
 				env: {
 					...process.env,

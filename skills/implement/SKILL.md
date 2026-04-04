@@ -305,15 +305,24 @@ If the user chooses to stop, preserve temp directory and halt.
 
 ### 5.5. Post-Phase Checks
 
-After the review loop passes, run lint/build/test checks:
+After the review loop passes, auto-format changed files and run lint/build/test checks. The orchestrator runs these directly — do not rely on the agent to have done it.
 
 ```bash
-# Run project-specific checks — adapt commands to the project
+# 1. Auto-format changed files (detect formatter from project config)
+# Check for biome.json → npx biome check --write <changed-files>
+# Or check package.json for "format" script → bun run format
+# Or check for .prettierrc → npx prettier --write <changed-files>
+# Also format package.json if it was modified
+
+# 2. Run project-specific checks — adapt commands to the project
+bun run lint 2>&1 | tail -20
 bun run build 2>&1 | tail -20
 bun test 2>&1 | tail -40
 ```
 
-If checks fail, log the failure and surface to user via AskUserQuestion: "Post-phase checks failed: {summary}. Re-enter review loop / Continue anyway / Stop?"
+If lint fails after auto-format, re-run the formatter with broader scope (`.` instead of individual files). If it still fails, the remaining issues are code-level (not formatting) — feed them back into the review loop.
+
+If build or test fails, log the failure and surface to user via AskUserQuestion: "Post-phase checks failed: {summary}. Re-enter review loop / Continue anyway / Stop?"
 
 ### 5.6. Orchestrator Commits
 

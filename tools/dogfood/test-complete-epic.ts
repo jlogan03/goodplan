@@ -16,7 +16,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import {
@@ -78,38 +78,6 @@ if (!existsSync(GP_BIN)) {
 // Use dist binary for ALL CLI operations (including createMinimalFixture)
 // to ensure schema consistency between fixture creation and test assertions.
 process.env.GP_CLI_PATH = GP_BIN;
-
-// Sync new skills from dist to installed cache so the Agent SDK can discover them.
-const installedSkillsDir = join(
-	HOME,
-	".claude/plugins/cache/goodplan-marketplace/goodplan",
-);
-try {
-	const versions = readdirSync(installedSkillsDir)
-		.filter((d: string) => statSync(join(installedSkillsDir, d)).isDirectory())
-		.sort()
-		.reverse();
-	const latestVersion = versions[0];
-	if (latestVersion) {
-		const installedPluginDir = join(installedSkillsDir, latestVersion);
-		// Sync complete-epic skill to installed cache
-		const srcSkill = join(PLUGIN_DIR, "skills", "complete-epic");
-		const dstSkill = join(installedPluginDir, "skills", "complete-epic");
-		if (existsSync(srcSkill)) {
-			execFileSync("rsync", ["-a", "--exclude", ".DS_Store", `${srcSkill}/`, `${dstSkill}/`]);
-			console.log("[test-complete-epic] Synced complete-epic skill to installed cache");
-		}
-		// Sync agents to installed cache
-		const srcAgents = join(PLUGIN_DIR, "agents");
-		const dstAgents = join(installedPluginDir, "agents");
-		if (existsSync(srcAgents)) {
-			execFileSync("rsync", ["-a", "--exclude", ".DS_Store", `${srcAgents}/`, `${dstAgents}/`]);
-			console.log("[test-complete-epic] Synced agents to installed cache");
-		}
-	}
-} catch (err) {
-	console.warn("[test-complete-epic] WARN: Could not sync to installed cache:", err instanceof Error ? err.message : String(err));
-}
 
 // ─── Logging ────────────────────────────────────────────────
 
@@ -456,6 +424,7 @@ async function testFullPipeline(): Promise<boolean> {
 				maxTurns: 300,
 				maxBudgetUsd: 20,
 				model: MODEL,
+				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
 				env: {
 					...process.env,

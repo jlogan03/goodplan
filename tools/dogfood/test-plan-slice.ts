@@ -16,7 +16,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import {
@@ -91,39 +91,6 @@ if (!existsSync(PLUGIN_DIR)) {
 if (!existsSync(GP_BIN)) {
 	console.error("FATAL: Plugin binary not found at", GP_BIN);
 	process.exit(1);
-}
-
-// Sync new skills from dist to installed cache so the Agent SDK can discover them.
-// The Agent SDK loads plugin skills from the installed cache, not from the local dist.
-const installedSkillsDir = join(
-	HOME,
-	".claude/plugins/cache/goodplan-marketplace/goodplan",
-);
-try {
-	const versions = readdirSync(installedSkillsDir)
-		.filter((d: string) => statSync(join(installedSkillsDir, d)).isDirectory())
-		.sort()
-		.reverse();
-	const latestVersion = versions[0];
-	if (latestVersion) {
-		const installedPluginDir = join(installedSkillsDir, latestVersion);
-		// Sync plan-slice skill to installed cache
-		const srcSkill = join(PLUGIN_DIR, "skills", "plan-slice");
-		const dstSkill = join(installedPluginDir, "skills", "plan-slice");
-		if (existsSync(srcSkill) && !existsSync(dstSkill)) {
-			execFileSync("cp", ["-r", srcSkill, dstSkill]);
-			console.log("[test-plan-slice] Synced plan-slice skill to installed cache");
-		}
-		// Sync agents to installed cache
-		const srcAgents = join(PLUGIN_DIR, "agents");
-		const dstAgents = join(installedPluginDir, "agents");
-		if (existsSync(srcAgents)) {
-			execFileSync("rsync", ["-a", "--exclude", ".DS_Store", `${srcAgents}/`, `${dstAgents}/`]);
-			console.log("[test-plan-slice] Synced agents to installed cache");
-		}
-	}
-} catch (err) {
-	console.warn("[test-plan-slice] WARN: Could not sync to installed cache:", err instanceof Error ? err.message : String(err));
 }
 
 // ─── Logging ────────────────────────────────────────────────
@@ -300,6 +267,7 @@ async function main(): Promise<void> {
 				maxTurns: 300,
 				maxBudgetUsd: 20,
 				model: MODEL,
+				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
 				env: {
 					...process.env,

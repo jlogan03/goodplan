@@ -100,37 +100,7 @@ if (!existsSync(GP_BIN)) {
 	process.exit(1);
 }
 
-// Sync skills and agents from dist to installed cache so the Agent SDK discovers them
-const installedSkillsDir = join(HOME, ".claude/plugins/cache/goodplan-marketplace/goodplan");
-try {
-	const versions = readdirSync(installedSkillsDir)
-		.filter((d: string) => statSync(join(installedSkillsDir, d)).isDirectory())
-		.sort()
-		.reverse();
-	const latestVersion = versions[0];
-	if (latestVersion) {
-		const installedPluginDir = join(installedSkillsDir, latestVersion);
-		// Sync all skills
-		const srcSkills = join(PLUGIN_DIR, "skills");
-		const dstSkills = join(installedPluginDir, "skills");
-		if (existsSync(srcSkills)) {
-			execFileSync("rsync", ["-a", "--exclude", ".DS_Store", `${srcSkills}/`, `${dstSkills}/`]);
-			console.log("[validate-consolidated] Synced all skills to installed cache");
-		}
-		// Sync agents
-		const srcAgents = join(PLUGIN_DIR, "agents");
-		const dstAgents = join(installedPluginDir, "agents");
-		if (existsSync(srcAgents)) {
-			execFileSync("rsync", ["-a", "--exclude", ".DS_Store", `${srcAgents}/`, `${dstAgents}/`]);
-			console.log("[validate-consolidated] Synced agents to installed cache");
-		}
-	}
-} catch (err) {
-	console.warn(
-		"[validate-consolidated] WARN: Could not sync to installed cache:",
-		err instanceof Error ? err.message : String(err),
-	);
-}
+// Local plugin path (PLUGIN_DIR) is passed directly to Agent SDK — no cache sync needed.
 
 // ─── Logging ────────────────────────────────────────────────
 
@@ -529,6 +499,7 @@ async function runSkill(opts: {
 				maxTurns: opts.maxTurns ?? 400,
 				maxBudgetUsd: opts.maxBudgetUsd ?? 30,
 				model: MODEL,
+				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
 				env: {
 					...process.env,

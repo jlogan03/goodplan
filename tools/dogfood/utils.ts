@@ -8,7 +8,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { appendFileSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import type {
@@ -31,38 +31,21 @@ export function platformBinaryDir(): string {
 function resolveDefaultGpBin(): string {
 	if (process.env.GP_CLI_PATH) return process.env.GP_CLI_PATH;
 
-	// Find the latest version in the plugin cache (avoids hardcoding version/arch)
-	const cacheBase = join(
-		process.env.HOME ?? "",
-		".claude/plugins/cache/goodplan-marketplace/goodplan",
-	);
+	// Use the local dist plugin binary — fully isolated from user's installed cache.
+	const distBin = join(import.meta.dir, "../..", "dist/gp-plugin/binaries", platformBinaryDir(), "gp");
 	try {
-		const versions = readdirSync(cacheBase)
-			.filter((d: string) => statSync(join(cacheBase, d)).isDirectory())
-			.sort()
-			.reverse();
-		if (versions.length > 0) {
-			const first = versions[0];
-			if (!first) return ""; // unreachable given length check above, satisfies noUncheckedIndexedAccess
-			const candidate = join(cacheBase, first, "binaries", platformBinaryDir(), "gp");
-			if (statSync(candidate, { throwIfNoEntry: false })) {
-				return candidate;
-			}
+		if (statSync(distBin, { throwIfNoEntry: false })) {
+			return distBin;
 		}
 	} catch {
-		// Fall through to hardcoded fallback
+		// Fall through
 	}
 
-	// Last resort fallback — version string will go stale as the binary advances
-	const fallback = join(
-		process.env.HOME ?? "",
-		".claude/plugins/cache/goodplan-marketplace/goodplan/1.0.2/binaries/macos-arm64/gp",
-	);
 	console.warn(
-		"[resolveDefaultGpBin] Using hardcoded fallback path (version 1.0.2 / macos-arm64). " +
-			"Set GP_CLI_PATH or ensure the plugin cache is populated to avoid stale paths.",
+		"[resolveDefaultGpBin] dist plugin binary not found. Run `bun run build:plugin` first, " +
+			"or set GP_CLI_PATH to override.",
 	);
-	return fallback;
+	return distBin;
 }
 
 const DEFAULT_GP_BIN = resolveDefaultGpBin();
@@ -454,6 +437,7 @@ export function createSimulatedUser(opts: {
 			systemPrompt: opts.systemPrompt,
 			permissionMode: "bypassPermissions",
 			allowDangerouslySkipPermissions: true,
+			settingSources: [],
 			abortController,
 			allowedTools: ["Read", "Grep", "Glob"],
 			maxTurns: 200, // generous — session is long-lived across many questions

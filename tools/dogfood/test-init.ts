@@ -13,7 +13,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import {
 	createLogger,
@@ -81,36 +81,6 @@ if (!existsSync(PLUGIN_DIR)) {
 if (!existsSync(GP_BIN)) {
 	console.error("FATAL: Plugin binary not found at", GP_BIN);
 	process.exit(1);
-}
-
-// Sync new skills from dist to installed cache so the Agent SDK can discover them.
-const installedSkillsDir = join(
-	HOME,
-	".claude/plugins/cache/goodplan-marketplace/goodplan",
-);
-try {
-	const versions = readdirSync(installedSkillsDir)
-		.filter((d: string) => statSync(join(installedSkillsDir, d)).isDirectory())
-		.sort()
-		.reverse();
-	const latestVersion = versions[0];
-	if (latestVersion) {
-		const installedPluginDir = join(installedSkillsDir, latestVersion);
-		const srcSkill = join(PLUGIN_DIR, "skills", "init");
-		const dstSkill = join(installedPluginDir, "skills", "init");
-		if (existsSync(srcSkill)) {
-			execFileSync("rsync", ["-a", "--exclude", ".DS_Store", `${srcSkill}/`, `${dstSkill}/`]);
-			console.log("[test-init] Synced init skill to installed cache");
-		}
-		const srcAgents = join(PLUGIN_DIR, "agents");
-		const dstAgents = join(installedPluginDir, "agents");
-		if (existsSync(srcAgents)) {
-			execFileSync("rsync", ["-a", "--exclude", ".DS_Store", `${srcAgents}/`, `${dstAgents}/`]);
-			console.log("[test-init] Synced agents to installed cache");
-		}
-	}
-} catch (err) {
-	console.warn("[test-init] WARN: Could not sync to installed cache:", err instanceof Error ? err.message : String(err));
 }
 
 // ─── Logging ─────────────────────────────────────────────────
@@ -202,6 +172,7 @@ async function testEmptyDir(): Promise<boolean> {
 					maxTurns: MAX_TURNS,
 					maxBudgetUsd: 5,
 					model: MODEL,
+					settingSources: [],
 					plugins: [{ type: "local", path: PLUGIN_DIR }],
 					env: {
 						...process.env,
@@ -284,6 +255,7 @@ async function testOnboardTypescript(): Promise<boolean> {
 					maxTurns: MAX_TURNS,
 					maxBudgetUsd: 15,
 					model: MODEL,
+					settingSources: [],
 					plugins: [{ type: "local", path: PLUGIN_DIR }],
 					env: {
 						...process.env,
@@ -376,6 +348,7 @@ async function testModeOverride(): Promise<boolean> {
 					maxTurns: MAX_TURNS,
 					maxBudgetUsd: 5,
 					model: MODEL,
+					settingSources: [],
 					plugins: [{ type: "local", path: PLUGIN_DIR }],
 					env: {
 						...process.env,
@@ -492,6 +465,7 @@ async function testAlreadyInitialized(): Promise<boolean> {
 					maxTurns: 30,
 					maxBudgetUsd: 2,
 					model: MODEL,
+					settingSources: [],
 					plugins: [{ type: "local", path: PLUGIN_DIR }],
 					env: {
 						...process.env,
@@ -592,6 +566,7 @@ async function testErrorPath(): Promise<boolean> {
 					maxTurns: 30,
 					maxBudgetUsd: 2,
 					model: MODEL,
+					settingSources: [],
 					plugins: [{ type: "local", path: PLUGIN_DIR }],
 					env: {
 						...process.env,

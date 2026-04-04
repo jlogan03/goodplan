@@ -16,7 +16,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import {
@@ -70,39 +70,6 @@ if (!existsSync(PLUGIN_DIR)) {
 if (!existsSync(GP_BIN)) {
 	console.error("FATAL: Plugin binary not found at", GP_BIN);
 	process.exit(1);
-}
-
-// Sync skills and agents from dist to installed cache
-const installedSkillsDir = join(HOME, ".claude/plugins/cache/goodplan-marketplace/goodplan");
-try {
-	const versions = readdirSync(installedSkillsDir)
-		.filter((d: string) => statSync(join(installedSkillsDir, d)).isDirectory())
-		.sort()
-		.reverse();
-	const latestVersion = versions[0];
-	if (latestVersion) {
-		const installedPluginDir = join(installedSkillsDir, latestVersion);
-		// Sync audit skill to installed cache
-		const srcSkill = join(PLUGIN_DIR, "skills", "audit");
-		const dstSkill = join(installedPluginDir, "skills", "audit");
-		if (existsSync(srcSkill)) {
-			mkdirSync(dstSkill, { recursive: true });
-			execFileSync("rsync", ["-a", "--exclude", ".DS_Store", `${srcSkill}/`, `${dstSkill}/`]);
-			console.log("[test-audit] Synced audit skill to installed cache");
-		}
-		// Sync agents to installed cache
-		const srcAgents = join(PLUGIN_DIR, "agents");
-		const dstAgents = join(installedPluginDir, "agents");
-		if (existsSync(srcAgents)) {
-			execFileSync("rsync", ["-a", "--exclude", ".DS_Store", `${srcAgents}/`, `${dstAgents}/`]);
-			console.log("[test-audit] Synced agents to installed cache");
-		}
-	}
-} catch (err) {
-	console.warn(
-		"[test-audit] WARN: Could not sync to installed cache:",
-		err instanceof Error ? err.message : String(err),
-	);
 }
 
 // ─── Logging ────────────────────────────────────────────────
@@ -464,6 +431,7 @@ async function testAuditMode(mode: string, fixtureDir: string): Promise<boolean>
 				maxTurns: 200,
 				maxBudgetUsd: 15,
 				model: MODEL,
+				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
 				env: {
 					...process.env,
@@ -587,6 +555,7 @@ async function testInvalidMode(fixtureDir: string): Promise<boolean> {
 				maxTurns: 50,
 				maxBudgetUsd: 5,
 				model: MODEL,
+				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
 				env: {
 					...process.env,

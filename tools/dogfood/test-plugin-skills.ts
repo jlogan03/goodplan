@@ -91,6 +91,7 @@ async function testSkillDiscovery(): Promise<boolean> {
 				maxTurns: 10,
 				maxBudgetUsd: 1,
 				model: MODEL,
+				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
 				systemPrompt: {
 					type: "preset",
@@ -150,6 +151,7 @@ async function testProjectStatus(): Promise<boolean> {
 				maxTurns: 50,
 				maxBudgetUsd: 3,
 				model: MODEL,
+				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
 				env: {
 					...process.env,

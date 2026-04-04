@@ -15,7 +15,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import {
@@ -90,39 +90,6 @@ if (!existsSync(PLUGIN_DIR)) {
 if (!existsSync(GP_BIN)) {
 	console.error("FATAL: Plugin binary not found at", GP_BIN);
 	process.exit(1);
-}
-
-// Sync new skills from dist to installed cache so the Agent SDK can discover them.
-const installedSkillsDir = join(
-	HOME,
-	".claude/plugins/cache/goodplan-marketplace/goodplan",
-);
-try {
-	const versions = readdirSync(installedSkillsDir)
-		.filter((d: string) => statSync(join(installedSkillsDir, d)).isDirectory())
-		.sort()
-		.reverse();
-	const latestVersion = versions[0];
-	if (latestVersion) {
-		const installedPluginDir = join(installedSkillsDir, latestVersion);
-		// Sync create-side-quest skill to installed cache
-		const srcSkill = join(PLUGIN_DIR, "skills", "create-side-quest");
-		const dstSkill = join(installedPluginDir, "skills", "create-side-quest");
-		if (existsSync(srcSkill)) {
-			mkdirSync(dstSkill, { recursive: true });
-			execFileSync("rsync", ["-a", "--exclude", ".DS_Store", `${srcSkill}/`, `${dstSkill}/`]);
-			console.log("[test-create-side-quest] Synced create-side-quest skill to installed cache");
-		}
-		// Sync agents to installed cache
-		const srcAgents = join(PLUGIN_DIR, "agents");
-		const dstAgents = join(installedPluginDir, "agents");
-		if (existsSync(srcAgents)) {
-			execFileSync("rsync", ["-a", "--exclude", ".DS_Store", `${srcAgents}/`, `${dstAgents}/`]);
-			console.log("[test-create-side-quest] Synced agents to installed cache");
-		}
-	}
-} catch (err) {
-	console.warn("[test-create-side-quest] WARN: Could not sync to installed cache:", err instanceof Error ? err.message : String(err));
 }
 
 // ─── Logging ────────────────────────────────────────────────
@@ -282,6 +249,7 @@ async function testFullPipeline(): Promise<boolean> {
 				maxTurns: 400,
 				maxBudgetUsd: 30,
 				model: MODEL,
+				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
 				env: {
 					...process.env,
@@ -453,6 +421,7 @@ async function testReentry(): Promise<boolean> {
 				maxTurns: 400,
 				maxBudgetUsd: 20,
 				model: MODEL,
+				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
 				env: {
 					...process.env,
@@ -675,6 +644,7 @@ async function testErrorPath(): Promise<boolean> {
 				maxTurns: 30,
 				maxBudgetUsd: 2,
 				model: MODEL,
+				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
 				env: {
 					...process.env,

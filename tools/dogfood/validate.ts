@@ -109,7 +109,7 @@ async function runSkill(
 				maxTurns,
 				maxBudgetUsd,
 				model: MODEL,
-				settingSources: ["project"],
+				settingSources: [],
 				env: { ...process.env, PATH: `${HOME}/bin:${process.env.PATH ?? ""}` },
 				systemPrompt: {
 					type: "preset",
