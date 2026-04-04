@@ -10,18 +10,20 @@ Consolidation criterion: only move a file here if it is expected to stay unified
 
 | File | Purpose |
 |---|---|
+| `audit-conventions.md` | Conventions for audit agents: severity levels, finding format, scoring |
+| `cli-interaction.md` | CLI detection, invocation patterns, error handling, state orientation |
 | `codebase-context-discovery.md` | Gather project-level context (docs, conventions, recent changes) before first review or implementation iteration |
 | `decisions-format.md` | Shared format for recording durable project decisions |
-| `dependency-research.md` | Research external dependencies referenced in a plan so reviewers and agents have current docs |
 | `epic-conventions.md` | Epic directory structure, state machine, transitions, two-layer architecture model, consumer guide |
 | `expertise-tracking.md` | Two-layer system for tracking user domain expertise and calibrating explanation depth |
 | `iteration-loop.md` | Shared orchestration skeleton for iterative review-and-edit skills (refine-plan, refine-architecture, etc.) |
-| `output-templates.md` | Rigid templates for structured user-facing output: iteration summaries, context load, completion, and done summaries |
 | `maturity-conventions.md` | Conventions for maturity levels, invariants, and fitness functions in architecture files |
-| `project-health-format.md` | Canonical structure for `.goodplan/project-health.md`, a living document of system-level observations |
-| `reviewers-cross-cutting.md` | Cross-cutting reviewer prompts spanning multiple domains, with fillable placeholders |
+| `output-templates.md` | Rigid templates for structured user-facing output: iteration summaries, context load, completion, and done summaries |
+| `plan-format.md` | Canonical plan structure: phases, expected behavior, verification, tasks |
+| `review-preamble.md` | Shared preamble for all 20 reviewer agents: diff access, codebase exploration, output format |
+| `review-*.md` (20 files) | Per-domain review criteria for each reviewer agent |
 | `state-and-activity-formats.md` | Canonical formats for `state.md` and `activity-log.jsonl` entries |
-| `team-defaults.md` | Default team preferences applied based on codebase context |
+| `sub-agent-return-format.md` | Standard JSON return format for pipeline sub-agents |
 
 ## Troubleshooting
 

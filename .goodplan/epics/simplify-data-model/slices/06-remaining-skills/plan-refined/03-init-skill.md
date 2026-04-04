@@ -12,7 +12,7 @@ Build the `/gp:init` skill as a lightweight orchestrator that auto-detects mode 
 **After implementation** (should pass / show presence):
 - [x] `ls skills/init/SKILL.md` — file exists
 - [x] `ls agents/onboard-phase.md` — file exists
-- [ ] `bun tools/dogfood/test-init.ts` — init detects empty repo (new project) and repo with source (onboard) correctly
+- [x] `bun tools/dogfood/test-init.ts` — 5/5 tests passed (empty dir, onboard, mode override, re-entry, error path)
 
 ### Tasks
 

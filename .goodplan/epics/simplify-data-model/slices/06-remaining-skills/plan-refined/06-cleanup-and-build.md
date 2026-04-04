@@ -13,7 +13,7 @@ Delete 15 old skill directories, remove install-skills.sh, update build-plugin.s
 - [x] `ls skills/` shows only: `_shared`, `audit`, `complete-epic`, `create-epic`, `create-side-quest`, `explore`, `implement`, `init`, `plan-slice`, `start-epic`, `status`, `task`, `upgrade`
 - [x] `ls scripts/install-skills.sh` — file does not exist
 - [x] `bun run build:plugin` — passes with "Packaged 12 skills" in output
-- [ ] `bun tools/dogfood/test-plugin-skills.ts` — all 12 skills discovered with `/gp:` namespace
+- [x] `bun tools/dogfood/test-plugin-skills.ts` — all 12 skills discovered with `/gp:` namespace
 - [x] `bun test` — all tests pass
 
 ### Tasks
@@ -67,7 +67,7 @@ Delete 15 old skill directories, remove install-skills.sh, update build-plugin.s
 
 - [x] Update `tools/dogfood/test-plugin-skills.ts` — update the `expectedSkills` array to the 12 new skill names: `audit`, `complete-epic`, `create-epic`, `create-side-quest`, `explore`, `implement`, `init`, `plan-slice`, `start-epic`, `status`, `task`, `upgrade`. Update both the count assertion and the name list.
 
-- [ ] Run `bun tools/dogfood/test-plugin-skills.ts` to verify all 12 skills are discovered
+- [x] Run `bun tools/dogfood/test-plugin-skills.ts` to verify all 12 skills are discovered
 - [x] Run `bun test` to verify no test breakage from deletions
 
 ### Verification
