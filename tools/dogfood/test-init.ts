@@ -13,7 +13,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import {
 	createLogger,
@@ -42,6 +42,15 @@ const LOG_FILE = join(GOODPLAN_DIR, "tools/dogfood/init-test.log");
 const _TRANSCRIPT_FILE = join(GOODPLAN_DIR, "tools/dogfood/init-transcript.jsonl");
 const FIXTURE_SCRIPT = join(GOODPLAN_DIR, "scripts/generate-onboard-fixture.sh");
 const MODEL = parseModel(tierDefault("quality"));
+
+// Read skill body for systemPrompt injection (Agent SDK resolves skills via slash commands
+// only from the installed cache; for local dev, we inject the skill content directly)
+const skillMdPath = join(PLUGIN_DIR, "skills", "init", "SKILL.md");
+const skillBody = existsSync(skillMdPath) ? readFileSync(skillMdPath, "utf-8") : "";
+if (!skillBody) {
+	console.error("FATAL: Could not read init skill SKILL.md at", skillMdPath);
+	process.exit(1);
+}
 
 const maxIterationsIdx = process.argv.indexOf("--max-iterations");
 const MAX_TURNS =
@@ -185,7 +194,7 @@ async function testEmptyDir(): Promise<boolean> {
 
 		try {
 			const session = await runSkillSession({
-				prompt: "/gp:init",
+				prompt: "Run /gp:init. Initialize this project following the init skill instructions.",
 				options: {
 					cwd: testDir,
 					permissionMode: "bypassPermissions",
@@ -198,7 +207,19 @@ async function testEmptyDir(): Promise<boolean> {
 						...process.env,
 						PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
 					},
-					systemPrompt: { type: "preset", preset: "claude_code" },
+					systemPrompt: {
+						type: "preset",
+						preset: "claude_code",
+						append: [
+							"You are in an automated test harness. Execute the skill below faithfully.",
+							"Do not ask the user to confirm -- proceed automatically.",
+							"When AskUserQuestion is needed, use it (the harness has a simulated user).",
+							"",
+							"# Init Skill Instructions",
+							"",
+							skillBody,
+						].join("\n"),
+					},
 				},
 				transcriptFile: transcript,
 				simulatedUser,
@@ -255,7 +276,7 @@ async function testOnboardTypescript(): Promise<boolean> {
 
 		try {
 			const session = await runSkillSession({
-				prompt: "/gp:init",
+				prompt: "Run /gp:init. Initialize this project following the init skill instructions.",
 				options: {
 					cwd: testDir,
 					permissionMode: "bypassPermissions",
@@ -268,7 +289,19 @@ async function testOnboardTypescript(): Promise<boolean> {
 						...process.env,
 						PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
 					},
-					systemPrompt: { type: "preset", preset: "claude_code" },
+					systemPrompt: {
+						type: "preset",
+						preset: "claude_code",
+						append: [
+							"You are in an automated test harness. Execute the skill below faithfully.",
+							"Do not ask the user to confirm -- proceed automatically.",
+							"When AskUserQuestion is needed, use it (the harness has a simulated user).",
+							"",
+							"# Init Skill Instructions",
+							"",
+							skillBody,
+						].join("\n"),
+					},
 				},
 				transcriptFile: transcript,
 				simulatedUser,
@@ -335,7 +368,7 @@ async function testModeOverride(): Promise<boolean> {
 
 		try {
 			const session = await runSkillSession({
-				prompt: "/gp:init --mode new",
+				prompt: "Run /gp:init --mode new. Force new project mode following the init skill instructions.",
 				options: {
 					cwd: testDir,
 					permissionMode: "bypassPermissions",
@@ -348,7 +381,19 @@ async function testModeOverride(): Promise<boolean> {
 						...process.env,
 						PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
 					},
-					systemPrompt: { type: "preset", preset: "claude_code" },
+					systemPrompt: {
+						type: "preset",
+						preset: "claude_code",
+						append: [
+							"You are in an automated test harness. Execute the skill below faithfully.",
+							"Do not ask the user to confirm -- proceed automatically.",
+							"When AskUserQuestion is needed, use it (the harness has a simulated user).",
+							"",
+							"# Init Skill Instructions",
+							"",
+							skillBody,
+						].join("\n"),
+					},
 				},
 				transcriptFile: transcript,
 				simulatedUser,
@@ -439,7 +484,7 @@ async function testAlreadyInitialized(): Promise<boolean> {
 
 		try {
 			const session = await runSkillSession({
-				prompt: "/gp:init",
+				prompt: "Run /gp:init. Initialize this project following the init skill instructions.",
 				options: {
 					cwd: testDir,
 					permissionMode: "bypassPermissions",
@@ -452,7 +497,19 @@ async function testAlreadyInitialized(): Promise<boolean> {
 						...process.env,
 						PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
 					},
-					systemPrompt: { type: "preset", preset: "claude_code" },
+					systemPrompt: {
+						type: "preset",
+						preset: "claude_code",
+						append: [
+							"You are in an automated test harness. Execute the skill below faithfully.",
+							"Do not ask the user to confirm -- proceed automatically.",
+							"When AskUserQuestion is needed, use it (the harness has a simulated user).",
+							"",
+							"# Init Skill Instructions",
+							"",
+							skillBody,
+						].join("\n"),
+					},
 				},
 				transcriptFile: transcript,
 				simulatedUser,
@@ -527,7 +584,7 @@ async function testErrorPath(): Promise<boolean> {
 
 		try {
 			const session = await runSkillSession({
-				prompt: "/gp:init",
+				prompt: "Run /gp:init. Initialize this project following the init skill instructions.",
 				options: {
 					cwd: testDir,
 					permissionMode: "bypassPermissions",
@@ -540,7 +597,19 @@ async function testErrorPath(): Promise<boolean> {
 						...process.env,
 						PATH: `${brokenBinaryDir}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
 					},
-					systemPrompt: { type: "preset", preset: "claude_code" },
+					systemPrompt: {
+						type: "preset",
+						preset: "claude_code",
+						append: [
+							"You are in an automated test harness. Execute the skill below faithfully.",
+							"Do not ask the user to confirm -- proceed automatically.",
+							"When AskUserQuestion is needed, use it (the harness has a simulated user).",
+							"",
+							"# Init Skill Instructions",
+							"",
+							skillBody,
+						].join("\n"),
+					},
 				},
 				transcriptFile: transcript,
 				simulatedUser,
