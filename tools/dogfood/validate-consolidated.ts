@@ -656,11 +656,10 @@ async function stepActivateEpic(ctx: PipelineContext): Promise<boolean> {
 		skillName: "start-epic",
 		prompt: `Activate the epic "${EPIC_NAME}". Review the architecture proposal and approve it.`,
 		userSystemPrompt: [
-			"You are a senior TypeScript developer reviewing the architecture for a flashcard app.",
-			"When presented with the architecture proposal, review it thoughtfully.",
-			"If the architecture covers cards, quiz engine, and scoring subsystems, approve it.",
-			"If asked about concerns, say the architecture looks well-structured for the scope.",
-			"When asked to confirm activation, confirm.",
+			"You are a senior TypeScript developer reviewing the architecture for a flashcard app with spaced repetition.",
+			"You expect a well-structured architecture to cover card data management, quiz engine logic, SM-2 scheduling, and scoring/statistics as distinct concerns.",
+			"Evaluate proposals based on your experience: clean module boundaries, appropriate dependency direction, and testability matter to you.",
+			"If the architecture is solid, approve it. If it has gaps or poor structure, identify the specific issues.",
 		].join("\n"),
 		fixtureDir: ctx.fixtureDir,
 		maxTurns: 100,
@@ -706,17 +705,10 @@ async function stepPlanSlice(ctx: PipelineContext): Promise<boolean> {
 		}
 	}
 
-	// Create a default slice if none exist
+	// No fallback slice creation — if create-epic didn't produce slices, that's a failure
 	if (!existsSync(join(slicesDir, sliceName))) {
-		logger.log(`[plan-slice] No slices found, creating default slice '${sliceName}'...`);
-		gp(["slice:create", "--epic", EPIC_NAME, "--json"], {
-			cwd: ctx.fixtureDir,
-			gpBin: GP_BIN,
-			stdin: JSON.stringify({
-				name: sliceName,
-				goal: "Implement SM-2 core algorithm for spaced repetition scheduling",
-			}),
-		});
+		logger.log("FAIL: No slices found — create-epic should have produced them");
+		return false;
 	}
 
 	logger.log(`[plan-slice] Planning slice: ${sliceName}`);
@@ -779,10 +771,9 @@ async function stepImplement(ctx: PipelineContext): Promise<boolean> {
 		prompt: `Implement the plan for slice "${sliceName}" in epic "${EPIC_NAME}". Follow the plan phases and write the code.`,
 		userSystemPrompt: [
 			"You are a senior TypeScript developer implementing SM-2 spaced repetition.",
-			"When asked about implementation approach, evaluate it and approve if it's reasonable. If something looks wrong, say so.",
-			"When asked about build or test guidance, say 'Run bun test to verify'.",
-			"When asked about code review findings, read them and respond substantively. If the findings are valid, agree. If they seem wrong, push back.",
-			"When asked about architectural changes, evaluate whether they're necessary for the scope.",
+			"You care about code quality: pure functions for the SM-2 algorithm, proper TypeScript types, and comprehensive test coverage with known input/output pairs.",
+			"Evaluate proposals and code review findings based on your experience. Approve good approaches, push back on questionable ones.",
+			"You know the project uses Bun for runtime and testing, Biome for linting, and TypeScript strict mode.",
 		].join("\n"),
 		fixtureDir: ctx.fixtureDir,
 		maxTurns: 400,
@@ -853,10 +844,10 @@ async function stepAudit(ctx: PipelineContext): Promise<boolean> {
 		skillName: "audit",
 		prompt: "Run /gp:audit architecture. Analyze the project architecture and report findings.",
 		userSystemPrompt: [
-			"You are a senior developer reviewing audit findings for a flashcard app.",
-			"When asked about audit mode, select 'architecture'.",
-			"When asked about side quests, evaluate each one. Approve side quests that address real gaps (missing tests, undocumented APIs). Decline side quests that are purely cosmetic.",
-			"When asked about findings, respond thoughtfully based on the severity and relevance.",
+			"You are a senior developer auditing the architecture of a flashcard app with spaced repetition.",
+			"You want to audit the architecture specifically — you're concerned about whether the module boundaries and dependency structure are sound.",
+			"For side quests proposed from findings: approve ones that address real structural gaps or missing functionality. Decline purely cosmetic improvements.",
+			"Evaluate findings based on their actual impact on the codebase, not just their severity label.",
 		].join("\n"),
 		fixtureDir: ctx.fixtureDir,
 		maxTurns: 200,
@@ -894,11 +885,11 @@ async function stepCompleteEpic(ctx: PipelineContext): Promise<boolean> {
 		prompt: `Complete the epic "${EPIC_NAME}". Synthesize learnings and complete the epic. If any slices are not in a terminal state, abandon them with a reason before completing.`,
 		userSystemPrompt: [
 			"You are a senior developer completing the spaced repetition epic.",
-			"You implemented the SM-2 algorithm and integrated it with the quiz engine. Some slices may not have been implemented — those can be abandoned if they're not critical.",
-			"For learnings, reflect substantively on what was learned: SM-2 algorithm implementation details, pure function design for testability, integration patterns between card storage and the quiz engine.",
-			"For architecture changes, review them carefully. Approve changes that accurately reflect what was built. Push back if they contradict the implementation.",
-			"For artifact promotion, promote patterns and utilities that would be useful in future epics.",
-			"If the skill says slices are not in terminal state, agree to abandon unimplemented slices with a brief reason.",
+			"You implemented the SM-2 algorithm and integrated it with the quiz engine. You have direct experience with the codebase.",
+			"For learnings, reflect substantively on what you actually experienced: algorithm implementation details, design patterns that worked well, integration challenges, testing strategies.",
+			"For architecture changes, evaluate whether they accurately describe the system as built. Approve accurate descriptions, reject ones that misrepresent the implementation.",
+			"For artifact promotion, consider whether each artifact would genuinely help future work or is too project-specific to promote.",
+			"For unfinished slices, decide based on whether they're critical to the epic's goal or can reasonably be deferred.",
 		].join("\n"),
 		fixtureDir: ctx.fixtureDir,
 		maxTurns: 200,
