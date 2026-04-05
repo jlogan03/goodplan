@@ -29,7 +29,7 @@ Lightweight orchestrator that dispatches to mode-specific audit agents. Replaces
 ## Step 0 -- Version Check
 
 ```bash
-GP="${CLAUDE_PLUGIN_ROOT}/binaries/macos-arm64/gp"
+GP="gp"
 "$GP" --version --json
 ```
 

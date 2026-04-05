@@ -28,7 +28,7 @@ For file copying (e.g., artifact promotion), use shell `cp` via Bash tool — no
 ## Step 0 — Setup
 
 ```bash
-GP="${CLAUDE_PLUGIN_ROOT}/binaries/macos-arm64/gp"
+GP="gp"
 "$GP" --version --json
 ```
 

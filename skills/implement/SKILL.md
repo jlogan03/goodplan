@@ -40,7 +40,7 @@ For file copying (e.g., agent-produced files to CLI-managed paths), use shell `c
 ## Step 0 — Setup
 
 ```bash
-GP="${CLAUDE_PLUGIN_ROOT}/binaries/macos-arm64/gp"
+GP="gp"
 "$GP" --version --json
 ```
 

@@ -23,11 +23,11 @@ Shared reference for all goodplan workflow skills. Defines how skills detect, in
 The `gp` binary is bundled with the goodplan plugin. At the start of any skill that uses the CLI, verify it is available and compatible:
 
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/binaries/macos-arm64/gp" --version --json
+gp --version --json
 # Returns: { "version": "1.0.0" }
 ```
 
-`${CLAUDE_PLUGIN_ROOT}` is substituted by Claude Code at skill load time with the plugin's installation directory. Use this full path for **all** `gp` invocations — the binary is not on PATH.
+The `gp` binary is on PATH (automatically added by Claude Code from the plugin's `bin/` directory). Use `gp` directly for all invocations.
 
 **If the command fails** (not found, non-zero exit):
 

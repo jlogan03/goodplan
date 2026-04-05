@@ -26,7 +26,7 @@ Converts a pre-CLI project directory (`.project/` for legacy projects, `.goodpla
 Verify CLI availability and compatibility:
 
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/binaries/macos-arm64/gp" --version --json
+gp --version --json
 ```
 
 If the command fails (not found, non-zero exit), stop: "The `gp` CLI is required but not found. Ensure the goodplan plugin is installed and enabled — run `/plugin` to check."

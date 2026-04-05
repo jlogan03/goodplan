@@ -19,7 +19,7 @@ Quickly capture a thought, bug, or idea as a task without breaking your current 
 ## Step 0 — Version Check
 
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/binaries/macos-arm64/gp" --version --json
+gp --version --json
 ```
 
 If the command fails: "The `gp` CLI is required but not found. Ensure the goodplan plugin is installed and enabled — run `/plugin` to check."

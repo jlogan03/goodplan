@@ -21,7 +21,7 @@ Two-stage detection:
 **Stage A — Binary exists:**
 
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/binaries/macos-arm64/gp" --version --json
+gp --version --json
 ```
 
 If the command fails (not found, non-zero exit), tell the user:
