@@ -241,14 +241,13 @@ This transitions `plan-created` → `refining` (via `BEGIN_REFINEMENT`).
 
 ### 4f. Refinement Loop
 
-Initialize tracking state:
-- `reviewerScores = {}` — map of reviewer name → score history array
-- `iteration = 0`
-- `stagnationCount = 0` — consecutive rounds with no score change
-- `reductionCount = 0` — total rounds with net score reduction
-- `planPath = "$TMPDIR/draft/plan.md"`
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/iteration-loop.md
 
-**Loop** (max 10 iterations):
+Follow the shared iteration loop pattern defined in iteration-loop.md (auto-included above). The orchestrator-specific parameters are listed in the **Loop Parameters** section at the end of this file.
+
+Set `planPath = "$TMPDIR/draft/plan.md"`.
+
+**Per-round steps** (reviewer context assembly and score computation stay here — only exit criteria evaluation uses the shared loop):
 
 #### 4f-i. Spawn Refinement Coordinator
 
@@ -305,20 +304,14 @@ Parse return JSON. Extract `score` (integer).
 
 #### 4f-v. Evaluate Exit Conditions
 
-Extract per-reviewer scores from each reviewer's return JSON. Update `reviewerScores` — append each reviewer's score to its history array. Compute `netScore` as the minimum of all reviewer scores for this round.
+Extract per-reviewer scores from each reviewer's return JSON. Update `reviewerScores`. Compute `netScore` as the minimum of all reviewer scores for this round.
 
 Log to stderr:
 ```
 [plan-slice] Round {iteration+1}: netScore={netScore}, reviewerScores={reviewerScores}
 ```
 
-Check exit conditions:
-
-1. **Pass**: `netScore >= 9` → exit loop, submit plan.
-2. **Stagnation**: if this is not the first round and `netScore === previous netScore` (exactly equal) → increment `stagnationCount`. If `stagnationCount >= 2` (two consecutive no-change rounds) → exit loop, submit best version. If `stagnationCount === 1`, log a warning but continue.
-3. **Reduction**: if `netScore < previous netScore` → reset `stagnationCount` to 0 and increment `reductionCount`. If `reductionCount >= 2` (two total reduction rounds, any position) → exit loop, submit best version.
-4. **Improvement**: if `netScore > previous netScore` → reset `stagnationCount` to 0. Continue.
-5. **Hard cap**: if `iteration >= maxIterations - 1` → exit loop, submit best version. Default `maxIterations` is 10. If `$GP_PLAN_SLICE_MAX_ITERATIONS` env var is set, use that value instead (enables cost control in test harness).
+Apply the exit condition evaluation order from iteration-loop.md using this skill's Loop Parameters.
 
 If none triggered → proceed to editor.
 
@@ -339,13 +332,7 @@ Parse return. Increment `iteration`. Loop back to 4f-i.
 
 ### 4g. Submit Refinement
 
-After exiting the loop, submit the refinement result with per-reviewer scores:
-
-```bash
-echo '{"scores":{REVIEWER_SCORES_JSON}}' | $GP submit-refinement --slice $SLICE_NAME --json
-```
-
-Where `REVIEWER_SCORES_JSON` is a JSON object mapping each reviewer name to its final score, e.g. `{"holistic":8,"software-architecture":7,"agent-skill":8}`. Use the last score from each reviewer's history in `reviewerScores`.
+After exiting the loop, submit the refinement result per the Loop Parameters `submit_command`.
 
 > **Transition note:** The existing `/gp:refine-plan` skill (v1.0.3) uses `{"scores":{"overall":<min_score>}}`. This skill uses per-reviewer scores, which is the target format. Both pass the `submitRefinementInputSchema` (`z.record(z.string(), z.number())`). Update the installed refine-plan to per-reviewer format in a later slice to maintain consistency.
 
@@ -385,6 +372,19 @@ Present results to the user:
 | editor | Read, Grep, Glob, Write, Edit | Reads feedback, modifies plan |
 
 All agents: `disallowedTools: ["Agent"]` — enforces flat hierarchy.
+
+## Loop Parameters
+
+Parameters for the iteration-loop.md shared reference (auto-included in Step 4f above). No early exit or override for plan-slice — refinement always runs to pass or cap.
+
+| Parameter | Value |
+|---|---|
+| **max_iterations** | 10 (override via `$GP_PLAN_SLICE_MAX_ITERATIONS` env var for test harness cost control) |
+| **run_dir_mode** | `temp` — ephemeral `$TMPDIR/reviews/` directory |
+| **submit_command** | `echo '{"scores":{REVIEWER_SCORES_JSON}}' \| $GP submit-refinement --slice $SLICE_NAME --json` |
+| **stagnation_window** | 2 |
+| **reduction_exit_threshold** | 2 |
+| **review_context** | `"implementation-plan"` |
 
 ## Error Handling
 

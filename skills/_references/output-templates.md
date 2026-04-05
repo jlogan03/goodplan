@@ -6,7 +6,7 @@ Shared rigid templates for structured output displayed to users. Skills referenc
 
 Display after every review iteration, immediately after synthesizing feedback and before applying fixes.
 
-**Used by**: plan-slice, create-epic, implement
+**Used by**: plan-slice, create-epic, create-side-quest, implement
 
 ```
 ---
@@ -83,7 +83,7 @@ Display after loading project context at skill start. Gives the user visibility 
 
 Display at the end of iterative review/implementation skills after all iterations complete. Shows the full review history.
 
-**Used by**: plan-slice, create-epic, implement
+**Used by**: plan-slice, create-epic, create-side-quest, implement
 
 The shared base contains the intersection of all consumers. Each skill extends with its own sections.
 

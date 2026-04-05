@@ -2,13 +2,6 @@
 
 Single source of truth for epic structure. Consumed by all epic-aware skills.
 
-## How to Load This File
-
-Skills that need epic awareness should read this file (`epic-conventions.md` in the `_references/` directory). Load it when:
-- Determining epic state (state machine lookup)
-- Creating or modifying epic directory structures
-- Planning transitions between epic phases
-
 ## Contents
 
 - [Directory Structure](#directory-structure)

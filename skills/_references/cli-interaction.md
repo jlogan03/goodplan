@@ -16,7 +16,6 @@ Shared reference for all goodplan workflow skills. Defines how skills detect, in
 9. [Completion Command Payloads](#9-completion-command-payloads)
 10. [Error Handling](#10-error-handling)
 11. [Self-Discovery](#11-self-discovery)
-12. [Migration Example](#12-migration-example)
 
 ## 1. Binary Detection & Version
 
@@ -304,7 +303,7 @@ Skills previously read `state.md` for several purposes. CLI equivalents:
 | **Next step hints** | `gp status --json` → `.recommendations[]` |
 | **Active quest detection** | `gp status --json` → `.activeQuest` |
 
-> **Deprecation:** The `state.md` format (previously documented in the now-deleted `state-and-activity-formats.md`) is obsolete. Skills should use the CLI commands above instead.
+> **Deprecation:** The `state.md` format is obsolete. Skills should use the CLI commands above instead.
 
 ### Querying Learnings
 
@@ -550,103 +549,3 @@ Returns that command's flags, stdin schema, and description.
 
 Note: `--version --json` is handled pre-dispatch and does not appear in `gp schema --json` output. This is a known limitation.
 
-## 12. Migration Example
-
-### Before (direct file access)
-
-```
-# Read project state
-Read .goodplan/project.json → check activeEpic
-Read .goodplan/epics/overview.json → check for name collision
-
-# Create the epic
-mkdir .goodplan/epics/my-epic/
-mkdir .goodplan/epics/my-epic/architecture/
-mkdir .goodplan/epics/my-epic/research/
-mkdir .goodplan/epics/my-epic/brainstorm/
-Write .goodplan/epics/my-epic/epic.json → { name, status: "created", goal, ... }
-Read + write .goodplan/epics/overview.json → append to items array
-Append .goodplan/activity-log.jsonl → { phase: "create", scope: "epics/my-epic", ... }
-```
-
-### After (CLI commands)
-
-```bash
-# Create the epic — one command handles all state writes
-echo '{"name":"my-epic","goal":"Build the feature..."}' | gp epic:create --json
-# Returns: { "entity": "my-epic", "phase": "create", "previousStatus": "none", "newStatus": "created" }
-
-# Begin exploration — single command advances state
-stdin: "" | gp epic:explore --epic my-epic --json
-# Returns: { "entity": "my-epic", "phase": "explore", "previousStatus": "created", "newStatus": "exploring" }
-```
-
-### Key Differences
-
-- No manual directory creation, JSON writes, or overview updates
-- State machine validates transitions (e.g., rejects duplicate epic names)
-- Activity log appended automatically on every mutation
-- Mutation response confirms the state change — no need to re-read state
-
-## 13. Migration Patterns
-
-Patterns discovered migrating `create-epic` and `complete` skills to CLI-based state access. Apply these when migrating other skills.
-
-### Simplification Rule
-
-Skills should drop state machine awareness entirely. Do not replicate transition guards, status checks, or state machine logic in skill code. Instead:
-
-- Use CLI commands for all state mutations — the CLI validates transitions and returns errors
-- Let CLI errors guide recovery (see section 10: Error Handling)
-- Use `show --json` to check current status when needed, rather than maintaining internal state tracking
-
-### Filesystem-Backed Accumulation
-
-For multi-step interactive flows (like `/gp:complete-epic`), write intermediate results to disk as each step completes, then read them back to construct the final CLI payload. This pattern:
-
-- Survives graceful stops — partial progress is on disk, not in memory
-- Enables re-entry detection — `stat` on known artifact paths reveals what was already done
-- Keeps the final CLI call atomic — one `slice:complete` with a fully assembled payload
-
-Example: the `/gp:complete-epic` skill writes `completion/learnings.md` and `completion/architecture-updates.md` during intermediate steps, then reads both back to construct the final CLI payload.
-
-### CLI Command Mapping
-
-Common direct-access patterns and their CLI equivalents:
-
-| Direct access pattern | CLI equivalent |
-|---|---|
-| Read `state.md` for active slice | `gp status --json` → `.activeSlice` |
-| Read `state.md` for current phase | `gp slice:show --slice X --json` → `.status` |
-| Read entity JSON for status/artifacts | `gp slice:show --slice X --json` → `.status`, `.artifacts` |
-| Read `activity-log.jsonl` directly | `gp state --json --query '.["activity-log.jsonl"]'` |
-| Read `decisions.jsonl` directly | `gp state --json --query '.["decisions.jsonl"]'` |
-| Append to `activity-log.jsonl` | Not needed — CLI appends automatically on every mutation |
-| Write `state.md` | Not needed — eliminated; CLI manages state |
-| `mkdir -p .goodplan/epics/<name>/...` | `echo '{"name":"..."}' \| gp epic:create --json` |
-| Read `overview.json` for entity list | `gp epic:list --json` or `gp slice:list --json` |
-
-### What Stays Direct
-
-LLM-owned markdown files are still read and written directly by skills:
-
-- **Plans**: `plan.md`, `plan-refined.md`, `plan-learnings-and-feedback.md`
-- **Goals**: `goal.md` (epics, slices, quests)
-- **Architecture**: `.goodplan/architecture/*.md`, epic `architecture/`
-- **Research and brainstorm**: `.goodplan/research/`, `.goodplan/brainstorm/`
-- **Project health**: `.goodplan/project-health.md`
-- **CLAUDE.md**: project root `CLAUDE.md`
-- **Idea**: `.goodplan/idea.md`
-- **Completion artifacts**: `completion/learnings.md`, `completion/architecture-updates.md`
-
-These are content authored by the LLM. The CLI does not manage their contents — skills read and write them with the Read, Write, and Edit tools.
-
-### Version Check Pattern
-
-Every skill that uses the CLI declares its minimum version in SKILL.md frontmatter:
-
-```yaml
-requires: gp >= 1.0.0
-```
-
-At startup, the skill runs `gp --version --json`, compares the version against `requires`, and stops with a clear error if incompatible. This ensures skills fail fast rather than encountering mysterious failures from changed CLI behavior.

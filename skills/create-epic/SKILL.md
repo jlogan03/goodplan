@@ -337,16 +337,13 @@ Transitions `architecture-defined` -> `refining-architecture`.
 
 ### 6d. Architecture Refinement Loop
 
-Initialize tracking state:
-- `reviewerScores = {}` — map of reviewer name -> score history array
-- `iteration = 0`
-- `stagnationCount = 0`
-- `reductionCount = 0`
-- `maxIterations = parseInt($GP_CREATE_EPIC_MAX_ITERATIONS) || 3`
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/iteration-loop.md
 
-Available reviewers: see `@${CLAUDE_PLUGIN_ROOT}/skills/_references/reviewer-registry.md` (auto-included via iteration-loop.md) for the full set of 20 reviewers. Select always-on reviewers plus relevant specialists based on the artifact content.
+Follow the shared iteration loop pattern defined in iteration-loop.md (auto-included above). The orchestrator-specific parameters are listed in the **Architecture Loop Parameters** section at the end of this file.
 
-**Loop** (max `maxIterations` iterations):
+Set `maxIterations = parseInt($GP_CREATE_EPIC_MAX_ITERATIONS) || 3`.
+
+**Per-round steps** (reviewer context assembly and score computation stay here — only exit criteria evaluation uses the shared loop):
 
 #### 6d-i. Load Context Bundle
 
@@ -435,7 +432,7 @@ disallowedTools: ["Agent"]
 
 #### 6d-vii. Evaluate Exit Conditions
 
-Extract per-reviewer scores from each reviewer's return JSON. Update `reviewerScores` — append each reviewer's score to its history array. Compute `netScore` as the minimum of all reviewer scores for this round.
+Extract per-reviewer scores from each reviewer's return JSON. Update `reviewerScores`. Compute `netScore` as the minimum of all reviewer scores for this round.
 
 Log to stderr:
 ```
@@ -448,21 +445,15 @@ Log to stderr:
 echo '{"scores":{REVIEWER_SCORES_JSON}}' | $GP submit-refine-architecture --epic $EPIC_NAME --json
 ```
 
-Where `REVIEWER_SCORES_JSON` maps each reviewer name to its score for this round.
-
 Check `response.advanced` (boolean):
 - **true**: Refinement complete. Exit loop.
 - **false**: Continue.
 
 #### 6d-ix. Check Loop Exit
 
-1. **Pass**: `netScore >= 9` -> exit loop.
-2. **Stagnation**: if not first round and `netScore === previous netScore` -> increment `stagnationCount`. If `stagnationCount >= 2` -> exit loop with `--override`. If `stagnationCount === 1`, log warning, continue.
-3. **Reduction**: if `netScore < previous netScore` -> reset `stagnationCount`, increment `reductionCount`. If `reductionCount >= 2` -> exit loop with `--override`.
-4. **Improvement**: if `netScore > previous netScore` -> reset `stagnationCount`. Continue.
-5. **Hard cap**: if `iteration >= maxIterations - 1` -> exit loop with `--override`.
+Apply the exit condition evaluation order from iteration-loop.md using the Architecture Loop Parameters.
 
-If using `--override`:
+If using `--override` (stagnation, reduction, or cap exit):
 ```bash
 echo '{"scores":{REVIEWER_SCORES_JSON}}' | $GP submit-refine-architecture --epic $EPIC_NAME --override --json
 ```
@@ -590,22 +581,9 @@ Transitions `slices-defined` -> `refining-slices`.
 
 ### 8f. Slices Refinement Loop
 
-Same pattern as architecture refinement (Step 6d), with these differences:
-- `review_context: "slice-definitions"`
-- Context bundle: `$GP start-refine-slices --epic $EPIC_NAME --json`
-- Submit: `echo '{"scores":{...}}' | $GP submit-refine-slices --epic $EPIC_NAME --json`
-- Override: `$GP submit-refine-slices --epic $EPIC_NAME --override --json`
-- Synthesis output: `$TMPDIR/reviews/slices-synthesis.md`
-- Editor operates on slice artifacts (sequencing.md, goal.md files) rather than architecture files
-- Uses same `maxIterations` and exit conditions as architecture refinement
+Follow the same shared iteration loop pattern as architecture refinement (Step 6d), using the **Slices Loop Parameters** section at the end of this file. Initialize fresh tracking state per iteration-loop.md.
 
-Initialize fresh tracking state for slices refinement:
-- `reviewerScores = {}`
-- `iteration = 0`
-- `stagnationCount = 0`
-- `reductionCount = 0`
-
-**Loop** (max `maxIterations` iterations):
+**Per-round steps:**
 
 #### 8f-i. Load Context Bundle
 
@@ -672,7 +650,7 @@ disallowedTools: ["Agent"]
 
 #### 8f-vii. Evaluate Exit Conditions
 
-Same logic as 6d-vii through 6d-ix. Submit via:
+Apply the exit condition evaluation order from iteration-loop.md using the Slices Loop Parameters. Submit via:
 
 ```bash
 echo '{"scores":{REVIEWER_SCORES_JSON}}' | $GP submit-refine-slices --epic $EPIC_NAME --json
@@ -725,6 +703,34 @@ Present results to the user:
 | editor | Read, Grep, Glob, Write, Edit | Reads feedback, modifies artifacts |
 
 All agents: `disallowedTools: ["Agent"]` — enforces flat hierarchy.
+
+## Architecture Loop Parameters
+
+Parameters for the iteration-loop.md shared reference (auto-included in Step 6d above):
+
+| Parameter | Value |
+|---|---|
+| **max_iterations** | 3 (override via `$GP_CREATE_EPIC_MAX_ITERATIONS` env var for test harness cost control) |
+| **override_flag** | `--override` — appended to submit command on stagnation/reduction/cap exits |
+| **run_dir_mode** | `temp` — ephemeral `$TMPDIR/reviews/` directory |
+| **submit_command** | `echo '{"scores":{REVIEWER_SCORES_JSON}}' \| $GP submit-refine-architecture --epic $EPIC_NAME --json` |
+| **stagnation_window** | 2 |
+| **reduction_exit_threshold** | 2 |
+| **review_context** | `"architecture-proposal"` |
+
+## Slices Loop Parameters
+
+Parameters for the iteration-loop.md shared reference (used in Step 8f above):
+
+| Parameter | Value |
+|---|---|
+| **max_iterations** | 3 (override via `$GP_CREATE_EPIC_MAX_ITERATIONS` env var for test harness cost control) |
+| **override_flag** | `--override` — appended to submit command on stagnation/reduction/cap exits |
+| **run_dir_mode** | `temp` — ephemeral `$TMPDIR/reviews/` directory |
+| **submit_command** | `echo '{"scores":{REVIEWER_SCORES_JSON}}' \| $GP submit-refine-slices --epic $EPIC_NAME --json` |
+| **stagnation_window** | 2 |
+| **reduction_exit_threshold** | 2 |
+| **review_context** | `"slice-definitions"` |
 
 ## Error Handling
 

@@ -2,25 +2,7 @@
 
 @${CLAUDE_PLUGIN_ROOT}/skills/_references/output-templates.md
 
-Shared orchestration skeleton for iterative review-and-edit skills (plan-slice refinement, create-epic architecture/slice refinement, etc.). Each skill's SKILL.md defines a **Loop Parameters** section that fills in the skill-specific slots listed below.
-
-## Skill-Specific Parameters
-
-Each consuming skill must define these in its own SKILL.md:
-
-| Parameter | Description |
-|---|---|
-| **Reviewer list** | Which reviewers run always vs conditionally |
-| **Exit criteria** | Score thresholds for full pass |
-| **Early exit** | Score thresholds + minimum iteration count for early exit |
-| **Max iterations** | Upper bound on loop iterations |
-| **Editor prompt path** | Path to the editor sub-agent prompt (in skill's `references/`) |
-| **Score thresholds** | Numeric thresholds for full pass and early exit |
-| **Scope constraints** | What files/directories the skill operates on |
-| **Working directory** | Where edits happen (in-place or working copy) |
-| **Run directory** | Where review artifacts are stored |
-| **Backup directory** | Where the pre-refinement backup lives (if applicable) |
-| **review_context** | Value injected into reviewer prompts (e.g., "an implementation plan", "project architecture files") |
+Shared orchestration skeleton for iterative review-and-edit skills (plan-slice refinement, create-epic architecture/slice refinement, etc.). Each skill's SKILL.md defines a **Loop Parameters** section that fills in the skill-specific parameter slots defined in the Loop Parameters Schema below.
 
 ## Run Directory Structure
 
@@ -126,26 +108,47 @@ After feedback is synthesized (and USER_INPUT resolved, research complete):
 
 ## Exit Criteria Evaluation
 
-The orchestrator (not reviewers, not the synthesis agent) decides when to exit.
+The orchestrator (not reviewers, not the synthesis agent) decides when to exit. Each consuming skill defines a **Loop Parameters** section in its SKILL.md that fills the parameter slots below.
 
-### Full Pass
+### Loop Parameters Schema
 
-Exit when ALL of:
-- Every reviewer score meets the full-pass threshold (skill-specific, typically 9+)
-- No CRITICAL or IMPORTANT issues flagged
+| Parameter | Description | Default |
+|---|---|---|
+| `max_iterations` | Upper bound on loop iterations | Skill-specific (plan-slice/create-side-quest: 10, create-epic: 3, implement: 12) |
+| `early_exit_threshold` | Optional score threshold for early exit before max_iterations | Optional (implement only: iteration >= 5 AND all scores >= 8) |
+| `override_flag` | Optional `--override` CLI flag appended to submit on stagnation/reduction/cap exits | Optional (create-epic and create-side-quest only) |
+| `run_dir_mode` | `temp` (ephemeral working directory) or `persistent` (git-committed run directory) | `temp` |
+| `submit_command` | Skill-specific CLI command to submit refinement results | Skill-specific |
+| `resume_detection` | Whether to check for incomplete run directories and offer resume | Optional (implement only) |
+| `stagnation_window` | Consecutive rounds with identical net score before exiting | 2 |
+| `reduction_exit_threshold` | Total rounds (any position, not necessarily consecutive) with net score decrease before exiting — counter never resets on improvement | 2 |
+| `review_context` | Value injected into reviewer prompts (e.g., `"implementation-plan"`, `"architecture-proposal"`, `"code-implementation"`) | Skill-specific |
 
-### Early Exit
+### Tracking State
 
-Exit when ALL of:
-- Minimum iteration count reached (skill-specific, typically 4-5)
-- Every reviewer score meets the early-exit threshold (skill-specific, typically 8+)
-- No CRITICAL or IMPORTANT issues remain
+Initialize at the start of each refinement loop:
 
-On early exit: warn the user which reviewers scored below the full-pass threshold, their reasons, and whether restructuring may help.
+- `reviewerScores = {}` — map of reviewer name to score history array
+- `iteration = 0`
+- `stagnationCount = 0` — consecutive rounds with no score change (resets on any score change)
+- `reductionCount = 0` — total rounds with net score decrease (never resets)
+
+### Exit Condition Evaluation Order
+
+After each round, compute `netScore` as the minimum of all reviewer scores for this round. Then evaluate in order:
+
+1. **Pass**: `netScore >= 9` AND no CRITICAL/IMPORTANT issues → exit loop, submit results.
+2. **Early exit** (if `early_exit_threshold` is defined): `iteration >= early_exit_threshold.min_iterations` AND all scores >= `early_exit_threshold.score` AND no CRITICAL/IMPORTANT → exit with warning listing reviewers below full-pass threshold.
+3. **Stagnation**: if not the first round and `netScore === previous netScore` (exactly equal) → increment `stagnationCount`. If `stagnationCount >= stagnation_window` → exit loop. If `stagnationCount < stagnation_window`, log warning, continue.
+4. **Reduction**: if `netScore < previous netScore` → reset `stagnationCount` to 0, increment `reductionCount`. If `reductionCount >= reduction_exit_threshold` → exit loop.
+5. **Improvement**: if `netScore > previous netScore` → reset `stagnationCount` to 0. Continue.
+6. **Hard cap**: if `iteration >= max_iterations - 1` → exit loop, present remaining issues.
+
+On exit via stagnation, reduction, or hard cap: if `override_flag` is defined, append it to the `submit_command`. Present remaining issues to the user.
 
 ### Final Cleanup Pass
 
-Before exiting (either path): if the synthesis summary reports DIRECTLY_ACTIONABLE items, spawn one final editor sub-agent to apply fixes. No re-review needed.
+Before exiting (any path — pass, early exit, stagnation, reduction, or hard cap): if the synthesis summary reports DIRECTLY_ACTIONABLE items, spawn one final editor sub-agent to apply fixes. No re-review needed.
 
 ### Max Iterations
 

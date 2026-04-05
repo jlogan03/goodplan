@@ -215,7 +215,7 @@ Parse the return JSON. Check `status`:
 
 @${CLAUDE_PLUGIN_ROOT}/skills/_references/iteration-loop.md
 
-Follow the shared iteration loop pattern defined in iteration-loop.md (auto-included above). The orchestrator-specific parameters are listed in the **Loop Parameters** section below.
+Follow the shared iteration loop pattern defined in iteration-loop.md (auto-included above). The orchestrator-specific parameters are listed in the **Loop Parameters** section at the end of this file.
 
 #### 5.3a. Write Changed Files Summary
 
@@ -454,16 +454,13 @@ Parameters for the iteration-loop.md shared reference (auto-included in Step 5.3
 
 | Parameter | Value |
 |---|---|
-| **Reviewer list** | Determined dynamically by `refinement-coordinator` per phase — reads `@${CLAUDE_PLUGIN_ROOT}/skills/_references/reviewer-registry.md` and selects based on changed file types/paths |
-| **Exit criteria** | All scores >= 9, no CRITICAL/IMPORTANT issues |
-| **Early exit** | iteration >= 5 AND all scores >= 8 AND no CRITICAL/IMPORTANT |
-| **Max iterations** | 12 (override via `$GP_IMPLEMENT_MAX_ITERATIONS` env var for test harness cost control) |
-| **Editor prompt path** | `agents/implement-phase.md` — re-spawned directly with merged feedback, no separate editor agent |
-| **Score thresholds** | `{ pass: 9, early_exit: 8 }` |
-| **Scope constraints** | Slice scope directory (from `slice:show --json`) |
-| **Working directory** | Repo root |
-| **Run directory** | `<epic>/slices/<slice>/implementation/` |
-| **Backup directory** | Not applicable — git provides history |
+| **max_iterations** | 12 (override via `$GP_IMPLEMENT_MAX_ITERATIONS` env var for test harness cost control) |
+| **early_exit_threshold** | iteration >= 5 AND all scores >= 8 AND no CRITICAL/IMPORTANT |
+| **run_dir_mode** | `persistent` — git-committed `<epic>/slices/<slice>/implementation/` directory |
+| **submit_command** | `$GP submit-implementation --slice $SLICE_NAME --json` |
+| **resume_detection** | Yes — check for incomplete run directories and offer resume (see Step 2b) |
+| **stagnation_window** | 2 |
+| **reduction_exit_threshold** | 2 |
 | **review_context** | `"code-implementation"` |
 
 **Coordinator note:** The `refinement-coordinator` agent already handles `review_context: "code-implementation"` as a defined input value. The orchestrator writes changed file paths (from `git diff --name-only`) to a summary file and passes it as the artifact. The coordinator reads the file and selects reviewers by file extensions/paths. No structural coordinator changes are needed.

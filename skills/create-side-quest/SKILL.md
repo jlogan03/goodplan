@@ -318,15 +318,13 @@ This transitions `plan-created` -> `refining` (via `BEGIN_QUEST_REFINEMENT`).
 
 ### 6e. Refinement Loop
 
-Initialize tracking state:
-- `reviewerScores = {}` — map of reviewer name -> score history array
-- `iteration = 0`
-- `stagnationCount = 0`
-- `reductionCount = 0`
-- `planPath = "$TMPDIR/draft/plan.md"`
-- `maxIterations = parseInt($GP_CREATE_SIDE_QUEST_MAX_ITERATIONS) || 10`
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/iteration-loop.md
 
-**Loop** (max `maxIterations` iterations):
+Follow the shared iteration loop pattern defined in iteration-loop.md (auto-included above). The orchestrator-specific parameters are listed in the **Loop Parameters** section at the end of this file.
+
+Set `planPath = "$TMPDIR/draft/plan.md"` and `maxIterations = parseInt($GP_CREATE_SIDE_QUEST_MAX_ITERATIONS) || 10`.
+
+**Per-round steps** (reviewer context assembly and score computation stay here — only exit criteria evaluation uses the shared loop):
 
 #### 6e-i. Load Context Bundle
 
@@ -412,12 +410,7 @@ Log to stderr:
 [create-side-quest] Round {iteration+1}: netScore={netScore}, reviewerScores={reviewerScores}
 ```
 
-Check exit conditions:
-1. **Pass**: `netScore >= 9` -> exit loop.
-2. **Stagnation**: if not first round and `netScore === previous netScore` -> increment `stagnationCount`. If `stagnationCount >= 2` -> exit with `--override`. If 1, warn, continue.
-3. **Reduction**: if `netScore < previous netScore` -> reset `stagnationCount`, increment `reductionCount`. If `reductionCount >= 2` -> exit with `--override`.
-4. **Improvement**: if `netScore > previous netScore` -> reset `stagnationCount`. Continue.
-5. **Hard cap**: if `iteration >= maxIterations - 1` -> exit with `--override`.
+Apply the exit condition evaluation order from iteration-loop.md using this skill's Loop Parameters.
 
 If none triggered -> proceed to editor.
 
@@ -438,16 +431,7 @@ Parse return. Increment `iteration`. Loop back to 6e-i.
 
 ### 6f. Submit Refinement
 
-After exiting the loop, submit the refinement result with per-reviewer scores:
-
-```bash
-echo '{"scores":{REVIEWER_SCORES_JSON}}' | $GP submit-refinement --quest $QUEST_NAME --json
-```
-
-If using `--override`:
-```bash
-echo '{"scores":{REVIEWER_SCORES_JSON}}' | $GP submit-refinement --quest $QUEST_NAME --override --json
-```
+After exiting the loop, submit the refinement result per the Loop Parameters `submit_command`. If exiting via stagnation, reduction, or hard cap, append `--override`.
 
 Log exit reason to stderr:
 ```
@@ -491,6 +475,20 @@ Present results to the user:
 | editor | Read, Grep, Glob, Write, Edit | Reads feedback, modifies plan |
 
 All agents: `disallowedTools: ["Agent"]` — enforces flat hierarchy.
+
+## Loop Parameters
+
+Parameters for the iteration-loop.md shared reference (auto-included in Step 6e above):
+
+| Parameter | Value |
+|---|---|
+| **max_iterations** | 10 (override via `$GP_CREATE_SIDE_QUEST_MAX_ITERATIONS` env var for test harness cost control) |
+| **override_flag** | `--override` — appended to submit command on stagnation/reduction/cap exits |
+| **run_dir_mode** | `temp` — ephemeral `$TMPDIR/reviews/` directory |
+| **submit_command** | `echo '{"scores":{REVIEWER_SCORES_JSON}}' \| $GP submit-refinement --quest $QUEST_NAME --json` |
+| **stagnation_window** | 2 |
+| **reduction_exit_threshold** | 2 |
+| **review_context** | `"implementation-plan"` |
 
 ## Error Handling
 
