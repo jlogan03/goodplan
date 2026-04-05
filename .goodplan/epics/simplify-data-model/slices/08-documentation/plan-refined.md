@@ -26,7 +26,7 @@ The start-epic skill uses v1.0.3 file-existence checks, directory renaming (`mv`
 
 ### Tasks
 
-- [ ] Rewrite `skills/start-epic/SKILL.md` with this structure:
+- [x] Rewrite `skills/start-epic/SKILL.md` with this structure:
   1. **Step 0 — Version Check**: `gp --version --json` (standard pattern)
   2. **Step 1 — Scope Resolution**: Accept epic name as argument or auto-detect via `gp epic:list --json` — find epic in `slices-refined` status. If no epic in `slices-refined`, check for `activated` (already done). If ambiguous, use AskUserQuestion.
   3. **Step 2 — Pre-activation Check**: `gp epic:show --epic <name> --json` — verify status is `slices-refined`. Prefer consulting `nextCommands` from the CLI response to determine recommended skills (resilient to future status additions). Handle wrong-status cases explicitly:
@@ -42,8 +42,8 @@ The start-epic skill uses v1.0.3 file-existence checks, directory renaming (`mv`
   6. **Step 5 — User Approval**: Use AskUserQuestion: "Approve this architecture and activate the epic? / Request changes / Cancel". If changes requested, guide user to re-run `/gp:create-epic` to revise.
   7. **Step 6 — Activate**: `gp epic:activate --epic <name> --json`. Verify response shows `activated` status.
   8. **Step 7 — Done Summary**: Display epic name, slice count, next step: "Run `/gp:plan-slice` to create a plan for the first slice, or `/gp:status` to see the full slice list."
-- [ ] Remove all references to: `architecture-proposal/`, `approved.md`, `explore-complete.md`, `explore-skipped.md`, `__active__` prefix, `state.md`, `activity-log.jsonl`, `/create-architecture`, `/create-slices`, `/explore`, `/complete`
-- [ ] Update the skill description in frontmatter to reflect the simplified flow
+- [x] Remove all references to: `architecture-proposal/`, `approved.md`, `explore-complete.md`, `explore-skipped.md`, `__active__` prefix, `state.md`, `activity-log.jsonl`, `/create-architecture`, `/create-slices`, `/explore`, `/complete`
+- [x] Update the skill description in frontmatter to reflect the simplified flow
 
 ### Verification
 
