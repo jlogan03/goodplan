@@ -24,17 +24,18 @@ import {
 	rmSync,
 	writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import {
+	type CliResult,
 	createSimulatedUser,
+	createTestEnv,
 	gp,
-	gpJson,
 	gpForce,
+	gpJson,
 	isSuccess,
 	parseModel,
 	runSkillSession,
 	tierDefault,
-	type CliResult,
 } from "./utils";
 
 // ─── Environment Validation ─────────────────────────────────
@@ -47,6 +48,7 @@ if (!HOME) {
 
 const NONDET_EVAL_DIR = join(HOME, "Repos/nondet-eval");
 const GOODPLAN_DIR = join(import.meta.dir, "../..");
+const PLUGIN_DIR = resolve(GOODPLAN_DIR, "dist/gp-plugin");
 const LOG_DIR = join(import.meta.dir, "logs");
 const FRICTION_LOG = join(LOG_DIR, "friction-log.md");
 const MODEL = parseModel(tierDefault("structural"));
@@ -70,15 +72,27 @@ const allViolations: string[] = [];
 // ─── CLI Helpers (project-scoped wrappers) ───────────────────
 
 function gpLocal(args: string[], opts: { cwd?: string; stdin?: string } = {}): CliResult {
-	return gp(args, { cwd: opts.cwd ?? NONDET_EVAL_DIR, ...(opts.stdin !== undefined ? { stdin: opts.stdin } : {}) });
+	return gp(args, {
+		cwd: opts.cwd ?? NONDET_EVAL_DIR,
+		...(opts.stdin !== undefined ? { stdin: opts.stdin } : {}),
+	});
 }
 
 function gpLocalJson<T>(args: string[], opts?: { cwd?: string; stdin?: string }): T {
-	return gpJson<T>(args, { cwd: opts?.cwd ?? NONDET_EVAL_DIR, ...(opts?.stdin !== undefined ? { stdin: opts.stdin } : {}) });
+	return gpJson<T>(args, {
+		cwd: opts?.cwd ?? NONDET_EVAL_DIR,
+		...(opts?.stdin !== undefined ? { stdin: opts.stdin } : {}),
+	});
 }
 
-function gpLocalForce(args: string[], opts: { cwd?: string; stdin?: string } = {}): CliResult & { retried: boolean } {
-	return gpForce(args, { cwd: opts.cwd ?? NONDET_EVAL_DIR, ...(opts.stdin !== undefined ? { stdin: opts.stdin } : {}) });
+function gpLocalForce(
+	args: string[],
+	opts: { cwd?: string; stdin?: string } = {},
+): CliResult & { retried: boolean } {
+	return gpForce(args, {
+		cwd: opts.cwd ?? NONDET_EVAL_DIR,
+		...(opts.stdin !== undefined ? { stdin: opts.stdin } : {}),
+	});
 }
 
 /**
@@ -206,10 +220,7 @@ async function runSkill(
 				maxBudgetUsd,
 				model,
 				settingSources: [],
-				env: {
-					...process.env,
-					PATH: `${HOME}/bin:${process.env.PATH ?? ""}`,
-				},
+				env: createTestEnv(PLUGIN_DIR),
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",
@@ -222,12 +233,14 @@ async function runSkill(
 			onMessage: (message) => {
 				if (message.type === "assistant") {
 					const raw = message as Record<string, unknown>;
-					const inner = typeof raw.message === "object" && raw.message !== null
-						? (raw.message as Record<string, unknown>)
-						: undefined;
-					const content = inner && Array.isArray(inner.content)
-						? (inner.content as Array<{ type: string; name?: string; text?: string }>)
-						: [];
+					const inner =
+						typeof raw.message === "object" && raw.message !== null
+							? (raw.message as Record<string, unknown>)
+							: undefined;
+					const content =
+						inner && Array.isArray(inner.content)
+							? (inner.content as Array<{ type: string; name?: string; text?: string }>)
+							: [];
 					for (const block of content) {
 						if (block.type === "tool_use") {
 							log(logName, `[tool_use] ${block.name}`);
@@ -286,10 +299,7 @@ async function runSkill(
 				`\n--- RESULT (${result.length} chars, $${costUsd.toFixed(4)}) ---\n${result.slice(0, 2000)}`,
 			);
 		} else {
-			log(
-				logName,
-				`\n--- ERROR RESULT (${session.result.subtype}) ---`,
-			);
+			log(logName, `\n--- ERROR RESULT (${session.result.subtype}) ---`);
 		}
 
 		if (session.violations.length > 0) {
@@ -308,9 +318,7 @@ async function runSkill(
 
 	simulatedUser.close();
 	const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-	console.log(
-		`  │  ${elapsed}s, $${costUsd.toFixed(4)}`,
-	);
+	console.log(`  │  ${elapsed}s, $${costUsd.toFixed(4)}`);
 	console.log(`  └─ Done: ${skillName}\n`);
 
 	log(
@@ -869,11 +877,21 @@ When done, submit scores via: echo '{"scores":{"completeness":8,"correctness":8,
 			if (existsSync(refiningPath)) {
 				execFileSync("mv", [refiningPath, refinedPath]);
 				console.log(`  Fixed: renamed plan-refining.md -> plan-refined.md for ${sliceName}`);
-				logFriction("minor", "Skill: /refine-plan", `plan-refining.md not renamed for ${sliceName}`);
+				logFriction(
+					"minor",
+					"Skill: /refine-plan",
+					`plan-refining.md not renamed for ${sliceName}`,
+				);
 			} else if (existsSync(planPath)) {
 				execFileSync("cp", [planPath, refinedPath]);
-				console.log(`  Fixed: copied plan.md -> plan-refined.md for ${sliceName} (no refinement file created)`);
-				logFriction("important", "Skill: /refine-plan", `Neither plan-refining.md nor plan-refined.md created for ${sliceName} — copied plan.md as fallback`);
+				console.log(
+					`  Fixed: copied plan.md -> plan-refined.md for ${sliceName} (no refinement file created)`,
+				);
+				logFriction(
+					"important",
+					"Skill: /refine-plan",
+					`Neither plan-refining.md nor plan-refined.md created for ${sliceName} — copied plan.md as fallback`,
+				);
 			}
 		}
 
@@ -907,7 +925,11 @@ When done, call: echo '' | goodplan submit-implementation --slice ${sliceName} -
 		const submitResult = gpLocalForce(["submit-implementation", "--slice", sliceName, "--json"]);
 		logCliResult("submit-implementation", submitResult);
 		if (submitResult.retried) {
-			logFriction("minor", "CLI: concurrent-mod", `Used --force to recover from CONCURRENT_MODIFICATION for ${sliceName}`);
+			logFriction(
+				"minor",
+				"CLI: concurrent-mod",
+				`Used --force to recover from CONCURRENT_MODIFICATION for ${sliceName}`,
+			);
 		}
 		logFriction(
 			"minor",
@@ -926,7 +948,9 @@ When done, call: echo '' | goodplan submit-implementation --slice ${sliceName} -
 			learnings: [],
 			architectureDelta: [],
 		});
-		const completeResult = gpLocalForce(["slice:complete", "--slice", sliceName, "--json"], { stdin: completePayload });
+		const completeResult = gpLocalForce(["slice:complete", "--slice", sliceName, "--json"], {
+			stdin: completePayload,
+		});
 		logCliResult("slice:complete", completeResult);
 		if (completeResult.exitCode !== 0) {
 			console.error(`  slice:complete failed: exit ${completeResult.exitCode}`);
@@ -967,7 +991,9 @@ Verification results: ${verificationResults}. Call epic:complete with this paylo
 		const completePayload = JSON.stringify({
 			verificationResults: [{ index: 0, passed: true, notes: "Harness automated verification" }],
 		});
-		const completeResult = gpLocalForce(["epic:complete", "--epic", "core-provider", "--json"], { stdin: completePayload });
+		const completeResult = gpLocalForce(["epic:complete", "--epic", "core-provider", "--json"], {
+			stdin: completePayload,
+		});
 		logCliResult("epic:complete fallback", completeResult);
 		if (completeResult.exitCode !== 0) {
 			console.error(
@@ -1175,7 +1201,9 @@ When done, call: echo '' | goodplan submit-implementation --quest ${questName} -
 			learnings: [],
 			architectureDelta: [],
 		});
-		const completeResult = gpLocalForce(["quest:complete", "--quest", questName, "--json"], { stdin: completePayload });
+		const completeResult = gpLocalForce(["quest:complete", "--quest", questName, "--json"], {
+			stdin: completePayload,
+		});
 		logCliResult("quest:complete", completeResult);
 		if (completeResult.exitCode !== 0) {
 			console.error(`  quest:complete failed: exit ${completeResult.exitCode}`);
@@ -1642,11 +1670,21 @@ When done, submit scores via: echo '{"scores":{"completeness":8,"correctness":8,
 			if (existsSync(refiningPath)) {
 				execFileSync("mv", [refiningPath, refinedPath]);
 				console.log(`  Fixed: renamed plan-refining.md -> plan-refined.md for ${sliceName}`);
-				logFriction("minor", "Skill: /refine-plan", `plan-refining.md not renamed for ${sliceName}`);
+				logFriction(
+					"minor",
+					"Skill: /refine-plan",
+					`plan-refining.md not renamed for ${sliceName}`,
+				);
 			} else if (existsSync(planPath)) {
 				execFileSync("cp", [planPath, refinedPath]);
-				console.log(`  Fixed: copied plan.md -> plan-refined.md for ${sliceName} (no refinement file created)`);
-				logFriction("important", "Skill: /refine-plan", `Neither plan-refining.md nor plan-refined.md created for ${sliceName} — copied plan.md as fallback`);
+				console.log(
+					`  Fixed: copied plan.md -> plan-refined.md for ${sliceName} (no refinement file created)`,
+				);
+				logFriction(
+					"important",
+					"Skill: /refine-plan",
+					`Neither plan-refining.md nor plan-refined.md created for ${sliceName} — copied plan.md as fallback`,
+				);
 			}
 		}
 
@@ -1680,7 +1718,11 @@ When done, call: echo '' | goodplan submit-implementation --slice ${sliceName} -
 		const submitResult = gpLocalForce(["submit-implementation", "--slice", sliceName, "--json"]);
 		logCliResult("submit-implementation", submitResult);
 		if (submitResult.retried) {
-			logFriction("minor", "CLI: concurrent-mod", `Used --force for submit-implementation on ${sliceName}`);
+			logFriction(
+				"minor",
+				"CLI: concurrent-mod",
+				`Used --force for submit-implementation on ${sliceName}`,
+			);
 		}
 		logFriction(
 			"minor",
@@ -1699,10 +1741,16 @@ When done, call: echo '' | goodplan submit-implementation --slice ${sliceName} -
 			learnings: [],
 			architectureDelta: [],
 		});
-		const completeResult = gpLocalForce(["slice:complete", "--slice", sliceName, "--json"], { stdin: completePayload });
+		const completeResult = gpLocalForce(["slice:complete", "--slice", sliceName, "--json"], {
+			stdin: completePayload,
+		});
 		logCliResult("slice:complete", completeResult);
 		if (completeResult.retried) {
-			logFriction("minor", "CLI: concurrent-mod", `Used --force for slice:complete on ${sliceName}`);
+			logFriction(
+				"minor",
+				"CLI: concurrent-mod",
+				`Used --force for slice:complete on ${sliceName}`,
+			);
 		}
 	}
 
@@ -1738,9 +1786,13 @@ Verification results: ${verificationResults}. Call epic:complete with this paylo
 	if (afterStatus !== "completed") {
 		console.log("  Completing epic manually via CLI fallback...");
 		const completePayload = JSON.stringify({
-			verificationResults: [{ index: verificationIndex, passed: true, notes: "Harness automated verification" }],
+			verificationResults: [
+				{ index: verificationIndex, passed: true, notes: "Harness automated verification" },
+			],
 		});
-		const completeResult = gpLocalForce(["epic:complete", "--epic", epicName, "--json"], { stdin: completePayload });
+		const completeResult = gpLocalForce(["epic:complete", "--epic", epicName, "--json"], {
+			stdin: completePayload,
+		});
 		logCliResult("epic:complete fallback", completeResult);
 		if (completeResult.exitCode !== 0) {
 			console.error(

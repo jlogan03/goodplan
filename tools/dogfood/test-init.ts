@@ -18,6 +18,7 @@ import { join, resolve } from "node:path";
 import {
 	createLogger,
 	createSimulatedUser,
+	createTestEnv,
 	gp,
 	isSuccess,
 	parseModel,
@@ -174,10 +175,7 @@ async function testEmptyDir(): Promise<boolean> {
 					model: MODEL,
 					settingSources: [],
 					plugins: [{ type: "local", path: PLUGIN_DIR }],
-					env: {
-						...process.env,
-						PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
-					},
+					env: createTestEnv(PLUGIN_DIR),
 					systemPrompt: {
 						type: "preset",
 						preset: "claude_code",
@@ -257,10 +255,7 @@ async function testOnboardTypescript(): Promise<boolean> {
 					model: MODEL,
 					settingSources: [],
 					plugins: [{ type: "local", path: PLUGIN_DIR }],
-					env: {
-						...process.env,
-						PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
-					},
+					env: createTestEnv(PLUGIN_DIR),
 					systemPrompt: {
 						type: "preset",
 						preset: "claude_code",
@@ -340,7 +335,8 @@ async function testModeOverride(): Promise<boolean> {
 
 		try {
 			const session = await runSkillSession({
-				prompt: "Run /gp:init --mode new. Force new project mode following the init skill instructions.",
+				prompt:
+					"Run /gp:init --mode new. Force new project mode following the init skill instructions.",
 				options: {
 					cwd: testDir,
 					permissionMode: "bypassPermissions",
@@ -350,10 +346,7 @@ async function testModeOverride(): Promise<boolean> {
 					model: MODEL,
 					settingSources: [],
 					plugins: [{ type: "local", path: PLUGIN_DIR }],
-					env: {
-						...process.env,
-						PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
-					},
+					env: createTestEnv(PLUGIN_DIR),
 					systemPrompt: {
 						type: "preset",
 						preset: "claude_code",
@@ -467,10 +460,7 @@ async function testAlreadyInitialized(): Promise<boolean> {
 					model: MODEL,
 					settingSources: [],
 					plugins: [{ type: "local", path: PLUGIN_DIR }],
-					env: {
-						...process.env,
-						PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
-					},
+					env: createTestEnv(PLUGIN_DIR),
 					systemPrompt: {
 						type: "preset",
 						preset: "claude_code",

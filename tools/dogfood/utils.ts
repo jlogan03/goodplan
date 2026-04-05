@@ -9,7 +9,7 @@
 
 import { execFileSync } from "node:child_process";
 import { appendFileSync, mkdirSync, statSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { delimiter, dirname, join } from "node:path";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import type {
 	CanUseTool,
@@ -32,7 +32,13 @@ function resolveDefaultGpBin(): string {
 	if (process.env.GP_CLI_PATH) return process.env.GP_CLI_PATH;
 
 	// Use the local dist plugin binary — fully isolated from user's installed cache.
-	const distBin = join(import.meta.dir, "../..", "dist/gp-plugin/binaries", platformBinaryDir(), "gp");
+	const distBin = join(
+		import.meta.dir,
+		"../..",
+		"dist/gp-plugin/binaries",
+		platformBinaryDir(),
+		"gp",
+	);
 	try {
 		if (statSync(distBin, { throwIfNoEntry: false })) {
 			return distBin;
@@ -49,6 +55,47 @@ function resolveDefaultGpBin(): string {
 }
 
 const DEFAULT_GP_BIN = resolveDefaultGpBin();
+
+// ─── Isolated Test Environment ─────────────────────────────
+
+/**
+ * Builds an isolated env for test harnesses.
+ *
+ * Whitelist rationale: we only forward PATH (filtered to remove installed
+ * plugin cache dirs), HOME, and USER. This prevents test pollution from
+ * the host environment (e.g., user shell config, CLAUDE_* vars).
+ *
+ * TMPDIR is intentionally excluded: Bun/Node use the system default
+ * (/tmp) when TMPDIR is unset, which is correct for test isolation.
+ *
+ * @param pluginDir - path to the local plugin dist dir; its bin/ subdir
+ *   is prepended to PATH so `gp` resolves to the test build.
+ * @param overrides - additional env vars to set (e.g., GP_*_MAX_ITERATIONS).
+ *   These are merged last, so they can override any whitelist value.
+ * @throws if HOME or USER are not set in process.env (these are required
+ *   for CLI and git operations; an empty string would cause subtle failures).
+ */
+export function createTestEnv(
+	pluginDir: string,
+	overrides?: Record<string, string>,
+): Record<string, string> {
+	const home = process.env.HOME;
+	const user = process.env.USER;
+	if (!home) throw new Error("HOME is not set — cannot create isolated test env");
+	if (!user) throw new Error("USER is not set — cannot create isolated test env");
+
+	const cleanPath = (process.env.PATH ?? "")
+		.split(delimiter)
+		.filter((p) => !p.includes("/.claude/plugins/"))
+		.join(delimiter);
+	const testPath = `${join(pluginDir, "bin")}${delimiter}${cleanPath}`;
+	return {
+		PATH: testPath,
+		HOME: home,
+		USER: user,
+		...overrides,
+	};
+}
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -456,10 +503,20 @@ export function createSimulatedUser(opts: {
 				if (message.type === "assistant" && "message" in message) {
 					// TODO: SDK types don't expose message.content on the union — narrow via runtime check
 					const msg = message as Record<string, unknown>;
-					const innerMsg = typeof msg.message === "object" && msg.message !== null ? msg.message as Record<string, unknown> : null;
-					const content = Array.isArray(innerMsg?.content) ? innerMsg.content as Array<Record<string, unknown>> : null;
+					const innerMsg =
+						typeof msg.message === "object" && msg.message !== null
+							? (msg.message as Record<string, unknown>)
+							: null;
+					const content = Array.isArray(innerMsg?.content)
+						? (innerMsg.content as Array<Record<string, unknown>>)
+						: null;
 					const textBlock = content?.find((b) => b.type === "text");
-					if (textBlock && typeof textBlock.text === "string" && textBlock.text && responseResolve) {
+					if (
+						textBlock &&
+						typeof textBlock.text === "string" &&
+						textBlock.text &&
+						responseResolve
+					) {
 						const r = responseResolve;
 						responseResolve = null;
 						r(textBlock.text.trim());
@@ -486,9 +543,12 @@ export function createSimulatedUser(opts: {
 				r("");
 			}
 			// AbortError is expected during close() — only log unexpected errors
-			const isAbort = err instanceof Error && (err.name === "AbortError" || err.message.includes("aborted"));
+			const isAbort =
+				err instanceof Error && (err.name === "AbortError" || err.message.includes("aborted"));
 			if (!isAbort) {
-				console.warn(`[simulatedUser] drainLoop error: ${err instanceof Error ? err.message : String(err)}`);
+				console.warn(
+					`[simulatedUser] drainLoop error: ${err instanceof Error ? err.message : String(err)}`,
+				);
 			}
 		}
 	})();
@@ -740,11 +800,7 @@ const ARTIFACT_PATH_PATTERNS: RegExp[] = [
 ];
 
 /** Paths that are violations only when NOT under /tmp/ (fixture directories). */
-const PROJECT_ONLY_PATTERNS: RegExp[] = [
-	/\bsrc\//,
-	/\bskills\//,
-	/\bagents\//,
-];
+const PROJECT_ONLY_PATTERNS: RegExp[] = [/\bsrc\//, /\bskills\//, /\bagents\//];
 
 /**
  * Check if a single tool call is an artifact read violation.
@@ -788,15 +844,17 @@ export function checkArtifactRead(toolName: string, input: unknown): string | nu
  * the full `onMessage` tool call stream which includes sub-agent calls, producing
  * false positives.
  */
-export function verifyNoArtifactReads(
-	toolCalls: Array<{ toolName: string; input: unknown }>,
-): { ok: boolean; violations: string[] } {
+export function verifyNoArtifactReads(toolCalls: Array<{ toolName: string; input: unknown }>): {
+	ok: boolean;
+	violations: string[];
+} {
 	const violations: string[] = [];
 
 	for (const call of toolCalls) {
 		if (call.toolName !== "Read") continue;
 
-		if (typeof call.input !== "object" || call.input === null || Array.isArray(call.input)) continue;
+		if (typeof call.input !== "object" || call.input === null || Array.isArray(call.input))
+			continue;
 
 		const record = call.input as Record<string, unknown>;
 		const filePath = typeof record.file_path === "string" ? record.file_path : "";
@@ -952,7 +1010,10 @@ export async function createMinimalFixture(opts?: {
 			gp(["epic:define-architecture", "--epic", epicName, "--json"], { cwd: tmpDir });
 			const epicArchDir = join(ecDir, "architecture");
 			mkdirSync(epicArchDir, { recursive: true });
-			writeFileSync(join(epicArchDir, "_overview.md"), "# Architecture Overview\n\nMinimal fixture architecture.\n");
+			writeFileSync(
+				join(epicArchDir, "_overview.md"),
+				"# Architecture Overview\n\nMinimal fixture architecture.\n",
+			);
 			gp(["submit-architecture", "--epic", epicName, "--json"], { cwd: tmpDir });
 			gp(["submit-refine-architecture", "--epic", epicName, "--json"], {
 				cwd: tmpDir,

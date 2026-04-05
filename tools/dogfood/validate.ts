@@ -12,16 +12,11 @@
  */
 
 import { execFileSync } from "node:child_process";
-import {
-	appendFileSync,
-	existsSync,
-	mkdirSync,
-	rmSync,
-	writeFileSync,
-} from "node:fs";
-import { join } from "node:path";
+import { appendFileSync, existsSync, mkdirSync, rmSync } from "node:fs";
+import { join, resolve } from "node:path";
 import {
 	createSimulatedUser,
+	createTestEnv,
 	gp,
 	gpForce,
 	gpJson,
@@ -30,7 +25,6 @@ import {
 	runSkillSession,
 	tierDefault,
 	verifyEntityStatus,
-	type CliResult,
 } from "./utils";
 
 // ─── Config ──────────────────────────────────────────────────
@@ -40,6 +34,8 @@ if (!HOME) {
 	console.error("FATAL: HOME environment variable is not set");
 	process.exit(1);
 }
+const GOODPLAN_DIR = join(import.meta.dir, "../..");
+const PLUGIN_DIR = resolve(GOODPLAN_DIR, "dist/gp-plugin");
 const PROJECT_DIR = join(HOME, "Repos/flashcards");
 const LOG_DIR = join(import.meta.dir, "validate-logs");
 const MODEL = parseModel(tierDefault("quality"));
@@ -88,7 +84,10 @@ async function runSkill(
 	console.log(`\n  ┌─ ${skillName}`);
 	console.log(`  │  model=${MODEL}, maxTurns=${maxTurns}, budget=$${maxBudgetUsd}`);
 
-	log(logName, `\n${"=".repeat(50)}\n[${new Date().toISOString()}] ${skillName}\n${"=".repeat(50)}\nPrompt: ${prompt}\n`);
+	log(
+		logName,
+		`\n${"=".repeat(50)}\n[${new Date().toISOString()}] ${skillName}\n${"=".repeat(50)}\nPrompt: ${prompt}\n`,
+	);
 
 	const simulatedUser = createSimulatedUser({
 		cwd: PROJECT_DIR,
@@ -110,7 +109,7 @@ async function runSkill(
 				maxBudgetUsd,
 				model: MODEL,
 				settingSources: [],
-				env: { ...process.env, PATH: `${HOME}/bin:${process.env.PATH ?? ""}` },
+				env: createTestEnv(PLUGIN_DIR),
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",
@@ -172,30 +171,50 @@ Always complete CLI state transitions (submit-explore, submit-architecture, etc.
 
 // ─── Workflow Helpers ────────────────────────────────────────
 
-async function runEpicLifecycle(epicName: string, goal: string, description: string): Promise<void> {
+async function runEpicLifecycle(
+	epicName: string,
+	goal: string,
+	description: string,
+): Promise<void> {
 	console.log(`\n${"=".repeat(60)}`);
 	console.log(`  EPIC: ${epicName} — ${description}`);
 	console.log(`${"=".repeat(60)}`);
 
 	// Create epic
-	const createResult = gpForce(["epic:create", "--json"], { cwd: PROJECT_DIR, stdin: JSON.stringify({ name: epicName, goal }) });
-	console.log(`  epic:create: ${createResult.exitCode === 0 ? "OK" : `FAIL ${createResult.exitCode}`}`);
+	const createResult = gpForce(["epic:create", "--json"], {
+		cwd: PROJECT_DIR,
+		stdin: JSON.stringify({ name: epicName, goal }),
+	});
+	console.log(
+		`  epic:create: ${createResult.exitCode === 0 ? "OK" : `FAIL ${createResult.exitCode}`}`,
+	);
 
 	// Create epic pipeline — handles explore, architecture, slices, and refinement
-	await runSkill("create-epic", `Use the Skill tool to invoke 'create-epic'. Epic: ${epicName}. Goal: ${goal}. Description: ${description}. Keep architecture to 2-3 modules, define 2 small slices.`, { logFile: `${epicName}-create-epic.log`, maxBudgetUsd: 30 });
+	await runSkill(
+		"create-epic",
+		`Use the Skill tool to invoke 'create-epic'. Epic: ${epicName}. Goal: ${goal}. Description: ${description}. Keep architecture to 2-3 modules, define 2 small slices.`,
+		{ logFile: `${epicName}-create-epic.log`, maxBudgetUsd: 30 },
+	);
 
 	let status = entityStatus("epic", epicName);
 	console.log(`  Status after create-epic: ${status}`);
 
 	// Ensure epic is activated if pipeline didn't complete all transitions
 	if (status !== "active" && status !== "completed") {
-		gpForce(["epic:add-verification", "--epic", epicName, "--json"], { cwd: PROJECT_DIR, stdin: JSON.stringify({ verification: [{ description: "All tests pass", command: "bun test" }] }) });
+		gpForce(["epic:add-verification", "--epic", epicName, "--json"], {
+			cwd: PROJECT_DIR,
+			stdin: JSON.stringify({
+				verification: [{ description: "All tests pass", command: "bun test" }],
+			}),
+		});
 		gpForce(["epic:activate", "--epic", epicName, "--json"], { cwd: PROJECT_DIR });
 		console.log(`  Activated: ${entityStatus("epic", epicName)}`);
 	}
 
 	// Per-slice cycle
-	const slices = gpJson<{ items: Array<{ name: string }> }>(["slice:list", "--json"], { cwd: PROJECT_DIR });
+	const slices = gpJson<{ items: Array<{ name: string }> }>(["slice:list", "--json"], {
+		cwd: PROJECT_DIR,
+	});
 	const activeSlices = slices.items.filter((s) => entityStatus("slice", s.name) !== "completed");
 	console.log(`  Slices to process: ${activeSlices.map((s) => s.name).join(", ")}`);
 
@@ -204,11 +223,20 @@ async function runEpicLifecycle(epicName: string, goal: string, description: str
 	}
 
 	// Complete epic
-	await runSkill("complete-epic", `Use the Skill tool to invoke 'complete-epic'. Complete epic "${epicName}". Synthesize learnings.`, { logFile: `${epicName}-complete-epic.log` });
+	await runSkill(
+		"complete-epic",
+		`Use the Skill tool to invoke 'complete-epic'. Complete epic "${epicName}". Synthesize learnings.`,
+		{ logFile: `${epicName}-complete-epic.log` },
+	);
 
 	status = entityStatus("epic", epicName);
 	if (status !== "completed") {
-		gpForce(["epic:complete", "--epic", epicName, "--json"], { cwd: PROJECT_DIR, stdin: JSON.stringify({ verificationResults: [{ index: 0, passed: true, notes: "Automated verification" }] }) });
+		gpForce(["epic:complete", "--epic", epicName, "--json"], {
+			cwd: PROJECT_DIR,
+			stdin: JSON.stringify({
+				verificationResults: [{ index: 0, passed: true, notes: "Automated verification" }],
+			}),
+		});
 	}
 	console.log(`  Epic ${epicName} final: ${entityStatus("epic", epicName)}`);
 }
@@ -218,10 +246,15 @@ async function runSliceCycle(sliceName: string, epicName: string): Promise<void>
 
 	// Plan slice pipeline — handles planning and refinement
 	gpForce(["slice:plan", "--slice", sliceName, "--json"], { cwd: PROJECT_DIR });
-	await runSkill("plan-slice", `Use the Skill tool to invoke 'plan-slice' for slice "${sliceName}". Create a simple 2-phase plan.`, { logFile: `${sliceName}-plan-slice.log` });
+	await runSkill(
+		"plan-slice",
+		`Use the Skill tool to invoke 'plan-slice' for slice "${sliceName}". Create a simple 2-phase plan.`,
+		{ logFile: `${sliceName}-plan-slice.log` },
+	);
 
 	let status = entityStatus("slice", sliceName);
-	if (status === "planning") gpForce(["submit-plan", "--slice", sliceName, "--json"], { cwd: PROJECT_DIR });
+	if (status === "planning")
+		gpForce(["submit-plan", "--slice", sliceName, "--json"], { cwd: PROJECT_DIR });
 
 	// Ensure plan-refined.md exists (pipeline may have handled refinement)
 	const sliceDir = join(PROJECT_DIR, ".goodplan/slices", sliceName);
@@ -236,15 +269,28 @@ async function runSliceCycle(sliceName: string, epicName: string): Promise<void>
 
 	// Implement pipeline — handles implementation, review, and completion
 	gpForce(["slice:implement", "--slice", sliceName, "--json"], { cwd: PROJECT_DIR });
-	await runSkill("implement", `Use the Skill tool to invoke 'implement' for slice "${sliceName}". Write TypeScript code.`, { logFile: `${sliceName}-implement.log`, maxBudgetUsd: 30 });
+	await runSkill(
+		"implement",
+		`Use the Skill tool to invoke 'implement' for slice "${sliceName}". Write TypeScript code.`,
+		{ logFile: `${sliceName}-implement.log`, maxBudgetUsd: 30 },
+	);
 
 	status = entityStatus("slice", sliceName);
-	if (status === "implementing") gpForce(["submit-implementation", "--slice", sliceName, "--json"], { cwd: PROJECT_DIR });
+	if (status === "implementing")
+		gpForce(["submit-implementation", "--slice", sliceName, "--json"], { cwd: PROJECT_DIR });
 
 	// Complete
 	status = entityStatus("slice", sliceName);
 	if (status === "implementation-complete") {
-		gpForce(["slice:complete", "--slice", sliceName, "--json"], { cwd: PROJECT_DIR, stdin: JSON.stringify({ verificationPassed: true, deferred: [], learnings: [], architectureDelta: [] }) });
+		gpForce(["slice:complete", "--slice", sliceName, "--json"], {
+			cwd: PROJECT_DIR,
+			stdin: JSON.stringify({
+				verificationPassed: true,
+				deferred: [],
+				learnings: [],
+				architectureDelta: [],
+			}),
+		});
 	}
 	console.log(`  Slice ${sliceName} final: ${entityStatus("slice", sliceName)}`);
 }
@@ -254,25 +300,41 @@ async function runQuestLifecycle(questName: string, goal: string): Promise<void>
 	console.log(`  QUEST: ${questName} — ${goal}`);
 	console.log(`${"=".repeat(60)}`);
 
-	gpForce(["quest:create", "--json"], { cwd: PROJECT_DIR, stdin: JSON.stringify({ name: questName, goal }) });
+	gpForce(["quest:create", "--json"], {
+		cwd: PROJECT_DIR,
+		stdin: JSON.stringify({ name: questName, goal }),
+	});
 	gpForce(["quest:plan", "--quest", questName, "--json"], { cwd: PROJECT_DIR });
 
-	await runSkill("plan-slice", `Use the Skill tool to invoke 'plan-slice' for quest "${questName}". Goal: ${goal}. Simple 1-2 phase plan.`, { logFile: `${questName}-plan-slice.log` });
+	await runSkill(
+		"plan-slice",
+		`Use the Skill tool to invoke 'plan-slice' for quest "${questName}". Goal: ${goal}. Simple 1-2 phase plan.`,
+		{ logFile: `${questName}-plan-slice.log` },
+	);
 
 	let status = entityStatus("quest", questName);
-	if (status === "planning") gpForce(["submit-plan", "--quest", questName, "--json"], { cwd: PROJECT_DIR });
+	if (status === "planning")
+		gpForce(["submit-plan", "--quest", questName, "--json"], { cwd: PROJECT_DIR });
 
 	// Skip refine for quests — test direct plan-to-implement path
 	gpForce(["quest:implement", "--quest", questName, "--json"], { cwd: PROJECT_DIR });
 
-	await runSkill("implement", `Use the Skill tool to invoke 'implement' for quest "${questName}". Write the code.`, { logFile: `${questName}-implement.log`, maxBudgetUsd: 20 });
+	await runSkill(
+		"implement",
+		`Use the Skill tool to invoke 'implement' for quest "${questName}". Write the code.`,
+		{ logFile: `${questName}-implement.log`, maxBudgetUsd: 20 },
+	);
 
 	status = entityStatus("quest", questName);
-	if (status === "implementing") gpForce(["submit-implementation", "--quest", questName, "--json"], { cwd: PROJECT_DIR });
+	if (status === "implementing")
+		gpForce(["submit-implementation", "--quest", questName, "--json"], { cwd: PROJECT_DIR });
 
 	status = entityStatus("quest", questName);
 	if (status === "implementation-complete") {
-		gpForce(["quest:complete", "--quest", questName, "--json"], { cwd: PROJECT_DIR, stdin: JSON.stringify({ verificationPassed: true, learnings: [], architectureDelta: [] }) });
+		gpForce(["quest:complete", "--quest", questName, "--json"], {
+			cwd: PROJECT_DIR,
+			stdin: JSON.stringify({ verificationPassed: true, learnings: [], architectureDelta: [] }),
+		});
 	}
 	console.log(`  Quest ${questName} final: ${entityStatus("quest", questName)}`);
 }
@@ -337,7 +399,9 @@ async function main(): Promise<void> {
 		console.log(`    Quest ${quest}: ${entityStatus("quest", quest)}`);
 	}
 
-	const slices = gpJson<{ items: Array<{ name: string }> }>(["slice:list", "--json"], { cwd: PROJECT_DIR });
+	const slices = gpJson<{ items: Array<{ name: string }> }>(["slice:list", "--json"], {
+		cwd: PROJECT_DIR,
+	});
 	for (const s of slices.items) {
 		console.log(`    Slice ${s.name}: ${entityStatus("slice", s.name)}`);
 	}
@@ -354,5 +418,11 @@ async function main(): Promise<void> {
 }
 
 main()
-	.then(() => { console.log("[validate] Done."); process.exit(0); })
-	.catch((e) => { console.error("[validate] FATAL:", e); process.exit(1); });
+	.then(() => {
+		console.log("[validate] Done.");
+		process.exit(0);
+	})
+	.catch((e) => {
+		console.error("[validate] FATAL:", e);
+		process.exit(1);
+	});

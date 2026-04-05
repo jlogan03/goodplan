@@ -23,6 +23,7 @@ import {
 	createLogger,
 	createMinimalFixture,
 	createSimulatedUser,
+	createTestEnv,
 	isSuccess,
 	parseModel,
 	platformBinaryDir,
@@ -433,10 +434,7 @@ async function testAuditMode(mode: string, fixtureDir: string): Promise<boolean>
 				model: MODEL,
 				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
-				env: {
-					...process.env,
-					PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
-				},
+				env: createTestEnv(PLUGIN_DIR),
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",
@@ -557,10 +555,7 @@ async function testInvalidMode(fixtureDir: string): Promise<boolean> {
 				model: MODEL,
 				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
-				env: {
-					...process.env,
-					PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
-				},
+				env: createTestEnv(PLUGIN_DIR),
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",

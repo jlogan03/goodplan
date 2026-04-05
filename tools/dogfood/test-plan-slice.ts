@@ -23,6 +23,7 @@ import {
 	createLogger,
 	createMinimalFixture,
 	createSimulatedUser,
+	createTestEnv,
 	isSuccess,
 	parseModel,
 	platformBinaryDir,
@@ -269,11 +270,7 @@ async function main(): Promise<void> {
 				model: MODEL,
 				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
-				env: {
-					...process.env,
-					PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
-					GP_PLAN_SLICE_MAX_ITERATIONS: String(MAX_ITERATIONS),
-				},
+				env: createTestEnv(PLUGIN_DIR, { GP_PLAN_SLICE_MAX_ITERATIONS: String(MAX_ITERATIONS) }),
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",

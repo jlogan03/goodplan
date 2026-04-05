@@ -14,10 +14,11 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import {
 	createLogger,
+	createTestEnv,
 	isSuccess,
 	parseModel,
 	platformBinaryDir,
@@ -83,7 +84,8 @@ async function testSkillDiscovery(): Promise<boolean> {
 
 	try {
 		const session = await runSkillSession({
-			prompt: "List all available slash commands that start with /gp: — just output the names, one per line, nothing else.",
+			prompt:
+				"List all available slash commands that start with /gp: — just output the names, one per line, nothing else.",
 			options: {
 				cwd: TEST_DIR,
 				permissionMode: "bypassPermissions",
@@ -96,7 +98,8 @@ async function testSkillDiscovery(): Promise<boolean> {
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",
-					append: "You are in an automated test. Be concise. Do not use any tools. Just list the /gp: skills you see available.",
+					append:
+						"You are in an automated test. Be concise. Do not use any tools. Just list the /gp: skills you see available.",
 				},
 			},
 			transcriptFile: TRANSCRIPT_FILE,
@@ -117,7 +120,20 @@ async function testSkillDiscovery(): Promise<boolean> {
 		logger.log("PASS: Skills discovered with /gp: namespace prefix");
 
 		// Check for specific expected skills
-		const expectedSkills = ["audit", "complete-epic", "create-epic", "create-side-quest", "explore", "implement", "init", "plan-slice", "start-epic", "status", "task", "upgrade"];
+		const expectedSkills = [
+			"audit",
+			"complete-epic",
+			"create-epic",
+			"create-side-quest",
+			"explore",
+			"implement",
+			"init",
+			"plan-slice",
+			"start-epic",
+			"status",
+			"task",
+			"upgrade",
+		];
 		for (const skill of expectedSkills) {
 			if (skillList.includes(`/gp:${skill}`)) {
 				logger.log(`  PASS: /gp:${skill} found`);
@@ -153,10 +169,7 @@ async function testProjectStatus(): Promise<boolean> {
 				model: MODEL,
 				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
-				env: {
-					...process.env,
-					PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
-				},
+				env: createTestEnv(PLUGIN_DIR),
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",
@@ -166,13 +179,16 @@ async function testProjectStatus(): Promise<boolean> {
 			transcriptFile: TRANSCRIPT_FILE,
 			onMessage: (message) => {
 				if (message.type === "assistant") {
-					const msg = message as { message: { content: Array<{ type: string; name?: string; input?: unknown }> } };
+					const msg = message as {
+						message: { content: Array<{ type: string; name?: string; input?: unknown }> };
+					};
 					for (const block of msg.message.content) {
 						if (block.type === "tool_use") {
 							if (block.name === "Bash") {
-								const cmd = typeof block.input === "object" && block.input && "command" in block.input
-									? String((block.input as Record<string, unknown>).command).slice(0, 120)
-									: "?";
+								const cmd =
+									typeof block.input === "object" && block.input && "command" in block.input
+										? String((block.input as Record<string, unknown>).command).slice(0, 120)
+										: "?";
 								logger.log(`  [${block.name}] ${cmd}`);
 							} else if (block.name === "Skill") {
 								logger.log(`  [${block.name}] ${JSON.stringify(block.input).slice(0, 120)}`);
@@ -190,7 +206,12 @@ async function testProjectStatus(): Promise<boolean> {
 			logger.log(`Result (first 2000 chars):\n${result.slice(0, 2000)}`);
 
 			// Check for indicators that status ran successfully
-			if (result.includes("plugin-skill-test") || result.includes("goodplan") || result.includes("project") || result.includes("status")) {
+			if (
+				result.includes("plugin-skill-test") ||
+				result.includes("goodplan") ||
+				result.includes("project") ||
+				result.includes("status")
+			) {
 				success = true;
 				logger.log("\nPASS: /gp:status executed and returned project information");
 			} else {
@@ -224,8 +245,12 @@ async function main(): Promise<void> {
 	logger.log(`Log file: ${LOG_FILE}`);
 
 	if (!discoveryPassed) {
-		logger.log("\nWARNING: Auto-namespacing failed. The build step should add gp: namespace prefixes.");
-		logger.log("See plan Phase 2 fallback: 'If auto-namespacing does NOT work (bug #20994 still present)'");
+		logger.log(
+			"\nWARNING: Auto-namespacing failed. The build step should add gp: namespace prefixes.",
+		);
+		logger.log(
+			"See plan Phase 2 fallback: 'If auto-namespacing does NOT work (bug #20994 still present)'",
+		);
 	}
 
 	// Clean up

@@ -24,6 +24,7 @@ import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import {
 	createLogger,
 	createSimulatedUser,
+	createTestEnv,
 	gp,
 	gpForce,
 	isSuccess,
@@ -33,7 +34,7 @@ import {
 	tierDefault,
 	verifyEntityStatus,
 } from "./utils";
-import type { CliResult, SkillSessionResult } from "./utils";
+import type { SkillSessionResult } from "./utils";
 
 // ─── CLI Arg Parsing ────────────────────────────────────────
 
@@ -71,7 +72,8 @@ const EPIC_GOAL =
 	"Cards should track review history, calculate next review date using SM-2, " +
 	"and the quiz engine should prioritize cards due for review.";
 
-const SIDE_QUEST_GOAL = "Add markdown card import — parse .md files with front/back delimiters into Card objects";
+const SIDE_QUEST_GOAL =
+	"Add markdown card import — parse .md files with front/back delimiters into Card objects";
 
 const COST_THRESHOLD_USD = 40;
 
@@ -179,7 +181,10 @@ function loadSkillBody(skillName: string): string {
 // ─── Fixture: Realistic Flashcard CLI App ───────────────────
 
 function createFlashcardFixture(): string {
-	const tmpDir = join("/tmp", `gp-flashcard-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+	const tmpDir = join(
+		"/tmp",
+		`gp-flashcard-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+	);
 	mkdirSync(tmpDir, { recursive: true });
 
 	// package.json
@@ -378,7 +383,7 @@ function createFlashcardFixture(): string {
 			"",
 			"/** Main CLI entry point. */",
 			"function main(): void {",
-			"  console.log(\"Flashcard CLI v0.1.0\");",
+			'  console.log("Flashcard CLI v0.1.0");',
 			"",
 			"  // Demo: create some cards and run a quick quiz",
 			"  const cards = [",
@@ -445,7 +450,9 @@ function createFlashcardFixture(): string {
 		});
 		logger.log("[fixture] bun install completed");
 	} catch (err) {
-		logger.log(`[fixture] WARN: bun install failed: ${err instanceof Error ? err.message : String(err)}`);
+		logger.log(
+			`[fixture] WARN: bun install failed: ${err instanceof Error ? err.message : String(err)}`,
+		);
 	}
 
 	// git init + commit
@@ -453,7 +460,15 @@ function createFlashcardFixture(): string {
 	execFileSync("git", ["add", "-A"], { cwd: tmpDir, stdio: "pipe" });
 	execFileSync(
 		"git",
-		["-c", "user.name=test", "-c", "user.email=test@test.com", "commit", "-m", "initial flashcard CLI skeleton"],
+		[
+			"-c",
+			"user.name=test",
+			"-c",
+			"user.email=test@test.com",
+			"commit",
+			"-m",
+			"initial flashcard CLI skeleton",
+		],
 		{ cwd: tmpDir, stdio: "pipe" },
 	);
 
@@ -501,11 +516,7 @@ async function runSkill(opts: {
 				model: MODEL,
 				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
-				env: {
-					...process.env,
-					PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
-					GP_CREATE_EPIC_MAX_ITERATIONS: String(MAX_ITERATIONS),
-				},
+				env: createTestEnv(PLUGIN_DIR, { GP_CREATE_EPIC_MAX_ITERATIONS: String(MAX_ITERATIONS) }),
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",
@@ -561,7 +572,8 @@ async function stepInit(ctx: PipelineContext): Promise<boolean> {
 
 	const result = await runSkill({
 		skillName: "init",
-		prompt: "Initialize this project with goodplan. The project is a flashcard CLI app built with TypeScript and Bun.",
+		prompt:
+			"Initialize this project with goodplan. The project is a flashcard CLI app built with TypeScript and Bun.",
 		userSystemPrompt: [
 			"You are a senior TypeScript developer building a flashcard CLI app.",
 			"When asked about project name, say 'flashcard-cli'.",
@@ -648,11 +660,16 @@ async function stepCreateEpic(ctx: PipelineContext): Promise<boolean> {
 
 	// Accept late-stage statuses
 	const acceptableStatuses = [
-		"slices-defined", "architecture-refined", "architecture-defined",
-		"defining-slices", "slices-refined",
+		"slices-defined",
+		"architecture-refined",
+		"architecture-defined",
+		"defining-slices",
+		"slices-refined",
 	];
 	if (acceptableStatuses.includes(epicStatus.actual)) {
-		logger.log(`WARN: Epic at '${epicStatus.actual}' (expected 'slices-refined') -- partial success`);
+		logger.log(
+			`WARN: Epic at '${epicStatus.actual}' (expected 'slices-refined') -- partial success`,
+		);
 		return true;
 	}
 
@@ -694,13 +711,18 @@ function stepActivateEpic(ctx: PipelineContext): boolean {
 	mkdirSync(epicDir, { recursive: true });
 
 	// Try each step, ignoring failures for already-completed transitions
-	const transitions: Array<{ args: string[]; artifact?: { path: string; content: string }; stdin?: string }> = [
+	const transitions: Array<{
+		args: string[];
+		artifact?: { path: string; content: string };
+		stdin?: string;
+	}> = [
 		{ args: ["epic:explore", "--epic", EPIC_NAME, "--json"] },
 		{
 			args: ["submit-explore", "--epic", EPIC_NAME, "--json"],
 			artifact: {
 				path: join(epicDir, "explore-complete.md"),
-				content: "# Explore Complete\n\n## Findings\n- SM-2 algorithm needs card-level review history\n- Quiz engine needs priority queue\n",
+				content:
+					"# Explore Complete\n\n## Findings\n- SM-2 algorithm needs card-level review history\n- Quiz engine needs priority queue\n",
 			},
 		},
 		{ args: ["epic:define-architecture", "--epic", EPIC_NAME, "--json"] },
@@ -770,7 +792,7 @@ function stepActivateEpic(ctx: PipelineContext): boolean {
 		return true;
 	}
 
-	logger.log(`WARN: Epic at '${postStatus.actual}' after fast-track (expected 'activated')`)
+	logger.log(`WARN: Epic at '${postStatus.actual}' after fast-track (expected 'activated')`);
 	return true; // Continue pipeline anyway
 }
 
@@ -798,7 +820,10 @@ async function stepPlanSlice(ctx: PipelineContext): Promise<boolean> {
 		gp(["slice:create", "--epic", EPIC_NAME, "--json"], {
 			cwd: ctx.fixtureDir,
 			gpBin: GP_BIN,
-			stdin: JSON.stringify({ name: sliceName, goal: "Implement SM-2 core algorithm for spaced repetition scheduling" }),
+			stdin: JSON.stringify({
+				name: sliceName,
+				goal: "Implement SM-2 core algorithm for spaced repetition scheduling",
+			}),
 		});
 	}
 
@@ -920,7 +945,9 @@ async function stepCreateSideQuest(ctx: PipelineContext): Promise<boolean> {
 	if (result.success) {
 		logger.log("PASS: Side quest created");
 	} else {
-		logger.log("WARN: Side quest creation may have failed -- continuing with degraded verification");
+		logger.log(
+			"WARN: Side quest creation may have failed -- continuing with degraded verification",
+		);
 	}
 
 	return true;
@@ -982,7 +1009,9 @@ async function stepCompleteEpic(ctx: PipelineContext): Promise<boolean> {
 				epic: EPIC_NAME,
 			});
 			if (sliceStatus.actual !== "done") {
-				logger.log(`[complete-epic] Force-completing slice '${sliceDir}' (status: ${sliceStatus.actual})...`);
+				logger.log(
+					`[complete-epic] Force-completing slice '${sliceDir}' (status: ${sliceStatus.actual})...`,
+				);
 				gpForce(["slice:complete", "--epic", EPIC_NAME, "--slice", sliceDir, "--json"], {
 					cwd: ctx.fixtureDir,
 					gpBin: GP_BIN,
@@ -1215,7 +1244,11 @@ function checkLearningsMetrics(fixtureDir: string): MetricResult {
 			| Array<{ summary?: string; detail?: string; file?: string }>;
 		learnings = Array.isArray(parsed) ? parsed : (parsed.items ?? []);
 	} catch {
-		return { name: "Learnings", passed: false, detail: "Could not parse learning:list JSON output" };
+		return {
+			name: "Learnings",
+			passed: false,
+			detail: "Could not parse learning:list JSON output",
+		};
 	}
 
 	const count = learnings.length;
@@ -1236,7 +1269,9 @@ function checkLearningsMetrics(fixtureDir: string): MetricResult {
 
 	// Diagnostic: warn if 0 learnings after epic completion (may indicate epic:complete didn't roll up)
 	if (count === 0) {
-		console.warn("  WARNING: 0 learnings found after epic:complete — learnings rollup may not be working");
+		console.warn(
+			"  WARNING: 0 learnings found after epic:complete — learnings rollup may not be working",
+		);
 	}
 
 	return {
@@ -1246,9 +1281,7 @@ function checkLearningsMetrics(fixtureDir: string): MetricResult {
 	};
 }
 
-function checkOrchestratorDiscipline(
-	artifactReadViolations: string[],
-): MetricResult {
+function checkOrchestratorDiscipline(artifactReadViolations: string[]): MetricResult {
 	const ok = artifactReadViolations.length === 0;
 	return {
 		name: "Orchestrator Discipline",
@@ -1284,7 +1317,9 @@ async function main(): Promise<void> {
 		});
 		logger.log("[setup] Fixture builds successfully");
 	} catch (err) {
-		logger.log(`[setup] WARN: Fixture build failed: ${err instanceof Error ? err.message : String(err)}`);
+		logger.log(
+			`[setup] WARN: Fixture build failed: ${err instanceof Error ? err.message : String(err)}`,
+		);
 	}
 
 	try {
@@ -1295,7 +1330,9 @@ async function main(): Promise<void> {
 		});
 		logger.log("[setup] Fixture tests pass");
 	} catch (err) {
-		logger.log(`[setup] WARN: Fixture tests failed: ${err instanceof Error ? err.message : String(err)}`);
+		logger.log(
+			`[setup] WARN: Fixture tests failed: ${err instanceof Error ? err.message : String(err)}`,
+		);
 	}
 
 	// ─── Run Pipeline ───────────────────────────────────────
@@ -1328,7 +1365,9 @@ async function main(): Promise<void> {
 			pipelineResults.push({ name: step.name, passed });
 			logger.log(`<<< Pipeline step ${step.name}: ${passed ? "PASS" : "FAIL"}`);
 		} catch (err) {
-			logger.log(`<<< Pipeline step ${step.name}: ERROR -- ${err instanceof Error ? err.message : String(err)}`);
+			logger.log(
+				`<<< Pipeline step ${step.name}: ERROR -- ${err instanceof Error ? err.message : String(err)}`,
+			);
 			pipelineResults.push({ name: step.name, passed: false });
 		}
 	}
@@ -1367,7 +1406,9 @@ async function main(): Promise<void> {
 	logger.log(`  TOTAL: $${totalCost.toFixed(4)}`);
 
 	if (totalCost > COST_THRESHOLD_USD) {
-		logger.log(`  WARNING: Total cost $${totalCost.toFixed(2)} exceeds threshold $${COST_THRESHOLD_USD} -- possible context leak`);
+		logger.log(
+			`  WARNING: Total cost $${totalCost.toFixed(2)} exceeds threshold $${COST_THRESHOLD_USD} -- possible context leak`,
+		);
 	}
 
 	// ─── Violation Summary ──────────────────────────────────

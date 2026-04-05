@@ -23,6 +23,7 @@ import {
 	createLogger,
 	createMinimalFixture,
 	createSimulatedUser,
+	createTestEnv,
 	gp,
 	isSuccess,
 	parseModel,
@@ -351,11 +352,7 @@ async function testFullPipeline(): Promise<boolean> {
 				model: MODEL,
 				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
-				env: {
-					...process.env,
-					PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
-					GP_CREATE_EPIC_MAX_ITERATIONS: String(MAX_ITERATIONS),
-				},
+				env: createTestEnv(PLUGIN_DIR, { GP_CREATE_EPIC_MAX_ITERATIONS: String(MAX_ITERATIONS) }),
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",
@@ -402,9 +399,16 @@ async function testFullPipeline(): Promise<boolean> {
 		logger.log("PASS: Epic reached 'slices-refined' status");
 	} else {
 		// Accept any late-stage status as partial success
-		const lateStatuses = ["slices-defined", "architecture-refined", "architecture-defined", "defining-slices"];
+		const lateStatuses = [
+			"slices-defined",
+			"architecture-refined",
+			"architecture-defined",
+			"defining-slices",
+		];
 		if (lateStatuses.includes(epicStatus.actual)) {
-			logger.log(`WARN: Epic reached '${epicStatus.actual}' (expected 'slices-refined') — partial pipeline completion`);
+			logger.log(
+				`WARN: Epic reached '${epicStatus.actual}' (expected 'slices-refined') — partial pipeline completion`,
+			);
 		} else {
 			logger.log(`FAIL: Epic status is '${epicStatus.actual}', expected 'slices-refined'`);
 			allPassed = false;
@@ -429,7 +433,9 @@ async function testFullPipeline(): Promise<boolean> {
 		try {
 			const archFiles = readdirSync(epicArchDir).filter((f: string) => f.endsWith(".md"));
 			if (archFiles.length > 0) {
-				logger.log(`PASS: Architecture directory has ${archFiles.length} file(s): ${archFiles.join(", ")}`);
+				logger.log(
+					`PASS: Architecture directory has ${archFiles.length} file(s): ${archFiles.join(", ")}`,
+				);
 			} else {
 				logger.log("FAIL: Architecture directory exists but has no .md files");
 				allPassed = false;
@@ -464,7 +470,9 @@ async function testFullPipeline(): Promise<boolean> {
 	}
 
 	const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-	logger.log(`\n[full-pipeline] Elapsed: ${elapsed}s | Cost: $${sessionResult?.totalCost.toFixed(4) ?? "unknown"}`);
+	logger.log(
+		`\n[full-pipeline] Elapsed: ${elapsed}s | Cost: $${sessionResult?.totalCost.toFixed(4) ?? "unknown"}`,
+	);
 	logger.log(`[full-pipeline] Fixture preserved at: ${fixtureDir}`);
 
 	return allPassed;
@@ -489,7 +497,9 @@ async function testReentry(): Promise<boolean> {
 		gpBin: GP_BIN,
 	});
 	if (!preStatus.ok) {
-		logger.log(`FAIL: Pre-condition not met — epic status is '${preStatus.actual}', expected 'explored'`);
+		logger.log(
+			`FAIL: Pre-condition not met — epic status is '${preStatus.actual}', expected 'explored'`,
+		);
 		return false;
 	}
 	logger.log(`[re-entry] Fixture at '${preStatus.actual}' status: ${fixtureDir}`);
@@ -512,7 +522,9 @@ async function testReentry(): Promise<boolean> {
 	const tracker = createToolCallTracker(logger.log.bind(logger));
 	const skillBody = loadSkillBody();
 
-	logger.log(`\n[re-entry] Running /gp:create-epic (model: ${MODEL}, max-iterations: ${MAX_ITERATIONS})...\n`);
+	logger.log(
+		`\n[re-entry] Running /gp:create-epic (model: ${MODEL}, max-iterations: ${MAX_ITERATIONS})...\n`,
+	);
 
 	let sessionResult: Awaited<ReturnType<typeof runSkillSession>> | undefined;
 
@@ -528,11 +540,7 @@ async function testReentry(): Promise<boolean> {
 				model: MODEL,
 				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
-				env: {
-					...process.env,
-					PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
-					GP_CREATE_EPIC_MAX_ITERATIONS: String(MAX_ITERATIONS),
-				},
+				env: createTestEnv(PLUGIN_DIR, { GP_CREATE_EPIC_MAX_ITERATIONS: String(MAX_ITERATIONS) }),
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",
@@ -585,18 +593,30 @@ async function testReentry(): Promise<boolean> {
 	if (exploreCommands.length === 0) {
 		logger.log("PASS: Explore phase was not re-run (re-entry skipped it)");
 	} else {
-		logger.log(`FAIL: Explore phase was re-run (${exploreCommands.length} epic:explore commands found)`);
+		logger.log(
+			`FAIL: Explore phase was re-run (${exploreCommands.length} epic:explore commands found)`,
+		);
 		allPassed = false;
 	}
 
 	if (postStatus.ok) {
 		logger.log("PASS: Epic reached 'slices-refined' status after re-entry");
 	} else {
-		const lateStatuses = ["slices-defined", "architecture-refined", "architecture-defined", "defining-slices", "defining-architecture"];
+		const lateStatuses = [
+			"slices-defined",
+			"architecture-refined",
+			"architecture-defined",
+			"defining-slices",
+			"defining-architecture",
+		];
 		if (lateStatuses.includes(postStatus.actual)) {
-			logger.log(`WARN: Epic reached '${postStatus.actual}' (expected 'slices-refined') — partial re-entry completion`);
+			logger.log(
+				`WARN: Epic reached '${postStatus.actual}' (expected 'slices-refined') — partial re-entry completion`,
+			);
 		} else {
-			logger.log(`FAIL: Epic status is '${postStatus.actual}', expected advancement beyond 'explored'`);
+			logger.log(
+				`FAIL: Epic status is '${postStatus.actual}', expected advancement beyond 'explored'`,
+			);
 			allPassed = false;
 		}
 	}
@@ -614,7 +634,9 @@ async function testReentry(): Promise<boolean> {
 	}
 
 	const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-	logger.log(`\n[re-entry] Elapsed: ${elapsed}s | Cost: $${sessionResult?.totalCost.toFixed(4) ?? "unknown"}`);
+	logger.log(
+		`\n[re-entry] Elapsed: ${elapsed}s | Cost: $${sessionResult?.totalCost.toFixed(4) ?? "unknown"}`,
+	);
 	logger.log(`[re-entry] Fixture preserved at: ${fixtureDir}`);
 
 	return allPassed;
@@ -639,13 +661,18 @@ async function testReconsiderWhenPositive(): Promise<boolean> {
 			title: "Use session-based auth instead of JWT",
 			rationale: "JWT was chosen initially but session-based may be simpler",
 			status: "accepted",
-			reconsiderWhen: ["New subsystem added that affects auth", "JWT complexity becomes a bottleneck"],
+			reconsiderWhen: [
+				"New subsystem added that affects auth",
+				"JWT complexity becomes a bottleneck",
+			],
 		}),
 	});
 
 	if (decisionResult.exitCode !== 0) {
 		// decision:create may not support reconsiderWhen yet — log and skip gracefully
-		logger.log(`WARN: decision:create failed (exit ${decisionResult.exitCode}) — reconsiderWhen may not be supported yet`);
+		logger.log(
+			`WARN: decision:create failed (exit ${decisionResult.exitCode}) — reconsiderWhen may not be supported yet`,
+		);
 		logger.log("SKIP: reconsiderWhen positive test (CLI does not support reconsiderWhen field)");
 		return true; // Not a failure — forward-compat
 	}
@@ -681,11 +708,7 @@ async function testReconsiderWhenPositive(): Promise<boolean> {
 				model: MODEL,
 				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
-				env: {
-					...process.env,
-					PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
-					GP_CREATE_EPIC_MAX_ITERATIONS: String(MAX_ITERATIONS),
-				},
+				env: createTestEnv(PLUGIN_DIR, { GP_CREATE_EPIC_MAX_ITERATIONS: String(MAX_ITERATIONS) }),
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",
@@ -722,7 +745,9 @@ async function testReconsiderWhenPositive(): Promise<boolean> {
 	// Check if triggered conditions were surfaced (look for condition-related output)
 	// This is a soft check — the condition evaluation mechanism may not be fully wired yet
 	logger.log("\n--- POST-RUN VERIFICATION (reconsiderWhen positive) ---\n");
-	logger.log("INFO: reconsiderWhen condition evaluation is forward-compatible — results depend on skill implementation");
+	logger.log(
+		"INFO: reconsiderWhen condition evaluation is forward-compatible — results depend on skill implementation",
+	);
 	logger.log(`[reconsider-positive] Fixture preserved at: ${fixtureDir}`);
 
 	return true;
@@ -751,14 +776,18 @@ async function testReconsiderWhenNegative(): Promise<boolean> {
 	});
 
 	if (decisionResult.exitCode !== 0) {
-		logger.log(`WARN: decision:create failed (exit ${decisionResult.exitCode}) — reconsiderWhen may not be supported yet`);
+		logger.log(
+			`WARN: decision:create failed (exit ${decisionResult.exitCode}) — reconsiderWhen may not be supported yet`,
+		);
 		logger.log("SKIP: reconsiderWhen negative test (CLI does not support reconsiderWhen field)");
 		return true;
 	}
 
 	logger.log("[reconsider-negative] Decision created with non-matching reconsiderWhen condition");
 	logger.log("INFO: Negative test verifies conditions are NOT triggered for unrelated epics");
-	logger.log("INFO: Full verification requires running the pipeline — deferred to integration testing");
+	logger.log(
+		"INFO: Full verification requires running the pipeline — deferred to integration testing",
+	);
 	logger.log(`[reconsider-negative] Fixture preserved at: ${fixtureDir}`);
 
 	return true;

@@ -23,6 +23,7 @@ import {
 	createLogger,
 	createMinimalFixture,
 	createSimulatedUser,
+	createTestEnv,
 	gp,
 	isSuccess,
 	parseModel,
@@ -209,7 +210,9 @@ async function createCompletedEpicFixture(): Promise<string> {
 			stdin: JSON.stringify({ name, goal }),
 		});
 		if (sliceResult.exitCode !== 0) {
-			throw new Error(`slice:create failed for ${name} (exit ${sliceResult.exitCode}): ${sliceResult.stdout}`);
+			throw new Error(
+				`slice:create failed for ${name} (exit ${sliceResult.exitCode}): ${sliceResult.stdout}`,
+			);
 		}
 	}
 
@@ -220,7 +223,9 @@ async function createCompletedEpicFixture(): Promise<string> {
 			cwd: fixtureDir,
 		});
 		if (planResult.exitCode !== 0) {
-			throw new Error(`slice:plan failed for ${sliceName} (exit ${planResult.exitCode}): ${planResult.stdout}`);
+			throw new Error(
+				`slice:plan failed for ${sliceName} (exit ${planResult.exitCode}): ${planResult.stdout}`,
+			);
 		}
 
 		// Write a minimal plan file so plan submission succeeds
@@ -257,7 +262,9 @@ async function createCompletedEpicFixture(): Promise<string> {
 			cwd: fixtureDir,
 		});
 		if (submitResult.exitCode !== 0) {
-			throw new Error(`submit-plan failed for ${sliceName} (exit ${submitResult.exitCode}): ${submitResult.stdout}`);
+			throw new Error(
+				`submit-plan failed for ${sliceName} (exit ${submitResult.exitCode}): ${submitResult.stdout}`,
+			);
 		}
 		// submit-refinement → plan-refined
 		const refineResult = gp(["submit-refinement", "--slice", sliceName, "--json"], {
@@ -265,7 +272,9 @@ async function createCompletedEpicFixture(): Promise<string> {
 			stdin: JSON.stringify({ scores: { overall: 9 } }),
 		});
 		if (refineResult.exitCode !== 0) {
-			throw new Error(`submit-refinement failed for ${sliceName} (exit ${refineResult.exitCode}): ${refineResult.stdout}`);
+			throw new Error(
+				`submit-refinement failed for ${sliceName} (exit ${refineResult.exitCode}): ${refineResult.stdout}`,
+			);
 		}
 
 		// implement → implementing
@@ -273,7 +282,9 @@ async function createCompletedEpicFixture(): Promise<string> {
 			cwd: fixtureDir,
 		});
 		if (implResult.exitCode !== 0) {
-			throw new Error(`slice:implement failed for ${sliceName} (exit ${implResult.exitCode}): ${implResult.stdout}`);
+			throw new Error(
+				`slice:implement failed for ${sliceName} (exit ${implResult.exitCode}): ${implResult.stdout}`,
+			);
 		}
 
 		// submit-implementation → implementation-complete
@@ -281,7 +292,9 @@ async function createCompletedEpicFixture(): Promise<string> {
 			cwd: fixtureDir,
 		});
 		if (submitImplResult.exitCode !== 0) {
-			throw new Error(`submit-implementation failed for ${sliceName} (exit ${submitImplResult.exitCode}): ${submitImplResult.stdout}`);
+			throw new Error(
+				`submit-implementation failed for ${sliceName} (exit ${submitImplResult.exitCode}): ${submitImplResult.stdout}`,
+			);
 		}
 
 		// Write completion artifacts before completing
@@ -325,7 +338,9 @@ async function createCompletedEpicFixture(): Promise<string> {
 			}),
 		});
 		if (completeResult.exitCode !== 0) {
-			throw new Error(`slice:complete failed for ${sliceName} (exit ${completeResult.exitCode}): ${completeResult.stdout}`);
+			throw new Error(
+				`slice:complete failed for ${sliceName} (exit ${completeResult.exitCode}): ${completeResult.stdout}`,
+			);
 		}
 	}
 
@@ -375,7 +390,9 @@ async function testFullPipeline(): Promise<boolean> {
 			epic: EPIC_NAME,
 		});
 		if (!sliceStatus.ok) {
-			logger.log(`FAIL: Pre-condition not met — slice '${sliceName}' status is '${sliceStatus.actual}', expected 'completed'`);
+			logger.log(
+				`FAIL: Pre-condition not met — slice '${sliceName}' status is '${sliceStatus.actual}', expected 'completed'`,
+			);
 			return false;
 		}
 	}
@@ -408,9 +425,7 @@ async function testFullPipeline(): Promise<boolean> {
 	const tracker = createToolCallTracker(logger.log.bind(logger));
 	const skillBody = loadSkillBody();
 
-	logger.log(
-		`\n[complete-epic] Running /gp:complete-epic (model: ${MODEL})...\n`,
-	);
+	logger.log(`\n[complete-epic] Running /gp:complete-epic (model: ${MODEL})...\n`);
 
 	let sessionResult: Awaited<ReturnType<typeof runSkillSession>> | undefined;
 
@@ -426,10 +441,7 @@ async function testFullPipeline(): Promise<boolean> {
 				model: MODEL,
 				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
-				env: {
-					...process.env,
-					PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
-				},
+				env: createTestEnv(PLUGIN_DIR),
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",
@@ -486,14 +498,13 @@ async function testFullPipeline(): Promise<boolean> {
 		if (learningsContent.length > 50) {
 			logger.log(`PASS: Epic-level learnings.md exists (${learningsContent.length} bytes)`);
 		} else {
-			logger.log(`WARN: Epic-level learnings.md exists but is very short (${learningsContent.length} bytes)`);
+			logger.log(
+				`WARN: Epic-level learnings.md exists but is very short (${learningsContent.length} bytes)`,
+			);
 		}
 	} else {
 		// Check if learnings were written elsewhere
-		const altPaths = [
-			join(epicDir, "learnings.md"),
-			join(epicCompletionDir, "summary.md"),
-		];
+		const altPaths = [join(epicDir, "learnings.md"), join(epicCompletionDir, "summary.md")];
 		let found = false;
 		for (const altPath of altPaths) {
 			if (existsSync(altPath)) {
@@ -519,9 +530,13 @@ async function testFullPipeline(): Promise<boolean> {
 			try {
 				const completionFiles = readdirSync(epicCompletionDir);
 				if (completionFiles.length > 0) {
-					logger.log(`WARN: Architecture reconciliation file not found, but completion dir has: ${completionFiles.join(", ")}`);
+					logger.log(
+						`WARN: Architecture reconciliation file not found, but completion dir has: ${completionFiles.join(", ")}`,
+					);
 				} else {
-					logger.log("FAIL: Completion directory exists but is empty — architecture reconciliation likely did not run");
+					logger.log(
+						"FAIL: Completion directory exists but is empty — architecture reconciliation likely did not run",
+					);
 					allPassed = false;
 				}
 			} catch {
@@ -529,7 +544,9 @@ async function testFullPipeline(): Promise<boolean> {
 				allPassed = false;
 			}
 		} else {
-			logger.log("FAIL: Epic completion directory not found — architecture reconciliation did not run");
+			logger.log(
+				"FAIL: Epic completion directory not found — architecture reconciliation did not run",
+			);
 			allPassed = false;
 		}
 	}
@@ -558,7 +575,9 @@ async function testFullPipeline(): Promise<boolean> {
 	}
 
 	const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-	logger.log(`\n[complete-epic] Elapsed: ${elapsed}s | Cost: $${sessionResult?.totalCost.toFixed(4) ?? "unknown"}`);
+	logger.log(
+		`\n[complete-epic] Elapsed: ${elapsed}s | Cost: $${sessionResult?.totalCost.toFixed(4) ?? "unknown"}`,
+	);
 	logger.log(`[complete-epic] Fixture preserved at: ${fixtureDir}`);
 
 	return allPassed;

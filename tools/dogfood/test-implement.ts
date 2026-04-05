@@ -24,6 +24,7 @@ import {
 	createLogger,
 	createMinimalFixture,
 	createSimulatedUser,
+	createTestEnv,
 	gp,
 	isSuccess,
 	parseModel,
@@ -287,7 +288,9 @@ async function createPlanRefinedFixture(): Promise<string> {
 		stdin: JSON.stringify({ scores: { overall: 9 } }),
 	});
 	if (refineResult.exitCode !== 0) {
-		throw new Error(`submit-refinement failed (exit ${refineResult.exitCode}): ${refineResult.stdout}`);
+		throw new Error(
+			`submit-refinement failed (exit ${refineResult.exitCode}): ${refineResult.stdout}`,
+		);
 	}
 
 	return fixtureDir;
@@ -407,11 +410,7 @@ async function testFullPipeline(): Promise<boolean> {
 				model: MODEL,
 				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
-				env: {
-					...process.env,
-					PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
-					GP_IMPLEMENT_MAX_ITERATIONS: String(MAX_ITERATIONS),
-				},
+				env: createTestEnv(PLUGIN_DIR, { GP_IMPLEMENT_MAX_ITERATIONS: String(MAX_ITERATIONS) }),
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",
@@ -631,11 +630,7 @@ async function testReentry(): Promise<boolean> {
 				model: MODEL,
 				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
-				env: {
-					...process.env,
-					PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
-					GP_IMPLEMENT_MAX_ITERATIONS: String(MAX_ITERATIONS),
-				},
+				env: createTestEnv(PLUGIN_DIR, { GP_IMPLEMENT_MAX_ITERATIONS: String(MAX_ITERATIONS) }),
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",
@@ -783,10 +778,7 @@ async function testModeIsolation(): Promise<boolean> {
 				model: MODEL,
 				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
-				env: {
-					...process.env,
-					PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
-				},
+				env: createTestEnv(PLUGIN_DIR),
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",
@@ -880,10 +872,7 @@ async function testModeIsolation(): Promise<boolean> {
 				model: MODEL,
 				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
-				env: {
-					...process.env,
-					PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
-				},
+				env: createTestEnv(PLUGIN_DIR),
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",
@@ -979,10 +968,7 @@ async function testReviewContext(): Promise<boolean> {
 				model: MODEL,
 				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
-				env: {
-					...process.env,
-					PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
-				},
+				env: createTestEnv(PLUGIN_DIR),
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",

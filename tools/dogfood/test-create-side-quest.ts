@@ -22,6 +22,7 @@ import {
 	createLogger,
 	createMinimalFixture,
 	createSimulatedUser,
+	createTestEnv,
 	gp,
 	isSuccess,
 	parseModel,
@@ -251,11 +252,9 @@ async function testFullPipeline(): Promise<boolean> {
 				model: MODEL,
 				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
-				env: {
-					...process.env,
-					PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
+				env: createTestEnv(PLUGIN_DIR, {
 					GP_CREATE_SIDE_QUEST_MAX_ITERATIONS: String(FULL_PIPELINE_MAX_ITERATIONS),
-				},
+				}),
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",
@@ -303,7 +302,9 @@ async function testFullPipeline(): Promise<boolean> {
 	} else {
 		const lateStatuses = ["refining", "plan-created", "planning", "explored", "exploring"];
 		if (lateStatuses.includes(questStatus.actual)) {
-			logger.log(`WARN: Quest reached '${questStatus.actual}' (expected 'plan-refined') — partial pipeline completion`);
+			logger.log(
+				`WARN: Quest reached '${questStatus.actual}' (expected 'plan-refined') — partial pipeline completion`,
+			);
 		} else {
 			logger.log(`FAIL: Quest status is '${questStatus.actual}', expected 'plan-refined'`);
 			allPassed = false;
@@ -343,7 +344,9 @@ async function testFullPipeline(): Promise<boolean> {
 	}
 
 	const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-	logger.log(`\n[full-pipeline] Elapsed: ${elapsed}s | Cost: $${sessionResult?.totalCost.toFixed(4) ?? "unknown"}`);
+	logger.log(
+		`\n[full-pipeline] Elapsed: ${elapsed}s | Cost: $${sessionResult?.totalCost.toFixed(4) ?? "unknown"}`,
+	);
 	logger.log(`[full-pipeline] Fixture preserved at: ${fixtureDir}`);
 
 	return allPassed;
@@ -384,7 +387,9 @@ async function testReentry(): Promise<boolean> {
 		gpBin: GP_BIN,
 	});
 	if (!preStatus.ok) {
-		logger.log(`FAIL: Pre-condition not met — quest status is '${preStatus.actual}', expected 'explored'`);
+		logger.log(
+			`FAIL: Pre-condition not met — quest status is '${preStatus.actual}', expected 'explored'`,
+		);
 		return false;
 	}
 	logger.log(`[re-entry] Fixture at '${preStatus.actual}' status: ${fixtureDir}`);
@@ -407,7 +412,9 @@ async function testReentry(): Promise<boolean> {
 	const tracker = createToolCallTracker(logger.log.bind(logger));
 	const skillBody = loadSkillBody();
 
-	logger.log(`\n[re-entry] Running /gp:create-side-quest (model: ${MODEL}, max-iterations: ${REENTRY_MAX_ITERATIONS})...\n`);
+	logger.log(
+		`\n[re-entry] Running /gp:create-side-quest (model: ${MODEL}, max-iterations: ${REENTRY_MAX_ITERATIONS})...\n`,
+	);
 
 	let sessionResult: Awaited<ReturnType<typeof runSkillSession>> | undefined;
 
@@ -423,11 +430,9 @@ async function testReentry(): Promise<boolean> {
 				model: MODEL,
 				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
-				env: {
-					...process.env,
-					PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
+				env: createTestEnv(PLUGIN_DIR, {
 					GP_CREATE_SIDE_QUEST_MAX_ITERATIONS: String(REENTRY_MAX_ITERATIONS),
-				},
+				}),
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",
@@ -480,7 +485,9 @@ async function testReentry(): Promise<boolean> {
 	if (exploreCommands.length === 0) {
 		logger.log("PASS: Explore phase was not re-run (re-entry skipped it)");
 	} else {
-		logger.log(`FAIL: Explore phase was re-run (${exploreCommands.length} quest:explore commands found)`);
+		logger.log(
+			`FAIL: Explore phase was re-run (${exploreCommands.length} quest:explore commands found)`,
+		);
 		allPassed = false;
 	}
 
@@ -490,7 +497,9 @@ async function testReentry(): Promise<boolean> {
 		if (firstAgent === "plan-phase") {
 			logger.log("PASS: First sub-agent spawn is 'plan-phase' (not 'explore-phase')");
 		} else if (firstAgent === "explore-phase") {
-			logger.log("FAIL: First sub-agent spawn is 'explore-phase' — should be 'plan-phase' for re-entry from explored");
+			logger.log(
+				"FAIL: First sub-agent spawn is 'explore-phase' — should be 'plan-phase' for re-entry from explored",
+			);
 			allPassed = false;
 		} else {
 			logger.log(`INFO: First sub-agent spawn is '${firstAgent}' — not explore-phase (acceptable)`);
@@ -504,9 +513,13 @@ async function testReentry(): Promise<boolean> {
 	} else {
 		const lateStatuses = ["refining", "plan-created", "planning"];
 		if (lateStatuses.includes(postStatus.actual)) {
-			logger.log(`WARN: Quest reached '${postStatus.actual}' (expected 'plan-refined') — partial re-entry completion`);
+			logger.log(
+				`WARN: Quest reached '${postStatus.actual}' (expected 'plan-refined') — partial re-entry completion`,
+			);
 		} else {
-			logger.log(`FAIL: Quest status is '${postStatus.actual}', expected advancement beyond 'explored'`);
+			logger.log(
+				`FAIL: Quest status is '${postStatus.actual}', expected advancement beyond 'explored'`,
+			);
 			allPassed = false;
 		}
 	}
@@ -524,7 +537,9 @@ async function testReentry(): Promise<boolean> {
 	}
 
 	const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-	logger.log(`\n[re-entry] Elapsed: ${elapsed}s | Cost: $${sessionResult?.totalCost.toFixed(4) ?? "unknown"}`);
+	logger.log(
+		`\n[re-entry] Elapsed: ${elapsed}s | Cost: $${sessionResult?.totalCost.toFixed(4) ?? "unknown"}`,
+	);
 	logger.log(`[re-entry] Fixture preserved at: ${fixtureDir}`);
 
 	return allPassed;
@@ -564,7 +579,9 @@ async function testErrorPath(): Promise<boolean> {
 	if (questResult.exitCode === 0) {
 		logger.log("PASS: Quest creation succeeds without active epic (quests are project-scoped)");
 	} else {
-		logger.log(`FAIL: Quest creation failed without active epic: ${questResult.stdout.slice(0, 200)}`);
+		logger.log(
+			`FAIL: Quest creation failed without active epic: ${questResult.stdout.slice(0, 200)}`,
+		);
 		return false;
 	}
 
@@ -646,11 +663,7 @@ async function testErrorPath(): Promise<boolean> {
 				model: MODEL,
 				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
-				env: {
-					...process.env,
-					PATH: `${join(PLUGIN_DIR, "binaries", platformBinaryDir())}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,
-					GP_CREATE_SIDE_QUEST_MAX_ITERATIONS: "1",
-				},
+				env: createTestEnv(PLUGIN_DIR, { GP_CREATE_SIDE_QUEST_MAX_ITERATIONS: "1" }),
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",
