@@ -19,9 +19,9 @@ The orchestrator passes:
 ## Shared References
 
 @${CLAUDE_PLUGIN_ROOT}/skills/_references/expertise-tracking.md
-@${CLAUDE_PLUGIN_ROOT}/skills/_references/maturity-conventions.md
-@${CLAUDE_PLUGIN_ROOT}/skills/_references/codebase-context-discovery.md
-@${CLAUDE_PLUGIN_ROOT}/skills/_references/sub-agent-return-format.md
+@${CLAUDE_PLUGIN_ROOT}/agents/_references/maturity-conventions.md
+@${CLAUDE_PLUGIN_ROOT}/agents/_references/codebase-context-discovery.md
+@${CLAUDE_PLUGIN_ROOT}/agents/_references/sub-agent-return-format.md
 
 ## Instructions
 

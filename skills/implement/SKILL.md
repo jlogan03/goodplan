@@ -213,7 +213,9 @@ Parse the return JSON. Check `status`:
 
 ### 5.3. Review Loop
 
-Follow the shared iteration loop pattern defined in `@${CLAUDE_PLUGIN_ROOT}/skills/_references/iteration-loop.md`. The orchestrator-specific parameters are listed in the **Loop Parameters** section below.
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/iteration-loop.md
+
+Follow the shared iteration loop pattern defined in iteration-loop.md (auto-included above). The orchestrator-specific parameters are listed in the **Loop Parameters** section below.
 
 #### 5.3a. Write Changed Files Summary
 
@@ -230,7 +232,7 @@ Agent: refinement-coordinator
 Task prompt: |
   Artifact path: {RUN_DIR}/round-{iteration+1}/changed-files.txt
   Review context: code-implementation
-  Available reviewers: see references/reviewer-registry.md
+  Available reviewers: see @${CLAUDE_PLUGIN_ROOT}/skills/_references/reviewer-registry.md
   {if iteration > 0: "Previous round synthesis: {RUN_DIR}/round-{iteration}/merged.md"}
 
 allowedTools: ["Read", "Grep", "Glob"]
@@ -448,11 +450,11 @@ After successful completion, present:
 
 ## Loop Parameters
 
-Parameters for `@${CLAUDE_PLUGIN_ROOT}/skills/_references/iteration-loop.md`:
+Parameters for the iteration-loop.md shared reference (auto-included in Step 5.3 above):
 
 | Parameter | Value |
 |---|---|
-| **Reviewer list** | Determined dynamically by `refinement-coordinator` per phase — reads `references/reviewer-registry.md` and selects based on changed file types/paths |
+| **Reviewer list** | Determined dynamically by `refinement-coordinator` per phase — reads `@${CLAUDE_PLUGIN_ROOT}/skills/_references/reviewer-registry.md` and selects based on changed file types/paths |
 | **Exit criteria** | All scores >= 9, no CRITICAL/IMPORTANT issues |
 | **Early exit** | iteration >= 5 AND all scores >= 8 AND no CRITICAL/IMPORTANT |
 | **Max iterations** | 12 (override via `$GP_IMPLEMENT_MAX_ITERATIONS` env var for test harness cost control) |

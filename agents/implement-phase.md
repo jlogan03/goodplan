@@ -23,7 +23,7 @@ The orchestrator passes:
 
 ## Shared Return Format
 
-@${CLAUDE_PLUGIN_ROOT}/skills/_references/sub-agent-return-format.md
+@${CLAUDE_PLUGIN_ROOT}/agents/_references/sub-agent-return-format.md
 
 ## Instructions
 

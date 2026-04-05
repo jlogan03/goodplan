@@ -304,7 +304,7 @@ Skills previously read `state.md` for several purposes. CLI equivalents:
 | **Next step hints** | `gp status --json` → `.recommendations[]` |
 | **Active quest detection** | `gp status --json` → `.activeQuest` |
 
-> **Deprecation:** The `state.md` format documented in `skills/_references/state-and-activity-formats.md` is now obsolete. Skills should use the CLI commands above instead.
+> **Deprecation:** The `state.md` format (previously documented in the now-deleted `state-and-activity-formats.md`) is obsolete. Skills should use the CLI commands above instead.
 
 ### Querying Learnings
 

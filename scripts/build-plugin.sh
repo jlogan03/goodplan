@@ -97,7 +97,13 @@ echo "Verifying skills..."
 # Assert _references directory exists with cli-interaction.md
 test -d "$PLUGIN_DIR/skills/_references/" || { echo "FAIL: skills/_references/ directory missing"; exit 1; }
 test -f "$PLUGIN_DIR/skills/_references/cli-interaction.md" || { echo "FAIL: skills/_references/cli-interaction.md missing"; exit 1; }
-echo "  _references/cli-interaction.md: present"
+echo "  skills/_references/cli-interaction.md: present"
+
+# Assert agents/_references/ directory exists with review-preamble.md (two-tier layout:
+# skills/_references/ for skill-shared + cross-consumer, agents/_references/ for agent-only, primarily review criteria)
+test -d "$PLUGIN_DIR/agents/_references/" || { echo "FAIL: agents/_references/ directory missing"; exit 1; }
+test -f "$PLUGIN_DIR/agents/_references/review-preamble.md" || { echo "FAIL: agents/_references/review-preamble.md missing"; exit 1; }
+echo "  agents/_references/review-preamble.md: present"
 
 # Assert every non-underscore skill directory contains a SKILL.md
 SKILL_COUNT=0
@@ -148,7 +154,8 @@ fi
 echo "  .DS_Store check: clean"
 
 # Assert exact skill count
-test "$SKILL_COUNT" -eq 12 || { echo "FAIL: expected 12 skills, got $SKILL_COUNT"; exit 1; }
+# Expected skills: audit, complete-epic, create-epic, create-side-quest, explore, implement, init, plan-slice, start-epic, status, task, upgrade, workflow-guide
+test "$SKILL_COUNT" -eq 13 || { echo "FAIL: expected 13 skills, got $SKILL_COUNT"; exit 1; }
 
 # Assert none of the 15 deleted skill names exist
 DELETED_SKILLS="create-architecture refine-architecture create-plan refine-plan create-slices refine-slices implement-plan complete audit-architecture audit-docs audit-tests capture onboard-repo migrate project-status"
@@ -187,50 +194,66 @@ if [ -d "$PLUGIN_DIR/agents/" ]; then
       exit 1
     fi
 
-    # Validate @ reference paths: extract @${CLAUDE_PLUGIN_ROOT}/... references from body
-    BODY=$(awk 'NR==1 && /^---$/{found=1; next} found && /^---$/{found=0; next} !found{print}' "$agent_file")
-
-    # Check for bare @ references that don't use ${CLAUDE_PLUGIN_ROOT} prefix
-    BARE_REFS=$(echo "$BODY" | grep -oE '@\./[^ )]+|@[a-zA-Z][^ )]*' | grep -v '@\$' || true)
-    if [[ -n "$BARE_REFS" ]]; then
-      echo "  WARN: agents/$agent_basename has bare @ references (won't resolve at runtime):"
-      echo "$BARE_REFS" | while read -r ref; do echo "    $ref"; done
-    fi
-
-    # Extract @${CLAUDE_PLUGIN_ROOT}/... references and verify targets exist
-    PLUGIN_REFS=$(echo "$BODY" | grep -oE '@\$\{CLAUDE_PLUGIN_ROOT\}/[^ )]+' || true)
-    if [[ -n "$PLUGIN_REFS" ]]; then
-      while IFS= read -r ref; do
-        # Strip the @${CLAUDE_PLUGIN_ROOT}/ prefix to get relative path
-        rel_path="${ref#@\$\{CLAUDE_PLUGIN_ROOT\}/}"
-        target="$PLUGIN_DIR/$rel_path"
-        if [[ ! -f "$target" ]]; then
-          echo "FAIL: agents/$agent_basename references $ref but $rel_path does not exist in plugin dist"
-          exit 1
-        fi
-      done <<< "$PLUGIN_REFS"
-    fi
-
     AGENT_COUNT=$((AGENT_COUNT + 1))
   done
 fi
 
 if [[ "$AGENT_COUNT" -gt 0 ]]; then
   echo "  frontmatter validation: all agents pass"
-  echo "  @ reference validation: all references resolve"
 fi
 echo "  Packaged $AGENT_COUNT agents"
+
+# Unified @ reference validation across all skills and agents
+# Covers: agents/*.md, skills/*/SKILL.md, skills/*/references/*.md, agents/_references/*.md
+echo ""
+echo "Validating @ references across all markdown files..."
+REF_ERRORS=0
+while IFS= read -r md_file; do
+  [ -f "$md_file" ] || continue
+  md_rel="${md_file#$PLUGIN_DIR/}"
+
+  # Extract body (skip frontmatter if present)
+  BODY=$(awk 'NR==1 && /^---$/{found=1; next} found && /^---$/{found=0; next} !found{print}' "$md_file")
+
+  # Check for bare @ references that don't use ${CLAUDE_PLUGIN_ROOT} prefix
+  BARE_REFS=$(echo "$BODY" | grep -oE '@\./[^ )\`>]+|@[a-zA-Z][^ )\`>]*' | grep -v '@\$' || true)
+  if [[ -n "$BARE_REFS" ]]; then
+    echo "  WARN: $md_rel has bare @ references (won't resolve at runtime):"
+    echo "$BARE_REFS" | while read -r ref; do echo "    $ref"; done
+  fi
+
+  # Extract @${CLAUDE_PLUGIN_ROOT}/... references and verify targets exist
+  # Filter out backtick-wrapped examples (e.g., `@${CLAUDE_PLUGIN_ROOT}/path` in docs)
+  # Exclude trailing backticks, parens, and angle brackets from matched paths
+  PLUGIN_REFS=$(echo "$BODY" | grep -v '`@\${CLAUDE_PLUGIN_ROOT}/[^`]*`' | grep -oE '@\$\{CLAUDE_PLUGIN_ROOT\}/[^ )\`>]+' || true)
+  if [[ -n "$PLUGIN_REFS" ]]; then
+    while IFS= read -r ref; do
+      rel_path="${ref#@\$\{CLAUDE_PLUGIN_ROOT\}/}"
+      target="$PLUGIN_DIR/$rel_path"
+      if [[ ! -f "$target" ]]; then
+        echo "FAIL: $md_rel references $ref but $rel_path does not exist in plugin dist"
+        REF_ERRORS=$((REF_ERRORS + 1))
+      fi
+    done <<< "$PLUGIN_REFS"
+  fi
+done < <(find "$PLUGIN_DIR/skills" "$PLUGIN_DIR/agents" -name '*.md' -type f 2>/dev/null)
+
+if [[ "$REF_ERRORS" -gt 0 ]]; then
+  echo "FAIL: $REF_ERRORS broken @ reference(s) found"
+  exit 1
+fi
+echo "  @ reference validation: all references resolve"
 
 # Validate plugin structure
 if command -v claude &> /dev/null; then
   echo ""
   echo "Validating plugin..."
   VALIDATION_OUTPUT=$(claude plugin validate "$PLUGIN_DIR/" 2>&1) || {
-    # The "agents" manifest field is not yet recognized by the claude CLI validator.
-    # Check if that's the only error — if so, warn and continue with fallback assertions.
-    AGENT_ERRORS=$(echo "$VALIDATION_OUTPUT" | grep -c 'agents:' || true)
-    TOTAL_ERRORS=$(echo "$VALIDATION_OUTPUT" | grep -c '❯' || true)
-    if [[ "$AGENT_ERRORS" -eq "$TOTAL_ERRORS" && "$TOTAL_ERRORS" -gt 0 ]]; then
+    # The "agents" manifest field is not yet recognized by the claude CLI validator,
+    # which produces an "agents: Invalid input" error. Filter out known/expected errors
+    # and fail only if unexpected errors remain.
+    UNEXPECTED_ERRORS=$(echo "$VALIDATION_OUTPUT" | grep '✘' | grep -v 'agents: Invalid input' | grep -v 'Validation failed' | grep -v 'Found [0-9]* error' || true)
+    if [[ -z "$UNEXPECTED_ERRORS" ]]; then
       echo "  WARN: claude plugin validate does not recognize 'agents' field yet — expected, continuing"
     else
       echo "FAIL: plugin validation failed with unexpected errors"

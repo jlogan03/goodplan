@@ -343,7 +343,7 @@ Agent: refinement-coordinator
 Task prompt: |
   Artifact path: {planPath}
   Review context: implementation-plan
-  Reviewer registry: skills/implement/references/reviewer-registry.md
+  Reviewer registry: @${CLAUDE_PLUGIN_ROOT}/skills/_references/reviewer-registry.md
   {if iteration > 0: "Previous round synthesis: {TMPDIR}/reviews/synthesis.md"}
 
   Inline context:

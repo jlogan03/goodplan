@@ -344,7 +344,7 @@ Initialize tracking state:
 - `reductionCount = 0`
 - `maxIterations = parseInt($GP_CREATE_EPIC_MAX_ITERATIONS) || 3`
 
-Available reviewers: read `skills/implement/references/reviewer-registry.md` to get the full set of 20 reviewers. Select always-on reviewers plus relevant specialists based on the artifact content.
+Available reviewers: see `@${CLAUDE_PLUGIN_ROOT}/skills/_references/reviewer-registry.md` (auto-included via iteration-loop.md) for the full set of 20 reviewers. Select always-on reviewers plus relevant specialists based on the artifact content.
 
 **Loop** (max `maxIterations` iterations):
 
@@ -362,7 +362,7 @@ Returns `ContextBundle` with architecture paths, prior review output, decisions,
 Agent: refinement-coordinator
 Task prompt: |
   Review context: architecture-proposal
-  Reviewer registry: skills/implement/references/reviewer-registry.md
+  Reviewer registry: @${CLAUDE_PLUGIN_ROOT}/skills/_references/reviewer-registry.md
   {if iteration > 0: "Previous round synthesis: {TMPDIR}/reviews/architecture-synthesis.md"}
 
   Inline context:
@@ -619,7 +619,7 @@ $GP start-refine-slices --epic $EPIC_NAME --json
 Agent: refinement-coordinator
 Task prompt: |
   Review context: slice-definitions
-  Reviewer registry: skills/implement/references/reviewer-registry.md
+  Reviewer registry: @${CLAUDE_PLUGIN_ROOT}/skills/_references/reviewer-registry.md
   {if iteration > 0: "Previous round synthesis: {TMPDIR}/reviews/slices-synthesis.md"}
 
   Inline context:

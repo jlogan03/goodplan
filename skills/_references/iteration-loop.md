@@ -45,7 +45,9 @@ All review artifacts live in a run directory, separate from the files being refi
 
 ## Reviewer Spawn Pattern
 
-1. **Select reviewers**: Read `skills/implement/references/reviewer-registry.md`. Always-on reviewers run every iteration. Specialists are selected based on the orchestrator's understanding of the artifact content — the `Agent` column in the registry identifies each reviewer's agent definition file (`agents/reviewer-*.md`).
+1. **Select reviewers**: Use `@${CLAUDE_PLUGIN_ROOT}/skills/_references/reviewer-registry.md` (auto-included below). Always-on reviewers run every iteration. Specialists are selected based on the orchestrator's understanding of the artifact content — the `Agent` column in the registry identifies each reviewer's agent definition file (`agents/reviewer-*.md`).
+
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/reviewer-registry.md
 
 2. **Parallel spawn**: Launch all selected reviewers in a single message using multiple Agent tool calls so they run concurrently in the **foreground** (do NOT use `run_in_background`). The Agent tool returns results when all foreground agents in the same message complete — no polling or sleep needed. Include `model: "opus"` for full reasoning capability. Each agent is spawned by name (e.g., `reviewer-holistic`, `reviewer-software-architecture`) — the agent definition includes `@` references to the shared preamble and domain-specific criteria.
 
