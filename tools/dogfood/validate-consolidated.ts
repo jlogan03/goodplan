@@ -26,7 +26,6 @@ import {
 	createSimulatedUser,
 	createTestEnv,
 	gp,
-	gpForce,
 	isSuccess,
 	parseModel,
 	platformBinaryDir,
@@ -438,19 +437,13 @@ function createFlashcardFixture(): string {
 		].join("\n"),
 	);
 
-	// Install dependencies
-	try {
-		execFileSync("bun", ["install"], {
-			cwd: tmpDir,
-			stdio: "pipe",
-			encoding: "utf-8",
-		});
-		logger.log("[fixture] bun install completed");
-	} catch (err) {
-		logger.log(
-			`[fixture] WARN: bun install failed: ${err instanceof Error ? err.message : String(err)}`,
-		);
-	}
+	// Install dependencies — fail hard if this doesn't work
+	execFileSync("bun", ["install"], {
+		cwd: tmpDir,
+		stdio: "pipe",
+		encoding: "utf-8",
+	});
+	logger.log("[fixture] bun install completed");
 
 	// git init + commit
 	execFileSync("git", ["init"], { cwd: tmpDir, stdio: "pipe" });
@@ -518,10 +511,6 @@ async function runSkill(opts: {
 					type: "preset",
 					preset: "claude_code",
 					append: [
-						"You are in an automated test harness. Execute the skill below faithfully.",
-						"Use AskUserQuestion for all interactive steps — a simulated user will respond.",
-						"Do not skip interactive phases or confirmation gates. Run the full workflow as a real user would experience it.",
-						"",
 						`# ${opts.skillName} Skill Instructions`,
 						"",
 						skillBody,
@@ -571,12 +560,10 @@ async function stepInit(ctx: PipelineContext): Promise<boolean> {
 		prompt:
 			"Initialize this project with goodplan. The project is a flashcard CLI app built with TypeScript and Bun.",
 		userSystemPrompt: [
-			"You are a senior TypeScript developer building a flashcard CLI app.",
-			"When asked about project name, say 'flashcard-cli'.",
-			"When asked about description, say 'A CLI flashcard quiz app with spaced repetition'.",
-			"When asked about conventions, say 'TypeScript strict mode, Bun runtime, Biome linting, kebab-case files'.",
-			"When asked about architecture, describe: card module (data types + loading), quiz module (session engine), score module (tracking), index (CLI entry).",
-			"Always choose concrete, specific answers.",
+			"You are a senior TypeScript developer who built this flashcard CLI app.",
+			"The project is called 'flashcard-cli' — a CLI flashcard quiz app with spaced repetition, built with TypeScript strict mode, Bun runtime, and Biome for linting.",
+			"The codebase has four modules: card (data types + loading), quiz (session engine), score (tracking), and index (CLI entry point). Files use kebab-case naming.",
+			"Answer questions based on your knowledge of the project. Give concrete, specific answers with reasoning.",
 		].join("\n"),
 		fixtureDir: ctx.fixtureDir,
 		maxTurns: 200,
@@ -590,24 +577,14 @@ async function stepInit(ctx: PipelineContext): Promise<boolean> {
 		ctx.skillCosts.push({ skill: "init", cost: result.sessionResult.totalCost });
 	}
 
-	// Verify .goodplan/ directory exists
+	// Verify .goodplan/ directory exists — no fallbacks
 	const goodplanDir = join(ctx.fixtureDir, ".goodplan");
 	if (existsSync(goodplanDir)) {
 		logger.log("PASS: .goodplan/ directory created");
 		return true;
 	}
 
-	logger.log("FAIL: .goodplan/ directory not created, attempting fallback...");
-	const fallback = gp(["init", "--name", "flashcard-cli", "--json"], {
-		cwd: ctx.fixtureDir,
-		gpBin: GP_BIN,
-	});
-	if (fallback.exitCode === 0) {
-		logger.log("PASS: .goodplan/ created via fallback gp init");
-		return true;
-	}
-
-	logger.log("FAIL: Fallback gp init also failed");
+	logger.log("FAIL: .goodplan/ directory not created by /gp:init skill");
 	return false;
 }
 
@@ -621,16 +598,14 @@ async function stepCreateEpic(ctx: PipelineContext): Promise<boolean> {
 		skillName: "create-epic",
 		prompt: `Create an epic named "${EPIC_NAME}" with the goal: ${EPIC_GOAL}. Follow the create-epic skill instructions completely through all phases.`,
 		userSystemPrompt: [
-			"You are a senior TypeScript developer building a flashcard CLI app.",
+			"You are a senior TypeScript developer who built this flashcard CLI app.",
 			`The epic goal is: ${EPIC_GOAL}`,
 			"",
-			"When asked about epic name or goal, confirm the provided name and goal.",
-			"When asked about subsystems, suggest: cards (data + persistence), quiz-engine (session + SM-2), scoring (stats + history).",
-			"When asked about architecture, suggest modular design with clear interfaces between card storage, quiz logic, and scoring.",
-			"When asked about slices, suggest 3 slices: SM-2 core algorithm, review scheduling, quiz engine integration.",
-			"When asked about dependencies, say SM-2 core is standalone, scheduling depends on SM-2, quiz integration depends on both.",
-			"During exploration, engage substantively with findings. When you feel the exploration has covered the key technical decisions (SM-2 algorithm choice, data model for review history, quiz session lifecycle), say exploration is sufficient.",
-			"Always choose concrete, specific answers. Provide reasoning when making decisions.",
+			"You know the project well. It has four modules: cards (data types + persistence), quiz-engine (session management + SM-2 scheduling), scoring (stats + history tracking), and a CLI entry point.",
+			"The SM-2 algorithm is the core of spaced repetition — it calculates when to show a card next based on ease factor, interval, and repetition count.",
+			"You prefer modular architecture with clear interfaces. Dependencies flow: SM-2 core is standalone, review scheduling depends on SM-2, quiz engine integration depends on both.",
+			"During exploration, engage with findings substantively — ask follow-up questions if something is unclear, and share your domain knowledge about spaced repetition when relevant.",
+			"Give concrete, specific answers with reasoning. Draw on your knowledge of the codebase and spaced repetition domain.",
 		].join("\n"),
 		fixtureDir: ctx.fixtureDir,
 	});
@@ -751,11 +726,11 @@ async function stepPlanSlice(ctx: PipelineContext): Promise<boolean> {
 		prompt: `Plan the slice "${sliceName}" in epic "${EPIC_NAME}". Create a detailed implementation plan with phases.`,
 		userSystemPrompt: [
 			"You are a senior TypeScript developer planning SM-2 spaced repetition implementation.",
-			"When asked about approach, prefer a phased approach: types first, then algorithm, then integration.",
-			"When asked about implementation strategy, suggest starting with pure functions for SM-2 calculation.",
-			"When asked about testing, suggest unit tests for the SM-2 formula with known input/output pairs.",
-			"When asked about file paths, reference src/sm2.ts for the algorithm and tests/sm2.test.ts for tests.",
-			"Always choose concrete, specific answers.",
+			"You prefer a phased approach: define types and interfaces first, then implement the core algorithm as pure functions, then integrate with the quiz engine.",
+			"The SM-2 algorithm should live in src/sm2.ts with tests in tests/sm2.test.ts. It takes ease factor, interval, and repetitions as input and returns the next review date.",
+			"For testing, you want unit tests with known SM-2 input/output pairs — e.g., a card with ease 2.5 and quality 4 should produce a specific next interval.",
+			"For phasing: phase 1 should produce compilable types, phase 2 should produce passing SM-2 unit tests, phase 3 should produce an integrated quiz flow where answering a card updates its review schedule.",
+			"Give concrete, specific answers with reasoning.",
 		].join("\n"),
 		fixtureDir: ctx.fixtureDir,
 	});
@@ -777,8 +752,8 @@ async function stepPlanSlice(ctx: PipelineContext): Promise<boolean> {
 		}
 	}
 
-	logger.log("WARN: No plan file found after plan-slice -- pipeline may be degraded");
-	return true; // Continue anyway
+	logger.log("FAIL: No plan file found after plan-slice");
+	return false;
 }
 
 /** Step 5: /gp:implement */
@@ -823,11 +798,11 @@ async function stepImplement(ctx: PipelineContext): Promise<boolean> {
 
 	if (result.success) {
 		logger.log("PASS: Implementation skill completed");
-	} else {
-		logger.log("WARN: Implementation skill did not complete successfully");
+		return true;
 	}
 
-	return true; // Continue pipeline regardless
+	logger.log("FAIL: Implementation skill did not complete successfully");
+	return false;
 }
 
 /** Step 6: /gp:create-side-quest */
@@ -840,12 +815,12 @@ async function stepCreateSideQuest(ctx: PipelineContext): Promise<boolean> {
 		skillName: "create-side-quest",
 		prompt: `Create a side quest: "${SIDE_QUEST_GOAL}". This is a small addition to support importing cards from markdown files.`,
 		userSystemPrompt: [
-			"You are a senior TypeScript developer wanting to add markdown card import.",
+			"You are a senior TypeScript developer who wants to add markdown card import to this flashcard app.",
 			`The side quest goal is: ${SIDE_QUEST_GOAL}`,
-			"When asked about scope, say it's small -- one parser function and one test file.",
-			"When asked about approach, say parse lines delimited by '---' as front/back pairs.",
-			"When asked about file paths, suggest src/import.ts and tests/import.test.ts.",
-			"Always choose concrete, specific answers.",
+			"You envision a simple markdown format where cards are separated by '---' delimiters, with the front on the first line and the back on the second line.",
+			"The implementation should be small: a parser function in src/import.ts and tests in tests/import.test.ts.",
+			"For phasing: phase 1 = parser function that reads a markdown file and returns Card objects, phase 2 = test coverage including edge cases (empty files, malformed delimiters, multi-line content).",
+			"Give concrete answers with reasoning. If asked about risks, mention encoding issues and delimiter ambiguity.",
 		].join("\n"),
 		fixtureDir: ctx.fixtureDir,
 		maxTurns: 200,
@@ -861,13 +836,11 @@ async function stepCreateSideQuest(ctx: PipelineContext): Promise<boolean> {
 
 	if (result.success) {
 		logger.log("PASS: Side quest created");
-	} else {
-		logger.log(
-			"WARN: Side quest creation may have failed -- continuing with degraded verification",
-		);
+		return true;
 	}
 
-	return true;
+	logger.log("FAIL: Side quest creation did not complete successfully");
+	return false;
 }
 
 /** Step 7: /gp:audit */
@@ -899,11 +872,11 @@ async function stepAudit(ctx: PipelineContext): Promise<boolean> {
 
 	if (result.success) {
 		logger.log("PASS: Audit completed");
-	} else {
-		logger.log("WARN: Audit may have failed -- continuing with degraded verification");
+		return true;
 	}
 
-	return true;
+	logger.log("FAIL: Audit did not complete successfully");
+	return false;
 }
 
 /** Step 8: /gp:complete-epic */
@@ -912,52 +885,20 @@ async function stepCompleteEpic(ctx: PipelineContext): Promise<boolean> {
 	logger.log("STEP 8: /gp:complete-epic");
 	logger.log("========================================\n");
 
-	// Ensure all slices are in a terminal state before completing the epic.
-	// Completed slices stay as-is. Unimplemented slices (created, planning, etc.) get abandoned.
-	const slicesDir = join(ctx.fixtureDir, ".goodplan", "epics", EPIC_NAME, "slices");
-	if (existsSync(slicesDir)) {
-		const sliceDirs = readdirSync(slicesDir).filter((d: string) =>
-			statSync(join(slicesDir, d)).isDirectory(),
-		);
-		const terminalStatuses = new Set(["completed", "abandoned"]);
-		for (const sliceDir of sliceDirs) {
-			const sliceStatus = verifyEntityStatus("slice", sliceDir, "completed", {
-				cwd: ctx.fixtureDir,
-				gpBin: GP_BIN,
-				epic: EPIC_NAME,
-			});
-			if (!terminalStatuses.has(sliceStatus.actual)) {
-				logger.log(
-					`[complete-epic] Abandoning unfinished slice '${sliceDir}' (status: ${sliceStatus.actual})...`,
-				);
-				gpForce(
-					[
-						"slice:abandon",
-						"--epic",
-						EPIC_NAME,
-						"--slice",
-						sliceDir,
-						"--reason",
-						"Not implemented during pipeline validation",
-						"--json",
-					],
-					{
-						cwd: ctx.fixtureDir,
-						gpBin: GP_BIN,
-					},
-				);
-			}
-		}
-	}
+	// No auto-abandon. The complete-epic skill should handle non-terminal slices
+	// by telling the user which slices need attention. If slices are still in
+	// non-terminal states, that's a real issue the skill should surface.
 
 	const result = await runSkill({
 		skillName: "complete-epic",
-		prompt: `Complete the epic "${EPIC_NAME}". All slices should be done. Synthesize learnings and complete the epic.`,
+		prompt: `Complete the epic "${EPIC_NAME}". Synthesize learnings and complete the epic. If any slices are not in a terminal state, abandon them with a reason before completing.`,
 		userSystemPrompt: [
 			"You are a senior developer completing the spaced repetition epic.",
-			"When asked about learnings, reflect on what was learned: SM-2 algorithm implementation details, integration patterns between card storage and quiz engine, testing strategies for spaced repetition logic.",
-			"When asked about architecture changes, review them and approve if they accurately reflect what was built. Push back if they contradict the implementation.",
-			"When asked to confirm completion, confirm if the summary looks accurate.",
+			"You implemented the SM-2 algorithm and integrated it with the quiz engine. Some slices may not have been implemented — those can be abandoned if they're not critical.",
+			"For learnings, reflect substantively on what was learned: SM-2 algorithm implementation details, pure function design for testability, integration patterns between card storage and the quiz engine.",
+			"For architecture changes, review them carefully. Approve changes that accurately reflect what was built. Push back if they contradict the implementation.",
+			"For artifact promotion, promote patterns and utilities that would be useful in future epics.",
+			"If the skill says slices are not in terminal state, agree to abandon unimplemented slices with a brief reason.",
 		].join("\n"),
 		fixtureDir: ctx.fixtureDir,
 		maxTurns: 200,
@@ -973,11 +914,11 @@ async function stepCompleteEpic(ctx: PipelineContext): Promise<boolean> {
 
 	if (result.success) {
 		logger.log("PASS: Epic completion skill completed");
-	} else {
-		logger.log("WARN: Epic completion may have failed");
+		return true;
 	}
 
-	return true;
+	logger.log("FAIL: Epic completion did not complete successfully");
+	return false;
 }
 
 // ─── Quality Proxy Metrics ──────────────────────────────────
