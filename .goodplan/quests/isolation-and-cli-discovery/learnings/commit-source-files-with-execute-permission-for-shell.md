@@ -1,0 +1,1 @@
+git add --chmod=+x is needed for shell scripts in plugin/bin/ because .gitignore rules can match unexpectedly (e.g., a global gp ignore rule). Always check git check-ignore -v before staging.

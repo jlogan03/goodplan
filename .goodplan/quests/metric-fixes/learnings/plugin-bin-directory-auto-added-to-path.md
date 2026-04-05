@@ -1,0 +1,1 @@
+Claude Code automatically adds <plugin-root>/bin/ to PATH for all installed plugins. No SessionStart hook needed for binary distribution.

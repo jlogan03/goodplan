@@ -1,0 +1,1 @@
+Variable substitution (${CLAUDE_PLUGIN_DATA}, ${CLAUDE_PLUGIN_ROOT}) does NOT work in plugin CLAUDE.md. Only works in skill content, agent content, and hook commands.

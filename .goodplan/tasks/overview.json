@@ -1,53 +1,18 @@
 {
 	"items": [
 		{
-			"completed": "2026-03-28T16:11:15.827Z",
-			"created": "2026-03-28T14:46:18.389Z",
-			"name": "self-verifying-error-codes",
-			"status": "dropped",
-			"title": "Make ALL_ERROR_CODES self-verifying via source extraction"
-		},
-		{
-			"completed": "2026-03-28T16:11:16.021Z",
-			"created": "2026-03-28T14:46:19.474Z",
-			"name": "dedup-fitness-collect-ts",
-			"status": "dropped",
-			"title": "Deduplicate collectTsFiles() across fitness tests"
+			"completed": null,
+			"created": "2026-04-05T05:27:06.117Z",
+			"name": "complete-epic-learnings-rollup",
+			"status": "open",
+			"title": "complete-epic only rolls up 1 of 7+ learnings"
 		},
 		{
 			"completed": null,
-			"created": "2026-03-29T18:20:26.557Z",
-			"name": "scoped-decision-rollup",
+			"created": "2026-04-05T05:27:13.941Z",
+			"name": "start-epic-uses-direct-file-ops",
 			"status": "open",
-			"title": "Scope decisions to entities and roll up like learnings"
-		},
-		{
-			"completed": null,
-			"created": "2026-04-01T19:26:28.354Z",
-			"name": "pretooluse-hook-state-protection",
-			"status": "open",
-			"title": "Add PreToolUse hook to plugin that blocks direct writes to .goodplan/"
-		},
-		{
-			"completed": null,
-			"created": "2026-04-01T19:26:36.357Z",
-			"name": "update-skills-use-cli-not-direct-writes",
-			"status": "open",
-			"title": "Update skills that instruct agents to write directly into .goodplan/ to use CLI commands instead"
-		},
-		{
-			"completed": "2026-04-01T20:24:43.716Z",
-			"created": "2026-04-01T20:21:42.004Z",
-			"name": "harness-observability-instrumentation",
-			"status": "dropped",
-			"title": "Add comprehensive instrumentation to test harness: message tracing, tool call tracking, context usage monitoring"
-		},
-		{
-			"completed": null,
-			"created": "2026-04-02T04:07:59.223Z",
-			"name": "refine-plan-per-reviewer-scores",
-			"status": "open",
-			"title": "Update installed /gp:refine-plan to per-reviewer score format"
+			"title": "start-epic skill uses direct file operations instead of CLI commands"
 		}
 	]
 }

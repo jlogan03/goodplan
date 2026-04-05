@@ -1,0 +1,1 @@
+${CLAUDE_PLUGIN_DATA} and ${CLAUDE_PLUGIN_ROOT} do NOT resolve for local plugins loaded via Agent SDK plugins:[{type:local}]. They are substitution tokens for marketplace-installed plugins only.
