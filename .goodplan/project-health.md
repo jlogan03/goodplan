@@ -19,7 +19,7 @@
 - New skills (audit, init, create-side-quest, task, upgrade, status): E2E tests run at haiku tier — audit 4/4 passed, init 5/5 passed, create-side-quest error path passed (full pipeline needs opus). Renamed skills (task, upgrade, status) verified via 47-point static checks.
 
 ### Known fragile areas
-- Agent SDK skill discovery requires both local plugin path AND installed cache sync — if cache is stale, skills silently fail as "Unknown skill"
+- Agent SDK local plugin path (`plugins: [{ type: "local" }]`) is sufficient for skill discovery — no cache sync needed. `${CLAUDE_PLUGIN_DATA}` and `${CLAUDE_PLUGIN_ROOT}` do not resolve for local plugins.
 - Concurrent E2E test harnesses corrupt `dist/gp-plugin/` via parallel `build:plugin` runs — must run sequentially
 - epic-conventions.md is consumed by 12+ skills: changes require updating all consumers
 - citty + `exactOptionalPropertyTypes`: requires `as unknown as CommandDef` casts in `src/index.ts`. May break on citty upgrade.
