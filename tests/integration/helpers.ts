@@ -9,7 +9,7 @@
  *
  * Fitness functions verify architectural invariants (INV-001 through INV-007).
  * Integration tests spawn the compiled binary against fixture `.goodplan/` directories.
- * Both rely on globalSetup (tests/global-setup.ts) to compile the binary once.
+ * Both rely on globalSetup (tests/global-setup.ts) to build the plugin once.
  */
 
 import type { SpawnSyncReturns } from "node:child_process";
@@ -18,8 +18,16 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
-/** Well-known path for the compiled binary (set by globalSetup). */
-const BINARY_PATH = path.resolve(import.meta.dirname, "../../gp");
+/** Well-known path for the plugin binary (built by globalSetup via build:plugin). */
+function pluginBinaryPath(): string {
+	const arch = process.arch === "x64" ? "x64" : "arm64";
+	const platform = process.platform === "linux" ? "linux" : "macos";
+	return path.resolve(
+		import.meta.dirname,
+		`../../dist/gp-plugin/binaries/${platform}-${arch}/gp`,
+	);
+}
+const BINARY_PATH = pluginBinaryPath();
 
 export interface CommandResult {
 	stdout: string;
@@ -160,13 +168,13 @@ export async function withTempDir<T>(
 }
 
 /**
- * Assert the compiled binary exists and return its path.
- * Does not compile — compilation is handled by globalSetup.
+ * Assert the plugin binary exists and return its path.
+ * Does not build — the plugin build is handled by globalSetup.
  */
 export function buildBinary(): string {
 	if (!fs.existsSync(BINARY_PATH)) {
 		throw new Error(
-			`Compiled binary not found at ${BINARY_PATH}. Ensure globalSetup ran successfully (vitest.config.ts → tests/global-setup.ts).`,
+			`Plugin binary not found at ${BINARY_PATH}. Ensure globalSetup ran successfully (vitest.config.ts → tests/global-setup.ts).`,
 		);
 	}
 	return BINARY_PATH;

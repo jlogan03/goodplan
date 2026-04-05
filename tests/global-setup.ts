@@ -1,48 +1,19 @@
 /**
- * Vitest globalSetup — compiles the goodplan binary once before all tests.
+ * Vitest globalSetup — builds the full plugin once before all tests.
  * Runs in a separate module context from test files.
  */
 
 import { execFileSync } from "node:child_process";
-import * as fs from "node:fs";
 import * as path from "node:path";
 
 const projectRoot = path.resolve(import.meta.dirname, "..");
-const outfile = path.join(projectRoot, "gp");
 
 export function setup(): void {
-	console.log("[global-setup] Compiling binary...");
-	const pkg = JSON.parse(fs.readFileSync(path.join(projectRoot, "package.json"), "utf-8")) as {
-		version: string;
-	};
-	execFileSync(
-		"bun",
-		[
-			"build",
-			"--compile",
-			"src/index.ts",
-			"--outfile",
-			outfile,
-			"--define",
-			`__GOODPLAN_VERSION__="${pkg.version}"`,
-			// HMAC key for state integrity — must match vitest.config.ts define.
-			// global-setup.ts compiles the test binary (integration/fitness tests);
-			// vitest.config.ts configures Vitest's module transform (unit tests).
-			"--define",
-			'__GP_HMAC_KEY__="goodplan-dev-hmac-key"',
-		],
-		{
-			cwd: projectRoot,
-			stdio: "inherit",
-			timeout: 60_000,
-		},
-	);
-	console.log(`[global-setup] Binary compiled to ${outfile}`);
-}
-
-export function teardown(): void {
-	if (fs.existsSync(outfile)) {
-		fs.rmSync(outfile, { force: true });
-		console.log("[global-setup] Cleaned up compiled binary");
-	}
+	console.log("[global-setup] Building plugin...");
+	execFileSync("bash", ["scripts/build-plugin.sh"], {
+		cwd: projectRoot,
+		stdio: "inherit",
+		timeout: 120_000,
+	});
+	console.log("[global-setup] Plugin built to dist/gp-plugin/");
 }

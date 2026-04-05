@@ -55,9 +55,9 @@ Also check if relevant to your task:
 
 We are implementing a set of improvements to the goodplan workflow itself. These span multiple epics and quests. Always read these before starting work on any workflow improvement:
 
-- `Target Workflow Vision.md` — north star document describing the target state for all workflow systems. Check implementations against this to prevent drift.
-- `Workflow Improvements - Work Items.md` — prioritized work items (2 epics, 23 quests) with dependency graph, status tracking, and execution order. Update status and capture learnings after completing each item.
-- `Development Workflow.md` — exploration scratchpad from the design session (reference, not authoritative — the Target Workflow Vision supersedes this where they differ)
+- `docs/Target Workflow Vision.md` — north star document describing the target state for all workflow systems. Check implementations against this to prevent drift.
+- `docs/Workflow Improvements - Work Items.md` — prioritized work items (2 epics, 23 quests) with dependency graph, status tracking, and execution order. Update status and capture learnings after completing each item.
+- `docs/Development Workflow.md` — exploration scratchpad from the design session (reference, not authoritative — the Target Workflow Vision supersedes this where they differ)
 
 **After completing any workflow improvement epic or quest:**
 1. Update the Work Items doc — mark done, note scope changes or surprises
