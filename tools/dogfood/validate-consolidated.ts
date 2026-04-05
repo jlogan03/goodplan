@@ -625,13 +625,12 @@ async function stepCreateEpic(ctx: PipelineContext): Promise<boolean> {
 			`The epic goal is: ${EPIC_GOAL}`,
 			"",
 			"When asked about epic name or goal, confirm the provided name and goal.",
-			"When asked about exploration, say 'That's enough, let's move on.'",
 			"When asked about subsystems, suggest: cards (data + persistence), quiz-engine (session + SM-2), scoring (stats + history).",
 			"When asked about architecture, suggest modular design with clear interfaces between card storage, quiz logic, and scoring.",
 			"When asked about slices, suggest 3 slices: SM-2 core algorithm, review scheduling, quiz engine integration.",
 			"When asked about dependencies, say SM-2 core is standalone, scheduling depends on SM-2, quiz integration depends on both.",
-			"Always choose concrete answers. Never say just 'Proceed' without context.",
-			"If asked to continue exploring, say 'That's enough' or choose to stop.",
+			"During exploration, engage substantively with findings. When you feel the exploration has covered the key technical decisions (SM-2 algorithm choice, data model for review history, quiz session lifecycle), say exploration is sufficient.",
+			"Always choose concrete, specific answers. Provide reasoning when making decisions.",
 		].join("\n"),
 		fixtureDir: ctx.fixtureDir,
 	});
@@ -643,7 +642,9 @@ async function stepCreateEpic(ctx: PipelineContext): Promise<boolean> {
 		ctx.skillCosts.push({ skill: "create-epic", cost: result.sessionResult.totalCost });
 	}
 
-	// Verify epic exists
+	// Verify epic reached slices-refined — the terminal state for create-epic.
+	// No fallbacks or partial-success acceptance. If create-epic didn't complete
+	// the full 6-phase pipeline, that's a real failure we need to see.
 	const epicStatus = verifyEntityStatus("epic", EPIC_NAME, "slices-refined", {
 		cwd: ctx.fixtureDir,
 		gpBin: GP_BIN,
@@ -654,40 +655,15 @@ async function stepCreateEpic(ctx: PipelineContext): Promise<boolean> {
 		return true;
 	}
 
-	// Accept late-stage statuses
-	const acceptableStatuses = [
-		"slices-defined",
-		"architecture-refined",
-		"architecture-defined",
-		"defining-slices",
-		"slices-refined",
-	];
-	if (acceptableStatuses.includes(epicStatus.actual)) {
-		logger.log(
-			`WARN: Epic at '${epicStatus.actual}' (expected 'slices-refined') -- partial success`,
-		);
-		return true;
-	}
-
-	logger.log(`FAIL: Epic status is '${epicStatus.actual}', attempting fallback...`);
-	// Fallback: force-create the epic if not present
-	const forceResult = gp(["epic:create", "--json"], {
-		cwd: ctx.fixtureDir,
-		gpBin: GP_BIN,
-		stdin: JSON.stringify({ name: EPIC_NAME, goal: EPIC_GOAL }),
-	});
-	if (forceResult.exitCode === 0 || epicStatus.actual !== "not-found") {
-		logger.log("WARN: Using fallback epic creation -- pipeline partially succeeded");
-		return true;
-	}
-
+	logger.log(`FAIL: Epic status is '${epicStatus.actual}' (expected 'slices-refined')`);
+	logger.log("The create-epic skill did not complete the full pipeline.");
 	return false;
 }
 
-/** Step 3: Activate epic if needed */
-function stepActivateEpic(ctx: PipelineContext): boolean {
+/** Step 3: Activate epic — uses /gp:start-epic skill */
+async function stepActivateEpic(ctx: PipelineContext): Promise<boolean> {
 	logger.log("\n========================================");
-	logger.log("STEP 3: Activate epic");
+	logger.log("STEP 3: /gp:start-epic");
 	logger.log("========================================\n");
 
 	const epicStatus = verifyEntityStatus("epic", EPIC_NAME, "activated", {
@@ -700,82 +676,27 @@ function stepActivateEpic(ctx: PipelineContext): boolean {
 		return true;
 	}
 
-	// Fast-track through lifecycle if stuck
-	logger.log(`[activate] Epic at '${epicStatus.actual}', fast-tracking to activated...`);
+	// Epic should be in slices-refined (output of create-epic). Activate it via the skill.
+	const result = await runSkill({
+		skillName: "start-epic",
+		prompt: `Activate the epic "${EPIC_NAME}". Review the architecture proposal and approve it.`,
+		userSystemPrompt: [
+			"You are a senior TypeScript developer reviewing the architecture for a flashcard app.",
+			"When presented with the architecture proposal, review it thoughtfully.",
+			"If the architecture covers cards, quiz engine, and scoring subsystems, approve it.",
+			"If asked about concerns, say the architecture looks well-structured for the scope.",
+			"When asked to confirm activation, confirm.",
+		].join("\n"),
+		fixtureDir: ctx.fixtureDir,
+		maxTurns: 100,
+		maxBudgetUsd: 10,
+	});
 
-	const epicDir = join(ctx.fixtureDir, ".goodplan", "epics", EPIC_NAME);
-	mkdirSync(epicDir, { recursive: true });
-
-	// Try each step, ignoring failures for already-completed transitions
-	const transitions: Array<{
-		args: string[];
-		artifact?: { path: string; content: string };
-		stdin?: string;
-	}> = [
-		{ args: ["epic:explore", "--epic", EPIC_NAME, "--json"] },
-		{
-			args: ["submit-explore", "--epic", EPIC_NAME, "--json"],
-			artifact: {
-				path: join(epicDir, "explore-complete.md"),
-				content:
-					"# Explore Complete\n\n## Findings\n- SM-2 algorithm needs card-level review history\n- Quiz engine needs priority queue\n",
-			},
-		},
-		{ args: ["epic:define-architecture", "--epic", EPIC_NAME, "--json"] },
-		{
-			args: ["submit-architecture", "--epic", EPIC_NAME, "--json"],
-			artifact: {
-				path: join(join(epicDir, "architecture"), "_overview.md"),
-				content: [
-					"# Architecture Overview",
-					"",
-					"## Cards Subsystem",
-					"Card data types, persistence, and loading.",
-					"",
-					"## Quiz Engine Subsystem",
-					"Quiz session management, SM-2 scheduling, card prioritization.",
-					"",
-					"## Scoring Subsystem",
-					"Score calculation, history tracking, statistics.",
-				].join("\n"),
-			},
-		},
-		{
-			args: ["submit-refine-architecture", "--epic", EPIC_NAME, "--json"],
-			stdin: JSON.stringify({ scores: { overall: 9 } }),
-		},
-		{ args: ["epic:define-slices", "--epic", EPIC_NAME, "--json"] },
-		{ args: ["submit-slices", "--epic", EPIC_NAME, "--json"] },
-		{
-			args: ["submit-refine-slices", "--epic", EPIC_NAME, "--json"],
-			stdin: JSON.stringify({ scores: { overall: 9 } }),
-		},
-		{
-			args: ["epic:add-verification", "--epic", EPIC_NAME, "--json"],
-			stdin: JSON.stringify({
-				verification: {
-					description: "SM-2 spaced repetition works end-to-end",
-					status: "pending",
-					addedDuring: "fixture-setup",
-					modifiedDuring: null,
-				},
-			}),
-		},
-		{ args: ["epic:activate", "--epic", EPIC_NAME, "--json"] },
-	];
-
-	for (const transition of transitions) {
-		if (transition.artifact) {
-			mkdirSync(join(transition.artifact.path, ".."), { recursive: true });
-			if (!existsSync(transition.artifact.path)) {
-				writeFileSync(transition.artifact.path, transition.artifact.content);
-			}
-		}
-		gpForce(transition.args, {
-			cwd: ctx.fixtureDir,
-			gpBin: GP_BIN,
-			stdin: transition.stdin,
-		});
+	ctx.allToolCalls.push(...result.tracker.toolCalls);
+	if (result.sessionResult) {
+		ctx.allViolations.push(...result.sessionResult.violations);
+		ctx.allArtifactReadViolations.push(...result.sessionResult.artifactReadViolations);
+		ctx.skillCosts.push({ skill: "start-epic", cost: result.sessionResult.totalCost });
 	}
 
 	const postStatus = verifyEntityStatus("epic", EPIC_NAME, "activated", {
@@ -784,12 +705,12 @@ function stepActivateEpic(ctx: PipelineContext): boolean {
 	});
 
 	if (postStatus.actual === "activated") {
-		logger.log("PASS: Epic activated via fast-track");
+		logger.log("PASS: Epic activated via /gp:start-epic");
 		return true;
 	}
 
-	logger.log(`WARN: Epic at '${postStatus.actual}' after fast-track (expected 'activated')`);
-	return true; // Continue pipeline anyway
+	logger.log(`FAIL: Epic at '${postStatus.actual}' after start-epic (expected 'activated')`);
+	return false;
 }
 
 /** Step 4: /gp:plan-slice */
@@ -883,10 +804,10 @@ async function stepImplement(ctx: PipelineContext): Promise<boolean> {
 		prompt: `Implement the plan for slice "${sliceName}" in epic "${EPIC_NAME}". Follow the plan phases and write the code.`,
 		userSystemPrompt: [
 			"You are a senior TypeScript developer implementing SM-2 spaced repetition.",
-			"When asked about implementation, approve the proposed approach.",
+			"When asked about implementation approach, evaluate it and approve if it's reasonable. If something looks wrong, say so.",
 			"When asked about build or test guidance, say 'Run bun test to verify'.",
-			"When asked about code review findings, say 'Looks good, proceed'.",
-			"Always approve implementation steps.",
+			"When asked about code review findings, read them and respond substantively. If the findings are valid, agree. If they seem wrong, push back.",
+			"When asked about architectural changes, evaluate whether they're necessary for the scope.",
 		].join("\n"),
 		fixtureDir: ctx.fixtureDir,
 		maxTurns: 400,
@@ -959,11 +880,10 @@ async function stepAudit(ctx: PipelineContext): Promise<boolean> {
 		skillName: "audit",
 		prompt: "Run /gp:audit architecture. Analyze the project architecture and report findings.",
 		userSystemPrompt: [
-			"You are testing the audit skill in architecture mode.",
+			"You are a senior developer reviewing audit findings for a flashcard app.",
 			"When asked about audit mode, select 'architecture'.",
-			"When asked about side quests, approve all proposed side quests.",
-			"When asked any yes/no question, say yes.",
-			"Always choose concrete answers.",
+			"When asked about side quests, evaluate each one. Approve side quests that address real gaps (missing tests, undocumented APIs). Decline side quests that are purely cosmetic.",
+			"When asked about findings, respond thoughtfully based on the severity and relevance.",
 		].join("\n"),
 		fixtureDir: ctx.fixtureDir,
 		maxTurns: 200,
@@ -1034,11 +954,10 @@ async function stepCompleteEpic(ctx: PipelineContext): Promise<boolean> {
 		skillName: "complete-epic",
 		prompt: `Complete the epic "${EPIC_NAME}". All slices should be done. Synthesize learnings and complete the epic.`,
 		userSystemPrompt: [
-			"You are completing the spaced repetition epic.",
-			"When asked about learnings, describe what was learned about SM-2 implementation.",
-			"When asked to confirm completion, say yes.",
-			"When asked about architecture changes, say the architecture docs are accurate.",
-			"Always approve completion steps.",
+			"You are a senior developer completing the spaced repetition epic.",
+			"When asked about learnings, reflect on what was learned: SM-2 algorithm implementation details, integration patterns between card storage and quiz engine, testing strategies for spaced repetition logic.",
+			"When asked about architecture changes, review them and approve if they accurately reflect what was built. Push back if they contradict the implementation.",
+			"When asked to confirm completion, confirm if the summary looks accurate.",
 		].join("\n"),
 		fixtureDir: ctx.fixtureDir,
 		maxTurns: 200,
@@ -1366,7 +1285,7 @@ async function main(): Promise<void> {
 	const pipelineSteps = [
 		{ name: "init", fn: () => stepInit(ctx) },
 		{ name: "create-epic", fn: () => stepCreateEpic(ctx) },
-		{ name: "activate-epic", fn: () => Promise.resolve(stepActivateEpic(ctx)) },
+		{ name: "activate-epic", fn: () => stepActivateEpic(ctx) },
 		{ name: "plan-slice", fn: () => stepPlanSlice(ctx) },
 		{ name: "implement", fn: () => stepImplement(ctx) },
 		{ name: "create-side-quest", fn: () => stepCreateSideQuest(ctx) },
