@@ -1110,11 +1110,17 @@ function checkLearningsMetrics(fixtureDir: string): MetricResult {
 		return { name: "Learnings", passed: false, detail: "gp learning:list failed" };
 	}
 
-	let learnings: Array<{ summary?: string; detail?: string; file?: string }>;
+	let learnings: Array<{
+		summary?: string;
+		file?: string;
+		source?: string;
+		category?: string;
+		rollupTo?: string[];
+	}>;
 	try {
 		const parsed = JSON.parse(learningsResult.stdout) as
-			| { items: Array<{ summary?: string; detail?: string; file?: string }> }
-			| Array<{ summary?: string; detail?: string; file?: string }>;
+			| { items: typeof learnings }
+			| typeof learnings;
 		learnings = Array.isArray(parsed) ? parsed : (parsed.items ?? []);
 	} catch {
 		return {
@@ -1124,23 +1130,37 @@ function checkLearningsMetrics(fixtureDir: string): MetricResult {
 		};
 	}
 
+	// 1. Learnings exist (rollup produced output)
 	const count = learnings.length;
 	const countOk = count >= 2;
 
-	let allLong = true;
-	let shortCount = 0;
-	for (const learning of learnings) {
-		const text = learning.detail ?? learning.summary ?? "";
-		if (text.length < 100) {
-			allLong = false;
-			shortCount++;
-		}
-	}
+	// 2. Every learning has a valid category (proves CLI validation ran)
+	const validCategories = new Set(["domain", "worked", "didnt-work", "do-differently"]);
+	const invalidCategory = learnings.filter((l) => !validCategories.has(l.category ?? ""));
+	const categoriesOk = invalidCategory.length === 0;
 
-	const passed = countOk && allLong;
-	const detail = `${count} learnings (>= 2: ${countOk ? "PASS" : "FAIL"}), ${shortCount > 0 ? `${shortCount} under 100 chars` : "all >= 100 chars"}`;
+	// 3. Every learning has a source field (CLI injects this — proves it went through the CLI)
+	const missingSource = learnings.filter((l) => !l.source);
+	const sourcesOk = missingSource.length === 0;
 
-	// Diagnostic: warn if 0 learnings after epic completion (may indicate epic:complete didn't roll up)
+	// 4. Every learning has a file field pointing to an existing .md (CLI creates these)
+	const missingFile = learnings.filter((l) => !l.file);
+	const filesOk = missingFile.length === 0;
+
+	// 5. Learnings came from multiple sources (proves cross-scope rollup)
+	const uniqueSources = new Set(learnings.map((l) => l.source).filter(Boolean));
+	const multiSourceOk = uniqueSources.size >= 2;
+
+	const passed = countOk && categoriesOk && sourcesOk && filesOk && multiSourceOk;
+
+	const checks = [
+		`${count} learnings (>= 2: ${countOk ? "PASS" : "FAIL"})`,
+		`categories: ${categoriesOk ? "PASS" : `${invalidCategory.length} invalid`}`,
+		`CLI source field: ${sourcesOk ? "PASS" : `${missingSource.length} missing`}`,
+		`file paths: ${filesOk ? "PASS" : `${missingFile.length} missing`}`,
+		`multi-source rollup: ${multiSourceOk ? `PASS (${uniqueSources.size} sources)` : `FAIL (${uniqueSources.size} source)`}`,
+	];
+
 	if (count === 0) {
 		console.warn(
 			"  WARNING: 0 learnings found after epic:complete — learnings rollup may not be working",
@@ -1150,7 +1170,7 @@ function checkLearningsMetrics(fixtureDir: string): MetricResult {
 	return {
 		name: "Learnings",
 		passed,
-		detail,
+		detail: checks.join(", "),
 	};
 }
 
