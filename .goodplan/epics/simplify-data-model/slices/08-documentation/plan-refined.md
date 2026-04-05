@@ -94,7 +94,7 @@ Systematic sweep across all skill files and shared references.
 
 ### Tasks
 
-- [ ] Update `skills/status/references/status-logic.md` — comprehensive line-by-line update of all stale references using this mapping:
+- [x] Update `skills/status/references/status-logic.md` — comprehensive line-by-line update of all stale references using this mapping:
   - `/explore` → `/gp:explore`
   - `/create-architecture` → `/gp:create-epic`
   - `/create-slices` → `/gp:create-epic`
@@ -106,16 +106,16 @@ Systematic sweep across all skill files and shared references.
   - `/create-epic` → `/gp:create-epic`
   - `/project-status` → `/gp:status`
   - Cover Epic States table (lines ~90-100, including `/explore` entries on lines 90-91), Slice/Quest States table (lines ~107-114, `/create-plan`, `/refine-plan`, `/implement-plan`, `/complete`), and Project States table (lines ~122-123, `/explore` or `/create-architecture`)
-- [ ] Update `skills/_shared/references/output-templates.md` — replace bare-name references to `refine-plan`, `refine-architecture`, `refine-slices`, `implement-plan` with current skill names (e.g., `refine-plan` -> `plan-slice (refinement phase)`, `implement-plan` -> `implement`). Update line 9 "Used by" annotation to reference: `plan-slice`, `create-epic`, `implement`. Note: these are bare names (not `/`-prefixed), so the Phase 3 verification grep won't catch them — add a separate bare-name check to verification.
-- [ ] Update `skills/_shared/references/iteration-loop.md` — update bare-name references from "refine-plan, refine-architecture" to current skill names. Same bare-name caveat as above.
-- [ ] Update `skills/_shared/references/README.md` — update bare-name references (e.g., line 19 "refine-plan, refine-architecture" text) to current skill names. Same bare-name caveat as above.
-- [ ] Update `skills/explore/SKILL.md` — fix next-step guidance from `/create-architecture`, `/create-plan` to `/gp:create-epic`, `/gp:plan-slice`. Also update line ~58 which contains TWO `/explore` references (prose + example invocation) — both need `/gp:explore` prefix ("Run /explore at the epic scope instead")
-- [ ] Update `skills/init/SKILL.md` — fix line ~209 reference to `/gp:create-architecture` → `/gp:create-epic`. Verify with: `grep -c '/gp:create-architecture' skills/init/SKILL.md` — expect 0 after fix (this reference is invisible to the main Phase 3 grep patterns)
-- [ ] Update `skills/upgrade/references/migration-heuristics.md` (~1 stale match) — note: these are descriptive "Used by" annotations, not skill invocations
-- [ ] Update `skills/init/references/expertise-profiling.md` (~1 stale match) — same: descriptive text, not invocations
-- [ ] Note: `start-epic/SKILL.md` (13 matches) is already handled by Phase 1 rewrite — no Phase 3 work needed for that file
-- [ ] Note: Other files previously listed (create-epic, plan-slice, audit, create-side-quest, _shared/references/cli-interaction.md, decisions-format.md, README.md, audit-conventions.md, init/references/repo-scanning.md, init/references/migration-detection.md, all 3 agent files) have zero stale `/`-prefixed skill references — their references are `$GP` CLI commands (correctly excluded) or already use current names
-- [ ] Run full grep to confirm no remaining stale references in skills/ and agents/ directories
+- [x] Update `skills/_shared/references/output-templates.md` — replace bare-name references to `refine-plan`, `refine-architecture`, `refine-slices`, `implement-plan` with current skill names (e.g., `refine-plan` -> `plan-slice (refinement phase)`, `implement-plan` -> `implement`). Update line 9 "Used by" annotation to reference: `plan-slice`, `create-epic`, `implement`. Note: these are bare names (not `/`-prefixed), so the Phase 3 verification grep won't catch them — add a separate bare-name check to verification.
+- [x] Update `skills/_shared/references/iteration-loop.md` — update bare-name references from "refine-plan, refine-architecture" to current skill names. Same bare-name caveat as above.
+- [x] Update `skills/_shared/references/README.md` — update bare-name references (e.g., line 19 "refine-plan, refine-architecture" text) to current skill names. Same bare-name caveat as above.
+- [x] Update `skills/explore/SKILL.md` — fix next-step guidance from `/create-architecture`, `/create-plan` to `/gp:create-epic`, `/gp:plan-slice`. Also update line ~58 which contains TWO `/explore` references (prose + example invocation) — both need `/gp:explore` prefix ("Run /explore at the epic scope instead")
+- [x] Update `skills/init/SKILL.md` — fix line ~209 reference to `/gp:create-architecture` → `/gp:create-epic`. Verify with: `grep -c '/gp:create-architecture' skills/init/SKILL.md` — expect 0 after fix (this reference is invisible to the main Phase 3 grep patterns)
+- [x] Update `skills/upgrade/references/migration-heuristics.md` (~1 stale match) — note: these are descriptive "Used by" annotations, not skill invocations
+- [x] Update `skills/init/references/expertise-profiling.md` (~1 stale match) — same: descriptive text, not invocations
+- [x] Note: `start-epic/SKILL.md` (13 matches) is already handled by Phase 1 rewrite — no Phase 3 work needed for that file
+- [x] Note: Other files previously listed (create-epic, plan-slice, audit, create-side-quest, _shared/references/cli-interaction.md, decisions-format.md, README.md, audit-conventions.md, init/references/repo-scanning.md, init/references/migration-detection.md, all 3 agent files) have zero stale `/`-prefixed skill references — their references are `$GP` CLI commands (correctly excluded) or already use current names
+- [x] Run full grep to confirm no remaining stale references in skills/ and agents/ directories
 
 ### Verification
 

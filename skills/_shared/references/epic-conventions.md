@@ -162,10 +162,10 @@ Auto-active, no approval gate. `/gp:create-epic` writes directly to `architectur
 
 | From State | Trigger | To State | Skill |
 |---|---|---|---|
-| (none) | `/create-epic` | ready-for-exploration | `/create-epic` |
-| ready-for-exploration | `/explore` | exploring | `/explore` |
+| (none) | `/gp:create-epic` | ready-for-exploration | `/gp:create-epic` |
+| ready-for-exploration | `/gp:explore` | exploring | `/gp:explore` |
 | ready-for-exploration | user skips explore | needs-architecture | writes `explore-skipped.md` |
-| exploring | user marks done | needs-architecture | `/explore` writes `explore-complete.md` |
+| exploring | user marks done | needs-architecture | `/gp:explore` writes `explore-complete.md` |
 | needs-architecture | `/gp:create-epic` | needs-slice-planning | `/gp:create-epic` writes to `architecture/` |
 | needs-slice-planning | `/gp:create-epic` | executing-slices | `/gp:create-epic` |
 | executing-slices | all slices complete | needs-completion | automatic |
@@ -176,10 +176,10 @@ Auto-active, no approval gate. `/gp:create-epic` writes directly to `architectur
 
 | From State | Trigger | To State | Skill |
 |---|---|---|---|
-| (none) | `/create-epic` | ready-for-exploration | `/create-epic` |
-| ready-for-exploration | `/explore` | exploring | `/explore` |
+| (none) | `/gp:create-epic` | ready-for-exploration | `/gp:create-epic` |
+| ready-for-exploration | `/gp:explore` | exploring | `/gp:explore` |
 | ready-for-exploration | user skips explore | needs-architecture-proposal | writes `explore-skipped.md` |
-| exploring | user marks done | needs-architecture-proposal | `/explore` writes `explore-complete.md` |
+| exploring | user marks done | needs-architecture-proposal | `/gp:explore` writes `explore-complete.md` |
 | needs-architecture-proposal | `/gp:create-epic` | proposal-pending | `/gp:create-epic` writes to `architecture-proposal/` |
 | needs-architecture-proposal | user skips proposal | needs-slice-planning | writes `architecture-proposal-skipped.md` |
 | proposal-pending | `/gp:start-epic` | needs-slice-planning | `/gp:start-epic` writes `approved.md`, renames to `__active__` |

@@ -1,6 +1,6 @@
 # Migration Heuristics
 
-Reference for the `/migrate` skill. Detailed rules for inferring entity status from pre-CLI project directory (`.project/` for legacy, `.goodplan/` for re-migration) filesystem artifacts, and conventions for directory scanning. All paths below use `$PROJ_DIR` — substitute with whichever directory exists (see SKILL.md Step 4).
+Reference for the `/gp:upgrade` skill. Detailed rules for inferring entity status from pre-CLI project directory (`.project/` for legacy, `.goodplan/` for re-migration) filesystem artifacts, and conventions for directory scanning. All paths below use `$PROJ_DIR` — substitute with whichever directory exists (see SKILL.md Step 4).
 
 ## Status Inference Rules
 

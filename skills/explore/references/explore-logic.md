@@ -53,7 +53,7 @@
 **Implementation:**
 - Cap parallel sub-agents at 5; queue rest sequentially.
 - Compute full absolute output path before spawning. Use the Agent tool to spawn a sub-agent (omit model param) with:
-  - Context: "This is a goodplan-managed project. `.goodplan/` contains project state. You are researching a topic for `/explore`."
+  - Context: "This is a goodplan-managed project. `.goodplan/` contains project state. You are researching a topic for `/gp:explore`."
   - Search codebase (Grep/Glob/Read) for relevant code/patterns
   - Use WebSearch for external knowledge; use Context7 MCP tools if available (resolve library ID → query docs)
   - `mkdir -p <research-path>` before writing

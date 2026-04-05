@@ -6,7 +6,7 @@ Shared rigid templates for structured output displayed to users. Skills referenc
 
 Display after every review iteration, immediately after synthesizing feedback and before applying fixes.
 
-**Used by**: refine-plan, refine-architecture, refine-slices, implement-plan
+**Used by**: plan-slice, create-epic, implement
 
 ```
 ---
@@ -34,8 +34,8 @@ Display after every review iteration, immediately after synthesizing feedback an
 
 | Placeholder | Description |
 |---|---|
-| `{scope_prefix}` | **Conditional.** implement-plan: `Phase {X} — `. All other skills: omit (empty string). |
-| `{N}` | Iteration number within the current scope (phase for implement-plan, full loop for refine-* skills). |
+| `{scope_prefix}` | **Conditional.** implement: `Phase {X} — `. All other skills: omit (empty string). |
+| `{N}` | Iteration number within the current scope (phase for implement, full loop for refinement skills). |
 | `{reviewer1}`, `{reviewer2}`, ... | Reviewer names and scores, comma-separated. Include all reviewers active in this iteration. |
 | `{brief issue description}` | One-line summary — enough to identify the issue, not the full explanation. |
 | `{Reviewer name(s)}` | Source reviewer(s). If deduplicated across reviewers, list all (e.g., "Holistic, Backend"). |
@@ -53,7 +53,7 @@ Display after every review iteration, immediately after synthesizing feedback an
 
 Display after loading project context at skill start. Gives the user visibility into what the skill found.
 
-**Used by**: create-slices, create-plan, complete
+**Used by**: create-epic, plan-slice, complete-epic
 
 ```
 **Loaded**: {files_loaded}
@@ -72,9 +72,9 @@ Display after loading project context at skill start. Gives the user visibility 
 ### Display Rules
 
 - The `**Context**` line content varies by skill:
-  - **create-slices**: Brief summary of epic/project scope and architecture state (e.g., "Epic initial: 4 subsystems defined, 2 active decisions").
-  - **create-plan**: Brief summary of slice goal, architecture, and conventions (e.g., "Slice 02-data-layer: schema + seed data, 3 architecture files loaded").
-  - **complete**: Scope-dependent format strings:
+  - **create-epic** (slice definition phase): Brief summary of epic/project scope and architecture state (e.g., "Epic initial: 4 subsystems defined, 2 active decisions").
+  - **plan-slice**: Brief summary of slice goal, architecture, and conventions (e.g., "Slice 02-data-layer: schema + seed data, 3 architecture files loaded").
+  - **complete-epic**: Scope-dependent format strings:
     - Epic scope: "Epic [name]: {N} slices completed, {M} research files, {K} brainstorm files, {J} prototypes."
     - Slice/quest scope: "Plan ({N} phases), {M} implementation reviews, {K} research files, architecture ({N} files)."
 - Keep the summary to one line — details are available in the loaded files.
@@ -83,7 +83,7 @@ Display after loading project context at skill start. Gives the user visibility 
 
 Display at the end of iterative review/implementation skills after all iterations complete. Shows the full review history.
 
-**Used by**: refine-plan, refine-architecture, refine-slices, implement-plan
+**Used by**: plan-slice, create-epic, implement
 
 The shared base contains the intersection of all consumers. Each skill extends with its own sections.
 
@@ -124,13 +124,13 @@ The shared base contains the intersection of all consumers. Each skill extends w
 
 | Placeholder | Description |
 |---|---|
-| `{completion_heading}` | **Skill-specific.** refine-plan: `Refinement Complete`. refine-architecture: `Architecture Refinement Complete`. refine-slices: `Refinement Complete`. implement-plan: `Implementation Complete`. |
-| `{score_label}` | **Skill-specific.** refine-plan: `plan score`. refine-architecture: `score`. refine-slices: `score`. implement-plan: omit — drop the entire `**Final ...**` line (see Display Rules). |
+| `{completion_heading}` | **Skill-specific.** plan-slice (refinement phase): `Refinement Complete`. create-epic (architecture refinement phase): `Architecture Refinement Complete`. create-epic (slice refinement phase): `Refinement Complete`. implement: `Implementation Complete`. |
+| `{score_label}` | **Skill-specific.** plan-slice (refinement phase): `plan score`. create-epic (architecture refinement phase): `score`. create-epic (slice refinement phase): `score`. implement: omit — drop the entire `**Final ...**` line (see Display Rules). |
 | `{min_score}` | Minimum score across all reviewers in the final iteration. |
 | `{N}` | Total iteration count. |
-| `{skill_specific_header_fields}` | **Skill-specific.** plan-slice (refinement): `**Path**: {path to -refined file or directory}`. create-epic (architecture refinement): `**Architecture files**: $ARCH_DIR/`. create-epic (slice refinement): omit. implement: `**Plan**: {plan name}` + `**Phases completed**: {N}` + `**Total iterations**: {sum across all phases}`. |
-| `{issues_resolved_variant}` | **Skill-specific.** plan-slice (refinement): `Per Iteration` (full per-iteration tables). create-epic (architecture refinement): `Per Iteration` (full per-iteration tables). create-epic (slice refinement): empty string (use total count for content). implement: omit — drop the entire `### Issues Resolved` and `### Remaining Issues` sections (see Display Rules). |
-| `{issues_resolved_content}` | **Skill-specific.** plan-slice/create-epic (architecture refinement): per-iteration severity tables. create-epic (slice refinement): `**Total**: {N} issues ({breakdown by severity})`. implement: omit — section dropped entirely (see Display Rules). |
+| `{skill_specific_header_fields}` | **Skill-specific.** plan-slice (refinement phase): `**Path**: {path to -refined file or directory}`. create-epic (architecture refinement phase): `**Architecture files**: $ARCH_DIR/`. create-epic (slice refinement phase): omit. implement: `**Plan**: {plan name}` + `**Phases completed**: {N}` + `**Total iterations**: {sum across all phases}`. |
+| `{issues_resolved_variant}` | **Skill-specific.** plan-slice (refinement phase): `Per Iteration` (full per-iteration tables). create-epic (architecture refinement phase): `Per Iteration` (full per-iteration tables). create-epic (slice refinement phase): empty string (use total count for content). implement: omit — drop the entire `### Issues Resolved` and `### Remaining Issues` sections (see Display Rules). |
+| `{issues_resolved_content}` | **Skill-specific.** plan-slice/create-epic (architecture refinement phase): per-iteration severity tables. create-epic (slice refinement phase): `**Total**: {N} issues ({breakdown by severity})`. implement: omit — section dropped entirely (see Display Rules). |
 | `{skill_specific_extension_sections}` | **Skill-specific.** See each skill's SKILL.md for extension sections. |
 
 ### Display Rules
@@ -140,22 +140,22 @@ The shared base contains the intersection of all consumers. Each skill extends w
 - Always include Score Progression — this is part of the shared base.
 - Extension sections are appended after Remaining Issues (or after Score Progression if issues sections are omitted) but before the closing `---`.
 - Skill-specific extensions:
-  - **refine-plan**: `**Path**` header field. Issues Resolved uses per-iteration tables with `# | Severity | Issue | Source | Status` columns.
-  - **refine-architecture**: `**Architecture files**` header field. Adds `### Changes Summary` section (substantive changes: added/removed/modified subsystems, boundary shifts, new patterns). Issues Resolved uses per-iteration tables.
-  - **refine-slices**: Issues Resolved uses total count. Adds `### Slices Modified` table (`Slice | Change`).
-  - **implement-plan**: Replaces score/iterations header fields with Plan/Phases/Total iterations. Adds `### Phase Summary` table (`Phase | Name | Iterations | Final Score | Commit`), `### Verification Evidence`, `### Key Decisions`, `### Follow-up Recommendations`.
+  - **plan-slice (refinement phase)**: `**Path**` header field. Issues Resolved uses per-iteration tables with `# | Severity | Issue | Source | Status` columns.
+  - **create-epic (architecture refinement phase)**: `**Architecture files**` header field. Adds `### Changes Summary` section (substantive changes: added/removed/modified subsystems, boundary shifts, new patterns). Issues Resolved uses per-iteration tables.
+  - **create-epic (slice refinement phase)**: Issues Resolved uses total count. Adds `### Slices Modified` table (`Slice | Change`).
+  - **implement**: Replaces score/iterations header fields with Plan/Phases/Total iterations. Adds `### Phase Summary` table (`Phase | Name | Iterations | Final Score | Commit`), `### Verification Evidence`, `### Key Decisions`, `### Follow-up Recommendations`.
 
 ## Done Summary Template
 
 Display at the very end of a skill run to confirm what was produced and recommend next steps.
 
-**Used by**: create-slices, create-plan, complete, create-architecture, explore
+**Used by**: create-epic, plan-slice, complete-epic, explore
 
 Two variants exist based on skill output style:
 
 ### Variant A — Strict Fenced Template
 
-For skills that produce structured, predictable output (create-slices, create-plan, complete).
+For skills that produce structured, predictable output (create-epic slices phase, plan-slice, complete-epic).
 
 ```
 ---

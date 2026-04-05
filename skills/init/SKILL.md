@@ -206,7 +206,7 @@ Present the onboarding summary:
 
 The init/onboard path is a lighter-weight version of full project onboarding. The following capabilities are intentionally deferred to dedicated skills:
 
-- **Architecture interview** (interactive validation of subsystem boundaries) — deferred to `/gp:create-architecture`
+- **Architecture interview** (interactive validation of subsystem boundaries) — deferred to `/gp:create-epic`
 - **Side quest creation** for detected migrations/debt — deferred to `/gp:audit`
 - **Expertise profiling** — deferred to `/gp:audit`
 - **Optional epic creation** — deferred to user running `/gp:create-epic`

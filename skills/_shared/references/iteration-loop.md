@@ -1,6 +1,6 @@
 # Iteration Loop — Shared Reference
 
-Shared orchestration skeleton for iterative review-and-edit skills (refine-plan, refine-architecture, etc.). Each skill's SKILL.md defines a **Loop Parameters** section that fills in the skill-specific slots listed below.
+Shared orchestration skeleton for iterative review-and-edit skills (plan-slice refinement, create-epic architecture/slice refinement, etc.). Each skill's SKILL.md defines a **Loop Parameters** section that fills in the skill-specific slots listed below.
 
 ## Skill-Specific Parameters
 

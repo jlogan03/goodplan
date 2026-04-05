@@ -2,7 +2,7 @@
 
 ## No Project Detected
 
-If `gp status --json` returns a `DATA_NO_PROJECT` error, respond: "No `.goodplan/` directory found — run `/create-epic` to set up structured project planning." Stop.
+If `gp status --json` returns a `DATA_NO_PROJECT` error, respond: "No `.goodplan/` directory found — run `/gp:create-epic` to set up structured project planning." Stop.
 
 ## Scope Resolution Order
 
@@ -56,7 +56,7 @@ To evaluate states #5, #6, and #7:
 
 Epic-level state machine is defined in `../../_shared/references/epic-conventions.md`. Uses the same first-match-wins pattern. Check that file for epic state resolution, directory structure, and transition tables.
 
-**First vs subsequent epic**: The first epic is named `initial` and created as `__active__initial/` (auto-active, no approval gate, writes directly to `architecture/`). Subsequent epics start without `__active__` prefix, use `architecture-proposal/` instead, and require `/start-epic` approval. Use the directory name to disambiguate which state table to apply.
+**First vs subsequent epic**: The first epic is named `initial` and created as `__active__initial/` (auto-active, no approval gate, writes directly to `architecture/`). Subsequent epics start without `__active__` prefix, use `architecture-proposal/` instead, and require `/gp:start-epic` approval. Use the directory name to disambiguate which state table to apply.
 
 #### Active Epic Detection
 
@@ -87,40 +87,40 @@ Load `../../_shared/references/epic-conventions.md` for the full state machine. 
 
 | State | Next Skill |
 |---|---|
-| Epic: ready for exploration | `/explore <epic-path>` |
-| Epic: exploring | `/explore <epic-path>` |
-| Epic: needs architecture (first) | `/create-architecture <epic-path>` |
-| Epic: needs architecture proposal (subsequent) | `/create-architecture <epic-path>` |
-| Epic: proposal pending review | `/start-epic <epic-path>` |
-| Epic: needs slice planning | `/create-slices <epic-path>` |
+| Epic: ready for exploration | `/gp:explore <epic-path>` |
+| Epic: exploring | `/gp:explore <epic-path>` |
+| Epic: needs architecture (first) | `/gp:create-epic <epic-path>` |
+| Epic: needs architecture proposal (subsequent) | `/gp:create-epic <epic-path>` |
+| Epic: proposal pending review | `/gp:start-epic <epic-path>` |
+| Epic: needs slice planning | `/gp:create-epic <epic-path>` |
 | Epic: executing slices | (check individual slice states below) |
-| Epic: needs completion | `/complete <epic-path>` |
+| Epic: needs completion | `/gp:complete-epic <epic-path>` |
 | Epic: abandoned | (no action) |
 | Epic: complete | (no action) |
-| No active epic, non-archived/non-abandoned epics exist | Suggest next skill for the most advanced in-progress epic (e.g., `/explore`, `/create-architecture`, `/start-epic`) |
-| No active epic, all epics archived/abandoned | `/create-epic` |
+| No active epic, non-archived/non-abandoned epics exist | Suggest next skill for the most advanced in-progress epic (e.g., `/gp:explore`, `/gp:create-epic`, `/gp:start-epic`) |
+| No active epic, all epics archived/abandoned | `/gp:create-epic` |
 
 ### Slice / Quest States
 
 | State | Next Skill |
 |---|---|
-| Slice: explore in progress | `/explore <path>` |
-| Slice: needs plan | `/create-plan <path>` |
-| Slice: needs refinement | `/refine-plan <path>/plan.md` |
-| Slice: plan refinement in progress | `/refine-plan <path>/plan.md` (resume) |
-| Slice: needs implementation | `/implement-plan <path>/plan-refined.md` |
-| Slice: implementation in progress | `/implement-plan <path>/plan-refined.md` (resume) |
+| Slice: explore in progress | `/gp:explore <path>` |
+| Slice: needs plan | `/gp:plan-slice <path>` |
+| Slice: needs refinement | `/gp:plan-slice <path>/plan.md` |
+| Slice: plan refinement in progress | `/gp:plan-slice <path>/plan.md` (resume) |
+| Slice: needs implementation | `/gp:implement <path>/plan-refined.md` |
+| Slice: implementation in progress | `/gp:implement <path>/plan-refined.md` (resume) |
 | Slice: needs QA & polish | (conversational — no skill) |
-| Slice: needs completion | `/complete <path>` |
+| Slice: needs completion | built into `/gp:implement` |
 | Interrupted work | Resume work stack top entry first |
 
 ### Project States
 
 | State | Next Skill |
 |---|---|
-| No `.goodplan/` directory | `/create-epic` |
-| Project: `idea.md`, no architecture | `/explore` or `/create-architecture` |
-| Project: architecture done, no sequencing | `/create-slices` |
+| No `.goodplan/` directory | `/gp:create-epic` |
+| Project: `idea.md`, no architecture | `/gp:explore` or `/gp:create-epic` |
+| Project: architecture done, no sequencing | `/gp:create-epic` |
 
 ## Archive Convention (REMOVED)
 

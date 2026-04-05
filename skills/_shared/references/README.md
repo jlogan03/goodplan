@@ -16,7 +16,7 @@ Consolidation criterion: only move a file here if it is expected to stay unified
 | `decisions-format.md` | Shared format for recording durable project decisions |
 | `epic-conventions.md` | Epic directory structure, state machine, transitions, two-layer architecture model, consumer guide |
 | `expertise-tracking.md` | Two-layer system for tracking user domain expertise and calibrating explanation depth |
-| `iteration-loop.md` | Shared orchestration skeleton for iterative review-and-edit skills (refine-plan, refine-architecture, etc.) |
+| `iteration-loop.md` | Shared orchestration skeleton for iterative review-and-edit skills (plan-slice refinement, create-epic architecture/slice refinement, etc.) |
 | `maturity-conventions.md` | Conventions for maturity levels, invariants, and fitness functions in architecture files |
 | `output-templates.md` | Rigid templates for structured user-facing output: iteration summaries, context load, completion, and done summaries |
 | `plan-format.md` | Canonical plan structure: phases, expected behavior, verification, tasks |

@@ -55,7 +55,7 @@ ls -d .goodplan/slices/*"$SHORT_NAME"* .goodplan/epics/*/slices/*"$SHORT_NAME"* 
 
 If exactly one match, use it. If multiple, list them and ask the user to pick. If none, tell the user and ask for a valid scope.
 
-**Reject epic slice paths**: If the resolved path matches `epics/*/slices/*` (e.g., `.goodplan/epics/foo/slices/02-bar`), tell the user: "Per-slice exploration is not supported for epic slices — all exploration happens at the epic level. Run `/explore` at the epic scope instead (e.g., `/explore epics/foo`)." Then stop.
+**Reject epic slice paths**: If the resolved path matches `epics/*/slices/*` (e.g., `.goodplan/epics/foo/slices/02-bar`), tell the user: "Per-slice exploration is not supported for epic slices — all exploration happens at the epic level. Run `/gp:explore` at the epic scope instead (e.g., `/gp:explore epics/foo`)." Then stop.
 
 ### If no argument was passed
 
@@ -116,7 +116,7 @@ Then proceed directly to Step 4 (the exploration loop). If the user responds wit
 
 ## Step 3 — Handle Skip
 
-If the user explicitly requests to skip exploration (e.g., replies "skip", "I already know what to do", or invokes `/explore skip`):
+If the user explicitly requests to skip exploration (e.g., replies "skip", "I already know what to do", or invokes `/gp:explore skip`):
 
 1. Ask for the reason why exploration is being skipped.
 2. Write `explore-skipped.md` at the scope path using the template from `references/explore-logic.md`. Use the Write tool.
@@ -239,7 +239,7 @@ Display using the Done Summary Template (Variant B — Loose Checklist) from `..
 - All decisions written during this run (if any) — list each decision title
 - CLAUDE.md update confirmation (if applicable)
 - Recommend next step based on scope:
-  - Epic: `/create-architecture`
-  - Project-level (no epic): `/create-architecture`
-  - Slice: `/create-plan`
-  - Side quest: `/create-plan`
+  - Epic: `/gp:create-epic`
+  - Project-level (no epic): `/gp:create-epic`
+  - Slice: `/gp:plan-slice`
+  - Side quest: `/gp:plan-slice`

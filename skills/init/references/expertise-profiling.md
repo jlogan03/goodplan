@@ -1,6 +1,6 @@
 # Expertise Profiling
 
-Rules for building an initial user expertise profile from git history, PR activity, and codebase structure. Used by `/onboard-repo` Step 10 to seed the two-layer expertise tracking system.
+Rules for building an initial user expertise profile from git history, PR activity, and codebase structure. Used by `/gp:init` (onboard path) to seed the two-layer expertise tracking system.
 
 ## 1. Git Authorship Analysis
 
