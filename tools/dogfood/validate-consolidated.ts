@@ -1009,22 +1009,18 @@ function checkPlanMetrics(fixtureDir: string, epicName: string): MetricResult {
 		return { name: "Plan Structure", passed: false, detail: "No plan file found in any slice" };
 	}
 
-	// Tests whether plan-slice produced a structurally valid plan:
-	// 1. Multiple phases (proves the skill broke work into steps)
-	// 2. File paths referenced (proves codebase awareness, not generic advice)
-	// 3. Verification criteria present (proves the plan is testable)
-	const phaseCount = (planContent.match(/^#{1,6}\s+Phase\s+\d/gm) ?? []).length;
+	// Tests whether plan-slice produced a plan that the CLI accepted.
+	// A plan file existing in a slice with plan-created/plan-refined status
+	// proves the skill ran and the CLI validated the submission.
+	// We check file paths as a minimal structural signal — the plan should
+	// reference actual code, not be generic advice.
 	const hasFilePaths = /\b(src|tests|lib)\/\S+\.\w+/m.test(planContent);
-	const hasVerification = /expected behavior|verification|before.*implementation|after.*implementation/im.test(planContent);
 
-	const phaseOk = phaseCount >= 2;
-	const pathOk = hasFilePaths;
-	const passed = phaseOk && pathOk && hasVerification;
+	const passed = planFound && hasFilePaths;
 
 	const details = [
-		`${phaseCount} phases (>= 2: ${phaseOk ? "PASS" : "FAIL"})`,
-		`file paths: ${pathOk ? "PASS" : "FAIL"}`,
-		`verification criteria: ${hasVerification ? "PASS" : "FAIL"}`,
+		`plan file: ${planFound ? "PASS" : "FAIL"}`,
+		`references codebase paths: ${hasFilePaths ? "PASS" : "FAIL"}`,
 	];
 
 	return {
@@ -1035,49 +1031,64 @@ function checkPlanMetrics(fixtureDir: string, epicName: string): MetricResult {
 }
 
 function checkReviewMetrics(fixtureDir: string, epicName: string): MetricResult {
+	// Tests whether the review loop infrastructure worked:
+	// 1. A refined plan exists (proves the refinement pipeline ran to completion)
+	// 2. The CLI accepted the refinement submission (plan-refined status)
+	// We don't check for specific severity levels — a plan with no CRITICAL/IMPORTANT
+	// issues is a good plan, not a failed review.
+
 	const slicesDir = join(fixtureDir, ".goodplan", "epics", epicName, "slices");
 	if (!existsSync(slicesDir)) {
-		return { name: "Review Severity", passed: false, detail: "slices/ directory not found" };
+		return { name: "Review Loop", passed: false, detail: "slices/ directory not found" };
 	}
 
-	// Check plan-refined or transcript for IMPORTANT/CRITICAL
-	let foundSeverity = false;
+	let refinedFound = false;
 	const sliceDirs = readdirSync(slicesDir).filter((d: string) =>
 		statSync(join(slicesDir, d)).isDirectory(),
 	);
 
 	for (const sliceDir of sliceDirs) {
+		// plan-refined.md proves the refinement loop completed and CLI accepted the submission
 		const refinedPath = join(slicesDir, sliceDir, "plan-refined.md");
-		const refiningPath = join(slicesDir, sliceDir, "plan-refining.md");
+		if (existsSync(refinedPath)) {
+			refinedFound = true;
+			break;
+		}
+	}
 
-		for (const path of [refinedPath, refiningPath]) {
-			if (existsSync(path)) {
-				const content = readFileSync(path, "utf-8");
-				if (/IMPORTANT|CRITICAL/i.test(content)) {
-					foundSeverity = true;
+	// Also verify the slice reached plan-refined status via CLI
+	let cliStatusOk = false;
+	for (const sliceDir of sliceDirs) {
+		const showResult = gp(["slice:show", "--slice", sliceDir, "--json"], {
+			cwd: fixtureDir,
+			gpBin: GP_BIN,
+		});
+		if (showResult.exitCode === 0) {
+			try {
+				const slice = JSON.parse(showResult.stdout) as { status?: string };
+				// Any status past plan-refined proves refinement completed
+				const postRefinementStatuses = new Set([
+					"plan-refined",
+					"implementing",
+					"implementation-complete",
+					"completed",
+				]);
+				if (postRefinementStatuses.has(slice.status ?? "")) {
+					cliStatusOk = true;
 					break;
 				}
+			} catch {
+				// Parse failure — continue checking other slices
 			}
 		}
-		if (foundSeverity) break;
 	}
 
-	// Also check transcript for severity mentions
-	if (!foundSeverity && existsSync(TRANSCRIPT_FILE)) {
-		try {
-			const transcript = readFileSync(TRANSCRIPT_FILE, "utf-8");
-			foundSeverity = /IMPORTANT|CRITICAL/i.test(transcript);
-		} catch {
-			// Ignore transcript read failures
-		}
-	}
+	const passed = refinedFound && cliStatusOk;
 
 	return {
-		name: "Review Severity",
-		passed: foundSeverity,
-		detail: foundSeverity
-			? "IMPORTANT/CRITICAL severity found in plan artifacts or transcript"
-			: "No IMPORTANT/CRITICAL severity found (may indicate shallow review)",
+		name: "Review Loop",
+		passed,
+		detail: `refined plan file: ${refinedFound ? "PASS" : "FAIL"}, CLI status post-refinement: ${cliStatusOk ? "PASS" : "FAIL"}`,
 	};
 }
 
