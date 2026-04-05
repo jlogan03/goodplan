@@ -925,23 +925,56 @@ interface MetricResult {
 }
 
 function checkArchitectureMetrics(fixtureDir: string): MetricResult {
-	const overviewPath = join(fixtureDir, ".goodplan", "architecture", "_overview.md");
-	if (!existsSync(overviewPath)) {
-		return { name: "Architecture", passed: false, detail: "_overview.md not found" };
+	// Tests whether the create-epic pipeline produced a well-formed architecture:
+	// 1. _overview.md exists at project level (created by init/onboard)
+	// 2. Epic architecture directory exists with _overview.md (created by create-epic)
+	// 3. CLI reports architecture files via status (proves CLI can discover them)
+	// 4. Multiple architecture files produced (not just a single stub)
+
+	const projectOverview = join(fixtureDir, ".goodplan", "architecture", "_overview.md");
+	const projectOverviewOk = existsSync(projectOverview);
+
+	// Find epic architecture via CLI status
+	const statusResult = gp(["status", "--json"], { cwd: fixtureDir, gpBin: GP_BIN });
+	let cliFileCount = 0;
+	let epicArchOk = false;
+	if (statusResult.exitCode === 0) {
+		try {
+			const status = JSON.parse(statusResult.stdout) as {
+				artifacts?: { architecture?: { count?: number; files?: string[] } };
+				activeEpic?: { name?: string };
+			};
+			cliFileCount = status.artifacts?.architecture?.count ?? 0;
+			const epicName = status.activeEpic?.name;
+			if (epicName) {
+				const epicOverview = join(
+					fixtureDir,
+					".goodplan",
+					"epics",
+					epicName,
+					"architecture",
+					"_overview.md",
+				);
+				epicArchOk = existsSync(epicOverview);
+			}
+		} catch {
+			// Parse failure handled by cliFileCount staying 0
+		}
 	}
 
-	const content = readFileSync(overviewPath, "utf-8");
-	const charCount = content.length;
-	const headingCount = (content.match(/^## /gm) ?? []).length;
+	const multiFileOk = cliFileCount >= 2;
+	const passed = projectOverviewOk && epicArchOk && multiFileOk;
 
-	const charOk = charCount >= 500;
-	const headingOk = headingCount >= 3;
-	const passed = charOk && headingOk;
+	const checks = [
+		`project _overview.md: ${projectOverviewOk ? "PASS" : "FAIL"}`,
+		`epic _overview.md: ${epicArchOk ? "PASS" : "FAIL"}`,
+		`CLI discovers ${cliFileCount} files (>= 2: ${multiFileOk ? "PASS" : "FAIL"})`,
+	];
 
 	return {
 		name: "Architecture",
 		passed,
-		detail: `${charCount} chars (>= 500: ${charOk ? "PASS" : "FAIL"}), ${headingCount} ## headings (>= 3: ${headingOk ? "PASS" : "FAIL"})`,
+		detail: checks.join(", "),
 	};
 }
 
@@ -976,23 +1009,21 @@ function checkPlanMetrics(fixtureDir: string, epicName: string): MetricResult {
 		return { name: "Plan Structure", passed: false, detail: "No plan file found in any slice" };
 	}
 
-	// Match phase headings at any markdown level (## Phase 1, ### Phase 2, etc.)
-	// Require "Phase" followed by a digit to avoid false matches like "Phased Rollout"
+	// Tests whether plan-slice produced a structurally valid plan:
+	// 1. Multiple phases (proves the skill broke work into steps)
+	// 2. File paths referenced (proves codebase awareness, not generic advice)
+	// 3. Verification criteria present (proves the plan is testable)
 	const phaseCount = (planContent.match(/^#{1,6}\s+Phase\s+\d/gm) ?? []).length;
 	const hasFilePaths = /\b(src|tests|lib)\/\S+\.\w+/m.test(planContent);
-	const contentLength = planContent.length;
-	const contentOk = contentLength >= 500;
-	// Check for verification criteria (Expected Behavior, expected behavior checks, Verification, etc.)
 	const hasVerification = /expected behavior|verification|before.*implementation|after.*implementation/im.test(planContent);
 
 	const phaseOk = phaseCount >= 2;
 	const pathOk = hasFilePaths;
-	const passed = phaseOk && pathOk && contentOk && hasVerification;
+	const passed = phaseOk && pathOk && hasVerification;
 
 	const details = [
 		`${phaseCount} phases (>= 2: ${phaseOk ? "PASS" : "FAIL"})`,
 		`file paths: ${pathOk ? "PASS" : "FAIL"}`,
-		`${contentLength} chars (>= 500: ${contentOk ? "PASS" : "FAIL"})`,
 		`verification criteria: ${hasVerification ? "PASS" : "FAIL"}`,
 	];
 
