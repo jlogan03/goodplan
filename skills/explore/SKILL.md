@@ -202,9 +202,9 @@ Use the Write tool to create `explore-complete.md` at the scope path after appro
 
 ## Step 5b — Expertise Check
 
-Reflect on the conversation: did it reveal new information about the user's expertise? (CLAUDE.md `## Expertise` section is already in context.)
+Reflect on the conversation: did it reveal new information about the user's expertise?
 
-- **If yes**: Read `../_shared/references/expertise-tracking.md` for the recording protocol. Update `## Expertise` section in `~/.claude/CLAUDE.md` and write/update relevant `expertise_<domain>.md` memory file.
+- **If yes**: Read `../_shared/references/expertise-tracking.md` for the recording protocol (including the plugin data guard). Update `${CLAUDE_PLUGIN_DATA}/expertise.md` following the guard and format described there.
 - **If no**: Skip silently — no Read, no output, no AskUserQuestion.
 
 ## Step 6 — Complete Exploration

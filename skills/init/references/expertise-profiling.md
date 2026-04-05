@@ -149,46 +149,38 @@ Present the top 10 hot spots as a table:
 
 Note which subsystems the hot spots cluster in — these are likely candidates for first slices or architectural attention.
 
-## 5. Two-Layer Expertise Protocol
+## 5. Expertise Protocol
 
-Per `expertise-tracking.md`, expertise is stored in two layers:
+Per `expertise-tracking.md`, expertise is stored in a single plugin-managed file at `${CLAUDE_PLUGIN_DATA}/expertise.md`.
 
-### Layer 1 — CLAUDE.md summary
+### Plugin Data Guard
 
-File: `~/.claude/CLAUDE.md`, section `## Expertise`
+Before any read or write, run the guard:
+
+```bash
+if [ -z "${CLAUDE_PLUGIN_DATA}" ] || [ "${CLAUDE_PLUGIN_DATA}" = '${CLAUDE_PLUGIN_DATA}' ]; then
+  echo 'CLAUDE_PLUGIN_DATA not resolved — skipping expertise tracking'
+else
+  # proceed with read/write to ${CLAUDE_PLUGIN_DATA}/expertise.md
+fi
+```
+
+If the guard fails, skip expertise tracking silently.
+
+### File Format
+
+File: `${CLAUDE_PLUGIN_DATA}/expertise.md`
 
 ```markdown
 ## Expertise
-- Comfortable with: TypeScript, React, Node.js
-- Less familiar with: database optimization, CI/CD pipelines
-- Actively learning: event-driven architecture (see memory: expertise_event-driven.md)
+- **Primary language:** TypeScript (strict mode, advanced flags)
+- **Strong areas:** API layer design, authentication, project architecture
+- **Less familiar with:** database optimization
+- **Role indicators:** Feature-driven development, majority contributor on API and auth subsystems
+- **Onboarded:** myapp (2026-03-29)
 ```
 
-This is the at-a-glance view. Keep to ~5 bullet points max.
-
-### Layer 2 — Auto memory files
-
-Path: `~/.claude/projects/<project>/memory/expertise_<domain>.md`
-
-The `<project>` path component is derived from the repo root:
-
-```bash
-git rev-parse --show-toplevel
-```
-
-Replace slashes with dashes. Example: `/Users/iwhite/Repos/myapp` becomes `-Users-iwhite-Repos-myapp`.
-
-Each file tracks one domain with dated observations:
-
-```markdown
-# expertise_typescript.md
-
-Tracking user expertise with TypeScript.
-
-## Observations
-
-- March 2026: Onboarded repo with strict TypeScript config (noUncheckedIndexedAccess, exactOptionalPropertyTypes). User showed comfort with advanced type features during architecture review.
-```
+Keep to ~5-7 bullet points max. This is a concise current snapshot, not a history log.
 
 ### What to write during onboarding
 
@@ -196,8 +188,8 @@ Based on the git history and PR analysis:
 
 1. **Identify 3-5 domain areas** the user has demonstrated expertise in (languages, frameworks, subsystem domains)
 2. **Identify 1-2 areas** where the user has less history (subsystems dominated by other contributors, technologies present but not in the user's commit history)
-3. **Write Layer 1**: Update `~/.claude/CLAUDE.md` `## Expertise` section
-4. **Write Layer 2**: Create one memory file per significant domain area with the onboarding observation
+3. Run the plugin data guard
+4. **Write**: Create or update `${CLAUDE_PLUGIN_DATA}/expertise.md` (create parent directory with `mkdir -p` if needed)
 
 ### Validation
 

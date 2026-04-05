@@ -171,7 +171,17 @@ If any interrupted work is found, surface it clearly in the status report.
 
 ## Step 7b — Load Expertise Summary
 
-Check if `~/.claude/CLAUDE.md` has a `## Expertise` section. If it does, extract a brief summary (domain names and levels) for inclusion in the status report. If not, skip.
+Check if `${CLAUDE_PLUGIN_DATA}/expertise.md` exists and has content. Before reading, run the plugin data guard from `../_shared/references/expertise-tracking.md`:
+
+```bash
+if [ -z "${CLAUDE_PLUGIN_DATA}" ] || [ "${CLAUDE_PLUGIN_DATA}" = '${CLAUDE_PLUGIN_DATA}' ]; then
+  echo 'CLAUDE_PLUGIN_DATA not resolved — skipping expertise loading'
+else
+  cat "${CLAUDE_PLUGIN_DATA}/expertise.md" 2>/dev/null
+fi
+```
+
+If the guard fails or the file does not exist, skip the expertise line in the status report. If the file exists, extract a brief summary (domain names and levels) for inclusion in the status report.
 
 ## Step 8 — Present Status Summary
 
@@ -195,7 +205,7 @@ Use this when there is an active slice or side quest being worked on:
 **Work stack**:
 - <entry>
 
-**Expertise**: <brief summary from CLAUDE.md ## Expertise, e.g. "TypeScript: expert, React: proficient, PostgreSQL: intermediate">
+**Expertise**: <brief summary from expertise.md, e.g. "TypeScript: expert, React: proficient, PostgreSQL: intermediate">
 
 **Tasks**: <N open>
 
@@ -204,7 +214,7 @@ Use this when there is an active slice or side quest being worked on:
 **Next**: `/<skill> <args>`
 ```
 
-Omit the **Expertise** line if no `## Expertise` section exists in `~/.claude/CLAUDE.md`. Omit the **Work stack** block entirely when empty. Omit the **Tasks** line if `openTasks` is 0 in the `status --json` response. Omit the **Decisions** line if no decisions exist. If any decisions have `revisiting` status, always show the revisiting count. Show the last 3-5 activity-log entries in Recent activity, most recent first.
+Omit the **Expertise** line if `${CLAUDE_PLUGIN_DATA}/expertise.md` does not exist or the plugin data guard fails. Omit the **Work stack** block entirely when empty. Omit the **Tasks** line if `openTasks` is 0 in the `status --json` response. Omit the **Decisions** line if no decisions exist. If any decisions have `revisiting` status, always show the revisiting count. Show the last 3-5 activity-log entries in Recent activity, most recent first.
 
 ### Format B — Between Work Items
 
@@ -244,14 +254,14 @@ Slices: <completed>/<total> complete
 
 **Tasks**: <N open>
 
-**Expertise**: <brief summary from CLAUDE.md ## Expertise>
+**Expertise**: <brief summary from expertise.md>
 
 **Decisions**: <N active> [, <M revisiting>]
 
 **Next**: `/<skill> <args>`
 ```
 
-Omit **Other Epics** if none exist. Omit **Side Quests** if none exist. Omit **Archived** if count is 0. Omit **Tasks** if `openTasks` is 0. Omit **Expertise** if no `## Expertise` section in `~/.claude/CLAUDE.md`. Omit **Decisions** if none exist.
+Omit **Other Epics** if none exist. Omit **Side Quests** if none exist. Omit **Archived** if count is 0. Omit **Tasks** if `openTasks` is 0. Omit **Expertise** if `${CLAUDE_PLUGIN_DATA}/expertise.md` does not exist or the plugin data guard fails. Omit **Decisions** if none exist.
 
 #### Format B without Epics
 
@@ -276,14 +286,14 @@ When no `epics/` directory exists (legacy/pre-epic projects), use the original l
 
 **Tasks**: <N open>
 
-**Expertise**: <brief summary from CLAUDE.md ## Expertise>
+**Expertise**: <brief summary from expertise.md>
 
 **Decisions**: <N active> [, <M revisiting>]
 
 **Next**: `/<skill> <args>`
 ```
 
-Omit the **Expertise** line if no `## Expertise` section exists in `~/.claude/CLAUDE.md`. Omit the **Side quests** block entirely if no side quests exist. Omit the **Tasks** line if `openTasks` is 0. Omit the **Decisions** line if no decisions exist.
+Omit the **Expertise** line if `${CLAUDE_PLUGIN_DATA}/expertise.md` does not exist or the plugin data guard fails. Omit the **Side quests** block entirely if no side quests exist. Omit the **Tasks** line if `openTasks` is 0. Omit the **Decisions** line if no decisions exist.
 
 For each slice, quest, or epic shown, use the state-to-next-skill mapping from `references/status-logic.md` to suggest the appropriate command. Complete items do not need a suggestion.
 
