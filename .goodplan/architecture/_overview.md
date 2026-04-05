@@ -6,7 +6,7 @@
 
 The system is a four-layer stack with strict unidirectional dependencies: Commands → RPC Layer → State Machine + Data Layer → Filesystem. Read-only commands (`list`, `show`) bypass the RPC layer and go directly from Commands to the Data Layer.
 
-The CLI and skills are distributed as a Claude Code plugin (`goodplan`). The plugin bundles the compiled binary, all workflow skills (namespaced as `/gp:<skill-name>`), and state protection hooks. Users install via `/plugin marketplace add ian97531/goodplan`.
+The CLI and skills are distributed as a Claude Code plugin (`goodplan`). The plugin bundles the compiled binary (`bin/gp` launcher), all 12 workflow skills (namespaced as `/gp:<skill-name>`), 34 agent definitions, and state protection hooks. Users install via `/plugin marketplace add ian97531/goodplan`.
 
 ## Subsystems
 
@@ -58,15 +58,25 @@ Single compiled binary per platform via `bun build --compile`. Target platforms:
 
 **Known Platform Gaps:** windows-x64 is aspirational. Bun's Windows support is maturing but not production-ready for compiled binaries. Known concerns: `fs.rename` atomicity differences, path separator handling in state keys. Windows support will be revisited when Bun's Windows maturity improves.
 
-Distributed as a Claude Code plugin via marketplace. CI builds the plugin on version tag push (`v*`), assembles skills/hooks/binary into `dist/gp-plugin/`, and force-pushes to a `release` branch. Users install via `/plugin marketplace add ian97531/goodplan`. The binary lives at `${CLAUDE_PLUGIN_ROOT}/binaries/macos-arm64/gp` inside the plugin — not on PATH. Skills are namespaced as `/gp:<skill-name>`. The CLI and skills are versioned together — skill prompts contain concrete CLI commands.
+Distributed as a Claude Code plugin via marketplace. CI builds the plugin on version tag push (`v*`), assembles skills/hooks/binary into `dist/gp-plugin/`, and force-pushes to a `release` branch. Users install via `/plugin marketplace add ian97531/goodplan`. The plugin includes a `bin/gp` shell launcher that detects the host platform and executes the correct platform-specific binary from `bin/`. Skills reference the CLI as `$GP` (resolved by the launcher). Skills are namespaced as `/gp:<skill-name>`. The CLI and skills are versioned together — skill prompts contain concrete CLI commands.
 
 **Platform constraint (v1):** macOS arm64 only. Multi-platform support is a future enhancement.
+
+## Plugin/Skills Layer
+
+The CLI is distributed as a Claude Code plugin. The plugin bundles the compiled binary, 12 workflow skills (namespaced as `/gp:<skill-name>`), 34 agent definitions, and state protection hooks.
+
+**Skills** (`skills/` directory) — 12 orchestrator-level SKILL.md files that drive the workflow. Three pipeline skills (`create-epic`, `plan-slice`, `create-side-quest`) use an orchestrator pattern that spawns sub-agents per phase. Four merged standalone skills (`audit`, `implement`, `complete-epic`, `explore`). Five utility skills (`init`, `status`, `upgrade`, `start-epic`, `task`).
+
+**Agents** (`agents/` directory) — 34 agent definitions spawned by orchestrator skills. Includes 20 domain-specialist reviewers, pipeline phase agents (explore, plan, architecture, slices, implement, completion), coordination agents (refinement-coordinator, synthesis, editor), and audit mode agents. Agent content is loaded by Claude Code at spawn time via `@${CLAUDE_PLUGIN_ROOT}/path` references.
+
+**Shared references** (`skills/_shared/references/`) — shared review criteria, output templates, and conventions consumed by agents and skills via `@` references.
 
 ## Subsystem Maturity
 
 | Subsystem | Maturity | Dependents | Fitness Functions | Notes |
 |---|---|---|---|---|
-| Plugin | Experimental | — | candidate | Packaging, hooks, build pipeline, CI/CD, marketplace distribution. |
+| Plugin | Developing | — | `tools/dogfood/validate-consolidated.ts` | Packaging, hooks, build pipeline, CI/CD, marketplace distribution. 12 skills, 34 agents. |
 | Commands | Developing | — | `tests/fitness/stateless-commands.test.ts`, `tests/fitness/schema-output-accuracy.test.ts`, `tests/fitness/structured-errors.test.ts` | Thin CLI layer. Stable across 8 slices. |
 | RPC Layer | Developing | Commands | `tests/fitness/mutation-through-state-machine.test.ts` | Workflow orchestration. Stable across 8 slices. Tested indirectly via integration tests. |
 | State Machine | Developing | RPC Layer | `tests/fitness/state-machine-purity.test.ts`, `tests/fitness/transition-completeness.test.ts` | Pure rules engine. Purity and completeness fitness functions in place. |

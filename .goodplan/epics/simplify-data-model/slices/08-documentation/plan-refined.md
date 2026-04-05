@@ -141,20 +141,24 @@ Update project documentation to reflect the 12-skill model.
 
 ### Tasks
 
-- [ ] Update `README.md`:
+- [x] Update `README.md`:
   - List the 12 skills: init, status, upgrade, create-epic, start-epic, explore, plan-slice, implement, create-side-quest, complete-epic, audit, task
   - Update workflow overview to show consolidated pipeline flow
   - Update installation/usage instructions
-- [ ] Update `.goodplan/architecture/_overview.md`:
+  - **Result:** Already up-to-date — all 12 skills listed with correct `/gp:` names, workflow overview and install instructions are current
+- [x] Update `.goodplan/architecture/_overview.md`:
   - Update skill count to 12
   - Add `agents/` as a described component (count agent files dynamically via `ls agents/*.md | wc -l`)
   - Update subsystem maturity levels
   - Update deployment model section to reflect `bin/gp` launcher
   - Clarify scope: this is the top-level CLI architecture overview (4-layer stack). Skills and agents are plugin-level concerns — add a "Plugin/Skills Layer" section rather than mixing skill details into existing CLI layers
-- [ ] Update `.goodplan/conventions.md`:
+  - **Result:** Added Plugin/Skills Layer section (12 skills, 34 agents, shared references). Updated Plugin maturity from Experimental to Developing with dogfood harness as fitness function. Updated deployment model to describe `bin/gp` launcher behavior.
+- [x] Update `.goodplan/conventions.md`:
   - Verify `agents/` is already present in repo structure (it should be); if so, count agent files dynamically and update. If missing, add it.
   - Update skill development conventions
-- [ ] Verify CLAUDE.md — scan for any remaining stale references (most were fixed in the isolation quest)
+  - **Result:** Already up-to-date — `agents/` listed with 34 total, skill count is 12, skill development conventions are current
+- [x] Verify CLAUDE.md — scan for any remaining stale references (most were fixed in the isolation quest)
+  - **Result:** No stale references found. All skill names use current `/gp:` namespace.
 
 ### Verification
 

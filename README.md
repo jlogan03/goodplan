@@ -16,7 +16,7 @@ claude plugin marketplace add https://github.com/ian97531/goodplan.git
 claude plugin install goodplan
 ```
 
-Then start Claude Code in your project directory and run `/create-epic` to get started, or `/onboard-repo` to add goodplan to an existing codebase.
+Then start Claude Code in your project directory and run `/gp:create-epic` to get started, or `/gp:init` to add goodplan to an existing codebase.
 
 ## Features
 
@@ -92,35 +92,29 @@ Project
 
 ### Skills
 
-Each step produces artifacts that persist across sessions. Use `/project-status` at any time to see where you are and what to do next.
+Each step produces artifacts that persist across sessions. Use `/gp:status` at any time to see where you are and what to do next. All 12 skills are namespaced under `/gp:`.
 
 **Getting started:**
-- `/onboard-repo` — Scaffold goodplan onto an existing codebase
-- `/migrate` — Migrate project state after CLI updates
+- `/gp:init` — Initialize a new project or onboard an existing codebase
+- `/gp:upgrade` — Migrate project state after CLI updates
 
 **Status and capture:**
-- `/project-status` — See where you are, what to do next
-- `/capture` — Quick-capture a bug, idea, or improvement without breaking flow
+- `/gp:status` — See where you are, what to do next
+- `/gp:task` — Quick-capture a bug, idea, or improvement without breaking flow
 
 **Defining an epic:**
-- `/create-epic` — Define a body of work with goals and constraints
-- `/explore` — Research, brainstorm, or prototype before committing
-- `/create-architecture` — Drive architecture decisions through a design tree
-- `/refine-architecture` — Iteratively improve architecture files
-- `/create-slices` — Break work into ordered slices
-- `/refine-slices` — Refine slice definitions and sequencing
-- `/start-epic` — Review and approve an epic's architecture before activation
+- `/gp:create-epic` — Define a body of work: goals, architecture, and slices via a 6-phase pipeline
+- `/gp:explore` — Research, brainstorm, or prototype before committing
+- `/gp:start-epic` — Review and approve an epic's architecture before activation
 
 **Building an epic slice or side-quest:**
-- `/create-plan` — Produce a detailed implementation plan
-- `/refine-plan` — Iteratively improve plans with automated reviewers
-- `/implement-plan` — Execute plans phase-by-phase with built-in review
-- `/complete` — Synthesize learnings, update architecture, archive
+- `/gp:plan-slice` — Create and refine an implementation plan with automated reviewers
+- `/gp:implement` — Execute plans phase-by-phase with built-in review
+- `/gp:create-side-quest` — Spin up unplanned work with the same plan/review discipline
+- `/gp:complete-epic` — Synthesize learnings, update architecture, archive
 
 **Auditing:**
-- `/audit-architecture` — Compare intended architecture against actual code
-- `/audit-docs` — Find stale docs, undocumented APIs, inconsistencies
-- `/audit-tests` — Analyze test quality, coverage gaps, fragile patterns
+- `/gp:audit` — Compare intended architecture, docs, and tests against actual code
 
 ### The CLI
 
