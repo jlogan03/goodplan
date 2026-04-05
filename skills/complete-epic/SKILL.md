@@ -261,7 +261,18 @@ echo '{"verificationResults": [{VERIFICATION}], "learnings": [{LEARNINGS}]}' | $
 
 If the CLI command fails, stop with the error message.
 
-## Step 8 — Done Summary
+## Step 8 — Expertise Check
+
+Read `../_shared/references/expertise-tracking.md` for the guard pattern and format.
+
+Reflect on the conversation: did completing this epic reveal new information about the user's expertise? Consider:
+- Technologies or patterns the user demonstrated deep knowledge of
+- Areas where the user needed more guidance or asked clarifying questions
+- New domains the user onboarded into during this epic
+
+If expertise data should be updated, follow the guard and format from the reference.
+
+## Step 9 — Done Summary
 
 Present results to the user:
 

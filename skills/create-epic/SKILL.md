@@ -125,6 +125,12 @@ Verify the response includes `entity` and `status: "created"`.
 
 If the epic already exists (re-entry), load the existing goal from the CLI response (`gp epic:show` output) — do not re-ask.
 
+### 3c. Expertise Calibration
+
+Read `../_shared/references/expertise-tracking.md` for the guard pattern and format.
+
+Load existing expertise data (if any) to calibrate communication depth for the rest of this epic. If the user's expertise profile doesn't exist yet, observe their responses during goal capture to build an initial profile. Update the expertise file following the guard and format from the reference.
+
 ## Step 4 — Phase 2: Autonomous Explore
 
 ### 4a. Status Transition
