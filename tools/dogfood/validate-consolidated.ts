@@ -235,7 +235,11 @@ function createFlashcardFixture(): string {
 			{
 				$schema: "https://biomejs.dev/schemas/1.9.4/schema.json",
 				files: {
-					ignore: [".goodplan/"],
+					ignore: [".goodplan/", "dist/"],
+				},
+				formatter: {
+					indentStyle: "space",
+					indentWidth: 2,
 				},
 				linter: {
 					enabled: true,
