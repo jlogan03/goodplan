@@ -13,6 +13,13 @@
 			"name": "start-epic-uses-direct-file-ops",
 			"status": "open",
 			"title": "start-epic skill uses direct file operations instead of CLI commands"
+		},
+		{
+			"completed": null,
+			"created": "2026-04-05T17:08:11.471Z",
+			"name": "learnings-quality-metric-sonnet",
+			"status": "open",
+			"title": "Learnings quality metric fails with sonnet"
 		}
 	]
 }
