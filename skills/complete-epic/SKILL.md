@@ -152,8 +152,18 @@ Task prompt: |
     "Evaluate each condition against epic-level learnings."
   }
 
+  Verification criteria (from `gp epic:show --json` `.verifications`):
+  {JSON array of verifications from epic:show output}
+
   Synthesize cross-slice learnings, reconcile architecture, identify
   artifacts to promote, and propose side quests.
+
+  Additionally, assess the epic's verification criteria. For each criterion
+  in the `verifications` array above, evaluate whether it has been met based
+  on the artifacts and completion state. Return your assessment in the
+  `verificationAssessments` array (one entry per criterion, in order) —
+  every entry must have a non-empty `notes` string explaining why it passed
+  or failed.
 
   Write to:
   - {EPIC_DIR}/completion/consolidated-learnings.md
@@ -169,6 +179,10 @@ Task prompt: |
       { "type": "architecture-update", "target": "top-level|epic", "description": "...", "priority": "high|medium|low" },
       { "type": "side-quest", "description": "...", "scope": "small|medium|large", "priority": "..." },
       { "type": "artifact-promotion", "source": "...", "destination": "...", "priority": "..." }
+    ],
+    "verificationAssessments": [
+      { "passed": true, "notes": "Criterion met because..." },
+      { "passed": false, "notes": "Not met because..." }
     ],
     "triggeredConditions": [
       { "type": "decision|learning", "id": "...", "condition": "...", "reason": "..." }
@@ -220,11 +234,13 @@ For each recommendation with `type: "side-quest"`:
 - **Defer** -- note for future consideration
 - **Skip**"
 
-For approved side quests:
+For approved side quests, submit via stdin JSON:
 
 ```bash
-$GP quest:create --title "{description}" --json
+echo '{"name":"<name>","goal":"Follow up: <description>. Estimated effort: <scope>"}' | $GP quest:create --json
 ```
+
+Where `<name>` is a short kebab-case identifier derived from the description, `<description>` is the recommendation's `description` field, and `<scope>` is the recommendation's `scope` field (e.g., "small", "medium", "large"). If `scope` is not available, omit the "Estimated effort" suffix and use the description alone as the goal.
 
 ### Artifact Promotions
 
@@ -247,17 +263,83 @@ cp -n "{source}" "{destination}"
 
 These are LLM-owned markdown files outside `.goodplan/` JSON state, so direct file operations are appropriate.
 
-## Step 7 — CLI Submit
+## Step 7 — Verification Assessment & CLI Submit
 
-Construct the `epic:complete` payload. The CLI accepts `verificationResults` and `learnings`:
+### 7a. Verification Assessment
 
-1. Read the agent's `learnings` from the completion analysis return (Step 4f). Each learning has `category`, `summary`, `detail`, `tags`, and `rollupTo`.
-2. Set `rollupTo: ["project"]` on each learning so they roll up to project scope.
-3. Construct `verificationResults` from the agent's verification data (or use `[{"index": 0, "passed": true}]` if verification was handled by the agent).
+The completion-epic agent spawned in Step 4 assesses the epic's verification criteria as part of its task. The orchestrator validates completeness of the agent's assessments — every criterion must have a corresponding entry with a non-empty `notes` string.
+
+Query the epic's verification criteria:
 
 ```bash
-echo '{"verificationResults": [{VERIFICATION}], "learnings": [{LEARNINGS}]}' | $GP epic:complete --epic $EPIC_NAME --json
+$GP epic:show --epic $EPIC_NAME --json
 ```
+
+Extract the `verifications` array from the response. Each entry has a `description`, `status`, `addedDuring`, and `modifiedDuring` field.
+
+The completion-epic agent's return value should include a `verificationAssessments` array (added to its return schema in Step 4e). Each assessment corresponds by position to the `verifications` array:
+
+```json
+{ "passed": true, "notes": "Criterion met because..." }
+```
+
+Construct `verificationResults` from the agent's assessments, adding the positional `index` for each. Each result must match `verificationResultSchema`:
+- `index`: number (integer, non-negative) — the array position in the epic's `verifications` array
+- `passed`: boolean — whether the criterion is met
+- `notes`: string (required, non-empty) — explanation of the assessment
+
+**Every verification result MUST include a non-empty `notes` string.** The CLI rejects results with missing or empty notes.
+
+### 7b. Verification Gate
+
+If any verification result has `passed: false`, present the failures to the user via AskUserQuestion:
+
+```
+The following epic verification criteria were assessed as NOT met:
+
+- Criterion {index}: {description}
+  Assessment: {notes}
+
+Options:
+- **Fix and retry** — address the issues and re-run completion
+- **Mark as accepted** — override and complete anyway
+- **Cancel completion** — stop without completing
+```
+
+- **Fix and retry**: Stop and tell the user what needs fixing. They should re-run `/gp:complete-epic` after addressing the issues.
+- **Mark as accepted**: Flip the accepted entries to `passed: true` before submitting (the CLI state machine rejects `passed: false` entries). Prepend the original assessment to `notes`: "User override: originally assessed as not met. {original notes}". This preserves the user's agency while staying CLI-compatible.
+- **Cancel completion**: Preserve the completion directory and stop.
+
+### 7c. Learnings Rollup
+
+Read `${EPIC_DIR}/completion/consolidated-learnings.md` and parse each learning entry into properly-typed objects. This is a justified exception to context discipline — the orchestrator needs to read this file to construct the CLI payload.
+
+Each learning must match `learningInputSchema`:
+
+```json
+{
+  "category": "domain" | "worked" | "didnt-work" | "do-differently",
+  "summary": "Short description (min 1 char)",
+  "detail": "Detailed explanation (min 1 char)",
+  "tags": ["tag1", "tag2"],
+  "rollupTo": ["epic", "project"],
+  "validUntil": ["optional condition"]
+}
+```
+
+Parse **all** learning entries from the consolidated file — not just the first one. Set `rollupTo: ["project"]` on each learning so they roll up to project scope (unless the consolidated file specifies a different rollup target).
+
+### 7d. Submit
+
+Construct the full payload and submit via stdin JSON:
+
+```bash
+echo '{"verificationResults":[<RESULTS>],"learnings":[<LEARNINGS>]}' | $GP epic:complete --epic $EPIC_NAME --json
+```
+
+The `--epic` flag is required on the command line (citty validates required args before reading stdin). The stdin payload schema is:
+- `verificationResults`: Array (required, non-empty) — each with `{ index: number, passed: boolean, notes: string }`
+- `learnings`: Array (optional, defaults to []) — each matching `learningInputSchema`
 
 If the CLI command fails, stop with the error message.
 
