@@ -558,6 +558,8 @@ async function testErrorPath(): Promise<boolean> {
 					model: MODEL,
 					settingSources: [],
 					plugins: [{ type: "local", path: PLUGIN_DIR }],
+					// Intentionally NOT using createTestEnv — this test needs a non-isolated
+					// env with a broken gp binary on PATH to test graceful error handling.
 					env: {
 						...process.env,
 						PATH: `${brokenBinaryDir}:${HOME}/.local/bin:${process.env.PATH ?? ""}`,

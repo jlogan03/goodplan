@@ -6,7 +6,7 @@ Do not browse `.goodplan/` directly. Use the `gp` CLI to discover project state 
 
 - `gp status --json` — project state, architecture file paths, epic/slice progress
 - `gp --help` — discover available commands
-- `gp status --json --query '.architecture'` — architecture file paths to read
+- `gp status --json --query '.artifacts.architecture'` — architecture file paths to read
 
 The CLI returns paths to files you should read (architecture, conventions, etc.). Read those files, but discover them through the CLI rather than scanning the directory.
 

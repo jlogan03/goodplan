@@ -109,6 +109,7 @@ async function runSkill(
 				maxBudgetUsd,
 				model: MODEL,
 				settingSources: [],
+				plugins: [{ type: "local" as const, path: PLUGIN_DIR }],
 				env: createTestEnv(PLUGIN_DIR),
 				systemPrompt: {
 					type: "preset",

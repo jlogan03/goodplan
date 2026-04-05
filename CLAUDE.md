@@ -42,8 +42,13 @@ Use the `gp` CLI to discover project state and architecture:
 - `gp status --json --query '.artifacts.architecture'` — architecture file paths to read
 - `gp learning:list --json` — per-learning `.md` files (CLI-managed)
 - `.goodplan/idea.md` — project goal, scope, constraints (not yet CLI-discoverable)
+- `.goodplan/conventions.md` — tech stack, repo structure, coding style (not yet CLI-discoverable)
 
 Also check if relevant to your task:
+- `gp status --json --query '.artifacts.research'` — research file paths
+- `gp status --json --query '.artifacts.brainstorm'` — brainstorm file paths
+- `gp status --json --query '.artifacts.decisions'` — active decisions count
+- `gp decision:list --json` — decision details
 - `docs/superpowers/specs/2026-03-20-goodplan-cli-and-skill-consolidation-design.md` — original design spec
 
 ## Workflow Evolution Program
