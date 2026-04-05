@@ -1,0 +1,1 @@
+The CLI state machine hard-rejects epic:complete payloads containing passed: false verification results (STATE_VERIFICATION_FAILED). When the user chooses Mark as accepted for a failing criterion, the skill must flip passed to true and prepend the original assessment to notes. This preserves audit trail while staying CLI-compatible.

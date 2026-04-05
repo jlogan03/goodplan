@@ -286,13 +286,13 @@
 					"status": "completed"
 				},
 				{
-					"completed": null,
+					"completed": "2026-04-05T17:47:47.447Z",
 					"created": "2026-04-01T19:27:36.878Z",
 					"name": "08-documentation",
-					"status": "implementation-complete"
+					"status": "completed"
 				}
 			],
-			"status": "activated"
+			"status": "completed"
 		}
 	]
 }

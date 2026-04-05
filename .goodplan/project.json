@@ -1,10 +1,10 @@
 {
-	"activeEpic": "simplify-data-model",
+	"activeEpic": null,
 	"activeQuest": null,
-	"activeSlice": "08-documentation",
+	"activeSlice": null,
 	"created": "2026-03-28T00:06:46.961Z",
 	"name": "goodplan",
-	"stateSignature": "6afcc9a2832b78e446e41e3b895c823ba59efbaf1705bac6d334ee7e086f935e",
-	"updated": "2026-04-05T05:55:39.337Z",
+	"stateSignature": "5a0a450df13a4f5008f8439bbafb7c6babaf6ba30d28c1cfd097f5672f210269",
+	"updated": "2026-04-05T17:47:47.447Z",
 	"version": "1.0.3"
 }
