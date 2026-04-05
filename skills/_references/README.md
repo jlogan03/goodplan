@@ -1,6 +1,6 @@
 # Shared References
 
-Reference files consumed by multiple skills. Each skill reads these via relative paths (e.g., `../_shared/references/<file>` from a SKILL.md).
+Reference files consumed by multiple skills and agents via `@${CLAUDE_PLUGIN_ROOT}/skills/_references/<file>` auto-includes. Files are loaded into context at skill/agent load time — no Read tool calls needed, no permission prompts.
 
 ## Adding a New Shared Reference
 
@@ -27,4 +27,4 @@ Consolidation criterion: only move a file here if it is expected to stay unified
 
 ## Troubleshooting
 
-If a skill fails with a Read error pointing to a `_shared/references/` path, this directory or its files may be missing. Re-create the directory and restore the files from the skill repository.
+If a skill fails with a Read error pointing to a `_references/` path, this directory or its files may be missing. Re-create the directory and restore the files from the skill repository.

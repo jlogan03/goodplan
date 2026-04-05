@@ -12,7 +12,7 @@
 - Refactor Intelligence Protocol (Step 9 in complete): new detection algorithm, batch table presentation, inline fix application, side quest proposal — all untested on a real codebase
 - Maturity/invariants/fitness workflow: Steps 8f/8g/8h in define-architecture, Steps 3b/3c/3d in audit-architecture, maturity evaluation in refine-architecture, reviewer criteria 12/13 — all untested on a real project
 - Epic completion mode in /complete: new epic scope type, architecture reconciliation, artifact promotion — untested on a real epic
-- Plugin build script (`scripts/build-plugin.sh`): verified via `bun run build:plugin` with count/name assertions (12 skills, 34 agents). Agent validation (frontmatter + @ reference path resolution) exercised.
+- Plugin build script (`scripts/build-plugin.sh`): verified via `bun run build` with count/name assertions (12 skills, 34 agents). Agent validation (frontmatter + @ reference path resolution) exercised.
 - Orchestrator context discipline (`verifyNoArtifactReads`): 24 unit tests covering violations, fixture exclusions, malformed input. Validated at haiku tier during E2E tests (67 violations in create-side-quest = haiku ignoring discipline, not code bug).
 - Plugin hook scripts (`plugin-hooks/protect-state.sh`, `warn-bash-state.sh`): verified via manual stdin-piped tests (14 checks including edge cases), shellcheck passes, CI smoke tests in publish-plugin.yml
 - CI release pipeline (`.github/workflows/publish-plugin.yml`): verified via live v1.0.0–v1.0.2 releases
@@ -20,7 +20,7 @@
 
 ### Known fragile areas
 - Agent SDK local plugin path (`plugins: [{ type: "local" }]`) is sufficient for skill discovery — no cache sync needed. `${CLAUDE_PLUGIN_DATA}` and `${CLAUDE_PLUGIN_ROOT}` do not resolve for local plugins.
-- Concurrent E2E test harnesses corrupt `dist/gp-plugin/` via parallel `build:plugin` runs — must run sequentially
+- Concurrent E2E test harnesses corrupt `dist/gp-plugin/` via parallel `bun run build` runs — must run sequentially
 - epic-conventions.md is consumed by 12+ skills: changes require updating all consumers
 - citty + `exactOptionalPropertyTypes`: requires `as unknown as CommandDef` casts in `src/index.ts`. May break on citty upgrade.
 

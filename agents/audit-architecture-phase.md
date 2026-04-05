@@ -25,8 +25,8 @@ The orchestrator passes:
 
 ## Shared References
 
-@${CLAUDE_PLUGIN_ROOT}/skills/_shared/references/audit-conventions.md
-@${CLAUDE_PLUGIN_ROOT}/skills/_shared/references/maturity-conventions.md
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/audit-conventions.md
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/maturity-conventions.md
 
 ## Instructions
 

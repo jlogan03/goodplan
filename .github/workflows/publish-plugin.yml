@@ -25,7 +25,7 @@ jobs:
         run: bun install
 
       - name: Build plugin
-        run: bun run build:plugin
+        run: bun run build
         env:
           GP_HMAC_KEY: ${{ secrets.GP_HMAC_KEY }}
 

@@ -25,6 +25,8 @@ If you need content-level information, spawn a sub-agent to read and summarize i
 
 For file copying (e.g., artifact promotion), use shell `cp` via Bash tool — not Read+Write, which would pull artifact content into orchestrator context.
 
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/expertise-tracking.md
+
 ## Step 0 — Setup
 
 ```bash
@@ -345,7 +347,7 @@ If the CLI command fails, stop with the error message.
 
 ## Step 8 — Expertise Check
 
-Read `../_shared/references/expertise-tracking.md` for the guard pattern and format.
+Use the guard pattern and format from expertise-tracking.md (auto-included above).
 
 Reflect on the conversation: did completing this epic reveal new information about the user's expertise? Consider:
 - Technologies or patterns the user demonstrated deep knowledge of

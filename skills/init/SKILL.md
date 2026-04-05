@@ -39,7 +39,9 @@ If the version doesn't satisfy `requires: gp >= 1.0.0`, stop with version mismat
 
 Store `$GP` as the CLI binary path for all subsequent commands.
 
-Read `../_shared/references/cli-interaction.md` — needed throughout for CLI error handling patterns (section 10: Error Handling). Key points: exit code 1 = internal/unexpected error (present to user and stop), exit code 2 = validation/usage error (fix invocation — likely a skill bug), exit code 3 = state machine error (parse error code from JSON, apply recovery pattern).
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/cli-interaction.md
+
+Key error handling points: exit code 1 = internal/unexpected error (present to user and stop), exit code 2 = validation/usage error (fix invocation — likely a skill bug), exit code 3 = state machine error (parse error code from JSON, apply recovery pattern).
 
 ## Step 1 — Re-Entry Check
 

@@ -38,6 +38,8 @@ For file copying (e.g., agent-produced files to CLI-managed paths), use shell `c
 | 5. Slices Q&A | Interactive | `architecture-refined` -> `defining-slices` | Scope/ordering discussion via AskUserQuestion |
 | 6. Slices draft + refinement | Autonomous | `defining-slices` -> `slices-defined` -> `refining-slices` -> `slices-refined` | Spawn slices-phase, then refinement loop |
 
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/expertise-tracking.md
+
 ## Step 0 — Version Check
 
 ```bash
@@ -127,7 +129,7 @@ If the epic already exists (re-entry), load the existing goal from the CLI respo
 
 ### 3c. Expertise Calibration
 
-Read `../_shared/references/expertise-tracking.md` for the guard pattern and format.
+Use the guard pattern and format from expertise-tracking.md (auto-included above).
 
 Load existing expertise data (if any) to calibrate communication depth for the rest of this epic. If the user's expertise profile doesn't exist yet, observe their responses during goal capture to build an initial profile. Update the expertise file following the guard and format from the reference.
 

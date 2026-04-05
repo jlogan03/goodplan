@@ -72,7 +72,7 @@ const QUEST_GOAL =
 
 console.log("\n[test-create-side-quest] Building plugin...");
 try {
-	execFileSync("bun", ["run", "build:plugin"], {
+	execFileSync("bun", ["run", "build"], {
 		cwd: GOODPLAN_DIR,
 		stdio: "pipe",
 		encoding: "utf-8",

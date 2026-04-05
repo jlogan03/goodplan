@@ -11,7 +11,7 @@ This repo develops a plugin that is ALSO installed in the user's Claude Code ses
 | Action | Correct | Wrong |
 |--------|---------|-------|
 | Edit skills | `skills/<name>/SKILL.md` | `~/.claude/plugins/cache/...` |
-| Build | `bun run build:plugin` | — |
+| Build | `bun run build` | — |
 | Test | Harness against `dist/gp-plugin/` | Against installed plugin |
 | Understand behavior | Read repo source | Read installed cache |
 

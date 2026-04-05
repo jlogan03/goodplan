@@ -27,7 +27,7 @@ Read the Q&A output and any reference paths provided. Use the inline context dir
 
 Follow this format convention for the plan you produce:
 
-@${CLAUDE_PLUGIN_ROOT}/skills/_shared/references/plan-format.md
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/plan-format.md
 
 ## Instructions
 

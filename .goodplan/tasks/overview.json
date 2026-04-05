@@ -20,6 +20,13 @@
 			"name": "learnings-quality-metric-sonnet",
 			"status": "open",
 			"title": "Learnings quality metric fails with sonnet"
+		},
+		{
+			"completed": null,
+			"created": "2026-04-05T19:21:54.926Z",
+			"name": "restructure-plugin-references",
+			"status": "open",
+			"title": "Restructure and trim plugin reference files"
 		}
 	]
 }

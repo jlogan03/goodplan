@@ -19,8 +19,7 @@ mkdir -p "$PLUGIN_DIR/hooks"
 mkdir -p "$PLUGIN_DIR/bin"
 
 # Compile binary.
-# --target is explicit because build:plugin always targets the v1 distribution
-# platform (macOS arm64), unlike `bun run build` which builds for the host.
+# --target is explicit because v1 only distributes macOS arm64.
 (cd "$REPO_ROOT" && bun build --compile src/index.ts \
   --outfile "$PLUGIN_DIR/binaries/macos-arm64/gp" \
   --target=bun-darwin-arm64 \
@@ -95,10 +94,10 @@ echo "  namespace prefixing: done"
 echo ""
 echo "Verifying skills..."
 
-# Assert _shared directory exists with cli-interaction.md
-test -d "$PLUGIN_DIR/skills/_shared/" || { echo "FAIL: skills/_shared/ directory missing"; exit 1; }
-test -f "$PLUGIN_DIR/skills/_shared/references/cli-interaction.md" || { echo "FAIL: skills/_shared/references/cli-interaction.md missing"; exit 1; }
-echo "  _shared/references/cli-interaction.md: present"
+# Assert _references directory exists with cli-interaction.md
+test -d "$PLUGIN_DIR/skills/_references/" || { echo "FAIL: skills/_references/ directory missing"; exit 1; }
+test -f "$PLUGIN_DIR/skills/_references/cli-interaction.md" || { echo "FAIL: skills/_references/cli-interaction.md missing"; exit 1; }
+echo "  _references/cli-interaction.md: present"
 
 # Assert every non-underscore skill directory contains a SKILL.md
 SKILL_COUNT=0

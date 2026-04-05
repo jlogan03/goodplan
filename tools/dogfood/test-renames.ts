@@ -233,7 +233,7 @@ assert(
 logger.log("\n[test-renames] Test 5: Plugin build includes renamed skills\n");
 
 try {
-	execFileSync("bun", ["run", "build:plugin"], {
+	execFileSync("bun", ["run", "build"], {
 		cwd: GOODPLAN_DIR,
 		stdio: "pipe",
 		encoding: "utf-8",

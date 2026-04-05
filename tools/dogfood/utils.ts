@@ -48,7 +48,7 @@ function resolveDefaultGpBin(): string {
 	}
 
 	console.warn(
-		"[resolveDefaultGpBin] dist plugin binary not found. Run `bun run build:plugin` first, " +
+		"[resolveDefaultGpBin] dist plugin binary not found. Run `bun run build` first, " +
 			"or set GP_CLI_PATH to override.",
 	);
 	return distBin;

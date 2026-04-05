@@ -20,11 +20,11 @@ Read the artifact, explore the codebase, then produce your review.
 
 ## Shared Review Standards
 
-@${CLAUDE_PLUGIN_ROOT}/skills/_shared/references/review-preamble.md
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/review-preamble.md
 
 ## Domain-Specific Criteria
 
-@${CLAUDE_PLUGIN_ROOT}/skills/_shared/references/review-agent-skill.md
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/review-agent-skill.md
 
 ## Output
 

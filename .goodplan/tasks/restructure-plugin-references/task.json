@@ -1,0 +1,11 @@
+{
+	"context": {
+		"capturedDuring": "reviewing plugin build output and skill effectiveness",
+		"gitBranch": "main"
+	},
+	"created": "2026-04-05T19:21:54.926Z",
+	"description": "Three changes: (1) Delete unused files (README.md, state-and-activity-formats.md). (2) Separate skill-included references from agent-included references — inline 20 review-*.md + review-preamble.md into their 1:1 agent definitions, move remaining agent-only refs (sub-agent-return-format.md, audit-conventions.md, codebase-context-discovery.md, maturity-conventions.md, plan-format.md) to agents/references/. Keep skills/_references/ for skill-only files. (3) Trim the 5 skill-included references for conciseness: cli-interaction.md 28KB→~12KB (delete migration history, unused completion payloads, duplicated version checks, compress role patterns), epic-conventions.md 14KB→~5.5KB (remove directory trees, transition tables, consumer guide), output-templates.md 10KB→~6.2KB (move per-skill substitution details to each SKILL.md), expertise-tracking.md 3.5KB→~2.1KB (compress bash guard, remove obvious calibration table), decisions-format.md 2.8KB→~2KB (remove obvious examples, compress loading protocol). Also move essential CLI rules to plugin CLAUDE.md. All changes in repo source (skills/, agents/, plugin/), not dist/. Build script may need updates for new directory structure.",
+	"name": "restructure-plugin-references",
+	"status": "open",
+	"title": "Restructure and trim plugin reference files"
+}

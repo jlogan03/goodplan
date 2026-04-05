@@ -74,7 +74,7 @@ const COST_THRESHOLD_USD = 40;
 
 console.log("\n[validate-consolidated] Building plugin...");
 try {
-	execFileSync("bun", ["run", "build:plugin"], {
+	execFileSync("bun", ["run", "build"], {
 		cwd: GOODPLAN_DIR,
 		stdio: "pipe",
 		encoding: "utf-8",

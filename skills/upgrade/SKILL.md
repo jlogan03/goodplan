@@ -19,7 +19,9 @@ Converts a pre-CLI project directory (`.project/` for legacy projects, `.goodpla
 
 ## References
 
-- `../_shared/references/cli-interaction.md` — Section 10: Error Handling (exit codes, error codes, recovery patterns). Note: Section 12 covers a different migration concept — scope to Section 10 only.
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/cli-interaction.md
+
+Focus on Section 10: Error Handling (exit codes, error codes, recovery patterns). Note: Section 12 covers a different migration concept — scope to Section 10 only.
 
 ## Step 1 — Version Check
 

@@ -22,7 +22,7 @@ This is managed by the **installed** CLI and skills (#2 above), not the repo sou
 | Mutate `.goodplan/` state | `gp quest:complete ...` (installed CLI) | Directly edit `.goodplan/quests/*/quest.json` |
 | Test CLI changes | Run `./gp` against a **fixture repo** in `/tmp` | Run `./gp` against this repo's `.goodplan/` |
 | Test skills/plugins | Use Agent SDK harness in `tools/dogfood/` | Ask user to run manual Claude Code sessions |
-| Build plugin | `bun run build:plugin` (explicit, user-initiated) | Auto-build during development |
+| Build plugin | `bun run build` (explicit, user-initiated) | Auto-build during development |
 
 ## Test Harness Isolation
 

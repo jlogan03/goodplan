@@ -23,7 +23,7 @@ The orchestrator passes (and pre-creates `<slice-path>/completion/` via `mkdir -
 
 ## Shared Return Format
 
-@${CLAUDE_PLUGIN_ROOT}/skills/_shared/references/sub-agent-return-format.md
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/sub-agent-return-format.md
 
 ## Instructions
 

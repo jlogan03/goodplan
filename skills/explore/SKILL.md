@@ -18,7 +18,10 @@ Iterative research/brainstorm/prototype loop. Facilitates open-ended investigati
 
 ## Step 0 — Version Check and Context Loading
 
-Read `../_shared/references/cli-interaction.md` for CLI interaction conventions and error handling patterns.
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/cli-interaction.md
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/epic-conventions.md
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/expertise-tracking.md
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/output-templates.md
 
 Verify CLI availability and compatibility:
 
@@ -30,13 +33,13 @@ If the command fails (not found, non-zero exit), stop: "The `gp` CLI is required
 
 If the version doesn't satisfy `requires: gp >= 1.0.0`, stop: "This skill requires gp >= 1.0.0 but found X.Y.Z. Upgrade the CLI."
 
-Also load `../_shared/references/epic-conventions.md` for epic directory structure.
-
 ## Step 1 — Load Explore Logic and Decisions Format
 
 Use the Read tool to load `references/explore-logic.md` (relative to this skill's directory). Use the scope path mapping, output templates, and mode behaviors from this file throughout all subsequent steps.
 
-Also load `../_shared/references/decisions-format.md` for the decisions format and Loading Protocol. Load `.goodplan/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions provide context for exploration.
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/decisions-format.md
+
+Load `.goodplan/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Active decisions provide context for exploration.
 
 ## Step 2 — Determine Scope
 
@@ -147,7 +150,7 @@ On subsequent iterations, note previously used modes in the question text (e.g.,
 
 If the user somehow selects Prototype at slice/quest scope, offer: "Want to switch to project or epic scope for this prototype, or pick Research or Brainstorm instead?"
 
-Follow calibration depth guidance in `../_shared/references/expertise-tracking.md`.
+Follow calibration depth guidance in expertise-tracking.md (auto-included above).
 
 ### 4b. Run the selected mode
 
@@ -204,7 +207,7 @@ Use the Write tool to create `explore-complete.md` at the scope path after appro
 
 Reflect on the conversation: did it reveal new information about the user's expertise?
 
-- **If yes**: Read `../_shared/references/expertise-tracking.md` for the recording protocol (including the plugin data guard). Update `${CLAUDE_PLUGIN_DATA}/expertise.md` following the guard and format described there.
+- **If yes**: Follow the recording protocol from expertise-tracking.md (auto-included above), including the plugin data guard. Update `${CLAUDE_PLUGIN_DATA}/expertise.md` following the guard and format described there.
 - **If no**: Skip silently — no Read, no output, no AskUserQuestion.
 
 ## Step 6 — Complete Exploration
@@ -233,7 +236,7 @@ The CLI only supports epic-scoped exploration state transitions. For project, sl
 
 ### After completion — Done Summary
 
-Display using the Done Summary Template (Variant B — Loose Checklist) from `../_shared/references/output-templates.md`. Include:
+Display using the Done Summary Template (Variant B — Loose Checklist) from output-templates.md (auto-included above). Include:
 
 - All artifacts written during this run (file paths)
 - All decisions written during this run (if any) — list each decision title

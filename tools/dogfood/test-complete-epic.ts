@@ -55,7 +55,7 @@ const SLICE_NAMES = ["slice-auth", "slice-users", "slice-cache"];
 
 console.log("\n[test-complete-epic] Building plugin...");
 try {
-	execFileSync("bun", ["run", "build:plugin"], {
+	execFileSync("bun", ["run", "build"], {
 		cwd: GOODPLAN_DIR,
 		stdio: "pipe",
 		encoding: "utf-8",

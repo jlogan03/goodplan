@@ -213,7 +213,7 @@ Parse the return JSON. Check `status`:
 
 ### 5.3. Review Loop
 
-Follow the shared iteration loop pattern defined in `@${CLAUDE_PLUGIN_ROOT}/skills/_shared/references/iteration-loop.md`. The orchestrator-specific parameters are listed in the **Loop Parameters** section below.
+Follow the shared iteration loop pattern defined in `@${CLAUDE_PLUGIN_ROOT}/skills/_references/iteration-loop.md`. The orchestrator-specific parameters are listed in the **Loop Parameters** section below.
 
 #### 5.3a. Write Changed Files Summary
 
@@ -448,7 +448,7 @@ After successful completion, present:
 
 ## Loop Parameters
 
-Parameters for `@${CLAUDE_PLUGIN_ROOT}/skills/_shared/references/iteration-loop.md`:
+Parameters for `@${CLAUDE_PLUGIN_ROOT}/skills/_references/iteration-loop.md`:
 
 | Parameter | Value |
 |---|---|

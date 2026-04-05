@@ -113,7 +113,7 @@ Add a test file for the greeting utility.
 
 console.log("\n[test-implement] Building plugin...");
 try {
-	execFileSync("bun", ["run", "build:plugin"], {
+	execFileSync("bun", ["run", "build"], {
 		cwd: GOODPLAN_DIR,
 		stdio: "pipe",
 		encoding: "utf-8",

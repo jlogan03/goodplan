@@ -52,7 +52,7 @@ const EPIC_NAME = "test-audit-epic";
 
 console.log("\n[test-audit] Building plugin...");
 try {
-	execFileSync("bun", ["run", "build:plugin"], {
+	execFileSync("bun", ["run", "build"], {
 		cwd: GOODPLAN_DIR,
 		stdio: "pipe",
 		encoding: "utf-8",

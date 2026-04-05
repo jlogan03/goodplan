@@ -52,7 +52,7 @@ const GOODPLAN_DIR = join(import.meta.dir, "../..");
 const PLUGIN_DIR = resolve(GOODPLAN_DIR, "dist/gp-plugin");
 
 if (!existsSync(PLUGIN_DIR)) {
-	console.error("FATAL: Plugin not built. Run `bun run build:plugin` first.");
+	console.error("FATAL: Plugin not built. Run `bun run build` first.");
 	process.exit(1);
 }
 

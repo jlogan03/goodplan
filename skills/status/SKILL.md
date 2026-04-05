@@ -52,13 +52,12 @@ If successful, save the `status --json` response for use in subsequent steps.
 
 ## Step 2 — Load References
 
-Use the Read tool to load:
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/cli-interaction.md
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/decisions-format.md
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/epic-conventions.md
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/expertise-tracking.md
 
-1. `references/status-logic.md` (relative to this skill's directory) — display formatting rules, state-to-next-skill mapping, scope resolution, and archive conventions
-2. `../_shared/references/cli-interaction.md` — CLI interaction conventions (how to invoke commands, parse responses, handle errors)
-3. `../_shared/references/decisions-format.md` — decisions format and Loading Protocol
-
-If the `status --json` response indicates an active epic exists, also load `../_shared/references/epic-conventions.md` — needed for epic state machine resolution, first-vs-subsequent epic disambiguation, and directory structure conventions.
+Use the Read tool to load `references/status-logic.md` (relative to this skill's directory) — display formatting rules, state-to-next-skill mapping, scope resolution, and archive conventions.
 
 Load `.goodplan/decisions/` following the Loading Protocol: glob `*.md`, skip superseded, flag any with `revisiting` status to the user. Count active decisions and note any with `revisiting` status for the status report.
 
@@ -171,7 +170,7 @@ If any interrupted work is found, surface it clearly in the status report.
 
 ## Step 7b — Load Expertise Summary
 
-Check if `${CLAUDE_PLUGIN_DATA}/expertise.md` exists and has content. Before reading, run the plugin data guard from `../_shared/references/expertise-tracking.md`:
+Check if `${CLAUDE_PLUGIN_DATA}/expertise.md` exists and has content. Before reading, run the plugin data guard from expertise-tracking.md (auto-included above):
 
 ```bash
 if [ -z "${CLAUDE_PLUGIN_DATA}" ] || [ "${CLAUDE_PLUGIN_DATA}" = '${CLAUDE_PLUGIN_DATA}' ]; then

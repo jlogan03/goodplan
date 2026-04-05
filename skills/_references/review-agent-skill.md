@@ -7,7 +7,7 @@ Domain-specific evaluation criteria for the agent/skill reviewer. Evaluates the 
 Before evaluating, use Grep, Glob, and Read tools to explore the codebase. Focus on:
 - Existing agent definitions in `agents/` — frontmatter patterns, body structure, `@` reference usage
 - Existing skill structure: directory layout, SKILL.md format, references/ organization
-- How `skills/_shared/references/` files are organized and cross-referenced
+- How `skills/_references/` files are organized and cross-referenced
 - Install scripts or packaging that copies/transforms skills and agents for deployment
 - Project configuration files (CLAUDE.md) for conventions
 - Orchestrator skills that spawn agents — how they pass context and parse returns

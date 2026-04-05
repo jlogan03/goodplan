@@ -28,7 +28,7 @@ If the version doesn't satisfy `>= 1.0.0`: "This skill requires gp >= 1.0.0 but 
 
 ## Step 1 — Load References
 
-Read `../_shared/references/cli-interaction.md` (relative to this skill's directory) for CLI interaction conventions.
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/cli-interaction.md
 
 ## Step 2 — Collect Context
 

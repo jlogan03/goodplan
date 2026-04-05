@@ -54,7 +54,7 @@ To evaluate states #5, #6, and #7:
 
 ### Per Epic
 
-Epic-level state machine is defined in `../../_shared/references/epic-conventions.md`. Uses the same first-match-wins pattern. Check that file for epic state resolution, directory structure, and transition tables.
+Epic-level state machine is defined in epic-conventions.md (auto-included by the status skill). Uses the same first-match-wins pattern. Check that file for epic state resolution, directory structure, and transition tables.
 
 **First vs subsequent epic**: The first epic is named `initial` and created as `__active__initial/` (auto-active, no approval gate, writes directly to `architecture/`). Subsequent epics start without `__active__` prefix, use `architecture-proposal/` instead, and require `/gp:start-epic` approval. Use the directory name to disambiguate which state table to apply.
 
@@ -83,7 +83,7 @@ Use `gp epic:list --json` to get all epics with statuses. Categorize:
 
 ### Epic States
 
-Load `../../_shared/references/epic-conventions.md` for the full state machine. Mappings:
+See epic-conventions.md (auto-included by the status skill) for the full state machine. Mappings:
 
 | State | Next Skill |
 |---|---|
@@ -128,4 +128,4 @@ Directories are no longer renamed with `~~archived~~` prefixes. Completed entiti
 
 ## State Orientation (CLI)
 
-Skills no longer read or write `state.md`. Use `gp status --json` for active entities and phase information. See `../../_shared/references/cli-interaction.md` section 6 for the full migration reference.
+Skills no longer read or write `state.md`. Use `gp status --json` for active entities and phase information. See cli-interaction.md section 6 (auto-included by the status skill) for the full migration reference.

@@ -4,7 +4,7 @@
  *
  * Usage: bun tools/dogfood/test-plugin-skills.ts [--model <model>]
  *
- * Prerequisites: `bun run build:plugin` must have been run first.
+ * Prerequisites: `bun run build` must have been run first.
  *
  * Tests:
  * 1. Plugin loads without errors
@@ -45,7 +45,7 @@ const MODEL = parseModel(tierDefault("structural"));
 // ─── Preflight ──────────────────────────────────────────────
 
 if (!existsSync(PLUGIN_DIR)) {
-	console.error("FATAL: Plugin not built. Run `bun run build:plugin` first.");
+	console.error("FATAL: Plugin not built. Run `bun run build` first.");
 	process.exit(1);
 }
 

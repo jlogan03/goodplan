@@ -1,5 +1,7 @@
 # Iteration Loop — Shared Reference
 
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/output-templates.md
+
 Shared orchestration skeleton for iterative review-and-edit skills (plan-slice refinement, create-epic architecture/slice refinement, etc.). Each skill's SKILL.md defines a **Loop Parameters** section that fills in the skill-specific slots listed below.
 
 ## Skill-Specific Parameters
@@ -81,7 +83,7 @@ After all foreground reviewer agents return (they were launched in a single mess
 
 ### Display Iteration Summary
 
-After synthesizing feedback, display the iteration results to the user using the **Iteration Summary Template** from `../_shared/references/output-templates.md`. Read that file for the exact template, substitution rules, and display rules. This must be shown every iteration.
+After synthesizing feedback, display the iteration results to the user using the **Iteration Summary Template** from output-templates.md (auto-included above). This must be shown every iteration.
 
 ### Handling USER_INPUT
 

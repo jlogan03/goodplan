@@ -103,5 +103,5 @@ tests/
 - **JSON output:** deterministic key ordering (alphabetical) for git merge friendliness. JSONL files are append-only.
 - **Environment variables:** `GOODPLAN_DIR` overrides default `.project/` location (useful for testing). `GOODPLAN_DEBUG=1` enables debug logging to stderr (dev/test only — use `--verbose` for production diagnostics).
 - **stdin for content:** mutations accept content via stdin (piped heredocs). Read-only commands use flags only.
-- **Skill development:** All goodplan workflow skills live in `skills/` as the source of truth (12 skills). Distributed as a Claude Code plugin via `bun run build:plugin`. Never edit installed plugin files directly. Commit skill changes explaining why and what changed (per global CLAUDE.md).
+- **Skill development:** All goodplan workflow skills live in `skills/` as the source of truth (12 skills). Distributed as a Claude Code plugin via `bun run build`. Never edit installed plugin files directly. Commit skill changes explaining why and what changed (per global CLAUDE.md).
 - **Agent definitions:** Agent `.md` files in `agents/` are spawned by orchestrator skills. 20 reviewer agents + pipeline phase agents + audit mode agents (34 total).

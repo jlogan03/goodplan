@@ -18,7 +18,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
-/** Well-known path for the plugin binary (built by globalSetup via build:plugin). */
+/** Well-known path for the plugin binary (built by globalSetup via scripts/build-plugin.sh). */
 function pluginBinaryPath(): string {
 	const arch = process.arch === "x64" ? "x64" : "arm64";
 	const platform = process.platform === "linux" ? "linux" : "macos";

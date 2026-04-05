@@ -26,7 +26,7 @@ Read the Q&A summary and any reference paths provided. Use inline context direct
 
 ## Shared Return Format
 
-@${CLAUDE_PLUGIN_ROOT}/skills/_shared/references/sub-agent-return-format.md
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/sub-agent-return-format.md
 
 ## Instructions
 
