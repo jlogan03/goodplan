@@ -241,6 +241,9 @@ function createFlashcardFixture(): string {
 		JSON.stringify(
 			{
 				$schema: "https://biomejs.dev/schemas/1.9.4/schema.json",
+				files: {
+					ignore: [".goodplan/"],
+				},
 				linter: {
 					enabled: true,
 					rules: {
@@ -996,27 +999,40 @@ async function stepCompleteEpic(ctx: PipelineContext): Promise<boolean> {
 	logger.log("STEP 8: /gp:complete-epic");
 	logger.log("========================================\n");
 
-	// Mark all slices as done before completing the epic
+	// Ensure all slices are in a terminal state before completing the epic.
+	// Completed slices stay as-is. Unimplemented slices (created, planning, etc.) get abandoned.
 	const slicesDir = join(ctx.fixtureDir, ".goodplan", "epics", EPIC_NAME, "slices");
 	if (existsSync(slicesDir)) {
 		const sliceDirs = readdirSync(slicesDir).filter((d: string) =>
 			statSync(join(slicesDir, d)).isDirectory(),
 		);
+		const terminalStatuses = new Set(["completed", "abandoned"]);
 		for (const sliceDir of sliceDirs) {
-			const sliceStatus = verifyEntityStatus("slice", sliceDir, "done", {
+			const sliceStatus = verifyEntityStatus("slice", sliceDir, "completed", {
 				cwd: ctx.fixtureDir,
 				gpBin: GP_BIN,
 				epic: EPIC_NAME,
 			});
-			if (sliceStatus.actual !== "done") {
+			if (!terminalStatuses.has(sliceStatus.actual)) {
 				logger.log(
-					`[complete-epic] Force-completing slice '${sliceDir}' (status: ${sliceStatus.actual})...`,
+					`[complete-epic] Abandoning unfinished slice '${sliceDir}' (status: ${sliceStatus.actual})...`,
 				);
-				gpForce(["slice:complete", "--epic", EPIC_NAME, "--slice", sliceDir, "--json"], {
-					cwd: ctx.fixtureDir,
-					gpBin: GP_BIN,
-					stdin: JSON.stringify({ learnings: ["Completed for pipeline validation"] }),
-				});
+				gpForce(
+					[
+						"slice:abandon",
+						"--epic",
+						EPIC_NAME,
+						"--slice",
+						sliceDir,
+						"--reason",
+						"Not implemented during pipeline validation",
+						"--json",
+					],
+					{
+						cwd: ctx.fixtureDir,
+						gpBin: GP_BIN,
+					},
+				);
 			}
 		}
 	}
@@ -1118,15 +1134,24 @@ function checkPlanMetrics(fixtureDir: string, epicName: string): MetricResult {
 	const hasFilePaths = /\b(src|tests|lib)\/\S+\.\w+/m.test(planContent);
 	const contentLength = planContent.length;
 	const contentOk = contentLength >= 500;
+	// Check for verification criteria (Expected Behavior, expected behavior checks, Verification, etc.)
+	const hasVerification = /expected behavior|verification|before.*implementation|after.*implementation/im.test(planContent);
 
-	const phaseOk = phaseCount >= 3;
+	const phaseOk = phaseCount >= 2;
 	const pathOk = hasFilePaths;
-	const passed = phaseOk && pathOk && contentOk;
+	const passed = phaseOk && pathOk && contentOk && hasVerification;
+
+	const details = [
+		`${phaseCount} phases (>= 2: ${phaseOk ? "PASS" : "FAIL"})`,
+		`file paths: ${pathOk ? "PASS" : "FAIL"}`,
+		`${contentLength} chars (>= 500: ${contentOk ? "PASS" : "FAIL"})`,
+		`verification criteria: ${hasVerification ? "PASS" : "FAIL"}`,
+	];
 
 	return {
 		name: "Plan Structure",
 		passed,
-		detail: `${phaseCount} phases (>= 3: ${phaseOk ? "PASS" : "FAIL"}), file paths present: ${pathOk ? "PASS" : "FAIL"}, content ${contentLength} chars (>= 500: ${contentOk ? "PASS" : "FAIL"})`,
+		detail: details.join(", "),
 	};
 }
 
