@@ -2,6 +2,7 @@
 dist/
 goodplan
 gp
+!plugin/bin/gp
 node_modules
 
 # OS files

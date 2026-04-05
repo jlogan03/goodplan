@@ -16,6 +16,7 @@ mkdir -p "$PLUGIN_DIR/.claude-plugin"
 mkdir -p "$PLUGIN_DIR/binaries/macos-arm64"
 mkdir -p "$PLUGIN_DIR/skills"
 mkdir -p "$PLUGIN_DIR/hooks"
+mkdir -p "$PLUGIN_DIR/bin"
 
 # Compile binary.
 # --target is explicit because build:plugin always targets the v1 distribution
@@ -54,6 +55,10 @@ fi
 # Copy hook scripts and configuration
 cp "$REPO_ROOT/plugin-hooks/"*.sh "$REPO_ROOT/plugin-hooks/"*.json "$PLUGIN_DIR/hooks/"
 chmod +x "$PLUGIN_DIR/hooks/"*.sh
+
+# Copy cross-platform bin/gp launcher
+cp "$REPO_ROOT/plugin/bin/gp" "$PLUGIN_DIR/bin/gp"
+chmod +x "$PLUGIN_DIR/bin/gp"
 
 # Copy plugin CLAUDE.md template
 cp "$REPO_ROOT/plugin/CLAUDE.md" "$PLUGIN_DIR/CLAUDE.md"
@@ -250,6 +255,9 @@ else
   # Verify binary is executable and runs
   "$PLUGIN_DIR/binaries/macos-arm64/gp" --version
   echo "  binary: executable and runs"
+  # Verify bin/gp launcher is executable
+  test -x "$PLUGIN_DIR/bin/gp"
+  echo "  bin/gp launcher: executable"
 fi
 
 # Print success summary

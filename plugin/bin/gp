@@ -1,0 +1,17 @@
+#!/usr/bin/env sh
+set -eu
+# Resolve symlinks to find the real script location
+SCRIPT="$0"
+while [ -L "$SCRIPT" ]; do
+  DIR="$(cd "$(dirname "$SCRIPT")" && pwd -P)"
+  SCRIPT="$(readlink "$SCRIPT")"
+  case "$SCRIPT" in /*) ;; *) SCRIPT="$DIR/$SCRIPT" ;; esac
+done
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT")" && pwd -P)"
+case "$(uname -s)-$(uname -m)" in
+  Darwin-arm64)  exec "$SCRIPT_DIR/../binaries/macos-arm64/gp" "$@" ;;
+  Darwin-x86_64) exec "$SCRIPT_DIR/../binaries/macos-x64/gp" "$@" ;;
+  Linux-aarch64) exec "$SCRIPT_DIR/../binaries/linux-arm64/gp" "$@" ;;
+  Linux-x86_64)  exec "$SCRIPT_DIR/../binaries/linux-x64/gp" "$@" ;;
+  *) echo "gp: unsupported platform $(uname -s)-$(uname -m). See https://github.com/ian97531/goodplan#supported-platforms" >&2; exit 1 ;;
+esac
