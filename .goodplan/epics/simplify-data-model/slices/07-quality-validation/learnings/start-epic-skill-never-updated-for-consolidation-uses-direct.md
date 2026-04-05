@@ -1,0 +1,1 @@
+Uses ls -d, mv, direct activity-log.jsonl writes. Bypasses CLI state model causing verification failures. Task captured.

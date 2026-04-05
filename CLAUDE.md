@@ -8,7 +8,7 @@ This repo builds the goodplan workflow system. It contains the source code for b
 This is what we are actively developing. **"Update a skill" always means editing files here.** The `skills/` directory is the **source of truth** for all goodplan skills. The `src/` directory is the source for the CLI. These are NOT installed or active anywhere until explicitly built/installed.
 
 ### 2. Installed tools (plugin distribution, `gp` on PATH)
-These are installed from the repo via `bun run build:plugin`. They are what `/gp:status`, `/gp:plan-slice`, `/gp:implement`, and all other slash commands actually use. They may have **different capabilities** from what's in the repo — we are actively improving the repo versions. **Never edit installed plugin files directly** — those files get overwritten by `bun run build:plugin`.
+These are installed via the goodplan marketplace (backed by the `ian97531/goodplan` GitHub repo). They are what `/gp:status`, `/gp:plan-slice`, `/gp:implement`, and all other slash commands actually use. They may have **different capabilities** from what's in the repo — we are actively improving the repo versions. **Never edit installed plugin files directly** — they are managed by the marketplace and overwritten on plugin updates.
 
 ### 3. This repo's `.goodplan/` directory
 This is managed by the **installed** CLI and skills (#2 above), not the repo source code (#1). It must stay compatible with the installed version. It tracks this repo's own epics, quests, learnings, and architecture.

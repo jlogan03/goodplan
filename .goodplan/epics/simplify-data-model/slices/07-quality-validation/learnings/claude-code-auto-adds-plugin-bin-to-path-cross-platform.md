@@ -1,0 +1,1 @@
+No SessionStart hook needed. bin/gp detects platform via uname and execs the correct binary. Skills use bare gp.
