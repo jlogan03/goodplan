@@ -2,7 +2,7 @@
  * Consolidated quality validation harness — runs the full 7-skill pipeline
  * against a realistic flashcard app fixture and validates quality proxy metrics.
  *
- * Usage: bun tools/dogfood/validate-consolidated.ts [--model <model>] [--max-iterations <n>]
+ * Usage: bun tools/dogfood/validate-consolidated.ts [--model <model>]
  *
  * Generates a realistic flashcard CLI app fixture (TypeScript, Biome, Bun),
  * then runs: init -> create-epic -> plan-slice -> implement -> create-side-quest
@@ -38,17 +38,8 @@ import type { SkillSessionResult } from "./utils";
 
 // ─── CLI Arg Parsing ────────────────────────────────────────
 
-function parseMaxIterations(defaultVal: number): number {
-	const idx = process.argv.indexOf("--max-iterations");
-	if (idx !== -1) {
-		const next = process.argv[idx + 1];
-		if (next && !next.startsWith("--")) {
-			const parsed = Number.parseInt(next, 10);
-			if (!Number.isNaN(parsed) && parsed > 0) return parsed;
-		}
-	}
-	return defaultVal;
-}
+// MAX_ITERATIONS removed — the E2E test runs uncapped to match real user experience.
+// Skills use their own built-in exit criteria (score thresholds, stagnation detection, hard caps).
 
 // ─── Environment ────────────────────────────────────────────
 
@@ -64,7 +55,10 @@ const GP_BIN = join(PLUGIN_DIR, "binaries", platformBinaryDir(), "gp");
 const LOG_FILE = join(GOODPLAN_DIR, "tools/dogfood/validate-consolidated.log");
 const TRANSCRIPT_FILE = join(GOODPLAN_DIR, "tools/dogfood/validate-consolidated-transcript.jsonl");
 const MODEL = parseModel(tierDefault("e2e"));
-const MAX_ITERATIONS = parseMaxIterations(1);
+// No iteration cap — the E2E test should run the full refinement loop as a real user would.
+// Skills have their own built-in exit criteria (score >= 9, stagnation detection, hard cap of 10-12).
+// Individual skill test harnesses (test-plan-slice.ts, etc.) may still use --max-iterations for
+// focused mechanical testing, but the consolidated E2E test must be uncapped.
 
 const EPIC_NAME = "spaced-repetition";
 const EPIC_GOAL =
@@ -519,15 +513,14 @@ async function runSkill(opts: {
 				model: MODEL,
 				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
-				env: createTestEnv(PLUGIN_DIR, { GP_CREATE_EPIC_MAX_ITERATIONS: String(MAX_ITERATIONS) }),
+				env: createTestEnv(PLUGIN_DIR),
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",
 					append: [
 						"You are in an automated test harness. Execute the skill below faithfully.",
-						`Use at most ${MAX_ITERATIONS} refinement iterations for cost control.`,
-						"Do not ask the user to confirm -- proceed automatically through all phases.",
-						"When AskUserQuestion is needed, use it (the harness has a simulated user).",
+						"Use AskUserQuestion for all interactive steps — a simulated user will respond.",
+						"Do not skip interactive phases or confirmation gates. Run the full workflow as a real user would experience it.",
 						"",
 						`# ${opts.skillName} Skill Instructions`,
 						"",
@@ -1324,7 +1317,7 @@ async function main(): Promise<void> {
 
 	logger.log("=== validate-consolidated.ts ===");
 	logger.log(`Model: ${MODEL}`);
-	logger.log(`Max iterations: ${MAX_ITERATIONS}`);
+	logger.log("Max iterations: uncapped (skills use built-in exit criteria)");
 	logger.log(`Timestamp: ${new Date().toISOString()}`);
 
 	// ─── Create Fixture ─────────────────────────────────────
