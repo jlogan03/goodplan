@@ -5,12 +5,10 @@
  * Usage: bun tools/dogfood/test-renames.ts [--model <model>]
  *
  * Tests:
- * 1. Each skill directory exists with a valid SKILL.md
- * 2. Frontmatter has correct name, user-invocable, and requires fields
- * 3. Each skill loads via plugin discovery (appears as /gp:task, /gp:upgrade, /gp:status)
- * 4. Trigger phrases are present in the description
- * 5. Reference files are copied to the correct locations
- * 6. All 12 target skills have user-invocable: true
+ * 1. Each skill directory exists with valid SKILL.md and frontmatter
+ * 2. All 12 target skills have user-invocable: true
+ * 3. No stale name references in renamed skills
+ * 4. Plugin build includes renamed skills
  */
 
 import { execFileSync } from "node:child_process";
@@ -25,7 +23,7 @@ const MODEL = parseModel(tierDefault("structural"));
 // ─── Environment ────────────────────────────────────────────
 
 const GOODPLAN_DIR = join(import.meta.dir, "../..");
-const SKILLS_DIR = resolve(GOODPLAN_DIR, "skills");
+const SKILLS_DIR = resolve(GOODPLAN_DIR, "plugin/skills");
 const LOG_FILE = join(GOODPLAN_DIR, "tools/dogfood/renames-test.log");
 
 const logger = createLogger(LOG_FILE);
@@ -102,13 +100,13 @@ const RENAMED_SKILLS: Array<{
 		name: "upgrade",
 		source: "migrate",
 		triggers: ["upgrade", "migrate", "convert project"],
-		references: ["references/migration-heuristics.md"],
+		references: [],
 	},
 	{
 		name: "status",
 		source: "project-status",
 		triggers: ["status", "where am I", "what's next"],
-		references: ["references/status-logic.md"],
+		references: [],
 	},
 ];
 
@@ -155,26 +153,9 @@ for (const skill of RENAMED_SKILLS) {
 	}
 }
 
-// ─── Test 2: init/references copied from onboard-repo ──────
+// ─── Test 2: All 12 target skills have user-invocable ──────
 
-logger.log("\n[test-renames] Test 2: init/references copied from onboard-repo\n");
-
-const INIT_REFS = [
-	"architecture-extraction.md",
-	"convention-heuristics.md",
-	"expertise-profiling.md",
-	"migration-detection.md",
-	"repo-scanning.md",
-];
-
-for (const ref of INIT_REFS) {
-	const refPath = join(SKILLS_DIR, "init", "references", ref);
-	assert(`init/references/${ref} exists`, existsSync(refPath));
-}
-
-// ─── Test 3: All 12 target skills have user-invocable ──────
-
-logger.log("\n[test-renames] Test 3: All 12 target skills have user-invocable: true\n");
+logger.log("\n[test-renames] Test 2: All 12 target skills have user-invocable: true\n");
 
 const TARGET_SKILLS = [
 	"audit",
@@ -202,9 +183,9 @@ for (const name of TARGET_SKILLS) {
 	assert(`${name}: user-invocable is true`, fm["user-invocable"] === "true", `got "${fm["user-invocable"]}"`);
 }
 
-// ─── Test 4: No stale name references in renamed skills ────
+// ─── Test 3: No stale name references in renamed skills ────
 
-logger.log("\n[test-renames] Test 4: No stale name references in renamed skills\n");
+logger.log("\n[test-renames] Test 3: No stale name references in renamed skills\n");
 
 // task/SKILL.md should not reference "/capture" as a skill invocation (triggers are fine)
 const taskContent = readFileSync(join(SKILLS_DIR, "task", "SKILL.md"), "utf-8");
@@ -228,9 +209,9 @@ assert(
 	!upgradeContent.includes("name: migrate"),
 );
 
-// ─── Test 5: Plugin build includes renamed skills ──────────
+// ─── Test 4: Plugin build includes renamed skills ──────────
 
-logger.log("\n[test-renames] Test 5: Plugin build includes renamed skills\n");
+logger.log("\n[test-renames] Test 4: Plugin build includes renamed skills\n");
 
 try {
 	execFileSync("bun", ["run", "build"], {

@@ -10,9 +10,6 @@
  * 1. /gp:status executes (exercises reference loading)
  * 2. Zero Read tool calls target shared reference paths
  *    (skills/_references/, agents/_references/)
- *
- * Preserved conditional Reads for skill-local references (explore-logic.md,
- * status-logic.md, migration-heuristics.md) are expected and excluded.
  */
 
 import { execFileSync } from "node:child_process";

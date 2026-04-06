@@ -246,6 +246,121 @@ export function checkViolation(toolName: string, input: unknown, violations: str
 	}
 }
 
+// ─── CLI Error Tracking ────────────────────────────────────
+
+export interface CliError {
+	/** The gp command that was attempted (extracted from the Bash command) */
+	command: string;
+	/** The exit code (1=internal, 2=validation, 3=state machine) */
+	exitCode: number;
+	/** The error code if parseable from JSON output (e.g., STATE_INVALID_TRANSITION) */
+	errorCode: string | undefined;
+	/** First 200 chars of the error output */
+	errorMessage: string;
+}
+
+/**
+ * Tracks pending gp commands from Bash tool_use blocks in assistant messages
+ * so we can match them against tool results in subsequent user messages.
+ * Key: tool_use_id, Value: the gp command string
+ */
+const pendingGpCommands = new Map<string, string>();
+
+/**
+ * Scans an assistant message for Bash tool_use blocks containing gp commands.
+ * Records them by tool_use_id for later correlation with results.
+ */
+export function trackGpCommandsFromAssistant(message: SDKMessage): void {
+	if (message.type !== "assistant") return;
+	const assistantMsg = message as { type: "assistant"; message: { content: unknown[] } };
+	if (!Array.isArray(assistantMsg.message?.content)) return;
+
+	for (const block of assistantMsg.message.content) {
+		const b = block as Record<string, unknown>;
+		if (b.type !== "tool_use" || b.name !== "Bash") continue;
+		const input = b.input as Record<string, unknown> | undefined;
+		const command = typeof input?.command === "string" ? input.command : "";
+		const id = typeof b.id === "string" ? b.id : "";
+		if (id && /\bgp\b/.test(command)) {
+			pendingGpCommands.set(id, command);
+		}
+	}
+}
+
+/**
+ * Scans a user message for gp CLI errors in tool results.
+ * User messages carry tool_result content blocks after tool execution.
+ */
+export function extractCliErrors(message: SDKMessage, cliErrors: CliError[]): void {
+	if (message.type !== "user") return;
+	const userMsg = message as SDKUserMessage;
+
+	// The message.message is a MessageParam with content that can be
+	// an array of content blocks or a string
+	const msgParam = userMsg.message;
+	if (typeof msgParam !== "object" || msgParam === null) return;
+	const content = (msgParam as Record<string, unknown>).content;
+	if (!Array.isArray(content)) return;
+
+	for (const block of content) {
+		if (typeof block !== "object" || block === null) continue;
+		const b = block as Record<string, unknown>;
+		if (b.type !== "tool_result") continue;
+
+		const toolUseId = typeof b.tool_use_id === "string" ? b.tool_use_id : "";
+		const resultContent = b.content;
+
+		// Get the original command if we tracked it
+		const originalCommand = pendingGpCommands.get(toolUseId);
+		pendingGpCommands.delete(toolUseId);
+
+		// Only analyze if this was a gp command
+		if (!originalCommand) continue;
+
+		// Extract text from the result content
+		let resultText = "";
+		if (typeof resultContent === "string") {
+			resultText = resultContent;
+		} else if (Array.isArray(resultContent)) {
+			for (const rc of resultContent) {
+				if (typeof rc === "object" && rc !== null && (rc as Record<string, unknown>).type === "text") {
+					resultText += (rc as Record<string, unknown>).text ?? "";
+				}
+			}
+		}
+
+		if (!resultText) continue;
+
+		// Check for non-zero exit code patterns in Bash tool results
+		// The Bash tool typically includes exit code info in the output
+		const exitCodeMatch = resultText.match(/exit code[:\s]+(\d+)/i)
+			?? resultText.match(/exited with (\d+)/i);
+		const exitCode = exitCodeMatch ? Number.parseInt(exitCodeMatch[1], 10) : undefined;
+
+		// Also check for JSON error responses from gp
+		let errorCode: string | undefined;
+		const jsonErrorMatch = resultText.match(/"error"\s*:\s*\{[^}]*"code"\s*:\s*"([^"]+)"/);
+		if (jsonErrorMatch?.[1]) {
+			errorCode = jsonErrorMatch[1];
+		}
+
+		// Record if we found a non-zero exit code OR a JSON error response
+		if ((exitCode !== undefined && exitCode !== 0) || errorCode) {
+			cliErrors.push({
+				command: originalCommand.slice(0, 200),
+				exitCode: exitCode ?? -1,
+				errorCode,
+				errorMessage: resultText.slice(0, 200),
+			});
+		}
+	}
+}
+
+/** Reset pending command tracking between sessions */
+export function resetCliErrorTracking(): void {
+	pendingGpCommands.clear();
+}
+
 // ─── Cost Tracker ───────────────────────────────────────────
 
 export function createCostTracker(): {
@@ -677,6 +792,8 @@ export interface SkillSessionResult {
 	violations: string[];
 	/** Artifact read violations detected at the orchestrator level via `canUseTool`. */
 	artifactReadViolations: string[];
+	/** CLI errors: gp commands that returned non-zero exit codes or error JSON. */
+	cliErrors: CliError[];
 	totalCost: number;
 }
 
@@ -690,7 +807,9 @@ export async function runSkillSession(opts: {
 }): Promise<SkillSessionResult> {
 	const violations: string[] = [];
 	const artifactReadViolations: string[] = [];
+	const cliErrors: CliError[] = [];
 	const costTracker = createCostTracker();
+	resetCliErrorTracking();
 
 	// Compose canUseTool from simulatedUser + violation detection
 	const originalCanUseTool = opts.options.canUseTool;
@@ -738,6 +857,10 @@ export async function runSkillSession(opts: {
 		writeTranscriptEntry(opts.transcriptFile, message);
 		opts.onMessage?.(message);
 
+		// CLI error tracking: record gp commands from assistant, extract errors from results
+		trackGpCommandsFromAssistant(message);
+		extractCliErrors(message, cliErrors);
+
 		if (message.type === "result") {
 			costTracker.add(message.total_cost_usd);
 			resultMessage = message;
@@ -758,6 +881,13 @@ export async function runSkillSession(opts: {
 		}
 	}
 
+	if (cliErrors.length > 0) {
+		console.warn(`[runSkillSession] ${cliErrors.length} CLI error(s) detected:`);
+		for (const e of cliErrors) {
+			console.warn(`  - exit ${e.exitCode}${e.errorCode ? ` (${e.errorCode})` : ""}: ${e.command.slice(0, 100)}`);
+		}
+	}
+
 	// Roll simulated user LLM cost into the session total
 	if (opts.simulatedUser) {
 		costTracker.add(opts.simulatedUser.totalCost());
@@ -767,6 +897,7 @@ export async function runSkillSession(opts: {
 		result: resultMessage,
 		violations,
 		artifactReadViolations,
+		cliErrors,
 		totalCost: costTracker.total(),
 	};
 }
