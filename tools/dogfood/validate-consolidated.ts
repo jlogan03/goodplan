@@ -33,7 +33,7 @@ import {
 	tierDefault,
 	verifyEntityStatus,
 } from "./utils";
-import type { SkillSessionResult } from "./utils";
+import type { CliError, SkillSessionResult } from "./utils";
 
 // ─── CLI Arg Parsing ────────────────────────────────────────
 
@@ -550,6 +550,7 @@ interface PipelineContext {
 	allToolCalls: Array<{ toolName: string; input: unknown }>;
 	allViolations: string[];
 	allArtifactReadViolations: string[];
+	allCliErrors: Array<{ skill: string; error: CliError }>;
 	skillCosts: Array<{ skill: string; cost: number }>;
 }
 
@@ -579,6 +580,7 @@ async function stepInit(ctx: PipelineContext): Promise<boolean> {
 		ctx.allViolations.push(...result.sessionResult.violations);
 		ctx.allArtifactReadViolations.push(...result.sessionResult.artifactReadViolations);
 		ctx.skillCosts.push({ skill: "init", cost: result.sessionResult.totalCost });
+		for (const e of result.sessionResult.cliErrors) ctx.allCliErrors.push({ skill: "init", error: e });
 	}
 
 	// Verify .goodplan/ directory exists — no fallbacks
@@ -619,6 +621,7 @@ async function stepCreateEpic(ctx: PipelineContext): Promise<boolean> {
 		ctx.allViolations.push(...result.sessionResult.violations);
 		ctx.allArtifactReadViolations.push(...result.sessionResult.artifactReadViolations);
 		ctx.skillCosts.push({ skill: "create-epic", cost: result.sessionResult.totalCost });
+		for (const e of result.sessionResult.cliErrors) ctx.allCliErrors.push({ skill: "create-epic", error: e });
 	}
 
 	// Verify epic reached slices-refined — the terminal state for create-epic.
@@ -675,6 +678,7 @@ async function stepActivateEpic(ctx: PipelineContext): Promise<boolean> {
 		ctx.allViolations.push(...result.sessionResult.violations);
 		ctx.allArtifactReadViolations.push(...result.sessionResult.artifactReadViolations);
 		ctx.skillCosts.push({ skill: "start-epic", cost: result.sessionResult.totalCost });
+		for (const e of result.sessionResult.cliErrors) ctx.allCliErrors.push({ skill: "start-epic", error: e });
 	}
 
 	const postStatus = verifyEntityStatus("epic", EPIC_NAME, "activated", {
@@ -736,6 +740,7 @@ async function stepPlanSlice(ctx: PipelineContext): Promise<boolean> {
 		ctx.allViolations.push(...result.sessionResult.violations);
 		ctx.allArtifactReadViolations.push(...result.sessionResult.artifactReadViolations);
 		ctx.skillCosts.push({ skill: "plan-slice", cost: result.sessionResult.totalCost });
+		for (const e of result.sessionResult.cliErrors) ctx.allCliErrors.push({ skill: "plan-slice", error: e });
 	}
 
 	// Verify plan file exists
@@ -789,6 +794,7 @@ async function stepImplement(ctx: PipelineContext): Promise<boolean> {
 		ctx.allViolations.push(...result.sessionResult.violations);
 		ctx.allArtifactReadViolations.push(...result.sessionResult.artifactReadViolations);
 		ctx.skillCosts.push({ skill: "implement", cost: result.sessionResult.totalCost });
+		for (const e of result.sessionResult.cliErrors) ctx.allCliErrors.push({ skill: "implement", error: e });
 	}
 
 	if (result.success) {
@@ -827,6 +833,7 @@ async function stepCreateSideQuest(ctx: PipelineContext): Promise<boolean> {
 		ctx.allViolations.push(...result.sessionResult.violations);
 		ctx.allArtifactReadViolations.push(...result.sessionResult.artifactReadViolations);
 		ctx.skillCosts.push({ skill: "create-side-quest", cost: result.sessionResult.totalCost });
+		for (const e of result.sessionResult.cliErrors) ctx.allCliErrors.push({ skill: "create-side-quest", error: e });
 	}
 
 	if (result.success) {
@@ -863,6 +870,7 @@ async function stepAudit(ctx: PipelineContext): Promise<boolean> {
 		ctx.allViolations.push(...result.sessionResult.violations);
 		ctx.allArtifactReadViolations.push(...result.sessionResult.artifactReadViolations);
 		ctx.skillCosts.push({ skill: "audit", cost: result.sessionResult.totalCost });
+		for (const e of result.sessionResult.cliErrors) ctx.allCliErrors.push({ skill: "audit", error: e });
 	}
 
 	if (result.success) {
@@ -905,6 +913,7 @@ async function stepCompleteEpic(ctx: PipelineContext): Promise<boolean> {
 		ctx.allViolations.push(...result.sessionResult.violations);
 		ctx.allArtifactReadViolations.push(...result.sessionResult.artifactReadViolations);
 		ctx.skillCosts.push({ skill: "complete-epic", cost: result.sessionResult.totalCost });
+		for (const e of result.sessionResult.cliErrors) ctx.allCliErrors.push({ skill: "complete-epic", error: e });
 	}
 
 	if (result.success) {
@@ -1216,6 +1225,35 @@ function checkLearningsMetrics(fixtureDir: string): MetricResult {
 	};
 }
 
+function checkCliErrorMetrics(
+	cliErrors: Array<{ skill: string; error: CliError }>,
+): MetricResult {
+	// Tests whether skills are correctly sequencing CLI commands.
+	// State machine errors (exit 3) indicate invalid transitions — the skill
+	// tried to advance to a state the CLI didn't expect. These are the strongest
+	// signal of skill/CLI misalignment. Validation errors (exit 2) indicate
+	// malformed payloads. Both should be zero in a well-functioning pipeline.
+	//
+	// Internal errors (exit 1) may be environmental and are not penalized.
+	const stateMachineErrors = cliErrors.filter((e) => e.error.exitCode === 3);
+	const validationErrors = cliErrors.filter((e) => e.error.exitCode === 2);
+	const actionableErrors = [...stateMachineErrors, ...validationErrors];
+
+	const passed = actionableErrors.length === 0;
+
+	const checks = [
+		`total CLI errors: ${cliErrors.length}`,
+		`state machine errors (exit 3): ${stateMachineErrors.length}`,
+		`validation errors (exit 2): ${validationErrors.length}`,
+	];
+
+	return {
+		name: "CLI Correctness",
+		passed,
+		detail: checks.join(", "),
+	};
+}
+
 function checkOrchestratorDiscipline(artifactReadViolations: string[]): MetricResult {
 	const ok = artifactReadViolations.length === 0;
 	return {
@@ -1277,6 +1315,7 @@ async function main(): Promise<void> {
 		allToolCalls: [],
 		allViolations: [],
 		allArtifactReadViolations: [],
+		allCliErrors: [],
 		skillCosts: [],
 	};
 
@@ -1320,6 +1359,7 @@ async function main(): Promise<void> {
 		checkImplementationMetrics(fixtureDir),
 		checkLearningsMetrics(fixtureDir),
 		checkOrchestratorDiscipline(ctx.allArtifactReadViolations),
+		checkCliErrorMetrics(ctx.allCliErrors),
 	];
 
 	for (const metric of metrics) {
@@ -1344,6 +1384,49 @@ async function main(): Promise<void> {
 		logger.log(
 			`  WARNING: Total cost $${totalCost.toFixed(2)} exceeds threshold $${COST_THRESHOLD_USD} -- possible context leak`,
 		);
+	}
+
+	// ─── CLI Error Summary ──────────────────────────────────
+
+	logger.log("\n========================================");
+	logger.log("CLI ERRORS");
+	logger.log("========================================\n");
+
+	if (ctx.allCliErrors.length === 0) {
+		logger.log("  No CLI errors detected");
+	} else {
+		// Group by skill
+		const errorsBySkill = new Map<string, Array<CliError>>();
+		for (const { skill, error } of ctx.allCliErrors) {
+			const existing = errorsBySkill.get(skill) ?? [];
+			existing.push(error);
+			errorsBySkill.set(skill, existing);
+		}
+
+		for (const [skill, errors] of errorsBySkill) {
+			logger.log(`  ${skill} (${errors.length} error${errors.length > 1 ? "s" : ""}):`);
+			for (const e of errors) {
+				const code = e.errorCode ? ` [${e.errorCode}]` : "";
+				logger.log(`    exit ${e.exitCode}${code}: ${e.command.slice(0, 100)}`);
+				if (e.errorMessage) {
+					logger.log(`      ${e.errorMessage.slice(0, 150)}`);
+				}
+			}
+		}
+
+		// Breakdown by error type
+		const stateMachineErrors = ctx.allCliErrors.filter((e) => e.error.exitCode === 3);
+		const validationErrors = ctx.allCliErrors.filter((e) => e.error.exitCode === 2);
+		const internalErrors = ctx.allCliErrors.filter((e) => e.error.exitCode === 1);
+		const otherErrors = ctx.allCliErrors.filter(
+			(e) => e.error.exitCode !== 1 && e.error.exitCode !== 2 && e.error.exitCode !== 3,
+		);
+
+		logger.log(`\n  Summary: ${ctx.allCliErrors.length} total`);
+		if (stateMachineErrors.length > 0) logger.log(`    State machine errors (exit 3): ${stateMachineErrors.length}`);
+		if (validationErrors.length > 0) logger.log(`    Validation errors (exit 2): ${validationErrors.length}`);
+		if (internalErrors.length > 0) logger.log(`    Internal errors (exit 1): ${internalErrors.length}`);
+		if (otherErrors.length > 0) logger.log(`    Other errors: ${otherErrors.length}`);
 	}
 
 	// ─── Violation Summary ──────────────────────────────────
@@ -1377,8 +1460,16 @@ async function main(): Promise<void> {
 		logger.log(`  ${m.passed ? "PASS" : "FAIL"}: ${m.name}`);
 	}
 
+	logger.log("\nCost per skill:");
+	for (const entry of ctx.skillCosts) {
+		const errors = ctx.allCliErrors.filter((e) => e.skill === entry.skill);
+		const errorSuffix = errors.length > 0 ? ` (${errors.length} CLI error${errors.length > 1 ? "s" : ""})` : "";
+		logger.log(`  ${entry.skill}: $${entry.cost.toFixed(4)}${errorSuffix}`);
+	}
+
 	logger.log(`\nElapsed: ${overallElapsed}s`);
 	logger.log(`Total cost: $${totalCost.toFixed(4)}`);
+	logger.log(`CLI errors: ${ctx.allCliErrors.length} (${ctx.allCliErrors.filter((e) => e.error.exitCode === 3).length} state machine, ${ctx.allCliErrors.filter((e) => e.error.exitCode === 2).length} validation)`);
 	logger.log(`Pipeline: ${allPipelinePassed ? "ALL PASSED" : "SOME FAILED"}`);
 	logger.log(`Metrics: ${allMetricsPassed ? "ALL PASSED" : "SOME FAILED"}`);
 	logger.log(`Overall: ${allPipelinePassed && allMetricsPassed ? "SUCCESS" : "NEEDS ATTENTION"}`);
