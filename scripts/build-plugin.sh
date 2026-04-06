@@ -42,25 +42,17 @@ cat > "$PLUGIN_DIR/.claude-plugin/plugin.json" <<MANIFEST
 }
 MANIFEST
 
-# Copy skills (rsync matches install-skills.sh convention)
-rsync -a --exclude '.DS_Store' "$REPO_ROOT/skills/" "$PLUGIN_DIR/skills/"
-
-# Copy agent definitions
-if [ -d "$REPO_ROOT/agents/" ]; then
-  mkdir -p "$PLUGIN_DIR/agents"
-  rsync -a --exclude '.DS_Store' "$REPO_ROOT/agents/" "$PLUGIN_DIR/agents/"
-fi
+# Copy plugin source files — all plugin components live under plugin/
+rsync -a --exclude '.DS_Store' "$REPO_ROOT/plugin/skills/" "$PLUGIN_DIR/skills/"
+rsync -a --exclude '.DS_Store' "$REPO_ROOT/plugin/agents/" "$PLUGIN_DIR/agents/"
 
 # Copy hook scripts and configuration
-cp "$REPO_ROOT/plugin-hooks/"*.sh "$REPO_ROOT/plugin-hooks/"*.json "$PLUGIN_DIR/hooks/"
+cp "$REPO_ROOT/plugin/hooks/"*.sh "$REPO_ROOT/plugin/hooks/"*.json "$PLUGIN_DIR/hooks/"
 chmod +x "$PLUGIN_DIR/hooks/"*.sh
 
 # Copy cross-platform bin/gp launcher
 cp "$REPO_ROOT/plugin/bin/gp" "$PLUGIN_DIR/bin/gp"
 chmod +x "$PLUGIN_DIR/bin/gp"
-
-# Copy plugin CLAUDE.md template
-cp "$REPO_ROOT/plugin/CLAUDE.md" "$PLUGIN_DIR/CLAUDE.md"
 
 # Add gp: namespace prefix to dist skill names (source unchanged).
 # Plugin name is "goodplan" (marketing name) but skills use "gp:" prefix (CLI shorthand).

@@ -4,8 +4,8 @@
 
 This repo builds the goodplan workflow system. It contains the source code for both the CLI and skills, AND it uses the installed version of those same tools to manage its own `.goodplan/` state. These are three distinct things:
 
-### 1. Repo source code (`skills/`, `src/`)
-This is what we are actively developing. **"Update a skill" always means editing files here.** The `skills/` directory is the **source of truth** for all goodplan skills. The `src/` directory is the source for the CLI. These are NOT installed or active anywhere until explicitly built/installed.
+### 1. Repo source code (`plugin/`, `src/`)
+This is what we are actively developing. **"Update a skill" always means editing files here.** The `plugin/` directory is the **source of truth** for all goodplan skills, agents, and hooks. The `src/` directory is the source for the CLI. These are NOT installed or active anywhere until explicitly built/installed.
 
 ### 2. Installed tools (plugin distribution, `gp` on PATH)
 These are installed via the goodplan marketplace (backed by the `ian97531/goodplan` GitHub repo). They are what `/gp:status`, `/gp:plan-slice`, `/gp:implement`, and all other slash commands actually use. They may have **different capabilities** from what's in the repo — we are actively improving the repo versions. **Never edit installed plugin files directly** — they are managed by the marketplace and overwritten on plugin updates.
@@ -17,7 +17,7 @@ This is managed by the **installed** CLI and skills (#2 above), not the repo sou
 
 | Action | Correct | Wrong |
 |---|---|---|
-| Edit a skill | Edit `skills/<name>/SKILL.md` in the repo | Edit `~/.claude/skills/<name>/SKILL.md` |
+| Edit a skill | Edit `plugin/skills/<name>/SKILL.md` in the repo | Edit `~/.claude/skills/<name>/SKILL.md` |
 | Run a workflow command | `gp status --json` (installed CLI) | `./gp status --json` (local build) |
 | Mutate `.goodplan/` state | `gp quest:complete ...` (installed CLI) | Directly edit `.goodplan/quests/*/quest.json` |
 | Test CLI changes | Run `./gp` against a **fixture repo** in `/tmp` | Run `./gp` against this repo's `.goodplan/` |
