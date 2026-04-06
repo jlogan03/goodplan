@@ -1,11 +1,15 @@
 ---
 name: create-side-quest
-description: Create a side quest through a 4-phase pipeline: goal capture, exploration, plan Q&A, plan draft + refinement. Orchestrates interactive and autonomous phases with sub-agents. Common triggers: 'side quest', 'new quest', 'quick task that needs a plan', 'create quest', 'start a quest'.
+description: This skill should be used when the user wants to create a side quest for follow-up work, tech debt, or out-of-scope improvements. Guides through goal capture, exploration, and plan creation. Common triggers: 'side quest', 'new quest', 'quick task that needs a plan', 'create quest', 'start a quest'.
 user-invocable: true
 requires: gp >= 1.0.0
 ---
 
 # Create-Side-Quest Pipeline
+
+## Shared References
+
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/cli-interaction.md
 
 ## Context Discipline
 
@@ -85,7 +89,7 @@ Write the goal summary to `$TMPDIR/goal.md` using the Write tool.
 Create the quest via CLI:
 
 ```bash
-echo '{"name":"$QUEST_NAME","goal":"<goal-summary>"}' | $GP quest:create --json
+echo "{\"name\":\"$QUEST_NAME\",\"goal\":\"<goal-summary>\"}" | $GP quest:create --json
 ```
 
 Verify the response includes `entity` and `newStatus: "created"`.
@@ -108,9 +112,7 @@ Follow the shared explore phase pattern defined in explore-phase-pattern.md (aut
 
 ## Step 5 — Phase 3: Interactive Plan Q&A
 
-@${CLAUDE_PLUGIN_ROOT}/skills/_references/plan-pipeline.md
-
-Follow **Phase A** (Interactive Plan Q&A) from plan-pipeline.md (auto-included above) with:
+Follow **Phase A** (Interactive Plan Q&A) from plan-pipeline.md (auto-included below in Step 6) with:
 - `{ENTITY_TYPE}` = `quest`
 - `{ENTITY_NAME}` = `$QUEST_NAME`
 - `{ENTITY_CLI_FLAG}` = `--quest`
@@ -159,7 +161,7 @@ Parameters for the iteration-loop.md shared reference (auto-included via plan-pi
 
 | Parameter | Value |
 |---|---|
-| **max_iterations** | 10 (override via `$GP_CREATE_SIDE_QUEST_MAX_ITERATIONS` env var for test harness cost control) |
+| **max_iterations** | 10 (override via `$GP_CREATE_SIDE_QUEST_MAX_ITERATIONS` env var for test harness cost control). Higher than create-epic's 3 because quest plans are the sole planning artifact (no separate architecture/slices refinement). The stagnation_window=2 and reduction_exit_threshold=2 typically exit well before 10. |
 | **override_flag** | `--override` — appended to submit command on stagnation/reduction/cap exits |
 | **run_dir_mode** | `temp` |
 | **submit_command** | `echo '{"scores":{REVIEWER_SCORES_JSON}}' \| $GP submit-refinement --quest $QUEST_NAME --json` |

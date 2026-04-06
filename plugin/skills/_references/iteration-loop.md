@@ -137,7 +137,7 @@ The orchestrator (not reviewers, not the synthesis agent) decides when to exit. 
 | `run_dir_mode` | `temp` (ephemeral working directory) or `persistent` (git-committed run directory) | `temp` |
 | `submit_command` | Skill-specific CLI command to submit refinement results. `{REVIEWER_SCORES_JSON}` is a `Record<string, number>` mapping reviewer names to their integer scores from this round (e.g., `{"holistic":8,"software-architecture":9}`) | Skill-specific |
 | `resume_detection` | Whether to check for incomplete run directories and offer resume. Enable when the run directory persists across sessions (deterministic temp paths, persistent mode). | Optional |
-| `stagnation_window` | Consecutive rounds with identical net score before exiting | 2 |
+| `stagnation_window` | Consecutive rounds with unchanged net score that triggers exit. With default value 2: exits after 2 consecutive unchanged rounds (i.e., 3 total rounds with the same score — original + 2 unchanged). | 2 |
 | `reduction_exit_threshold` | Total rounds (any position, not necessarily consecutive) with net score decrease before exiting — counter never resets on improvement | 2 |
 | `review_context` | Value injected into reviewer prompts (e.g., `"implementation-plan"`, `"architecture-proposal"`, `"code-implementation"`) | Skill-specific |
 

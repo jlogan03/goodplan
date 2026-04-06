@@ -146,7 +146,9 @@ Include any triggered conditions in your return JSON.
   "summary": "Epic completion partial: <what's missing and why>",
   "filesWritten": ["..."],
   "learnings": [],
-  "recommendations": ["..."],
+  "recommendations": [
+    { "type": "...", "description": "...", "priority": "..." }
+  ],
   "verificationAssessments": [],
   "triggeredConditions": []
 }
@@ -160,6 +162,7 @@ Include any triggered conditions in your return JSON.
   "filesWritten": [],
   "learnings": [],
   "recommendations": [],
+  "verificationAssessments": [],
   "triggeredConditions": []
 }
 ```

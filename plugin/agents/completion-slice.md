@@ -124,7 +124,9 @@ Include any triggered conditions in your return JSON.
   "filesWritten": ["..."],
   "learnings": [],
   "architectureDelta": [],
-  "recommendations": ["..."],
+  "recommendations": [
+    { "type": "...", "description": "...", "priority": "..." }
+  ],
   "triggeredConditions": []
 }
 ```

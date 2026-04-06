@@ -17,14 +17,20 @@ cwd = d.get('cwd', '')
 # Check for .goodplan-dev sentinel — skip warning in dev repos
 if os.path.isfile(os.path.join(cwd, '.goodplan-dev')):
     sys.exit(0)
-# Check if command references .goodplan/
+# Check if command writes to .goodplan/ (not just reads)
+# Only warn on write-like operations, not reads (cat, grep, ls, stat, head, tail, jq, etc.)
 if '.goodplan/' in cmd:
-    print(json.dumps({
-        'hookSpecificOutput': {
-            'hookEventName': 'PreToolUse',
-            'additionalContext': 'This command references .goodplan/ files. State files (.json/.jsonl) are managed by the gp CLI -- direct reads are fine, but avoid direct writes.'
-        }
-    }))
+    read_only_patterns = ['cat ', 'grep ', 'rg ', 'ls ', 'stat ', 'head ', 'tail ', 'wc ', 'file ', 'diff ', 'find ', 'less ', 'more ', 'bat ']
+    stripped = cmd.strip()
+    # Check both start-of-command and subshell/pipe patterns like $(cat .goodplan/...)
+    is_read_only = any(stripped.startswith(p) for p in read_only_patterns) or any('$(' + p.strip() for p in read_only_patterns if ('$(' + p.strip()) in cmd)
+    if not is_read_only:
+        print(json.dumps({
+            'hookSpecificOutput': {
+                'hookEventName': 'PreToolUse',
+                'additionalContext': 'This command references .goodplan/ files. State files (.json/.jsonl) and learnings (.md in learnings/) are managed by the gp CLI -- direct reads are fine, but avoid direct writes.'
+            }
+        }))
 " || true
 
 exit 0

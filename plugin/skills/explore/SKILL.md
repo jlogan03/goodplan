@@ -1,6 +1,6 @@
 ---
 name: explore
-description: Runs an iterative research/brainstorm/prototype loop scoped to an epic, a slice, or a side quest. Invoked when the user needs to investigate unknowns, explore options, or try approaches before committing to a plan or architecture. When an active epic exists, uses the epic's research/, brainstorm/, and prototypes/ directories. Common triggers: 'I need to research X', 'let's brainstorm', 'what are my options for...', 'let's explore', 'what should I use for...', 'compare X vs Y', 'help me decide between...', 'I'm not sure which approach...', 'skip exploration'.
+description: This skill should be used when the user needs to research, brainstorm, or prototype before committing to a plan or architecture. Runs an iterative exploration loop scoped to a project, epic, slice, or quest. When an active epic exists, uses the epic's research/, brainstorm/, and prototypes/ directories. Common triggers: 'I need to research X', 'let's brainstorm', 'what are my options for...', 'let's explore', 'what should I use for...', 'compare X vs Y', 'help me decide between...', 'I'm not sure which approach...', 'skip exploration'.
 user-invocable: true
 requires: gp >= 1.0.0
 ---
@@ -48,7 +48,7 @@ If exactly one match, use it. If multiple, list them and ask the user to pick. I
 Query current project state for scope resolution:
 
 ```bash
-gp status --json
+$GP status --json
 ```
 
 Determine scope using resolution order (check fields in the status response):
@@ -109,7 +109,7 @@ If the user explicitly requests to skip exploration (e.g., replies "skip", "I al
 3. **For epic scope**: Complete the exploration phase via CLI. The `submit-explore` command handles both skip (from `created` state — without ever calling `epic:explore`) and normal completion (from `exploring`). The state machine guard accepts both statuses: `["created", "exploring"]`.
 
    ```bash
-   stdin: "" | gp submit-explore --epic <name> --json
+   stdin: "" | $GP submit-explore --epic <name> --json
    ```
 
    This transitions the epic to `explored` status and records the activity.
@@ -117,7 +117,7 @@ If the user explicitly requests to skip exploration (e.g., replies "skip", "I al
 4. **For quest scope**: Same as epic — complete the exploration phase via CLI:
 
    ```bash
-   stdin: "" | gp submit-explore --quest <name> --json
+   stdin: "" | $GP submit-explore --quest <name> --json
    ```
 
 5. **For non-epic/non-quest scopes** (project, slice): Leave the `explore-skipped.md` artifact in place as the record — no CLI mutation is needed.
@@ -158,7 +158,7 @@ During any mode (Research, Brainstorm, Prototype), if a durable decision emerges
 Create decisions via CLI — construct the payload from user responses and pipe to:
 
 ```bash
-echo '{"id":"<kebab-case-id>","domain":"<topic-area>","title":"<decision-title>","summary":"<brief-summary>","reconsiderWhen":["<condition>"]}' | gp decision:create --json
+echo '{"id":"<kebab-case-id>","domain":"<topic-area>","title":"<decision-title>","summary":"<brief-summary>","reconsiderWhen":["<condition>"]}' | $GP decision:create --json
 ```
 
 The `id` is derived from kebab-casing the title, `domain` from the topic area. Include `reconsiderWhen` if the decision has known conditions that would invalidate it (per decisions-format.md). The CLI creates the metadata entry.
@@ -208,7 +208,7 @@ Reflect on the conversation: did it reveal new information about the user's expe
 If the exploration was not already begun via `epic:explore` in this session, begin it now (this may already have been done if the user started exploration explicitly):
 
 ```bash
-stdin: "" | gp epic:explore --epic <name> --json
+stdin: "" | $GP epic:explore --epic <name> --json
 ```
 
 If this returns `STATE_INVALID_TRANSITION` (exit 3), the epic is already past the `created` state — check `gp epic:show --epic <name> --json` for current status and proceed.
@@ -216,7 +216,7 @@ If this returns `STATE_INVALID_TRANSITION` (exit 3), the epic is already past th
 **CRITICAL — Do this BEFORE the Done Summary.** Complete the exploration phase:
 
 ```bash
-stdin: "" | gp submit-explore --epic <name> --json
+stdin: "" | $GP submit-explore --epic <name> --json
 ```
 
 This transitions the epic to `explored` and records the activity. If this step is skipped, the epic will be stuck in `exploring` and downstream skills cannot proceed. The skill writes `explore-complete.md` (Step 5); this command transitions state only.
@@ -226,13 +226,13 @@ This transitions the epic to `explored` and records the activity. If this step i
 The CLI supports quest-scoped exploration transitions (same pattern as epic):
 
 ```bash
-stdin: "" | gp quest:explore --quest <name> --json
+stdin: "" | $GP quest:explore --quest <name> --json
 ```
 
 If this returns `STATE_INVALID_TRANSITION` (exit 3), the quest is already past `created` — check `gp quest:show --quest <name> --json` for current status and proceed.
 
 ```bash
-stdin: "" | gp submit-explore --quest <name> --json
+stdin: "" | $GP submit-explore --quest <name> --json
 ```
 
 This transitions the quest to `explored` and records the activity.

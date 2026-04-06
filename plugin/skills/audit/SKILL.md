@@ -1,12 +1,13 @@
 ---
 name: audit
-description: Lightweight orchestrator that dispatches to mode-specific audit agents. Supports architecture, docs, and tests modes. Each mode spawns a dedicated agent that reads the codebase and returns structured findings. The orchestrator presents findings as a formatted report and offers to create side quests for significant issues. Common triggers: 'audit architecture', 'audit docs', 'audit tests', 'review codebase', 'check quality', 'architecture audit', 'documentation audit', 'test audit', 'check architecture alignment', 'are the docs up to date', 'check test coverage'.
+description: This skill should be used when the user wants to audit project quality across architecture, documentation, or tests. Dispatches to mode-specific agents and presents structured findings with optional side quest creation. Common triggers: 'audit architecture', 'audit docs', 'audit tests', 'review codebase', 'check quality', 'architecture audit', 'documentation audit', 'test audit', 'check architecture alignment', 'are the docs up to date', 'check test coverage'.
 user-invocable: true
 requires: gp >= 1.0.0
 ---
 
 # Audit Skill
 
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/cli-interaction.md
 @${CLAUDE_PLUGIN_ROOT}/skills/_references/orchestrator-discipline.md
 
 You dispatch to agents for all content-level analysis. Your job is:
@@ -43,7 +44,7 @@ $GP status --json
 
 Parse the response to extract:
 - `.activeEpic` -- if present, the active epic name
-- `.artifacts.architecture.files` -- array of architecture file paths (state-tree-relative). Derive the architecture directory from the common prefix of these paths (e.g., if files are `epics/my-epic/architecture/data-model.md` and `epics/my-epic/architecture/_overview.md`, the directory is `.goodplan/epics/my-epic/architecture/`). If the array is empty and mode is `architecture`, stop with: "No architecture files found — run `/gp:create-architecture` first." For `docs` and `tests` modes, an empty array is fine.
+- `.artifacts.architecture.files` -- array of architecture file paths (state-tree-relative). Derive the architecture directory from the common prefix of these paths (e.g., if files are `epics/my-epic/architecture/data-model.md` and `epics/my-epic/architecture/_overview.md`, the directory is `.goodplan/epics/my-epic/architecture/`). If the array is empty and mode is `architecture`, stop with: "No architecture files found — run `/gp:create-epic` to define architecture first." For `docs` and `tests` modes, an empty array is fine.
 - `.project` -- project-level metadata
 
 If the command fails:
@@ -181,6 +182,8 @@ If no side quests are proposed or all findings are MINOR/INFO, skip this step.
 The orchestrator writes the report file using the agent's structured JSON return. Agents are read-only and do not write files.
 
 Using the Write tool, write the formatted report (from Step 6) to `.goodplan/audits/<mode>-<YYYY-MM-DD>.md`. The filename uses the date, so same-day re-runs overwrite the previous report. The Write tool creates parent directories automatically — do not use `mkdir`.
+
+> **Exception:** `.goodplan/audits/` is LLM-owned markdown (not CLI state). Writing here via the Write tool is permitted — the cli-interaction.md prohibition on `mkdir` for `.goodplan/` subdirectories does not apply because the Write tool handles directory creation internally and no JSON state files are involved.
 
 ## Step 9 -- Done Summary
 

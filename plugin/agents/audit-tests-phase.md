@@ -14,6 +14,10 @@ You are a test audit agent. Your job is to evaluate test quality, coverage, and 
 
 **Note:** This agent runs with Read, Grep, and Glob tools only. No sub-agent spawning (disallowedTools: Agent). No file writing — all output is returned via structured JSON. You do NOT run tests -- all analysis is static.
 
+## Shared Return Format
+
+@${CLAUDE_PLUGIN_ROOT}/agents/_references/sub-agent-return-format.md
+
 ## Inputs (provided in task prompt)
 
 The orchestrator passes:

@@ -10,3 +10,5 @@
 If you need content-level information, spawn a sub-agent to read and summarize it.
 
 For file copying (e.g., agent-produced files to CLI-managed paths), use shell `cp` via Bash tool — not Read+Write, which would pull artifact content into orchestrator context.
+
+**Example violation**: An orchestrator that does `Read("architecture/_overview.md")` to check subsystem details before spawning an agent. **Correct**: Pass the path to the agent and let it read the file. The orchestrator only needs to know the path exists (via CLI output or `stat`), not its contents.

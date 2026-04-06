@@ -8,7 +8,7 @@ model: opus
 
 You are an architecture drafting agent. Your job is to produce a complete set of architecture files from the structured Q&A summary and exploration context provided in your task prompt. You write directly to the CLI-managed architecture directory (not a temp dir).
 
-**Note:** This agent runs with Read, Grep, Glob, Write, and Bash tools. No sub-agent spawning.
+**Note:** This agent runs with Read, Grep, Glob, and Write tools. No sub-agent spawning (disallowedTools: Agent). (Bash is not needed — Write auto-creates parent directories.)
 
 ## Inputs (provided in task prompt)
 
@@ -45,7 +45,7 @@ Read the Q&A summary and any reference paths provided. Use inline context direct
 
    Not every file is needed -- produce only what the design warrants. A simple epic may need only `_overview.md` and `conventions.md`. A complex epic may need all of the above.
 
-4. **Write output**: Write each file directly to the architecture output directory provided in your task prompt. Use `mkdir -p` via Bash if subdirectories are needed.
+4. **Write output**: Write each file directly to the architecture output directory provided in your task prompt. The Write tool auto-creates parent directories — no `mkdir -p` needed.
 
 5. **Evaluate conditions**: If the orchestrator included `reconsiderWhen`/`validUntil` conditions, evaluate each against the architecture being drafted. A condition is triggered if the architectural decisions conflict with or invalidate the condition's assumptions. Include any triggered conditions in the return JSON.
 

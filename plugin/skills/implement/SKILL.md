@@ -1,6 +1,6 @@
 ---
 name: implement
-description: Implement a plan phase-by-phase with review loops, then complete the slice. Autonomous pipeline: implementation, code review, slice completion. Common triggers: 'implement', 'execute plan', 'build slice', 'complete slice', 'implement plan', 'run implementation', 'start implementing'.
+description: This skill should be used when the user wants to implement a refined plan. Executes plan phases autonomously with code review loops, then completes the slice. Common triggers: 'implement', 'execute plan', 'build slice', 'complete slice', 'implement plan', 'run implementation', 'start implementing'.
 user-invocable: true
 requires: gp >= 1.0.0
 ---
@@ -8,6 +8,10 @@ requires: gp >= 1.0.0
 # Implement Pipeline
 
 **This is a fully autonomous pipeline. There are no interactive phases.** All phases run without user input unless an exceptional condition is surfaced (unexpected RED-check pass, agent failure).
+
+## Shared References
+
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/cli-interaction.md
 
 ## Context Discipline
 
@@ -42,7 +46,17 @@ Accept a slice name as argument, or auto-detect:
    - If ambiguous, use AskUserQuestion to let the user choose.
 3. If no suitable slice found, stop: "No slice in `plan-refined` or `implementing` status found. Create and refine a plan first."
 
-For quests: accept a quest name argument or check `.activeQuest` from `$GP status --json`. Quest handling follows the same pattern — substitute `quest` for `slice` in all subsequent CLI commands, with one exception: `submit-implementation --phase N` is slice-only. For quests, skip per-phase tracking in Step 5.8 (the CLI rejects `--phase` with `--quest`).
+For quests: accept a quest name argument or check `.activeQuest` from `$GP status --json`. Quest handling follows the same pattern with these CLI command substitutions:
+
+| Slice Command | Quest Equivalent |
+|---|---|
+| `slice:show --slice NAME` | `quest:show --quest NAME` |
+| `slice:implement --slice NAME` | `quest:implement --quest NAME` |
+| `submit-implementation --slice NAME --phase N` | `submit-implementation --quest NAME` (no `--phase` — per-phase tracking is slice-only) |
+| `submit-implementation --slice NAME` (final) | `submit-implementation --quest NAME` |
+| `slice:complete --slice NAME` | `quest:complete --quest NAME` |
+
+Skip per-phase tracking in Step 5.8 for quests (the CLI rejects `--phase` with `--quest`).
 
 ## Step 2 — State Transition and Re-Entry
 
@@ -156,7 +170,7 @@ Initialize per-phase tracking state:
 
 ### 5.1. Spawn Implement-Phase Agent
 
-Spawn `implement-phase` with: slice name, phase index/name/path, iteration count, plan slug, scope directory, architecture overview path, temp directory, merged feedback path (if iteration > 0). The agent runs RED checks (should fail before implementation), implements, then runs GREEN checks (should pass after).
+Spawn `implement-phase` (model: opus) with: slice name, phase index/name/path, iteration count, plan slug, scope directory, architecture overview path, temp directory, merged feedback path (if iteration > 0). Tools: Read, Grep, Glob, Write, Bash, WebSearch. No Agent tool. The agent runs RED checks (should fail before implementation), implements, then runs GREEN checks (should pass after).
 
 Expected return JSON: `{ status, summary, filesWritten, redGreenResults: { passed, details } }`
 
@@ -173,7 +187,7 @@ Parse the return JSON. Check `status`:
 
 ### 5.3. Check for Unexpected RED Passes
 
-Called immediately after each implement-phase return. If `redGreenResults.passed` is `false` and `redGreenResults.details` mentions unexpected passes, surface to user via AskUserQuestion:
+Called immediately after each implement-phase return. If `redGreenResults.hasUnexpectedPass` is `true`, surface to user via AskUserQuestion:
 
 "RED checks reported unexpected behavior:
 {redGreenResults.details}
@@ -270,7 +284,7 @@ Load active conditions per cli-interaction.md Conditions Loading section, filter
 
 ### 6.3. Spawn Completion-Slice Agent
 
-Spawn `completion-slice` with: slice path, plan path, changed files list, architecture overview path, epic architecture path (if applicable), decisions/learnings with conditions (if any). Agent synthesizes learnings, reviews architecture delta, proposes side quests. Writes `completion/learnings.md`, `completion/architecture-delta.md`, `completion/side-quest-proposals.md`, and `completion/health-update.md`.
+Spawn `completion-slice` (model: opus, tools: Read/Grep/Glob/Write, no Agent) with: slice path, plan path, changed files list, architecture overview path, epic architecture path (if applicable), decisions/learnings with conditions (if any). Agent synthesizes learnings, reviews architecture delta, proposes side quests. Writes `completion/learnings.md`, `completion/architecture-delta.md`, `completion/side-quest-proposals.md`, and `completion/health-update.md`.
 
 Expected return JSON: `{ status, summary, filesWritten, learnings: [{ category, summary, detail, tags, rollupTo }], architectureDelta: [{ subsystem, type, description }], recommendations: [{ type, description }], triggeredConditions: [{ type, id, condition, reason }] }`
 
@@ -318,7 +332,7 @@ Parameters for the iteration-loop.md shared reference (auto-included in Step 5.4
 | **max_iterations** | 12 (override via `$GP_IMPLEMENT_MAX_ITERATIONS` env var for test harness cost control) |
 | **early_exit_threshold** | `{ min_iterations: 5, score: 8 }` — exit early if iteration >= 5 AND all scores >= 8 AND no CRITICAL/IMPORTANT |
 | **run_dir_mode** | `persistent` — git-committed `<epic>/slices/<slice>/implementation/phase-{N}/` (per-phase subdirectories) |
-| **submit_command** | `stdin: "" \| $GP submit-implementation --slice $SLICE_NAME --json` |
+| **submit_command** | `echo '' \| $GP submit-implementation --slice $SLICE_NAME --json` |
 | **resume_detection** | Yes — check for incomplete run directories and offer resume (see Step 2b) |
 | **stagnation_window** | 2 |
 | **reduction_exit_threshold** | 2 |

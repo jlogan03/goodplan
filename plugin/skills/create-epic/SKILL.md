@@ -1,11 +1,15 @@
 ---
 name: create-epic
-description: Create a new epic through a 6-phase pipeline: goal capture, exploration, architecture Q&A, architecture draft + refinement, slices Q&A, slices draft + refinement. Orchestrates interactive and autonomous phases with sub-agents. Common triggers: 'create epic', 'new epic', 'start project', 'new project', 'I have a new idea', 'add epic', 'start fresh'.
+description: This skill should be used when the user wants to create a new epic or start a new project. Guides through goal capture, exploration, architecture design, and slice definition. Common triggers: 'create epic', 'new epic', 'start project', 'new project', 'I have a new idea', 'add epic', 'start fresh'.
 user-invocable: true
 requires: gp >= 1.0.0
 ---
 
 # Create-Epic Pipeline
+
+## Shared References
+
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/cli-interaction.md
 
 ## Context Discipline
 
@@ -66,7 +70,7 @@ Map the `status` field to resume the pipeline:
 
 Present re-entry context to the user: "Epic **{EPIC_NAME}** is in progress. Completed: {completed phases}. Next: {next phase}. Continue / Go back to a previous phase?"
 
-If the user says "go back", re-enter an earlier phase with existing artifacts preserved. The CLI state may need manual override for backward movement — use the earliest valid status for the target phase.
+If the user says "go back", re-enter an earlier phase with existing artifacts preserved. **Backward movement is not supported by the CLI state machine.** Tell the user: "The CLI state machine does not support backward transitions. Options: (1) Continue from the current phase — prior artifacts are preserved. (2) Abandon this epic and create a new one with revised inputs."
 
 ## Step 2b — Temp Directory Setup
 
@@ -95,7 +99,7 @@ Write the goal summary to `$TMPDIR/goal.md` using the Write tool.
 Create the epic via CLI:
 
 ```bash
-echo '{"name":"$EPIC_NAME","goal":"<goal-summary>"}' | $GP epic:create --json
+echo "{\"name\":\"$EPIC_NAME\",\"goal\":\"<goal-summary>\"}" | $GP epic:create --json
 ```
 
 Verify the response includes `entity` and `newStatus: "created"`.

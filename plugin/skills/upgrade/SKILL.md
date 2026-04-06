@@ -64,7 +64,7 @@ Stop.
 Initiate the migration workflow:
 
 ```bash
-gp migrate --json
+$GP migrate --json
 ```
 
 Handle error responses:
@@ -83,7 +83,7 @@ Proceed to Step 4.
 
 Before answering, determine the project directory and review the migration heuristics below.
 
-1. **Determine the project directory.** The CLI's `gp migrate` command detects `.goodplan/` (re-migration) or `.project/` (legacy) automatically. Determine which exists and use that as `$PROJ_DIR` for all scanning commands below:
+1. **Determine the project directory.** The CLI's `gp migrate` command detects `.goodplan/` (re-migration) or `.project/` (legacy) automatically. **Important:** Shell variables don't persist across separate Bash tool invocations. Prefix every Bash call that uses `PROJ_DIR` with the detection line:
    ```bash
    PROJ_DIR=$([ -d .goodplan ] && echo ".goodplan" || echo ".project")
    ```
@@ -92,7 +92,7 @@ Before answering, determine the project directory and review the migration heuri
 ### Epic Discovery
 
 ```bash
-ls -d $PROJ_DIR/epics/*/ 2>/dev/null
+PROJ_DIR=$([ -d .goodplan ] && echo ".goodplan" || echo ".project") && ls -d $PROJ_DIR/epics/*/ 2>/dev/null
 ```
 
 For each subdirectory:
@@ -130,13 +130,13 @@ Construct the answer payload. The CLI expects an envelope wrapping each answer w
 Each question's `responseSchema` defines the shape of its `data` field — not the top-level payload. **Include an answer for every question in the round** — the CLI rejects incomplete submissions with `VALIDATION_MIGRATION_INVALID`. Pipe the envelope using `stdin:` parameter syntax for robustness with large payloads:
 
 ```bash
-stdin: '<envelope-json>' | gp migrate --json
+stdin: '<envelope-json>' | $GP migrate --json
 ```
 
 For simple/short answers, `echo` piping is also acceptable:
 
 ```bash
-echo '<envelope-json>' | gp migrate --json
+echo '<envelope-json>' | $GP migrate --json
 ```
 
 If the CLI returns validation errors (bad sourcePaths, schema failures), read the error message, fix the answer, and resubmit.
@@ -186,7 +186,7 @@ Quests do not have slices in the CLI model. Any subdirectories within a quest (e
 Same envelope pattern as Step 4 — use the `round` number from the CLI's response:
 
 ```bash
-stdin: '<envelope-json>' | gp migrate --json
+stdin: '<envelope-json>' | $GP migrate --json
 ```
 
 Continue answering rounds until the CLI presents a confirmation summary (Step 6).
@@ -203,13 +203,13 @@ The CLI presents a state summary for review. Cross-check against the filesystem:
 If everything looks correct, approve using the same envelope format — `notes` is required:
 
 ```bash
-stdin: '{"round": N, "answers": [{"id": "confirmation", "data": {"approved": true, "notes": "All entities and statuses look correct."}}]}' | gp migrate --json
+stdin: '{"round": N, "answers": [{"id": "confirmation", "data": {"approved": true, "notes": "All entities and statuses look correct."}}]}' | $GP migrate --json
 ```
 
 If errors are spotted, reject with `reAnswerIds` listing the question IDs to re-answer:
 
 ```bash
-stdin: '{"round": N, "answers": [{"id": "confirmation", "data": {"approved": false, "notes": "Epic status wrong for X.", "reAnswerIds": ["<questionId1>", "<questionId2>"]}}]}' | gp migrate --json
+stdin: '{"round": N, "answers": [{"id": "confirmation", "data": {"approved": false, "notes": "Epic status wrong for X.", "reAnswerIds": ["<questionId1>", "<questionId2>"]}}]}' | $GP migrate --json
 ```
 
 Then re-answer the flagged questions when the CLI re-asks them.

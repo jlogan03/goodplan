@@ -134,15 +134,15 @@ Commands that accept structured input read from stdin:
 echo '{"name": "my-slice", "goal": "Implement the data model"}' | gp slice:create --epic my-epic --json
 ```
 
+> **Syntax note:** `stdin: ""` is Claude Code's Bash tool API syntax — a named parameter, not valid shell. Skills invoke commands through Claude Code's Bash tool where `stdin` is a tool parameter that feeds data to the command's standard input. In a regular shell, the equivalent would be `echo '' | gp ...` or `echo -n '' | gp ...`.
+
 **IMPORTANT — pipe stdin for commands that accept payloads:** The following commands read stdin and will block if nothing is piped: `submit-*`, `*:create`, `*:complete`, `decision:create`, `decision:update`, `epic:add-verification`, `epic:update-verification`, `migrate`. For commands with no payload, pipe empty stdin. All other commands (`status`, `show`, `list`, `state`, `schema`, `start-*`, `init`, `*:plan`, `*:explore`, `*:activate`, `*:refine-*`, `*:define-*`, `*:implement`, `--version`) do not read stdin.
 
-For commands with no payload that read stdin:
+For commands with no payload that still read stdin (pipe empty stdin to prevent blocking):
 
 ```bash
-echo '{"verificationPassed":true}' | gp slice:complete --slice my-slice --json
+stdin: "" | gp submit-plan --slice my-slice --json
 ```
-
-> **Syntax note:** `stdin: ""` is Claude Code's Bash tool API syntax — a named parameter, not valid shell. Skills invoke commands through Claude Code's Bash tool where `stdin` is a tool parameter that feeds data to the command's standard input. In a regular shell, the equivalent would be `echo '' | gp ...` or `echo -n '' | gp ...`.
 
 > **Harmless pipe note:** Piping empty stdin to commands that don't read it is harmless (the pipe closes immediately). Existing skills may have defensive `stdin: ""` pipes on non-reading commands — this is fine, just unnecessary.
 

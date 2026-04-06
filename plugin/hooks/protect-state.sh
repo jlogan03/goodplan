@@ -25,9 +25,18 @@ if not os.path.isabs(fp):
     fp = os.path.join(cwd, fp)
 resolved = os.path.normpath(fp)
 prefix = os.path.join(cwd, '.goodplan') + os.sep
-if resolved.startswith(prefix) and (resolved.endswith('.json') or resolved.endswith('.jsonl')):
-    print('Blocked: direct write to .goodplan/ state file. Use the gp CLI instead (e.g., gp status, gp epic:create). See gp --help for available commands.', file=sys.stderr)
-    sys.exit(2)
+if resolved.startswith(prefix):
+    if resolved.endswith('.json') or resolved.endswith('.jsonl'):
+        print('Blocked: direct write to .goodplan/ state file. Use the gp CLI instead (e.g., gp status, gp epic:create). See gp --help for available commands.', file=sys.stderr)
+        sys.exit(2)
+    # Protect CLI-owned learnings/*.md files (e.g., .goodplan/learnings/foo.md,
+    # .goodplan/epics/my-epic/learnings/bar.md). Files must be inside a learnings/
+    # subdirectory — a file at .goodplan/learnings.md is not CLI-owned.
+    rel = resolved[len(prefix):]
+    parts = rel.split(os.sep)
+    if len(parts) >= 2 and parts[-2] == 'learnings' and resolved.endswith('.md'):
+        print('Blocked: direct write to .goodplan/ learnings file. Learnings are managed by the gp CLI (e.g., gp slice:complete, gp epic:complete).', file=sys.stderr)
+        sys.exit(2)
 " || RC=$?
 
 # Only propagate exit 2 (intentional block). All other failures = allow.

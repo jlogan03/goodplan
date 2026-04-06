@@ -86,6 +86,8 @@ Parse return. If `triggeredConditions` is non-empty, surface them to the user vi
 
 ### B4. Submit Plan Draft
 
+The `stdin: ""` prefix is Claude Code shell syntax — it pipes an empty string to stdin. This is required because the CLI's submit commands read stdin for optional payloads and will hang waiting for input if stdin is not provided.
+
 ```bash
 stdin: "" | $GP submit-plan {ENTITY_CLI_FLAG} {ENTITY_NAME} --json
 ```

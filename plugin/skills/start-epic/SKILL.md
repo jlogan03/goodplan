@@ -1,11 +1,17 @@
 ---
 name: start-epic
-description: Reviews an epic's architecture, gets user approval, and activates the epic via the CLI. Uses gp epic:show / epic:activate for all state operations. Common triggers: 'start epic', 'activate epic', 'approve epic', 'let's start building', 'approve the proposal', 'kick off epic', 'review architecture proposal', 'ready to build', 'let's build this epic', 'activate this'.
+description: This skill should be used when the user wants to activate an epic after architecture and slices are defined. Presents architecture for user review, then activates the epic. Common triggers: 'start epic', 'activate epic', 'approve epic', 'let's start building', 'approve the proposal', 'kick off epic', 'review architecture proposal', 'ready to build', 'let's build this epic', 'activate this'.
 user-invocable: true
 requires: gp >= 1.0.0
 ---
 
 # Start Epic
+
+## Shared References
+
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/cli-interaction.md
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/orchestrator-discipline.md
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/orchestrator-error-handling.md
 
 **Context Discipline:** This skill reads architecture files to present them for user approval. This is a legitimate orchestrator exception — the skill's purpose is to present architecture for user review.
 
@@ -24,13 +30,13 @@ Use the argument as the epic name (strip leading `epics/` or `.goodplan/epics/` 
 Verify the epic exists:
 
 ```bash
-gp epic:show --epic <name> --json
+$GP epic:show --epic <name> --json
 ```
 
 If the command fails (epic not found), list available epics and ask the user to pick:
 
 ```bash
-gp epic:list --json
+$GP epic:list --json
 ```
 
 ### If no argument was passed
@@ -38,7 +44,7 @@ gp epic:list --json
 List all epics and find one in `slices-refined` status:
 
 ```bash
-gp epic:list --json
+$GP epic:list --json
 ```
 
 - If exactly one epic is in `slices-refined` status, select it automatically and confirm with the user: "Found epic '<name>' ready for activation. Proceed?" If the user declines, list all epics with their statuses and let the user choose, or stop if none are suitable.
@@ -51,26 +57,26 @@ gp epic:list --json
 Get full epic details (reuse the `epic:show` response from Step 1 if already retrieved for this epic):
 
 ```bash
-gp epic:show --epic <name> --json
+$GP epic:show --epic <name> --json
 ```
 
 Verify the status is `slices-refined`. If not, handle by status:
 
 - **`activated`** — "Epic '<name>' is already activated. Run `/gp:plan-slice` to plan the next slice, or `/gp:status` to see progress." **Stop.**
-- **`created`** — "Epic '<name>' needs exploration and architecture first. Run `/gp:explore` to research, then `/gp:create-architecture` to define architecture, then `/gp:create-slices` to define slices." **Stop.**
-- **`explored`** — "Epic '<name>' needs architecture and slices. Run `/gp:create-architecture` to define architecture, then `/gp:create-slices` to define slices." **Stop.**
-- **`slices-defined`** — "Epic '<name>' has slices that need refinement. Run `/gp:refine-slices` to refine slices before activation." **Stop.**
+- **`created`** — "Epic '<name>' needs exploration and architecture first. Run `/gp:create-epic <name>` to continue the pipeline (it resumes from the current phase)." **Stop.**
+- **`explored`** — "Epic '<name>' needs architecture and slices. Run `/gp:create-epic <name>` to continue (resumes at the architecture phase)." **Stop.**
+- **`slices-defined`** — "Epic '<name>' has slices that need refinement. Run `/gp:create-epic <name>` to continue (resumes at the slices refinement phase)." **Stop.**
 - **In-progress statuses** — use this mapping to suggest the correct skill:
 
   | Status | Skill |
   |---|---|
   | `exploring` | `/gp:explore` |
-  | `defining-architecture` | `/gp:create-architecture` |
-  | `architecture-defined` | `/gp:refine-architecture` |
-  | `refining-architecture` | `/gp:refine-architecture` |
-  | `architecture-refined` | `/gp:create-slices` |
-  | `defining-slices` | `/gp:create-slices` |
-  | `refining-slices` | `/gp:refine-slices` |
+  | `defining-architecture` | `/gp:create-epic <name>` (resumes at architecture phase) |
+  | `architecture-defined` | `/gp:create-epic <name>` (resumes at architecture refinement) |
+  | `refining-architecture` | `/gp:create-epic <name>` (resumes at architecture refinement) |
+  | `architecture-refined` | `/gp:create-epic <name>` (resumes at slices Q&A) |
+  | `defining-slices` | `/gp:create-epic <name>` (resumes at slices phase) |
+  | `refining-slices` | `/gp:create-epic <name>` (resumes at slices refinement) |
 
   Report: "{status} is in progress. Run `{skill}` to continue." **Stop.**
 - **Terminal statuses** (`completed`, `abandoned`) — "This epic is already {status}." **Stop.** Do not suggest running another skill.
@@ -80,13 +86,13 @@ Verify the status is `slices-refined`. If not, handle by status:
 
 Check the following guards in order (most actionable first):
 
-1. **No other epic active**: Check `gp status --json` for `.activeEpic`. If another epic is already active, tell the user: "Epic '<active-epic-name>' is currently active. Complete or abandon it before activating a new epic." **Stop.**
+1. **No other epic active**: Check `$GP status --json` for `.activeEpic`. If another epic is already active, tell the user: "Epic '<active-epic-name>' is currently active. Complete or abandon it before activating a new epic." **Stop.**
 
-2. **Architecture**: If `artifacts.architectureDefined` is `false` (from Step 2's `epic:show` response), tell the user: "Architecture not found — run `/gp:create-architecture` to set up architecture before activation." **Stop.**
+2. **Architecture**: If `artifacts.architectureDefined` is `false` (from Step 2's `epic:show` response), tell the user: "Architecture not found — run `/gp:create-epic <name>` to continue the pipeline (it resumes at the architecture phase)." **Stop.**
 
 3. **Verifications**: If `verifications` is empty or missing (from Step 2's `epic:show` response), tell the user: "No verification criteria defined for this epic. Add criteria, e.g.:
    ```bash
-   echo '{"verification":{"description":"All unit tests pass","status":"pending","addedDuring":"pre-activation","modifiedDuring":null}}' | gp epic:add-verification --epic <name> --json
+   echo '{"verification":{"description":"All unit tests pass","status":"pending","addedDuring":"pre-activation","modifiedDuring":null}}' | $GP epic:add-verification --epic <name> --json
    ```
    " **Stop.**
 
@@ -104,7 +110,7 @@ Present a structured summary to the user:
 1. **Epic goal** — one-line summary.
 2. **Architecture overview** — key subsystems and design decisions from `_overview.md`.
 3. **Additional architecture files** — summarize each additional file's key points.
-4. **Slice count** — how many slices are defined. Query `gp slice:list --epic <name> --json` and use `.total` from the response.
+4. **Slice count** — how many slices are defined. Query `$GP slice:list --epic <name> --json` and use `.total` from the response.
 
 ## Step 5 — User Approval
 
@@ -132,7 +138,7 @@ Proceed to Step 6.
 ## Step 6 — Activate
 
 ```bash
-gp epic:activate --epic <name> --json
+$GP epic:activate --epic <name> --json
 ```
 
 Verify the response shows `activated` status. If the command fails, report the error and **stop.**

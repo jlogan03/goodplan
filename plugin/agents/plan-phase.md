@@ -8,7 +8,7 @@ model: opus
 
 You are a plan drafting agent. Your job is to produce a complete implementation plan from the Q&A output and architecture context provided in your task prompt.
 
-**Note:** This agent runs with Read, Grep, Glob, and Write tools — no sub-agent spawning.
+**Note:** This agent runs with Read, Grep, Glob, and Write tools — no sub-agent spawning (disallowedTools: Agent).
 
 ## Inputs (provided in task prompt)
 
@@ -22,6 +22,10 @@ The orchestrator passes:
 - **Reference paths** — additional file paths for content that exceeded the inline budget (read these as needed)
 
 Read the Q&A output and any reference paths provided. Use the inline context directly — it's already in your task prompt.
+
+## Shared Return Format
+
+@${CLAUDE_PLUGIN_ROOT}/agents/_references/sub-agent-return-format.md
 
 ## Plan Format
 

@@ -1,6 +1,6 @@
 ---
 name: complete-epic
-description: Complete an epic: synthesize cross-slice learnings, reconcile architecture, promote artifacts. Standalone skill (not a pipeline). Common triggers: 'complete epic', 'finish epic', 'epic completion', 'close epic', 'wrap up epic', 'epic is done'.
+description: This skill should be used when the user wants to complete an epic after all slices are done. Synthesizes cross-slice learnings, reconciles architecture, and promotes artifacts. Common triggers: 'complete epic', 'finish epic', 'epic completion', 'close epic', 'wrap up epic', 'epic is done'.
 user-invocable: true
 requires: gp >= 1.0.0
 ---
@@ -11,6 +11,7 @@ Standalone epic completion skill. Spawns the `completion-epic` agent for cross-s
 
 ## Context Discipline
 
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/cli-interaction.md
 @${CLAUDE_PLUGIN_ROOT}/skills/_references/orchestrator-discipline.md
 
 **Exception**: The orchestrator MAY use `stat` or `ls` for file existence checks (re-entry detection on LLM-owned markdown).
@@ -83,11 +84,9 @@ If resuming, present: "Epic completion in progress. Resuming from {step descript
 
 ## Step 4 — Spawn Completion-Epic Agent
 
-### 4a. Pre-Create Completion Directory
+### 4a. Completion Directory
 
-```bash
-mkdir -p "${EPIC_DIR}/completion/"
-```
+The completion agent writes LLM-owned markdown to `${EPIC_DIR}/completion/`. The Write tool auto-creates parent directories — no `mkdir -p` needed. This is an exception to the `.goodplan/` mkdir prohibition since these are LLM-owned markdown files, not CLI state.
 
 ### 4b. Load Epic Details
 
@@ -124,7 +123,7 @@ Agent: completion-epic
 Task prompt: |
   Epic: {EPIC_NAME}
   Epic path: {EPIC_DIR}
-  Completion directory: {EPIC_DIR}/completion/ (pre-created)
+  Completion directory: {EPIC_DIR}/completion/ (Write tool auto-creates parent directories)
 
   Slice learnings paths:
   {list each: EPIC_DIR/slices/{slice-name}/completion/learnings.md}
@@ -192,10 +191,10 @@ disallowedTools: ["Agent"]
 ### 4g. Parse Agent Return
 
 Check `status`:
-- **SUCCESS**: Validate `verificationAssessments` — the array length must match the number of verification criteria from Step 4b, and every entry must have a non-empty `notes` string. If validation fails, re-spawn the agent. On success, persist all structured arrays using the Write tool for re-entry resilience:
-  - `${EPIC_DIR}/completion/verification-assessments.cache` — the verificationAssessments array
-  - `${EPIC_DIR}/completion/learnings.cache` — the learnings array
-  - `${EPIC_DIR}/completion/recommendations.cache` — the recommendations array
+- **SUCCESS**: Validate `verificationAssessments` — the array length must match the number of verification criteria from Step 4b, and every entry must have a non-empty `notes` string. If validation fails, re-spawn the agent. On success, persist all structured arrays as JSON using the Write tool for re-entry resilience:
+  - `${EPIC_DIR}/completion/verification-assessments.cache` — JSON array of verificationAssessments
+  - `${EPIC_DIR}/completion/learnings.cache` — JSON array of learnings
+  - `${EPIC_DIR}/completion/recommendations.cache` — JSON array of recommendations
   Then proceed to Step 5.
 - **PARTIAL**: log the `summary` and surface to user via AskUserQuestion: "Epic completion partially completed: {summary}. Continue with partial results / Retry / Stop?"
   - Continue: persist verificationAssessments only if non-empty AND length matches expected count. Persist learnings and recommendations if non-empty. Set `assessmentsIncomplete = true` if assessments not persisted. Proceed to Step 5 with partial data.

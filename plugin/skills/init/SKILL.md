@@ -1,6 +1,6 @@
 ---
 name: init
-description: Initialize a goodplan project — auto-detects whether to onboard an existing codebase or set up a fresh empty project. Replaces onboard-repo for existing repos; subsumes "Mode A" (new project) from create-epic. Common triggers: 'init', 'initialize', 'onboard', 'new repo', 'set up project', 'new project', 'onboard this repo', 'scan this codebase', 'start a project'.
+description: This skill should be used when the user wants to initialize a goodplan project. Auto-detects whether to onboard an existing codebase or set up a fresh empty project. Common triggers: 'init', 'initialize', 'onboard', 'new repo', 'set up project', 'new project', 'onboard this repo', 'scan this codebase', 'start a project'.
 user-invocable: true
 requires: gp >= 1.0.0
 ---

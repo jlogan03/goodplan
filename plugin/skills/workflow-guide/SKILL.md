@@ -1,6 +1,6 @@
 ---
 name: workflow-guide
-description: Always-on orientation for the goodplan workflow system. Provides CLI query/mutation patterns, .goodplan/ write restrictions, skill entry points per flow, and interrupted flow recovery guidance. Not directly invocable — auto-loaded by description matching when Claude encounters goodplan workflow context in the conversation.
+description: Always-on orientation for the goodplan workflow system. Provides CLI query/mutation patterns, .goodplan/ write restrictions, skill entry points per flow, and interrupted flow recovery guidance. This skill should be used when the user mentions goodplan, .goodplan directory, gp CLI, structured development workflow, epic/slice/quest status, or asks about project planning workflow. Common triggers: 'how does goodplan work', 'what gp commands are there', 'goodplan workflow', '.goodplan directory', 'project workflow', 'epic slice quest'.
 user-invocable: false
 requires: gp >= 1.0.0
 ---

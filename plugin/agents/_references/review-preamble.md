@@ -24,7 +24,7 @@ Resolution: RESOLUTION_TAG
 **Resolution tags** (closed set — use exactly one per issue):
 - **DIRECTLY_ACTIONABLE** — The editor agent can fix this from the issue description alone.
 - **RESEARCH_NEEDED** — Requires external research (API docs, library behavior, platform constraints). Include a `Research:` line specifying what to look up, why it matters, and suggested sources.
-- **CODEBASE_EXPLORATION** — Requires exploring existing code to answer a question. Include what to search for and why.
+- **CODEBASE_EXPLORATION** — Requires exploring existing code to answer a question. Include what to search for and why. (Handled as a subtype of RESEARCH_NEEDED by the orchestrator — both trigger the same research sub-agent resolution flow.)
 - **USER_INPUT** — Requires a decision from the user (intent, preferences, business context). Phrase as a clear question.
 
 If no issues found, write: "No issues found."
@@ -78,7 +78,7 @@ You will receive a `review_context` value in your task prompt. Adapt your evalua
 
 ## Return Format
 
-After completing your review, return your full review content inline as your final message. Include the review markdown followed by a structured JSON block:
+After completing your review, return a structured JSON block as your final message. The `review` field contains your complete review markdown — the orchestrator writes this to a file for the synthesis agent. The inline review text preceding the JSON is for debugging visibility only; the orchestrator parses only the JSON.
 
 ```json
 {

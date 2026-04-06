@@ -18,17 +18,17 @@ user-invocable: true
 
 **Stage A — Binary exists:**
 
-Verify CLI availability: run `gp --version --json`. If not found or version < 1.0.0, stop with the appropriate message per cli-interaction.md.
+Verify CLI availability: run `gp --version --json`. If not found or version < 1.0.0, stop with the appropriate message per cli-interaction.md. Store as `$GP`.
 
 **Stage B — Project exists:**
 
 ```bash
-gp status --json
+$GP status --json
 ```
 
 If this returns a `DATA_NO_PROJECT` error (exit code 1), tell the user:
 
-> No `.goodplan/` directory found — run `/create-epic` to set up structured project planning.
+> No `.goodplan/` directory found — run `/gp:create-epic` to set up structured project planning.
 
 **Stop here** — do not continue with subsequent steps.
 
@@ -53,7 +53,10 @@ This replaces the previous `state.md` read — `status --json` is now the author
 Run:
 
 ```bash
-gp state --json --query '.["activity-log.jsonl"] | .[-5:]'
+$GP state --json --query '.["activity-log.jsonl"] | .[-5:]'
+# Note: `gp state` accesses raw state data with jq queries.
+# `gp status` returns processed project state (active entities, recommendations).
+# Use `status` for high-level orientation, `state` for deep state queries.
 ```
 
 Parse the returned array and extract: `phase`, `scope`, `status`, and `ts` (timestamp). Format timestamps as human-readable short form (e.g., "Mar 15 16:45"). Arrange entries most recent first for the status report.
@@ -70,9 +73,9 @@ Derive the active scope from the `status --json` response:
 For Format B reporting (all slices/epics/quests with states), use:
 
 ```bash
-gp slice:list --json
-gp quest:list --json
-gp epic:list --json
+$GP slice:list --json
+$GP quest:list --json
+$GP epic:list --json
 ```
 
 Note: `epic:list --json` has no `--status` filter — filtering is client-side.
@@ -80,7 +83,7 @@ Note: `epic:list --json` has no `--status` filter — filtering is client-side.
 For interrupted work detection, use:
 
 ```bash
-gp state --json --query '.epics | .. | .["interrupted.md"]? // empty'
+$GP state --json --query '.epics | .. | .["interrupted.md"]? // empty'
 ```
 
 > Note: recursive `..` queries traverse all values (strings, arrays, objects) and may need optimization for larger state trees. A more targeted alternative: `.epics[][].slices[][] | select(has("interrupted.md")) | .["interrupted.md"]`
@@ -92,19 +95,19 @@ For sequencing order, resolve the path via the CLI (epic directories may use an 
 Use `status --json` for phase derivation and entity status. For entity details, use `show --json`:
 
 ```bash
-gp slice:show --slice <name> --json
-gp epic:show --epic <name> --json
-gp quest:show --quest <name> --json
+$GP slice:show --slice <name> --json
+$GP epic:show --epic <name> --json
+$GP quest:show --quest <name> --json
 ```
 
 Skills can rely on `status`, `name`, `goal` fields from entity JSON. The `artifacts` field is not yet available (deferred to slice 02).
 
-For deeper lookups where `show --json` is insufficient, use `state --json --query`. First get the active epic name from `gp status --json` (`.activeEpic.name`), then use it to construct the query path:
+For deeper lookups where `show --json` is insufficient, use `state --json --query`. First get the active epic name from `$GP status --json` (`.activeEpic.name`), then use it to construct the query path:
 
 ```bash
 # Get the active epic name dynamically
-EPIC_NAME=$(gp status --json | jq -r '.activeEpic.name')
-gp state --json --query ".epics[\"$EPIC_NAME\"].slices | keys"
+EPIC_NAME=$($GP status --json | jq -r '.activeEpic.name')
+$GP state --json --query ".epics[\"$EPIC_NAME\"].slices | keys"
 ```
 
 ### Slice / Quest State
@@ -114,8 +117,8 @@ Use the `status` field from `show --json` or `list --json` responses. See the **
 For implementation progress checking (when the status indicates implementation is in progress), use `state --json --query` to check implementation phase directories:
 
 ```bash
-EPIC_NAME=$(gp status --json | jq -r '.activeEpic.name')
-gp state --json --query ".epics[\"$EPIC_NAME\"].slices[\"<slice>\"].implementation | keys"
+EPIC_NAME=$($GP status --json | jq -r '.activeEpic.name')
+$GP state --json --query ".epics[\"$EPIC_NAME\"].slices[\"<slice>\"].implementation | keys"
 ```
 
 Then check for passing reviews via the Read tool on `review.md` files (these are LLM-owned markdown).
@@ -125,7 +128,7 @@ Then check for passing reviews via the Read tool on `review.md` files (these are
 Epic scanning always runs when epics exist — needed for Format B reporting. Use `epic:list --json` to get all epics with their statuses:
 
 ```bash
-gp epic:list --json
+$GP epic:list --json
 ```
 
 For each epic, categorize by CLI status:
@@ -138,7 +141,7 @@ For each epic, categorize by CLI status:
 Check for interrupted work using `state --json --query`:
 
 ```bash
-gp state --json --query '[.. | .["interrupted.md"]? | select(. != null)]'
+$GP state --json --query '[.. | .["interrupted.md"]? | select(. != null)]'
 ```
 
 Also check the `status --json` response for any entities with interrupted/paused status.
@@ -196,10 +199,10 @@ Omit the **Expertise** line if `${CLAUDE_PLUGIN_DATA}/expertise.md` does not exi
 
 Use this when no slice or quest is currently in progress (e.g., just completed a slice, or at the very start of the project).
 
-To determine slice sequencing order, use the CLI to resolve the actual epic directory path (epic directories may use an `__active__` prefix — do not construct paths manually). Use `$EPIC_NAME` from Step 6's pattern (`EPIC_NAME=$(gp status --json | jq -r '.activeEpic.name')`):
+To determine slice sequencing order, use the CLI to resolve the actual epic directory path (epic directories may use an `__active__` prefix — do not construct paths manually). Use `$EPIC_NAME` from Step 6's pattern (`EPIC_NAME=$($GP status --json | jq -r '.activeEpic.name')`):
 
 ```bash
-gp state --json --query ".epics[\"$EPIC_NAME\"].slices[\"sequencing.md\"]" --inline
+$GP state --json --query ".epics[\"$EPIC_NAME\"].slices[\"sequencing.md\"]" --inline
 ```
 
 If the query returns `null`, slices haven't been sequenced yet — skip the **Up next** section. For non-epic projects, read `.goodplan/slices/sequencing.md` via the Read tool. Use `slice:list --json` to get statuses for each.
@@ -285,13 +288,13 @@ After presenting the status report, offer:
 
 > Want me to show the full activity-log or all slice statuses?
 
-Only expand if the user asks. For full activity-log, use `gp state --json --query '.["activity-log.jsonl"]'`. For all slice statuses, use `gp slice:list --json` if available, otherwise `gp state --json --query` for slice directories. Format B already shows an overview when between work items — do not repeat it unprompted.
+Only expand if the user asks. For full activity-log, use `$GP state --json --query '.["activity-log.jsonl"]'`. For all slice statuses, use `$GP slice:list --json` if available, otherwise `$GP state --json --query` for slice directories. Format B already shows an overview when between work items — do not repeat it unprompted.
 
 ## Status Logic Reference
 
 ### Scope Resolution Order
 
-Determine active scope from `gp status --json` response fields.
+Determine active scope from `$GP status --json` response fields.
 
 1. **Active quest** — `activeQuest` field (highest priority)
 2. **Active slice** — `activeSlice` field

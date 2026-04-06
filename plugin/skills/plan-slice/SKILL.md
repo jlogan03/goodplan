@@ -1,11 +1,15 @@
 ---
 name: plan-slice
-description: Orchestrate end-to-end plan creation and refinement for a slice. Runs interactive Q&A to capture approach decisions, then autonomously drafts, reviews, and refines the plan via sub-agents until quality thresholds are met. Common triggers: 'plan slice', 'plan this slice', 'create a plan', 'plan and refine', 'write a plan for this slice'.
+description: This skill should be used when the user wants to create an implementation plan for a slice. Runs interactive Q&A then autonomously drafts, reviews, and refines the plan until quality thresholds are met. Common triggers: 'plan slice', 'plan this slice', 'create a plan', 'plan and refine', 'write a plan for this slice'.
 user-invocable: true
 requires: gp >= 1.0.0
 ---
 
 # Plan-Slice Pipeline
+
+## Shared References
+
+@${CLAUDE_PLUGIN_ROOT}/skills/_references/cli-interaction.md
 
 ## Context Discipline
 
@@ -64,9 +68,7 @@ Log to stderr: `[plan-slice] Working directory: $TMPDIR`
 
 ### 3a. Plan Q&A
 
-@${CLAUDE_PLUGIN_ROOT}/skills/_references/plan-pipeline.md
-
-Follow **Phase A** (Interactive Plan Q&A) from plan-pipeline.md (auto-included above) with:
+Follow **Phase A** (Interactive Plan Q&A) from plan-pipeline.md (auto-included below in Step 4) with:
 - `{ENTITY_TYPE}` = `slice`
 - `{ENTITY_NAME}` = `$SLICE_NAME`
 - `{ENTITY_CLI_FLAG}` = `--slice`
@@ -80,8 +82,6 @@ Follow **Phase B** (Autonomous Draft & Refinement) from plan-pipeline.md (auto-i
 - `{ENTITY_NAME}` = `$SLICE_NAME`
 - `{ENTITY_CLI_FLAG}` = `--slice`
 
-> **Transition note:** The existing `/gp:refine-plan` skill (v1.0.3) uses `{"scores":{"overall":<min_score>}}`. This skill uses per-reviewer scores, which is the target format. Both pass the `submitRefinementInputSchema` (`z.record(z.string(), z.number())`). Update the installed refine-plan to per-reviewer format in a later slice to maintain consistency.
-
 ### 4a. Cleanup
 
 On successful completion (no errors), delete the temp directory: `rm -rf $TMPDIR`. On any error, preserve it for debugging and log:
@@ -91,13 +91,13 @@ On successful completion (no errors), delete the temp directory: `rm -rf $TMPDIR
 
 ## Step 5 — Done Summary
 
-Display the **Completion Summary Template** from output-templates.md (auto-included above) with:
+Display the **Completion Summary Template** from output-templates.md (transitively included via plan-pipeline.md → iteration-loop.md → output-templates.md) with:
 - `{completion_heading}`: `Refinement Complete`
 - `{skill_specific_header_fields}`: `**Path**: {path to plan-refined file}`
 - Score Progression table from `reviewerScores` history
 - Per-iteration issues-resolved tables
 
-Then display the **Done Summary Template (Variant A)** with:
+Then display the **Done Summary Template (Variant A)** (from output-templates.md, transitively included) with:
 - `{done_heading}`: `Plan Created`
 - `{next_step}`: `/gp:implement {SLICE_NAME}`
 
