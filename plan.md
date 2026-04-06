@@ -151,7 +151,6 @@ Replace all `...process.env` spreads in dogfood harness files with a whitelist-o
   - `tools/dogfood/test-plan-slice.ts` (1 occurrence)
   - `tools/dogfood/test-integration.ts` (1 occurrence)
   - `tools/dogfood/validate-consolidated.ts` (1 occurrence)
-  - `tools/dogfood/harness.ts` (1 occurrence)
   - `tools/dogfood/test-implement.ts` (5 occurrences)
   - `tools/dogfood/test-init.ts` (5 occurrences)
   - `tools/dogfood/test-create-epic.ts` (3 occurrences)

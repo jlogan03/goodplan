@@ -77,7 +77,6 @@ env: {
 ```
 
 **Files to update:** Every file in `tools/dogfood/` that sets `env:` on Agent SDK options:
-- `harness.ts`
 - `test-audit.ts`
 - `test-complete-epic.ts`
 - `test-create-epic.ts`

@@ -79,6 +79,5 @@ When you need to test skills or plugins in a live Claude Code session, use the A
 | `test-create-epic.ts` | `/gp:create-epic` orchestrator end-to-end | `bun tools/dogfood/test-create-epic.ts [--model <model>] [--max-iterations <n>]` |
 | `validate.ts` | Full workflow (2 epics + 2 quests) | `bun tools/dogfood/validate.ts` |
 | `validate-consolidated.ts` | Full 7-skill pipeline + quality metrics | `bun tools/dogfood/validate-consolidated.ts [--model <model>] [--max-iterations <n>]` |
-| `harness.ts` | Multi-phase dogfooding | `bun tools/dogfood/harness.ts [phase] [step]` |
 
 Pattern: `query()` from `@anthropic-ai/claude-agent-sdk` with `permissionMode: "bypassPermissions"`, `plugins: [{ type: "local", path: PLUGIN_DIR }]`, `settingSources: []`, `env: createTestEnv(PLUGIN_DIR)` for fully isolated plugin testing.

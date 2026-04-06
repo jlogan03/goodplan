@@ -1,8 +1,8 @@
 /**
  * Shared dogfood test harness utilities.
  *
- * Extracted from duplicated patterns across the 5 existing harness scripts:
- * harness.ts, validate.ts, test-plugin-skills.ts, test-onboard.ts, test-migrate.ts.
+ * Extracted from duplicated patterns across the harness scripts:
+ * validate.ts, validate-consolidated.ts, test-plugin-skills.ts, and individual skill tests.
  *
  * GP_CLI_PATH env var overrides the default gp binary location.
  */
