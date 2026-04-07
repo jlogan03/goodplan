@@ -106,6 +106,8 @@ export interface CliResult {
 
 export interface SimulatedUser {
 	ask(question: string, options: Array<{ label: string; description: string }>): Promise<string>;
+	/** Answer a free-form question (no structured options). Used when the LLM asks a question as text output instead of AskUserQuestion. */
+	askFreeform(question: string): Promise<string>;
 	totalCost(): number;
 	close(): void;
 }
@@ -576,13 +578,15 @@ export function createSimulatedUser(opts: {
 			role: "user",
 			content: [
 				"You are a simulated user in a test harness. You will be asked questions by a skill under test.",
-				"For each question, you will be given options to choose from.",
+				"You will receive two types of questions:",
+				"",
+				"1. **Multiple-choice questions** (with labeled options) — reply with ONLY the exact label text of the option you choose. Nothing else. No explanation, commentary, or formatting.",
+				"2. **Free-form questions** (no options, the skill stopped and asked you something as text) — respond naturally with concrete, substantive answers and reasoning. Do NOT just say 'proceed' or 'yes'.",
+				"",
+				"Each message will indicate which type it is.",
 				"",
 				`The full session transcript is at: ${opts.transcriptFile}`,
 				"You can Read this file to understand what has happened so far in the session.",
-				"",
-				"Reply with ONLY the exact label text of the option you choose. Nothing else.",
-				"Do not add explanation, commentary, or formatting. Just the label.",
 			].join("\n"),
 		},
 		parent_tool_use_id: null,
@@ -742,6 +746,37 @@ export function createSimulatedUser(opts: {
 			}
 		},
 
+		async askFreeform(question: string): Promise<string> {
+			await sessionReady;
+
+			const userContent = [
+				"The skill has stopped and is asking you the following (as text output, not structured options).",
+				"Respond naturally as a user would — give concrete answers with reasoning.",
+				"Do NOT just say 'proceed' or 'yes'. Answer the actual questions substantively.",
+				"",
+				question,
+			].join("\n");
+
+			try {
+				const userMessage: SDKUserMessage = {
+					type: "user",
+					message: { role: "user", content: userContent },
+					parent_tool_use_id: null,
+					session_id: "",
+				};
+				messageQueue.push(userMessage);
+
+				const responsePromise = waitForResponse();
+				sessionReady = responsePromise.then(() => {});
+				const rawAnswer = await responsePromise;
+
+				return rawAnswer || "Please proceed with your best judgment.";
+			} catch (err) {
+				console.warn(`[simulatedUser] askFreeform failed: ${err}`);
+				return "Please proceed with your best judgment.";
+			}
+		},
+
 		close(): void {
 			messageQueue.end();
 			abortController.abort();
@@ -783,6 +818,42 @@ export function createAskUserHandler(simulatedUser: SimulatedUser): CanUseTool {
 		}
 		return { behavior: "allow" as const };
 	};
+}
+
+// ─── End-Turn Classification ───────────────────────────────
+
+/**
+ * Uses Haiku to classify whether a text-only end_turn is a question
+ * needing user input, or the agent signaling task completion.
+ */
+export async function classifyEndTurn(text: string): Promise<"question" | "done"> {
+	let resultText = "";
+	for await (const message of query({
+		prompt: [
+			"Classify the following text from an AI assistant. Did the assistant stop because it is asking the user a question or waiting for user input? Or did it finish its task?",
+			"",
+			"Reply with ONLY one word: 'question' or 'done'.",
+			"",
+			"---",
+			text.slice(0, 2000),
+			"---",
+		].join("\n"),
+		options: {
+			model: tierDefault("structural"),
+			systemPrompt: "You classify AI assistant outputs. Reply with exactly one word.",
+			permissionMode: "bypassPermissions",
+			allowDangerouslySkipPermissions: true,
+			settingSources: [],
+			persistSession: false,
+			maxTurns: 1,
+		},
+	})) {
+		if (message.type === "result" && message.subtype === "success") {
+			resultText = message.result;
+		}
+	}
+	const normalized = resultText.trim().toLowerCase();
+	return normalized.includes("question") ? "question" : "done";
 }
 
 // ─── Skill Session Runner ───────────────────────────────────
@@ -849,29 +920,86 @@ export async function runSkillSession(opts: {
 	};
 
 	let resultMessage: SDKResultMessage | undefined;
+	let currentPrompt: string = opts.prompt;
+	let sessionId: string | undefined;
+	let continuationCount = 0;
 
-	for await (const message of query({
-		prompt: opts.prompt,
-		options: mergedOptions,
-	})) {
-		writeTranscriptEntry(opts.transcriptFile, message);
-		opts.onMessage?.(message);
+	// Continuation loop: when the LLM stops with a text-only response that is
+	// a question, get a simulated user answer and resume the session.
+	for (;;) {
+		const isResume = sessionId !== undefined;
+		const queryOptions: Options = isResume
+			? { ...mergedOptions, resume: sessionId }
+			: mergedOptions;
 
-		// CLI error tracking: record gp commands from assistant, extract errors from results
-		trackGpCommandsFromAssistant(message);
-		extractCliErrors(message, cliErrors);
+		for await (const message of query({
+			prompt: currentPrompt,
+			options: queryOptions,
+		})) {
+			writeTranscriptEntry(opts.transcriptFile, message);
+			opts.onMessage?.(message);
 
-		if (message.type === "result") {
-			costTracker.add(message.total_cost_usd);
-			resultMessage = message;
+			// CLI error tracking: record gp commands from assistant, extract errors from results
+			trackGpCommandsFromAssistant(message);
+			extractCliErrors(message, cliErrors);
+
+			if (message.type === "result") {
+				costTracker.add(message.total_cost_usd);
+				resultMessage = message;
+				// Capture session ID for potential resume
+				if (message.subtype === "success") {
+					sessionId = message.session_id;
+				}
+			}
 		}
+
+		flushTranscript(opts.transcriptFile);
+
+		if (!resultMessage) {
+			throw new Error("runSkillSession: no result message received");
+		}
+
+		// Check if we should continue: text-only success + simulated user available
+		if (
+			resultMessage.subtype === "success" &&
+			sessionId &&
+			opts.simulatedUser
+		) {
+			const resultText = resultMessage.result;
+			// Classify whether the LLM is asking a question or is done.
+			// If classification itself fails, treat as done to avoid crashing the session.
+			let classification: "question" | "done" = "done";
+			try {
+				classification = await classifyEndTurn(resultText);
+			} catch (err) {
+				console.warn(
+					`[runSkillSession] classifyEndTurn failed, treating as done: ${err instanceof Error ? err.message : String(err)}`,
+				);
+			}
+
+			if (classification === "question") {
+				continuationCount++;
+				console.log(
+					`[runSkillSession] Text-only end_turn classified as question (continuation #${continuationCount}), getting simulated user response...`,
+				);
+				const answer = await opts.simulatedUser.askFreeform(resultText);
+				currentPrompt = answer;
+				// Reset resultMessage for the next iteration
+				resultMessage = undefined;
+				continue;
+			}
+		}
+
+		// Not a question or no simulated user — we're done
+		break;
 	}
 
-	flushTranscript(opts.transcriptFile);
-
 	if (!resultMessage) {
-		// This shouldn't happen, but handle gracefully
-		throw new Error("runSkillSession: no result message received");
+		throw new Error("runSkillSession: no result message after continuation loop");
+	}
+
+	if (continuationCount > 0) {
+		console.log(`[runSkillSession] Session completed after ${continuationCount} continuation(s)`);
 	}
 
 	if (violations.length > 0) {

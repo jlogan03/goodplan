@@ -158,17 +158,18 @@ function createToolCallTracker(logFn: (msg: string) => void): {
 	return { toolCalls, onMessage };
 }
 
-// ─── Load SKILL.md ──────────────────────────────────────────
+// ─── Skill Invocation ──────────────────────────────────────────
 
-function loadSkillBody(skillName: string): string {
-	const skillMdPath = join(PLUGIN_DIR, "skills", skillName, "SKILL.md");
-	if (!existsSync(skillMdPath)) {
-		logger.log(`FATAL: ${skillName} SKILL.md not found in dist at ${skillMdPath}`);
-		process.exit(1);
-	}
-	const skillContent = readFileSync(skillMdPath, "utf-8");
-	// Strip frontmatter
-	return skillContent.replace(/^---[\s\S]*?---\n/, "");
+/**
+ * The plugin namespace when loaded via --plugin-dir.
+ * Matches the "name" field in .claude-plugin/plugin.json.
+ * Skills are invoked as /goodplan:{skillName}.
+ */
+const PLUGIN_NAMESPACE = "goodplan";
+
+/** Build a prompt that tells the LLM to invoke the skill naturally via the Skill tool. */
+function skillInvocationPrompt(skillName: string, userPrompt: string): string {
+	return `/${PLUGIN_NAMESPACE}:${skillName} — ${userPrompt}`;
 }
 
 // ─── Fixture: Realistic Flashcard CLI App ───────────────────
@@ -486,7 +487,6 @@ async function runSkill(opts: {
 	maxBudgetUsd?: number;
 }): Promise<SkillRunResult> {
 	const tracker = createToolCallTracker(logger.log.bind(logger));
-	const skillBody = loadSkillBody(opts.skillName);
 
 	const simulatedUser = createSimulatedUser({
 		cwd: opts.fixtureDir,
@@ -500,7 +500,7 @@ async function runSkill(opts: {
 
 	try {
 		sessionResult = await runSkillSession({
-			prompt: opts.prompt,
+			prompt: skillInvocationPrompt(opts.skillName, opts.prompt),
 			options: {
 				cwd: opts.fixtureDir,
 				permissionMode: "bypassPermissions",
@@ -514,11 +514,6 @@ async function runSkill(opts: {
 				systemPrompt: {
 					type: "preset",
 					preset: "claude_code",
-					append: [
-						`# ${opts.skillName} Skill Instructions`,
-						"",
-						skillBody,
-					].join("\n"),
 				},
 			},
 			transcriptFile: TRANSCRIPT_FILE,
@@ -853,7 +848,7 @@ async function stepAudit(ctx: PipelineContext): Promise<boolean> {
 
 	const result = await runSkill({
 		skillName: "audit",
-		prompt: "Run /gp:audit architecture. Analyze the project architecture and report findings.",
+		prompt: "Audit the project architecture and report findings.",
 		userSystemPrompt: [
 			"You are a senior developer auditing the architecture of a flashcard app with spaced repetition.",
 			"You want to audit the architecture specifically — you're concerned about whether the module boundaries and dependency structure are sound.",

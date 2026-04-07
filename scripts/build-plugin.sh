@@ -37,8 +37,7 @@ cat > "$PLUGIN_DIR/.claude-plugin/plugin.json" <<MANIFEST
     "name": "Ian White",
     "url": "https://github.com/ian97531"
   },
-  "skills": "./skills",
-  "agents": "./agents"
+  "skills": "./skills"
 }
 MANIFEST
 
