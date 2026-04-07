@@ -22,8 +22,8 @@ if os.path.isfile(os.path.join(cwd, '.goodplan-dev')):
 if '.goodplan/' in cmd:
     read_only_patterns = ['cat ', 'grep ', 'rg ', 'ls ', 'stat ', 'head ', 'tail ', 'wc ', 'file ', 'diff ', 'find ', 'less ', 'more ', 'bat ']
     stripped = cmd.strip()
-    # Check both start-of-command and subshell/pipe patterns like $(cat .goodplan/...)
-    is_read_only = any(stripped.startswith(p) for p in read_only_patterns) or any('$(' + p.strip() for p in read_only_patterns if ('$(' + p.strip()) in cmd)
+    # Check both start-of-command and subshell/pipe patterns like \$(cat .goodplan/...)
+    is_read_only = any(stripped.startswith(p) for p in read_only_patterns) or any('\$(' + p.strip() for p in read_only_patterns if ('\$(' + p.strip()) in cmd)
     if not is_read_only:
         print(json.dumps({
             'hookSpecificOutput': {
