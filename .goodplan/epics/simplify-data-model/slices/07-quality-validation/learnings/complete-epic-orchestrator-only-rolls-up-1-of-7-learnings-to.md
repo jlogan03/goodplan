@@ -1,1 +1,0 @@
-Agent writes rich consolidated-learnings.md but orchestrator extracts only 1 truncated summary. Task captured.

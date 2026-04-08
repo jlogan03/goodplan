@@ -1,1 +1,0 @@
-Pattern: INPUT=$(cat) to capture stdin, then pipe to single python3 -c that handles all logic (JSON parsing, path resolution, matching, output).

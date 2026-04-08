@@ -1,0 +1,10 @@
+{
+	"activated": null,
+	"created": "2026-04-07T23:53:04.761Z",
+	"goal": "Redesign the goodplan workflow based on dogfooding pain. First design the ideal flow abstractly (independent of current skills/CLI), then translate the delta into skill and CLI changes. Seed pain points: clunky phase transitions, wrong context bundles, rigid state machine (no backward transitions), need more user steering opportunities while preserving define-up-front-then-autonomous model. Scope: whole system end-to-end (init through complete-epic). Not a rewrite — targeted improvements.",
+	"name": "workflow-bug-fixes",
+	"refinement": null,
+	"status": "exploring",
+	"updated": "2026-04-07T23:53:10.788Z",
+	"verifications": []
+}

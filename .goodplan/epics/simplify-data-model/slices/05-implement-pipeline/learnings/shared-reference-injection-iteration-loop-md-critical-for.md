@@ -1,1 +1,0 @@
-The implement SKILL.md manages 10+ concerns. Delegating the review loop to iteration-loop.md via reference injection kept it at 490 lines. Future pipeline skills should aggressively extract reusable patterns.

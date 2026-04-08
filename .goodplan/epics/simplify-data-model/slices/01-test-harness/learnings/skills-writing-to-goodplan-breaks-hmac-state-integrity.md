@@ -1,1 +1,0 @@
-16 of 18 installed skills instruct agents to write directly into .goodplan/ subdirectories. This invalidates the HMAC stateSignature. Verification temporarily disabled until skills only write to CLI-provided paths.

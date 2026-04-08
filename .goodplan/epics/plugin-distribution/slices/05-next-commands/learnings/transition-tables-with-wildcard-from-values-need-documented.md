@@ -1,1 +1,0 @@
-State machine transition tables use wildcard from values (*(non-terminal), *(pre-activated)) requiring expansion before derivation. Expansion rules are implicit in handler code. Future derivation work should document the algorithm: Zod status schema provides full set, specific sets to import, handling of (same) and (error) sentinels.

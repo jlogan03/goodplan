@@ -1,8 +1,0 @@
-{
-	"created": "2026-03-28T21:54:33.391Z",
-	"goal": "Update rpc-layer-api.md to match actual code signatures. Key gaps: (1) All three core functions (begin, complete, submit) take undocumented projectDir as first param. (2) begin() has a generic BeginPayloadMap mechanism for per-phase payloads — completely absent from docs. (3) BeginResult and SubmitResult lack context field (docs claim they have it). (4) StatusResult shape changed significantly (active entities are nullable not optional, no phase field, artifacts use {count,files} objects, openTasks/totalTasks added). (5) status() documented as RPC function but lives in Commands layer. (6) startContext() listed under RPC but is a peer module. (7) WorkflowOptions.force undocumented. (8) DecisionSummary.status and LearningSummary.file optionality drift. Done when: rpc-layer-api.md accurately reflects the current function signatures, type definitions, and module locations.",
-	"name": "rpc-api-doc-drift",
-	"refinement": null,
-	"status": "completed",
-	"updated": "2026-03-28T22:55:19.949Z"
-}

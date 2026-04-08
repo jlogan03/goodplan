@@ -1,1 +1,0 @@
-Test fixtures like pre-cli-project and learnings-migration intentionally lack modern entities. Adding them breaks migration tests that rely on detecting their absence. Future fixture updates should check whether the fixture is used by migration tests.

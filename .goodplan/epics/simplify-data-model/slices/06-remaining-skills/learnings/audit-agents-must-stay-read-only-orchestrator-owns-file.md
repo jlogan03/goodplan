@@ -1,1 +1,0 @@
-Audit agents should return structured JSON; the orchestrator writes the report file. This is consistent with the orchestrator pattern where the orchestrator owns all filesystem mutations. Initial implementation gave agents write instructions but read-only tools, caught by reviewers.

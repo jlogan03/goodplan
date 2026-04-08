@@ -1,1 +1,0 @@
-Creating a fixture at explored status requires: createMinimalFixture + epic:explore + write explore-complete.md + submit-explore (empty stdin, not JSON). Each CLI command has specific stdin format expectations. Took 3 refinement rounds to nail down.

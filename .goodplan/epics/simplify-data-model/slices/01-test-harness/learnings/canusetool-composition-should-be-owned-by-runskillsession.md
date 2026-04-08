@@ -1,1 +1,0 @@
-runSkillSession should accept simulatedUser + checkViolations params and handle canUseTool composition internally. Leaving it to callers defeats the deduplication goal.

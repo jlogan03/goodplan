@@ -1,1 +1,0 @@
-The 4-layer stack (Commands → RPC → State Machine → Data Layer) held up across all 8 slices without boundary changes. Reducer purity (INV-003) made all 37 event handlers trivially testable and deterministic. Invest in the layer model and purity constraint early — it pays dividends for the entire epic.

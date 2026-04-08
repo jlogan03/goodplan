@@ -1,1 +1,0 @@
-The original plan used git log parsing for re-entry. Adding an implementationPhase field to the slice entity (schema, state event, transition handler, CLI flag) produced a robust mechanism consistent with all other re-entry patterns. Future slices needing in-progress tracking should extend the data model.

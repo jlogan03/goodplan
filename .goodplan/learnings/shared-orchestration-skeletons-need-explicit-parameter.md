@@ -1,1 +1,0 @@
-When extracting a shared pattern (like an iteration loop), define how consumers plug in their specifics: a "Loop Parameters" section listing reviewer list, exit criteria, editor prompt path, etc. Without a concrete interface contract, "use the shared loop" is too vague for implementing agents.

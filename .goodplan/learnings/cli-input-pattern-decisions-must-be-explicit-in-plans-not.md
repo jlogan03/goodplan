@@ -1,1 +1,0 @@
-Leaving `task:drop` as "reads stdin" cost a refinement iteration when reviewers flagged it as inconsistent with `quest:abandon`'s flag pattern. Plans should explicitly name which existing command's pattern to follow.

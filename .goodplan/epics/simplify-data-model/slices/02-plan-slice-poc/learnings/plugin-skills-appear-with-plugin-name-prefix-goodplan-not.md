@@ -1,1 +1,0 @@
-build-plugin.sh adds gp: prefix to skill names but Claude Code replaces it with the plugin manifest name (goodplan:). Test prompts must use goodplan: prefix or natural language.

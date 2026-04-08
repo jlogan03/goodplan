@@ -1,1 +1,0 @@
-Per-phase reviews validated each skill in isolation but missed system-level gaps (e.g., implement-plan and create-plan not reading initiative architecture). A final integration review across all phases caught 5 IMPORTANT issues. Budget for integration review when plans span many files.

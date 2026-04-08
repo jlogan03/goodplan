@@ -1,1 +1,0 @@
-{"description":"Scope decision: __GOODPLAN_VERSION__ define, GOODPLAN_DIR env var, and globalThis flags all kept as-is rather than renamed to __GP_VERSION__/GP_DIR","subsystem":"Commands","ts":"2026-03-30T01:12:49.149Z","type":"modify"}

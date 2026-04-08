@@ -1,1 +1,0 @@
-Bun-specific APIs (Bun.CryptoHasher) are unavailable in Vitest unit tests. Use node:crypto for crypto code that must work in both compiled binary and unit test contexts.

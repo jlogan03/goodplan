@@ -1,1 +1,0 @@
-All three audit skills share identical severity definitions, reviewer output format, and side quest template. Extracting to _shared/references/audit-conventions.md with per-skill cross-references prevents drift. Extract shared conventions early when adding skills to a family.

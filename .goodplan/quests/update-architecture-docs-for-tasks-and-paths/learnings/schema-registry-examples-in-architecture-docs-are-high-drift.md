@@ -1,1 +1,0 @@
-Schema registry examples in data-layer-api.md and data-model.md used flat slice paths restructured during entity-restructuring epic. Code examples in architecture docs are prone to drift because they are not validated by any automated process. Consider a fitness function comparing documented patterns against actual schema-registry.ts.

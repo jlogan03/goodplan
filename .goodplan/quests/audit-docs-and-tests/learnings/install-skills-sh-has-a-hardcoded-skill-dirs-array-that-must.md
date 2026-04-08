@@ -1,1 +1,0 @@
-New skills are not auto-discovered. They must be manually added to the SKILL_DIRS array in scripts/install-skills.sh. Without this, bun run install:skills silently skips new skills. Consider making this dynamic.

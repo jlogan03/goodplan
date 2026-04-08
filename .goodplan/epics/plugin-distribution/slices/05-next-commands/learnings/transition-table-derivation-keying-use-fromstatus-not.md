@@ -1,1 +1,0 @@
-The plan specified keying commandMappings by (entityType, toStatus) but correct semantics is fromStatus — the status the entity IS IN when the command is available. Future plans should be precise about which status dimension is the lookup key.

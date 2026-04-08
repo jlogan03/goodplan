@@ -1,1 +1,0 @@
-Exporting PROJECT_DIR_NAME and LEGACY_DIR_NAME from project.ts gave init.ts, migrate.ts, and schema.ts a single source of truth. Without this, three modules would independently hardcode the same string.

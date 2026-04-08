@@ -1,1 +1,0 @@
-Variable substitution is only performed in skill content, agent content, hook commands, and MCP/LSP configs. Plugin root CLAUDE.md gets no substitution and may not load for marketplace installs. Binary path instructions must live in skill content.

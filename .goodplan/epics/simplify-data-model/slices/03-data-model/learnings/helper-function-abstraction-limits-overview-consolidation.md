@@ -1,1 +1,0 @@
-The 7 helpers.ts functions (updateEpicStatus, addSliceToOverview, etc.) encapsulated most overview path access. Only task-lifecycle.ts had a direct path bypass (handleConvertTask ~line 108). Exhaustive grep for old paths is essential even when helpers exist.

@@ -1,1 +1,0 @@
-Use python3 os.path.normpath + os.path.join instead of realpath for portable path normalization in bash scripts.
