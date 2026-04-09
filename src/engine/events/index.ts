@@ -6,6 +6,12 @@ export type { LockHandle } from "./lock.js";
 export { readLastEventId } from "./read-last-event.js";
 export { replayEvents } from "./replay.js";
 export type { ReplayFilter, ReplayOptions, ReplayResult } from "./replay.js";
+export { createMigrationRegistry, replayWithMigrations } from "./migration.js";
+export type {
+	EventMigration,
+	MigrationRegistry,
+	VersionAwareReplayOptions,
+} from "./migration.js";
 export type {
 	Actor,
 	AnyEventEnvelope,
