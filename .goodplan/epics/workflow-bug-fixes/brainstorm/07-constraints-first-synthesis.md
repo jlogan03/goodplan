@@ -155,13 +155,16 @@ The Trust Substrate is a single mechanism with two expressions. It consists of:
 
 **Flow:**
 1. Producer reads rubric and relevant spine context, drafts artifact, emits `artifact-drafted` event.
-2. Routing function picks reviewers based on artifact type, content tags, and subsystem maturity.
-3. Each reviewer reads the full artifact (round 1) and emits `reviewer-scored`.
-4. Convergence evaluator: if `CONVERGED`, emit `artifact-converged` and unblock downstream; else producer sees aggregated findings.
-5. Producer addresses findings, emits `artifact-revised` with a diff against the prior version.
-6. Each reviewer from round N-1 sees the **diff**, not the full artifact, and answers the single question: *"did your prior concerns get resolved, and are there new ones in the changed region?"* Re-review is change-scoped.
-7. Loop until `CONVERGED` or `STUCK`.
-8. `STUCK` → circuit breaker → Pause Discipline → structured user decision → either forced convergence with a recorded override, or redesign, or abandon.
+2. **Plan-shape checkpoint (plan artifacts only, mandatory).** Before reviewers run, the producer surfaces the draft to the user and enters an interactive shape-collaboration mode. The user and the LLM shape the skeleton together — structure, ordering, scope of chunks, framing — while the plan is still malleable and has not yet accreted reviewer context. Refinement does **not** run until the user explicitly signals "shape-approved, proceed to refinement." See §4.3's *Scheduled steering checkpoints* for the discipline. Other artifact types may opt into a shape checkpoint via the rubric; for plans it is non-negotiable.
+3. Routing function picks reviewers based on artifact type, content tags, and subsystem maturity.
+4. Each reviewer reads the full artifact (round 1) and emits `reviewer-scored`.
+5. Convergence evaluator: if `CONVERGED`, emit `artifact-converged` and unblock downstream; else producer sees aggregated findings.
+6. Producer addresses findings, emits `artifact-revised` with a diff against the prior version.
+7. Each reviewer from round N-1 sees the **diff**, not the full artifact, and answers the single question: *"did your prior concerns get resolved, and are there new ones in the changed region?"* Re-review is change-scoped.
+8. Loop until `CONVERGED` or `STUCK`.
+9. `STUCK` → circuit breaker → Pause Discipline → structured user decision → either forced convergence with a recorded override, or redesign, or abandon.
+
+**Refinement only runs on shape-approved plans.** Refinement does not bypass, replace, or substitute for the shape checkpoint. A plan that has not been shape-approved cannot enter the reviewer loop; the invariant engine refuses it the same way it refuses unconverged handoffs.
 
 **Always-on reviewers (attached to every artifact regardless of type):**
 - **Holistic-coherence reviewer** — internal consistency and claims-vs-content.
@@ -208,6 +211,13 @@ chunk:
   id: c17
   description: Add `task:defer` command that appends a defer event to the task log.
   expectation: After `task:defer 42 --until=tomorrow`, `task:list --pending` no longer shows task 42 today, but shows it tomorrow.
+  red-test: |
+    A unit/integration test that invokes `task:defer` and asserts the log contains
+    a `task-deferred { id, until }` event. The test MUST be written before the
+    implementation and MUST be observed to fail (command not found / event absent)
+    before any implementation code is added. The failure is itself an expectation:
+    it proves the test actually exercises the intended behavior and is not a
+    cargo-culted green checkmark.
   verification-method: |
     1. Seed a task with `task:create "foo"` and record its id.
     2. Run `task:defer <id> --until=2026-04-08`.
@@ -227,19 +237,27 @@ The **verification-plausibility reviewer** (always attached to plan artifacts) i
 - Is this `live` pretending to be `live` when it's really just a type check or a build?
 - If `supplementary-tests`, is the coverage demonstration concrete?
 - If `impossible-with-reason`, is the reason specific enough to give the user a real choice?
+- **Does the `red-test` exercise the chunk's expectation — not an adjacent property?** A test that asserts something other than what the chunk is meant to do is rejected, even if it happens to exercise nearby code.
+- **Does the `red-test` test behavior, not implementation details?** Tests that lock in specific internal choices (private method signatures, incidental call counts, internal data shapes) are rejected. Tests that verify observable outcomes are accepted.
+- **Is the `red-test` meaningful?** A test that fails for trivial reasons (`expect(1).toBe(2)`, unconditional throw, unrelated assertion) is not a valid red test even if it technically fails initially. The failure must be caused by the absence of the thing the chunk is meant to add.
+- **Could the `red-test` pass for reasons unrelated to the described change?** If yes, it is cargo-culted and rejected. The reviewer traces: if the chunk's change were reverted, would this test actually fail for the intended reason?
+- **Is the `red-test` distinct from the `verification-method`?** The red test proves intent-alignment at the unit level in isolation or a controlled environment; the verification method proves behavior in production-shape conditions at the live-execution level. Both are required, and a plan that collapses the two loses the property each one provides.
 
 Any chunk that fails these is a BLOCKING finding. The plan cannot converge until every chunk passes.
 
-**Build-time flow (when implementing a chunk):**
+**Build-time flow (when implementing a chunk) — the red-green-verify loop:**
 
-1. Agent loads the chunk from the plan (the contract: description, expectation, verification-method, verification-type).
-2. Agent writes the code.
-3. Agent runs the verification method as specified.
-4. Agent captures observations (output, state dumps, screenshots, curl responses, log excerpts).
-5. Agent compares observation against expectation.
-6. If match: emit `chunk-verified { id: c17, method: live, expectation: ..., observation: ..., matched: true, evidence-ref: ... }`.
-7. If mismatch: the agent does **not** edit the expectation. It diagnoses the mismatch and either fixes the implementation, re-runs, or, if the mismatch is because the expectation itself was wrong, pauses (the plan artifact needs a revision, which re-enters refinement).
-8. If verification turns out to be impossible at build time (environment broken, dependency missing, something the plan did not foresee): emit `chunk-blocked-on-verification` and pause with the Unverifiable-Chunk Decision (see §4.3).
+1. Agent loads the chunk from the plan (the contract: description, expectation, `red-test`, verification-method, verification-type).
+2. **Red.** Agent writes the `red-test` as specified and runs it. The test MUST fail. The failure is captured as evidence — a passing test at this step is itself a bug (the test is not exercising the intended behavior, or prior state satisfies it accidentally) and the chunk halts until the test is rewritten to fail for the right reason.
+3. **Green.** Agent writes the implementation code until the `red-test` passes. No other changes; the goal is to move the one test from red to green.
+4. **Verify.** Agent runs the `verification-method` in the live environment.
+5. Agent captures observations (output, state dumps, screenshots, curl responses, log excerpts).
+6. Agent compares observation against expectation.
+7. If match: emit `chunk-verified { id: c17, method: live, expectation: ..., observation: ..., red-test-initial-failure: ..., red-test-final-pass: ..., matched: true, evidence-ref: ... }`.
+8. If mismatch: the agent does **not** edit the expectation. It diagnoses the mismatch and either fixes the implementation, re-runs, or, if the mismatch is because the expectation itself was wrong, pauses (the plan artifact needs a revision, which re-enters refinement).
+9. If verification turns out to be impossible at build time (environment broken, dependency missing, something the plan did not foresee): emit `chunk-blocked-on-verification` and pause with the Unverifiable-Chunk Decision (see §4.3).
+
+**TDD is additive, not a substitute for live execution.** The red-green loop gives one property — it proves the test exercises the intended behavior, because the test was observed to fail before the code existed. Live verification gives a different property — it proves the real-world behavior the user cares about actually happened. Constraint 2's language is deliberately stronger than red-green TDD and stays that way: *"a test that passes because it tests almost nothing is worse than no test."* TDD contributes to the evidence; it never replaces the live-execution observation that Constraint 2 demands.
 
 **Invariant on slice completion:**
 
@@ -250,6 +268,28 @@ Any chunk that fails these is a BLOCKING finding. The plan cannot converge until
 - `chunk-verified` carries evidence, not just a boolean. The schema requires a non-empty `observation` field.
 - A `verification-spot-check` reviewer can sample N% of `chunk-verified` events in an epic-land synthesis and re-run the verification method, comparing its observation to the one in the event. Divergence triggers an IMPORTANT finding against the build agent and may retro-demote the chunk to unverified.
 - The Pressure Test (§4.4) explicitly includes the question: *"for which chunks could the LLM plausibly fake verification without anyone noticing? strengthen those methods."*
+
+#### 3.2.3 Code refinement loop — Constraint 1 applied to implemented code
+
+Execution verification (Constraint 2) answers *"does this code do what it's supposed to?"* — a mechanical per-chunk check that behavior matches expectation. It does not answer *"is this code good enough to live in the project?"* — the quality dimensions of performance, reliability, security, domain correctness, code style, and test meaningfulness. Under Constraint 1, implemented code is itself an artifact and must earn trust through review.
+
+After every chunk in a slice has passed execution verification (Constraint 2 satisfied), the implemented code enters a **code refinement loop**: specialized reviewers evaluate quality dimensions, iterating until a quality bar is met. This is not a new top-level element — it is the refinement loop mechanism from §3.2.1 applied to code as the artifact, with reviewer categories specialized for code quality dimensions. *"The refinement loop is applied to code after execution verification, with reviewer categories specialized for code quality dimensions. This is Constraint 1 applied to implemented code: the code earns trust through review, just as artifacts earn trust through review."*
+
+**Reviewer categories (starting set, expandable via the reviewer registry):**
+
+- **Performance** — hot paths, algorithmic complexity, memory usage, I/O patterns.
+- **Reliability** — error handling, edge cases, recovery paths, failure modes.
+- **Security** — input validation, auth/authz, secrets handling, injection surfaces.
+- **Domain correctness** — business logic, invariants maintained, contract adherence.
+- **Code style and maintainability** — readability, consistency with the existing codebase, naming, structure.
+- **Test meaningfulness** — tests actually exercise the claimed behavior; no cargo-culted tests. This is the slot for cargo-cult detection at code-review time, complementing the plan-refinement-time check on `red-test` (§3.2.2).
+- **Subsystem reviewers** — pulled dynamically by the routing function based on which subsystems the slice touches.
+
+The loop reuses the substrate wholesale: routing function, rubric library (with a `code/vN` rubric), convergence evaluator, circuit breaker, change-scoped re-review, rigor dial. The artifact is the slice's diff; rounds operate on the diff and on successive revisions. STUCK routes through the Pause Discipline exactly as artifact refinement does.
+
+**Invariant on slice completion (strengthened from §3.2.2):**
+
+> `slice-completed` cannot fire unless every chunk has a `chunk-verified { matched: true }` (or `chunk-unverifiable { user-decision: accepted-with-reason }`) event **and** the slice's code has a `code-refined { converged: true }` event. No slice may enter Slice Land until all chunks are verified AND the code has passed the code refinement loop.
 
 ### 3.3 Shared substrate infrastructure
 
@@ -335,6 +375,35 @@ The Pause Discipline now absorbs two new cases that fall out of the Trust Substr
 
 The user's choice is recorded as `chunk-unverifiable-decided { choice, reason }`. Only options 2 and 3 allow the slice to eventually complete; option 2 requires a declared limitation that promotes into the spine as a known risk on the affected subsystem.
 
+**Scheduled steering checkpoints — a distinct class of pause.**
+
+The five triggers above (R1, pre-flight, briefings, return, non-convergence, unverifiable-chunk) are **reactive**: the LLM hits a condition and the discipline fires. The Pause Discipline also owns a second class, **scheduled steering checkpoints**, which are built into the phase flow rather than reactive to a condition.
+
+| Property | Reactive pause | Scheduled steering checkpoint |
+|---|---|---|
+| When it fires | When a trigger condition hits | At a fixed point in the phase lifecycle |
+| What the LLM is doing | Blocking on an external decision | Actively collaborating with the user |
+| User's role | Resolves the block, workflow resumes | Primary feedback source on shape and direction |
+| Exits on | Decision recorded | Explicit user signal ("shape-approved, proceed") |
+
+**The canonical example is the plan-shape checkpoint.** After the initial plan draft and *before* the plan refinement loop runs, the workflow enters the shape checkpoint: the user and the LLM iteratively shape the plan's skeleton together. The checkpoint exists because the plan is most malleable before refinement accretes reviewer context around it, and the user's highest-leverage opportunity to steer direction is at the skeleton stage — not after reviewers have turned the plan into a vehicle for aggregated context. This is not a quality gate (refinement is); it is a **steering checkpoint**. Refinement is forbidden from running until the user signals shape-approval.
+
+The shape checkpoint reuses the Pause Discipline's format — fresh briefing, trade-offs named, options presented, recommendation stated — but in collaborative mode: the LLM is not waiting, it is proposing revisions, surfacing alternatives, and converging with the user on a skeleton both sides are willing to hand to reviewers. On exit, a `plan-shape-approved { artifact-id, user-confirmation }` event is emitted; the invariant engine refuses to start refinement without it.
+
+**"User away" protocol — epic-level steering preference.** The shape checkpoint is collaborative, which requires a user on the other end. When the user is unavailable at checkpoint time, the workflow must neither block forever nor silently guess. The resolution is an **epic-level steering preference** set once during epic creation (§4.8) and honored at every checkpoint in that epic.
+
+The three preference values:
+
+- **`always-consult`** — the LLM pauses at each checkpoint, emits a *"plan-shape checkpoint reached, ready for your input"* notification, and waits indefinitely. The slice does not progress until the user engages.
+- **`best-guess-and-flag`** — the LLM drafts a best-guess shape, emits a `plan-shape-checkpoint-auto-shaped { artifact-id, guess-summary, reasoning }` event, proceeds to refinement, and flags the decision in the return briefing so the user sees it and can redirect at the next natural pause.
+- **`ask-in-the-moment`** — the LLM emits a short *"I'm at a plan-shape checkpoint, do you want to steer now?"* notification and proceeds based on the response; after a reasonable wait with no response, it defaults to best-guess with flag.
+
+**Override at any time.** The user can override the epic-level preference with an explicit message (*"I want to steer the next plan directly"* / *"use best-guess for the next few slices"*). Overrides are either permanent (updating the epic preference) or scoped to a specified number of upcoming checkpoints. Emits `epic-steering-preference-set { scope, value }`.
+
+The preference applies only to scheduled steering checkpoints, not to reactive pauses — a non-convergence or unverifiable-chunk pause still fires regardless of the preference, because those are blocks on real decisions the user cannot delegate to a guess.
+
+Other artifact types may opt into scheduled steering checkpoints by declaring one in their rubric. For plans the checkpoint is non-negotiable. It lives in the Pause Discipline because it shares the same shape (fresh context, structured format, next-action clarity), not because it is reactive.
+
 **Why absorbing these into Pause Discipline instead of adding new mechanisms:** They share the same shape — fresh context at pause time, structured format, cheap-block rule, next-action menu discipline. Making them new mechanisms would duplicate the rule and the format. Making them triggers means a new contributor learns Pause Discipline once and gets all five cases for free.
 
 ### 4.4 The Pressure Test
@@ -375,6 +444,68 @@ Unchanged from 06. Integrity engine, schema validator, query engine, atomic-writ
 - **The CLI owns the reviewer registry and rubric library read surface.** `gp reviewer:list --for-artifact=plan --subsystem=auth` is a query. `gp rubric:show plan/v3` is a query. The producer of an artifact reads the applicable rubric through the CLI before drafting.
 - **The CLI enforces the handoff invariant.** `gp phase:transition --from=plan --to=build` refuses if `convergence:evaluate --artifact=<plan-id>` is not `CONVERGED`. The LLM cannot override; only a user-level `--force-override-with-reason` flag can, and that emits a `convergence-overridden` event recorded on the epic's audit trail.
 
+### 4.7 Slicing techniques (Shape phase)
+
+When the Shape phase produces the slice set for an epic, three techniques guide the slicing.
+
+> *"These techniques guide slicing but don't dictate it. The slicing step weighs them against each other and against the epic's specific shape. Deviations are allowed and expected; reviewers ask about justification, not enforcement."*
+
+They are heuristics, not rules — reviewers attached to slice-set artifacts check for them explicitly, but the check is *"if you didn't apply this technique, why not?"*, not *"did you apply this technique?"*.
+
+| Technique | Rule | Why |
+|---|---|---|
+| **Tracer bullet** | The first slice is a thin end-to-end cross-section through every layer the epic affects — front to back, minimal feature content — producing a working-but-minimal skeleton. | De-risks layer integration early; subsequent slices iterate on a proven skeleton rather than on speculation about whether the layers connect. |
+| **Debugging/observability early** | Logging, tracing, and debugging tooling that later slices will rely on are scheduled in early slices. | Later slices are verified inside an environment with good debug tools, not added retroactively when something is already broken. |
+| **Known unknowns first** | Slices that directly address the team's biggest uncertainties — feasibility, approach, external behavior — are prioritized ahead of comfortable work. | The scariest parts pay their risk down first, while there is still time to reshape the epic around what the early slices reveal. |
+
+**Reviewer contract (slice-set refinement).** The slicing reviewer — attached to every slice-set artifact — does *not* check "did you tracer-bullet?"; it checks "if you didn't tracer-bullet, why not?" A slicing that applies none of the techniques but records clear justification passes review. A slicing that omits them silently, or with weak reasoning ("felt cleaner this way"), fails review. The reviewer's job is to surface missing reasoning, not to enforce a checklist.
+
+**Valid deviations (examples):**
+
+- *Tracer bullet:* a pure backend refactor has no frontend to thread through — deviation accepted.
+- *Observability early:* an epic that touches already-well-instrumented code doesn't need a dedicated observability slice — deviation accepted.
+- *Known unknowns first:* an epic with no meaningful unknowns doesn't need a de-risking slice — deviation accepted.
+
+**Meta-rule: techniques serve the epic's goals.** The techniques exist to de-risk epic execution. If applying a technique would produce nonsensical slices for this epic, the technique doesn't apply to this epic. The slicing step chooses its techniques based on the epic's actual risks, not on checklist compliance.
+
+**The techniques can conflict.** Tracer bullet says *"touch every layer lightly"*; known-unknowns-first says *"go deep on the scariest thing."* These cannot both be the first slice. The slicing step resolves the conflict based on the epic's specific risks — which risk, if it fires, hurts the epic more — and records the reasoning for the slicing reviewer to evaluate.
+
+**Connection to the rest of the architecture.** These techniques are the *"de-risk early"* posture expressed as concrete slicing rules. They interact with §4.5 Mid-Epic Discovery: known-unknowns-first maximizes the chance that mid-flight discoveries land while the epic still has scope to absorb them, rather than at the end when reshape is expensive.
+
+### 4.8 Design tree interviewing (Explore and Shape phases)
+
+When the LLM interviews the user — during brainstorming in the Explore phase, or during architecture design in the Shape phase — it uses a **design tree** approach. The LLM maintains an internal model of the design space as a tree where each branching point is a decision with alternatives and consequences. Questions to the user are generated to systematically navigate the tree, rather than drifting through whatever topic surfaces next.
+
+**How the technique runs:**
+
+- The LLM builds the tree incrementally: the root is the thing being designed, branches are the major decisions, sub-branches are the alternatives at each decision, leaves are consequences and open questions.
+- The LLM asks questions that help the user reason through one branch at a time, marking branches as **explored / deferred / closed** as the conversation progresses.
+- The LLM does not commit to a direction until enough of the tree has been explored to make the choice informed. Commitment before exploration is a pull back to the tree, not a skip.
+- The user sees a summary-level view of the tree on request — what's been explored, what's still open, what's deferred — so the conversation has shared state rather than living only in the LLM's context.
+- The tree is maintained implicitly by the LLM during the interview, surfaced explicitly at the end (or on demand) as an artifact the Explore or Shape phase can hand to downstream work.
+
+**Where the technique applies:**
+
+| Phase | Use |
+|---|---|
+| Explore | Brainstorming an idea, researching a problem space, mapping alternatives before committing to a target. Design tree interviewing is the primary interview technique. |
+| Shape | Architecture design — the interactive portions where the user has context the LLM needs. The tree captures the design space of the architecture itself and is navigated collaboratively. |
+| Slice (plan-shape checkpoint) | The shape checkpoint (§4.3, §3.2.1) is a natural place to use design-tree interviewing on the plan skeleton: the skeleton is itself a small design space with branches worth exploring before refinement locks in. |
+
+**Why a tree rather than a flat question list:** flat questioning drifts, re-covers ground, and leaves the LLM without a map of what's unexplored. A tree makes unexplored branches visible and prevents the LLM from committing to a direction because the first branch sounded promising. The technique is in service of *"extract as much useful context from the user as possible"* — the user's attention is scarce, and the tree structure makes each question earn its place.
+
+**The tree is biased; the user co-authors it.** The design tree the LLM generates is inherently biased — it includes the branches the LLM can think of, and misses ones it can't. The LLM explicitly acknowledges this to the user when introducing the tree: *"Here's the design tree as I see it. Are there branches or alternatives I missed? This is your chance to add them before we explore."* The user becomes a co-author of the tree, not just a navigator of it. Branches the user adds are marked as user-contributed so later reviewers can weight them appropriately.
+
+**Non-tree-shaped spaces use different structures.** Some design spaces aren't tree-shaped. They're graphs (branches interconnect and can't be explored independently), matrices (orthogonal dimensions that compose), or flat (many parallel choices with no hierarchy). When the LLM recognizes that the space isn't naturally tree-shaped, it says so and uses a different structure: a matrix for orthogonal dimensions, a diagram for interconnected branches, a list for flat parallel choices. *"Design tree"* is the default technique; the underlying principle is *"systematic exploration of the design space,"* and the structure should match the space.
+
+**Epic-creation interview: capturing the steering preference.** When the design-tree interview runs during initial goal capture for a new epic, the LLM asks the user explicitly about the plan-shape checkpoint steering preference (§4.3):
+
+> *"For this epic, plan-shape checkpoints give you a chance to steer each slice's plan before refinement starts. How do you want me to handle them? (a) Always consult you — I'll block at each checkpoint until you respond. (b) Use best-guess and flag for your review at return time — I'll continue working and you can redirect if you disagree. (c) Ask me in the moment at each checkpoint — I'll tell you I've reached one, you decide then whether to engage."*
+
+The answer is captured as an epic-level steering preference and emitted as `epic-steering-preference-set { epic-id, value }`. The preference is honored by every plan-shape checkpoint in the epic unless the user overrides it at a specific checkpoint (§4.3).
+
+**Relationship to the substrate.** Design tree interviewing is a producer-side technique for Explore and Shape phases; it is not a reviewer or a gate. Its output feeds into artifacts that then go through the Trust Substrate like any other. The tree itself can be captured as an artifact and reviewed if the phase's rubric asks for it.
+
 ---
 
 ## 5. How the mechanisms compose
@@ -390,10 +521,12 @@ Pressure-test report → refinement (light) → CONVERGED
      ↓
 Target → refinement (rigor scaled to maturity) → CONVERGED
      ↓  [invariant gate: no Slice phase without converged target]
-Slice set proposed → refinement → CONVERGED
+Slice set proposed (applying tracer-bullet / observability-early / known-unknowns-first techniques §4.7) → refinement → CONVERGED
      ↓  [invariant gate: no Plan phase without converged slices]
-Per slice: Plan proposed
+Per slice: Plan drafted
      ↓
+Plan-shape checkpoint (§4.3) — interactive user↔LLM shaping of the skeleton
+     ↓  [invariant gate: no refinement without plan-shape-approved event]
 Plan → refinement, with verification-plausibility as BLOCKING reviewer
      ↓
   if any chunk `impossible-with-reason`:
@@ -403,8 +536,9 @@ Plan → refinement, with verification-plausibility as BLOCKING reviewer
      ↓
 Plan CONVERGED
      ↓  [invariant gate: no Build phase without converged plan and all chunks decidable]
-Build: for each chunk:
-  Write code → run verification-method → capture observation
+Build: for each chunk (red-green-verify loop §3.2.2):
+  Write red-test → run → confirm FAIL → write code → run red-test → confirm PASS
+    → run verification-method → capture observation
     → match:    emit chunk-verified{matched:true, evidence}
     → mismatch: diagnose → fix → retry, or revise plan (re-enters refinement)
     → impossible at build time: Pause Discipline → Unverifiable-Chunk Decision
@@ -502,6 +636,30 @@ Flagged for user review. Each of these is a design decision I made while writing
 11. **I did not specify event schemas at field level** — I sketched them in prose (e.g., *"`chunk-verified` carries observation, not just boolean"*). The next-layer implementation doc needs full schemas. I left them at sketch-level because the prompt asked for architecture, not implementation, and full schemas would have pushed this doc past length and usefulness.
 
 12. **I treated "phases" from 06 (Spark/Sharpen/Survey/Shape/Slice/Build/SliceLand/Repeat/EpicLand) as implicit context, not as named first-class entities in 07.** The prompt did not ask me to redefine phase names. The substrate gates transitions between phases; the phase names themselves are inherited from 01/06 without change.
+
+### 8a. Judgment calls on the technique additions
+
+The original 12 judgment calls above are unchanged. The four techniques added in this revision (plan-shape checkpoint, red-green TDD, slicing techniques, design tree interviewing) were specified by the user as concepts to integrate, but their placement and scoping were choices I made; these are flagged separately so the original set stays stable.
+
+- **A. Plan-shape checkpoint as mandatory-for-plans, rubric-optional elsewhere** (§3.2.1, §4.3). Alternative: mandatory for every artifact, or optional everywhere. I chose mandatory-for-plans because plans are where user steering leverage is highest and refinement churn is most expensive; other artifacts can opt in through their rubric. If this asymmetry is wrong, the rule generalizes either direction.
+- **B. Red-green-verify as baseline on every code-producing chunk** (§3.2.2). Alternative: make `red-test` optional per chunk (e.g., skippable for config-only chunks). I made it baseline because the cost is low and the "does the test actually exercise the change" property is load-bearing for plan refinement. If baseline TDD is too expensive on some chunk classes, the verification-type taxonomy can gain a `live-without-red-test` variant with recorded justification. **This addition does not alter Constraint 2's language; TDD is additive to live execution, never a substitute.**
+- **C. Slicing techniques as a named §4.7 subsection** rather than rubric dimensions only. I chose a named subsection because the techniques are concrete enough to teach and the reviewer contract is clearer when the techniques have names. If §4 gets crowded, §4.7 can collapse into rubric dimensions on slice-set/vN.
+- **D. Design tree interviewing as a named §4.8 subsection** rather than implicit phase behavior. I named it because interviewing is the step most prone to drift and a named technique gives reviewers and skills something concrete to check. If this over-specifies, §4.8 can relocate into producer guidance notes on the Explore and Shape phases.
+
+None of the four additions modify any of the 12 original judgment calls. They interact most directly with calls 2 (`supplementary-tests` vs. strict `live`) and 8 (verification-plausibility as always-on for plans): B strengthens both by adding a second per-chunk check the reviewer runs, but does not change either's disposition.
+
+### 8b. Judgment calls on the refinement additions
+
+The five refinements in this revision (plan-shape "user away" protocol, post-implementation code refinement loop, strengthened red-test reviewer bullets, slicing heuristics-not-rules framing, design tree bias and non-tree shapes) were specified by the user as concepts to integrate, but their placement and scoping were choices I made. Flagged separately so sets §8 and §8a stay stable.
+
+- **E. Three fixed values for the epic-level steering preference** (§4.3, §4.8) — `always-consult`, `best-guess-and-flag`, `ask-in-the-moment`. Alternative: a richer DSL (e.g., "best-guess for slices 1-3, consult for slices 4+"). I chose three fixed values because per-epic capture is the cheap path and the override mechanism already covers fine-grained cases. If richer scoping is needed routinely, the preference can become a small policy expression.
+- **F. The steering preference applies only to scheduled steering checkpoints, not reactive pauses** (§4.3). Alternative: generalize it to any pause. I kept it narrow because reactive pauses (non-convergence, unverifiable-chunk) block on real decisions the user cannot delegate to a best-guess without losing the constraint they exist to enforce. If the narrowness becomes annoying, the preference can gain a second axis for reactive pauses.
+- **G. Code refinement loop runs after execution verification, not interleaved with it** (§3.2.3). Alternative: interleave per chunk. I chose "after all chunks verify" because the code-refinement reviewers need the whole slice diff to evaluate cross-chunk properties (style consistency, reliability across integration points, subsystem-level correctness) and per-chunk review would fragment these. If the loop turns out to block slice completion on trivial style issues, the per-chunk interleave is available as an alternative.
+- **H. Test meaningfulness lives in the code refinement loop as a reviewer category, not as a separate element** (§3.2.3). Alternative: a dedicated cargo-cult-detection element. I folded it into the code refinement loop because it is a quality dimension of code, and the loop is where quality dimensions live. The plan-time `red-test` reviewer (§3.2.2) catches the plan-level failure mode; the code-refinement reviewer catches the build-time failure mode where the test technically passes but tests the wrong thing. Two complementary checks at two different gates.
+- **I. The slicing reviewer contract is "why didn't you?" not "did you?"** (§4.7). Alternative: hybrid — apply at least one, justify deviations from the others. I chose the pure "why didn't you?" framing because the hybrid smuggles in a checklist under the heuristic framing. If slicings routinely apply none of the techniques and the justifications all read as post-hoc rationalization, the hybrid can be adopted.
+- **J. Non-tree design-space structures (graph, matrix, flat list) are named but not fully specified** (§4.8). Alternative: specify each structure's shape, navigation rules, and hand-off format in §4.8 the same way the tree is specified. I left them at sketch-level because the tree is the default and the alternatives are escape hatches; fully specifying each would triple §4.8's length for cases that will be rare. If one of the alternative structures becomes common, it earns its own subsection.
+
+None of the refinements modify §8's 12 original calls or §8a's four additions. The code refinement loop (G, H) interacts with call 2 (`supplementary-tests`) by adding a second place where test meaningfulness is checked, but does not change the verification-type taxonomy.
 
 ---
 
