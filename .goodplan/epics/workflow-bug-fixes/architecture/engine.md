@@ -16,13 +16,13 @@ Each line is a self-contained JSON object (the event envelope). Append-only — 
 ### Event Envelope Schema
 
 ```typescript
-import type { z } from "zod/v4";
+import type { z } from "zod";
 
 // The universal event envelope wrapping every event
 interface EventEnvelope<D extends EventDomain, T extends string, P> {
   id: string;           // UUID v4
   schemaVersion: number; // starts at 1; see Schema Evolution below
-  ts: string;           // ISO-8601 UTC with ms precision
+  ts: string;           // ISO-8601 UTC with ms precision (eventTimestampSchema in envelope.ts, precision:3; distinct from timestampSchema in shared.ts)
   scope: "project" | "epic" | "side-quest";
   scopeRef: string | null;  // slug for epic/side-quest, null for project
   actor: {
@@ -90,7 +90,7 @@ The `schemaVersion` field on every envelope enables forward-compatible evolution
 
 This is a single-user CLI tool. Concurrent writes to the same scope's `events.jsonl` are not expected in normal operation, but can occur if multiple skill/hook invocations overlap (e.g., a hook fires while a command is mid-append).
 
-**Protection:** The read-prevId-then-append critical section is wrapped in a file lock (`flock` on macOS/Linux — the only supported platforms) scoped to the target `events.jsonl`. The lock is held only for the duration of the read-last-prevId + append-line operation (milliseconds). If the lock cannot be acquired within 5 seconds, the command fails with `STATE_CONFLICT`.
+**Protection:** The read-prevId-then-append critical section is wrapped in a file lock (proper-lockfile, mkdir-based locking) scoped to the target `events.jsonl`. The lock is held only for the duration of the read-last-prevId + append-line operation (milliseconds). If the lock cannot be acquired within 5 seconds, the command fails with `DATA_CONCURRENT_MODIFICATION`.
 
 This is a safety net, not a concurrency design. If contention is ever observed in practice, it indicates a skill orchestration bug (two skills mutating the same scope simultaneously).
 
