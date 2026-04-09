@@ -1,0 +1,11 @@
+{
+	"created": "2026-04-09T22:27:17.271Z",
+	"deferred": [],
+	"epic": "workflow-bug-fixes",
+	"goal": "Build artifact-agnostic refinement loop, convergence evaluator, circuit breaker, and 10 extractors",
+	"implementationPhase": null,
+	"name": "04-refinement-loop-extractors",
+	"refinement": null,
+	"status": "created",
+	"updated": "2026-04-09T22:27:17.271Z"
+}

@@ -4,8 +4,81 @@
 			"completed": null,
 			"created": "2026-04-07T23:53:04.761Z",
 			"name": "workflow-bug-fixes",
-			"slices": [],
-			"status": "exploring"
+			"slices": [
+				{
+					"completed": null,
+					"created": "2026-04-09T22:27:03.883Z",
+					"name": "01-event-engine",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-09T22:27:17.139Z",
+					"name": "02-invariant-engine",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-09T22:27:17.207Z",
+					"name": "03-derived-state-core-commands",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-09T22:27:17.271Z",
+					"name": "04-refinement-loop-extractors",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-09T22:27:17.335Z",
+					"name": "05-epic-lifecycle-commands",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-09T22:27:17.399Z",
+					"name": "06-slice-lifecycle-commands",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-09T22:27:17.465Z",
+					"name": "07-supporting-commands-trust",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-09T22:27:17.531Z",
+					"name": "08-core-skills",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-09T22:27:17.599Z",
+					"name": "09-epic-creation-skills",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-09T22:27:17.663Z",
+					"name": "10-slice-execution-skills",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-09T22:27:17.730Z",
+					"name": "11-supporting-skills",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-09T22:27:17.793Z",
+					"name": "12-migration-dogfood",
+					"status": "created"
+				}
+			],
+			"status": "activated"
 		}
 	],
 	"quests": [],

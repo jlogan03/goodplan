@@ -1,0 +1,11 @@
+{
+	"created": "2026-04-09T22:27:17.335Z",
+	"deferred": [],
+	"epic": "workflow-bug-fixes",
+	"goal": "Implement ~20 gp epic:* commands covering full epic lifecycle with context bundle integration",
+	"implementationPhase": null,
+	"name": "05-epic-lifecycle-commands",
+	"refinement": null,
+	"status": "created",
+	"updated": "2026-04-09T22:27:17.335Z"
+}

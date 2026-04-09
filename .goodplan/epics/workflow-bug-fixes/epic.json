@@ -1,10 +1,64 @@
 {
-	"activated": null,
+	"activated": "2026-04-09T22:54:19.463Z",
 	"created": "2026-04-07T23:53:04.761Z",
 	"goal": "Redesign the goodplan workflow based on dogfooding pain. First design the ideal flow abstractly (independent of current skills/CLI), then translate the delta into skill and CLI changes. Seed pain points: clunky phase transitions, wrong context bundles, rigid state machine (no backward transitions), need more user steering opportunities while preserving define-up-front-then-autonomous model. Scope: whole system end-to-end (init through complete-epic). Not a rewrite — targeted improvements.",
 	"name": "workflow-bug-fixes",
-	"refinement": null,
-	"status": "exploring",
-	"updated": "2026-04-07T23:53:10.788Z",
-	"verifications": []
+	"refinement": {
+		"maxRounds": 10,
+		"round": 3,
+		"scoreHistory": [
+			{
+				"round": 1,
+				"scores": {
+					"holistic": 6,
+					"scope-sizing": 6,
+					"slice-ordering": 7,
+					"software-architecture": 7,
+					"verification-plausibility": 7
+				}
+			},
+			{
+				"round": 2,
+				"scores": {
+					"holistic": 9,
+					"scope-sizing": 8,
+					"slice-ordering": 9,
+					"software-architecture": 9,
+					"verification-plausibility": 9
+				}
+			},
+			{
+				"round": 3,
+				"scores": {
+					"holistic": 9,
+					"scope-sizing": 9,
+					"slice-ordering": 9,
+					"software-architecture": 9,
+					"verification-plausibility": 9
+				}
+			}
+		]
+	},
+	"status": "activated",
+	"updated": "2026-04-09T22:54:19.463Z",
+	"verifications": [
+		{
+			"addedDuring": "pre-activation",
+			"description": "All v2 CLI commands pass unit + integration tests (gp verify returns clean)",
+			"modifiedDuring": null,
+			"status": "pending"
+		},
+		{
+			"addedDuring": "pre-activation",
+			"description": "Full epic lifecycle exercised end-to-end via dogfood harness (create -> plan -> implement -> land)",
+			"modifiedDuring": null,
+			"status": "pending"
+		},
+		{
+			"addedDuring": "pre-activation",
+			"description": "v1-to-v2 migration succeeds on this repos own .goodplan/ directory with gp verify passing after",
+			"modifiedDuring": null,
+			"status": "pending"
+		}
+	]
 }

@@ -1,0 +1,11 @@
+{
+	"created": "2026-04-09T22:27:17.207Z",
+	"deferred": [],
+	"epic": "workflow-bug-fixes",
+	"goal": "Build derived state computer and core bootstrap commands: gp init, gp status, gp schema",
+	"implementationPhase": null,
+	"name": "03-derived-state-core-commands",
+	"refinement": null,
+	"status": "created",
+	"updated": "2026-04-09T22:27:17.207Z"
+}

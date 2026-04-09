@@ -1,0 +1,11 @@
+{
+	"created": "2026-04-09T22:27:17.139Z",
+	"deferred": [],
+	"epic": "workflow-bug-fixes",
+	"goal": "Build invariant enforcement framework with 24 core invariants and check-before-append integration",
+	"implementationPhase": null,
+	"name": "02-invariant-engine",
+	"refinement": null,
+	"status": "created",
+	"updated": "2026-04-09T22:27:17.139Z"
+}

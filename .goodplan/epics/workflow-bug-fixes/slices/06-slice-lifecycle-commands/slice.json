@@ -1,0 +1,11 @@
+{
+	"created": "2026-04-09T22:27:17.399Z",
+	"deferred": [],
+	"epic": "workflow-bug-fixes",
+	"goal": "Implement ~14 gp slice:* commands including chunk lifecycle, code refinement, and landing",
+	"implementationPhase": null,
+	"name": "06-slice-lifecycle-commands",
+	"refinement": null,
+	"status": "created",
+	"updated": "2026-04-09T22:27:17.399Z"
+}

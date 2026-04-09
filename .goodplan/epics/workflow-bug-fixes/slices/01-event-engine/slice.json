@@ -1,0 +1,11 @@
+{
+	"created": "2026-04-09T22:27:03.883Z",
+	"deferred": [],
+	"epic": "workflow-bug-fixes",
+	"goal": "Build append-only event log engine",
+	"implementationPhase": null,
+	"name": "01-event-engine",
+	"refinement": null,
+	"status": "created",
+	"updated": "2026-04-09T22:27:03.883Z"
+}
