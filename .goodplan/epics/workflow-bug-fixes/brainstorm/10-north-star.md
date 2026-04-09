@@ -112,6 +112,26 @@ The `gp` CLI owns the trust substrate. It manages the event log, enforces invari
 - **It doesn't replace judgment.** Collaborative phases exist because the user's domain knowledge is irreplaceable. The system provides scaffolding — context, prompts, blocking options — not rules.
 - **It doesn't optimize for speed.** It optimizes for trust. A slower process that produces verified work beats a fast process that produces plausible work.
 
+## Implementation risks
+
+These are known risks to carry into the delta and implementation phases. The core mechanisms are achievable — most already work in some form in the current system. The risks are in calibration and context pressure, not feasibility.
+
+### Will need iteration
+
+**Reviewer threshold calibration.** The mechanical convergence bar (all scores above threshold, zero BLOCKING) is clear in principle. In practice, thresholds set too strict mean nothing converges and the system burns tokens endlessly; too loose and it rubber-stamps. Start conservative, measure how many rounds artifacts actually take, and adjust. The existing reviewer set gives us a head start — they've been through real-world use already.
+
+**R1 pause judgment.** "If the user knew this, would they want to reconsider?" requires genuine judgment from the LLM. Current models can do this sometimes but not reliably. The pre-flight discipline helps (forces the LLM to commit upfront to what would make it pause), and the five reshape options give structure. But expect false negatives (continuing when it should have paused) more often than false positives. Design the system so that missed R1 pauses are recoverable — they should cost the user time, not correctness.
+
+**Collaborative design quality.** The exploration and architecture phases depend on the LLM being a good design partner — pushing back, exploring alternatives, incorporating domain knowledge. Current models are decent but uneven. Sometimes they push back well; sometimes they agree too readily. The design-tree interview structure helps by forcing enumeration of alternatives before convergence.
+
+### Biggest risks
+
+**Context window pressure during implementation.** A slice with 4 chunks, each with red-green-verify, generates a lot of context: the plan, architecture docs, subsystem docs, test output, evidence files. The context bundler and token budgeting are spec'd but the actual implementation is the hard part. If the LLM loses context mid-slice, verification quality degrades. Mitigation: aggressive budgeting in context bundles, and the Agent SDK's sub-agent model (each chunk can run in a fresh context with only its relevant context loaded).
+
+**Reviewer signal-to-noise.** With 20+ reviewer types, every artifact could generate 15+ findings, mostly MINOR. The important ones get lost. Relevance weighting helps (low-relevance reviewers produce warnings, not blocks), but the initial calibration matters. Mitigation: start with fewer reviewers active per artifact type, expand as we learn which reviewers actually catch meaningful issues.
+
+**Spec-to-implementation gap.** 140KB of spec for a system that doesn't exist yet. The walkthroughs (09) show an ideal experience — every exploration pivots cleanly, every R1 pause is perfectly timed. In practice, it'll be messier. The mechanisms are sound, but messy-but-structured is the realistic target, not the polished walkthrough experience. Build the substrate first (events, invariants, CLI), validate with a real epic, then iterate on the experience.
+
 ## Reading order for the full spec
 
 1. **This document** (you're here) — 10-minute overview
