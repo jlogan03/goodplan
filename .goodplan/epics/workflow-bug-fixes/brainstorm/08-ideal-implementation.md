@@ -47,21 +47,29 @@ Stated once here; the rest of the document assumes them.
 | Commit at milestones, not per event | The event log accumulates uncommitted lines; `gp milestone:commit` (called by phase-completing commands) stages and commits a meaningful group. |
 | Pre-tool-use hooks for integrity; HMAC dropped | `.goodplan/**/*.jsonl` and spine files are blocked from direct Edit/Write by Claude Code hooks. The CLI is the only legitimate writer. `core/data/hmac.ts` and `gp verify --fix` retire. |
 | Flat directory structure | `.goodplan/epics/` and `.goodplan/side-quests/` at root. The `workspace/` concept is gone. |
-| Naming: `<YYYY-MM-DD>_<slug>_<6charsuffix>` for epic and side-quest directories and artifact files | Collision-resistant across branches; suffix is 6 chars of Crockford base32 over a random 30-bit value. |
-| ULIDs for system IDs (events, findings, briefings, reviewer scores); slugs for user-facing entity names | ULIDs sort lexicographically by time; slugs are stable identifiers readable in briefings and prompts. |
+| Naming: `<YYYY-MM-DD>_<slug>/` for epic and side-quest directories | Date prefix for human-friendly chronological sorting; slug for readability. No random suffix — collision risk eliminated by one-person-per-epic model. |
+| Slugs for entity IDs; UUIDs for event IDs | Slugs are human-readable and unique within scope. Event IDs are UUIDs — globally unique across branches to prevent merge conflicts when multiple branches append to the same JSONL files. Timestamps provide ordering; UUIDs provide identity. |
 | `architecture-current.md` at `.goodplan/` root; `architecture-target.md` inside each active epic directory | The spine always reflects what the codebase *is*; the epic holds what it is becoming. |
-| Three write-blessed directories for CLI output | `.goodplan/`, `.goodplan/epics/<dir>/`, `.goodplan/side-quests/<dir>/`. Anything else is a hook-blocked path. |
+| Hook-protected integrity files; LLM-writable artifact content | `events.jsonl` (any scope), `architecture-current.md`, `conventions.md`, `invariants.md` are CLI-only (hook-blocked from direct LLM writes). Artifact content files (plans, goals, research, brainstorm docs) under `.goodplan/` are LLM-writable — the CLI references them via events. |
 | Single branch, single active epic, single active side-quest | `≤1 active epic per branch`, `≤1 active side-quest per branch`, parallel slices within an epic gated by declared dependencies, same slice on two branches forbidden. |
 | PR Option 1 | Epic branches stay alive until the epic is complete, then merge to `main`. Multi-person collab happens on the epic branch. |
 
-**Multi-person merge resilience.** The workflow is designed to support multiple collaborators working on the same epic on different branches. Several mechanisms combine to make this work:
+**Maturity taxonomy (4 levels).** Each subsystem carries a maturity tag that acts as the universal rigor dial.
 
-1. **Per-scope JSONL event logs** append cleanly across branches. Two people appending events on different branches produce append-friendly diffs that git auto-merges with minimal friction.
-2. **Content-addressed artifacts via git blob hashes** mean two people authoring different versions of the same artifact produce different hashes and different blobs — no silent clobbers.
-3. **The `slice.single-active-per-branch` invariant** prevents two people from simultaneously being in P10–P11 on the same slice. Either they collaborate on one branch, or only one branch drives implementation at a time.
-4. **Plan-shape checkpoints on the same slice across branches** are resolved by the epic-level steering preference. If both branches hit a checkpoint, the one that ran first sets the shape; the second branch sees the shape-approved state on pull and proceeds from there.
-5. **Findings from parallel implementers merge** into one log by ULID timestamp ordering. Duplicate findings (same content, different timestamps) can be deduplicated via a later triage pass.
-6. **Briefings from multiple agents** on the same epic are append-only per-scope; the orientation skill reads the most-recent briefing per scope.
+| Level | Meaning | Rigor | LLM behavior |
+|---|---|---|---|
+| **Experimental** | Recently introduced. Unstable API. Few or no dependents. | minimum | Change freely. Don't over-engineer. Tests check the experiment, not churn. |
+| **Stabilizing** | Some dependents. API in flux but not wildly. | standard | Be deliberate. Write tests. Don't break known callers silently. |
+| **Stable** | API fixed. Multiple dependents. | standard | Default rigor. Breaking changes need justification. |
+| **Foundational** | Load-bearing primitive, many dependents. | full | Change carefully and rarely. Explicit user sign-off for breaking changes. R1 sensitivity multiplier. |
+
+`stabilizing` and `stable` share the same review rigor (`standard`); the distinction is API stability expectations and breaking-change sensitivity. Maturity calibrates Pressure Test depth, Refinement Loop strictness, R1 sensitivity, and Triggered Reshape thresholds — one concept, four uses. Each subsystem also carries a `dependentCount` as a falsifiability check: "experimental" with twelve dependents is lying.
+
+**Multi-person model: one person per epic, merge at completion.** Each epic is worked on by one person on a dedicated branch off `main`. `main` has no active epic (invariant). Multiple people work on different epics simultaneously on different branches. When an epic completes, its branch merges to `main` via PR.
+
+Merge conflicts — both in code and in `.goodplan/` state — are resolved at merge time, the same as today. When person A merges their epic and updates `architecture-current.md`, person B's branch becomes stale; they rebase, and the architecture changes flow in. Slice-land's incremental updates to `architecture-current.md` make these rebases predictable: each change is small, well-documented, and tied to a specific slice.
+
+Multiple people should NOT work on the same epic simultaneously. The event log and artifact model are not designed for concurrent writers on the same scope.
 
 **Determinism vs. judgment.** Gating is deterministic — invariants check, rubrics score, convergence is mechanical. But the CONTENT that reviewers and agents produce — findings, reshape proposals, scope judgments, verification-plausibility assessments — is irreducibly judgment-laden by design. The mental models throughout this doc (the R1 question, the honest-intermediate-state rule, the tests-manufacture-confidence warning) exist precisely because checklists fail at these boundaries. The model is trusted to exercise judgment; the workflow provides scaffolding — context, prompts, blocking options — rather than rules.
 
@@ -117,14 +125,13 @@ The flow is enumerated here explicitly rather than inherited. Each phase has ent
 | P9 | Slice-plan-refine | slice | `gp:plan-slice` | plan artifact refinement (BLOCKING verification-plausibility reviewer) |
 | P10 | Slice-implement (red-green-verify loop per chunk) | slice | `gp:implement-slice` | per-chunk `chunk-verified` or `chunk-unverifiable-decided` |
 | P11 | Slice-code-refine | slice | `gp:implement-slice` | code refinement loop convergence |
-| P12 | Slice-land | slice | `gp:land-slice` | spine deltas refined; discoveries triaged |
-| P13 | Epic-land | epic | `gp:complete-epic` | cross-slice synthesis refined; architecture-current reconciled |
+| P12 | Slice-land (+ epic completion if final slice) | slice | `gp:land-slice` | spine deltas refined; discoveries triaged; if final slice: cross-slice synthesis, architecture reconciliation, maturity transitions |
 | S0 | Side-quest-capture | side-quest | `gp:create-side-quest` | goal refined (light) |
 | S1 | Side-quest-explore-plan | side-quest | `gp:create-side-quest` | plan refinement |
 | S2 | Side-quest-implement | side-quest | `gp:implement-side-quest` | per-chunk verification |
 | S3 | Side-quest-land | side-quest | `gp:land-side-quest` | light refinement |
 
-The epic path is **P0 → P1 → P2 → P3 → P4 → P5 → P6 → (P7 → P8 → P9 → P10 → P11 → P12)* → P13**. The side-quest path is **S0 → S1 → S2 → S3** and is concurrent with, but cannot interleave inside, a single slice's P7–P12 sequence on the same branch.
+The epic path is **P0 → P1 → P2 → P3 → P4 → P5 → P6 → (P7 → P8 → P9 → P10 → P11 → P12)***. The last P12 detects it is the final slice and triggers epic completion automatically — no separate P13. The side-quest path is **S0 → S1 → S2 → S3** and is concurrent with, but cannot interleave inside, a single slice's P7–P12 sequence on the same branch.
 
 ### 3.2 Per-phase detail
 
@@ -319,33 +326,40 @@ If convergence returns `STUCK`, the Pause Discipline fires. If any chunk is `imp
 
 - **Entry:** `code-refinement-converged`.
 - **Skill:** `gp:land-slice`.
-- **Context bundle:** slice plan, diff, mid-flight findings for this slice, architecture-target.
-- **Agents spawned:** `completion-slice` (triages discoveries, proposes spine deltas, proposes side quests), optionally `reviewer-verification-spot-check` (samples N% of `chunk-verified` events and re-runs verification).
-- **Events emitted:** `findings-triaged`, `architecture-delta-proposed`, `architecture-delta-committed`, `learning-captured`, `decision-recorded` (if any), `side-quest-proposed`, `slice-landed`, `milestone-committed`.
-- **Artifacts:** architecture deltas written into `architecture-current.md` AND (if the epic's target deviates) into `architecture-target.md`; learnings at `.goodplan/learnings/<date>_<slug>_<suffix>.md`.
+- **Context bundle:** slice plan, diff, mid-flight findings for this slice, architecture-target, architecture-current, conventions, invariants.
+- **Agents spawned:** `completion-slice` (triages discoveries, proposes spine updates, captures learnings, proposes side quests), optionally `reviewer-verification-spot-check` (samples N% of `chunk-verified` events and re-runs verification).
+- **Events emitted:** `findings-triaged`, `architecture-delta-proposed`, `architecture-delta-committed`, `conventions-committed` (if updated), `invariants-committed` (if updated), `learning-captured`, `decision-recorded` (if any), `side-quest-proposed`, `slice-landed`, `milestone-committed`. If this is the final slice: additionally `epic-synthesis-committed`, `architecture-current-reconciled`, `epic-completed`.
+- **Artifacts:** updates to `architecture-current.md` (honest intermediate state reflecting what the codebase *is* after this slice); updates to `conventions.md` (if new patterns emerged); updates to `invariants.md` (if new invariants discovered); learnings at `.goodplan/learnings/<date>_<slug>.md`.
 - **Trust gate:** each spine delta is itself a small refined artifact (light rigor).
-- **Exit:** `slice-landed`.
+- **Exit:** `slice-landed` (or `epic-completed` if final slice).
+
+**Spine rollup at slice-land.** Every slice-land updates the project spine to reflect the current state of the codebase. This is the incremental approach — rather than waiting until epic-land for a big reconciliation, each slice leaves the spine accurate for the next slice's planning:
+
+1. **`architecture-current.md`** — updated to reflect what this slice built. Uses the honest-intermediate-state rule: mid-implementation is described as mid-implementation.
+2. **`conventions.md`** — updated if this slice introduced or discovered new patterns worth codifying.
+3. **`invariants.md`** — updated if this slice established new invariants or discovered that existing ones need revision.
+4. **Learnings** — captured per slice, tagged by subsystem, so they surface in future context bundles.
+5. **Findings triage** — deferred findings promoted, merged, or culled. Stale findings (older than N epics) surfaced for culling.
+
+**Final-slice detection.** When the `completion-slice` agent runs, it checks: are all other slices in this epic `slice-landed` or `slice-abandoned`? If yes, this is the final slice and epic completion triggers automatically:
+
+- **Cross-slice synthesis:** patterns across all slice learnings, recurring findings, surprising outcomes.
+- **Architecture reconciliation:** verify `architecture-current.md` matches `architecture-target.md` (should be trivially close if slice-lands are doing their job). Flag any gaps.
+- **Maturity transitions:** propose promotions for subsystems that matured during the epic. User confirms.
+- **Side quest proposals:** scan deferred findings for side-quest candidates.
+- **Emit:** `epic-synthesis-committed`, `architecture-current-reconciled`, `epic-completed`, `milestone-committed`.
+
+This eliminates the need for a separate epic-land phase. The last slice-land does everything epic-land would have done, with the advantage that all context is still fresh.
 
 **Between-slice review checkpoint (optional).** Between `slice-landed` and the next slice's P7 (plan drafting). The user can:
 
 - Review the implementation that just landed.
-- Check the updated `architecture-current.md`.
+- Check the updated `architecture-current.md` and other spine updates.
 - Review findings from the Discovery Ledger triage.
 - Adjust their approach for upcoming slices based on what they learned from this one.
 - Decide whether to proceed to the next slice, reshape the epic, or take a break.
 
 This checkpoint is optional, controlled by steering preference. In `always-consult` mode, the workflow pauses here. In `best-guess-and-flag` mode, the workflow proceeds to the next slice and flags the checkpoint in the return briefing.
-
-#### P13 — Epic-land
-
-- **Entry:** every slice in the epic has `slice-landed` OR `slice-abandoned` with recorded reason; no unresolved blocking findings.
-- **Skill:** `gp:complete-epic`.
-- **Context bundle:** epic goal, all slice summaries, all learnings, architecture-current, architecture-target.
-- **Agents spawned:** `completion-epic`, reviewer set for the synthesis artifact (light-to-standard rigor).
-- **Events emitted:** `epic-synthesis-drafted`, `reviewer-scored`, `epic-synthesis-committed`, `architecture-current-reconciled`, `epic-completed`.
-- **Artifacts:** `.goodplan/epics/<dir>/epic-land.md`, updates to `architecture-current.md`, `invariants.md`, `conventions.md`, per-subsystem files.
-- **Trust gate:** reconciliation between `architecture-current` and `architecture-target` runs through refinement; conflicts flagged as STUCK if unresolved.
-- **Exit:** `epic-completed`.
 
 #### S0–S3 — Side-quest lifecycle
 
@@ -434,16 +448,16 @@ Every event is a single JSONL line with this shape:
 
 ```ts
 type EventEnvelope = {
-  id: string;                       // ULID (26 chars)
+  id: string;                        // UUID v4 — globally unique across branches to prevent merge conflicts
   ts: string;                       // ISO-8601 UTC with milliseconds
   scope: "project" | "epic" | "side-quest";
-  scopeRef: string | null;          // slug/dir of the epic or side-quest (null for project)
+  scopeRef: string | null;          // slug of the epic or side-quest (null for project)
   actor: { kind: "user" | "cli" | "skill" | "agent"; id: string };
   branch: string;                   // current git branch
   commitHint: string | null;        // HEAD at emit time; null if unborn
   type: string;                     // kebab-case event type
   payload: Record<string, unknown>; // validated by the event's Zod schema
-  prevId: string | null;            // ULID of previous event in this scope, for log-chain sanity
+  prevId: string | null;            // UUID of previous event in this scope, for log-chain integrity
 };
 ```
 
@@ -472,7 +486,7 @@ type ContentRef = {
 - Invariants triggered: `project.exists`
 
 **`epic-created`**
-- Required: `slug: string`, `dir: string`, `date: string` (YYYY-MM-DD), `suffix: string` (6 chars)
+- Required: `slug: string`, `dir: string` (`<YYYY-MM-DD>_<slug>`), `date: string` (YYYY-MM-DD)
 - Invariants triggered: `epic.dir.unique`, `epic.single-active-per-branch` precondition
 
 **`epic-goal-drafted`** — `artifact: ContentRef`, `version: number`
@@ -486,7 +500,7 @@ type ContentRef = {
 **`epic-synthesis-committed`** — `epicId: string`, `artifactRef: ContentRef`, `crossSliceLearnings: string[]`, `architectureReconciliationStatus: "clean" | "manual-required" | "resolved"`, `sideQuestProposals: Array<{ title: string; rationale: string }>`
 **`epic-abandoned`** — `reason: string`, `learningsCaptured: number`
 
-**`side-quest-created`** — `slug: string`, `dir: string`, `date: string`, `suffix: string`, `parentEpic: string | null`
+**`side-quest-created`** — `slug: string`, `dir: string` (`<YYYY-MM-DD>_<slug>`), `date: string`, `parentEpic: string | null`
 **`side-quest-goal-committed`** — `artifact: ContentRef`, `extracted: SideQuestGoalExtract`
 **`side-quest-plan-drafted`** — `sideQuestId: string`, `artifactRef: ContentRef`, `extracted: PlanExtract`
 **`side-quest-plan-shape-approved`** — `sideQuestId: string`, `approvedBy: "user" | "auto-best-guess"`
@@ -494,6 +508,10 @@ type ContentRef = {
 **`side-quest-landed`** — `summary: ContentRef`
 **`side-quest-abandoned`** — `reason: string`
 
+**`slice-set-drafted`** — `epicId: string`, `artifactRef: ContentRef`
+**`slice-shape-checkpoint-reached`** — `epicId: string`, `sliceSet: ContentRef`, `preference: string`
+**`slice-shape-approved`** — `epicId: string`, `sliceSet: ContentRef`, `userConfirmation: string`
+**`slice-shape-checkpoint-auto-shaped`** — `epicId: string`, `sliceSet: ContentRef`, `guessSummary: string`, `reasoning: string`, `flaggedInBriefing: string` (briefing ID)
 **`slice-set-committed`** — `epicId: string`, `sliceCount: number`, `sliceIds: string[]`, `extracted: SliceSetExtract`
 **`slice-created`** — `slug: string`, `index: number`, `dependsOn: string[]` (slice slugs), `goal: ContentRef`, `extracted: SliceGoalExtract`
 **`slice-plan-drafted`** — `plan: ContentRef`, `chunkCount: number`
@@ -525,31 +543,50 @@ type ContentRef = {
 **`architecture-target-drafted`** — `epicId: string`, `artifactRef: ContentRef`, `extracted: ArchitectureTargetExtract`
 **`architecture-target-committed`** — `epicId: string`, `artifactRef: ContentRef`, `extracted: ArchitectureTargetExtract`, `delta: { subsystemsAdded: string[]; subsystemsModified: string[]; subsystemsRemoved: string[] }`
 **`architecture-current-reconciled`** — `epicId: string`, `reconciliationMethod: "auto" | "manual-merge" | "user-override"`, `changesFromEpic: string[]`, `newCurrentRef: ContentRef`
+**`architecture-shape-checkpoint-reached`** — `epicId: string`, `architecture: ContentRef`, `preference: string`
+**`architecture-shape-approved`** — `epicId: string`, `architecture: ContentRef`, `userConfirmation: string`
+**`architecture-shape-checkpoint-auto-shaped`** — `epicId: string`, `architecture: ContentRef`, `guessSummary: string`, `reasoning: string`, `flaggedInBriefing: string` (briefing ID)
 **`conventions-committed`** — `artifact: ContentRef`
 **`invariants-committed`** — `artifact: ContentRef`, `changeset: { added: string[]; removed: string[]; modified: string[] }`
-**`subsystem-registered`** — `slug: string`, `maturity: "experimental" | "stabilizing" | "foundational"`, `file: ContentRef`
+**`subsystem-registered`** — `slug: string`, `maturity: "experimental" | "stabilizing" | "stable" | "foundational"`, `dependentCount: number`, `file: ContentRef`
 **`subsystem-maturity-updated`** — `slug: string`, `from: string`, `to: string`, `rationale: string`
 **`subsystem-retired`** — `slug: string`, `reason: string`
 
 #### Findings & discoveries
 
-**`finding-captured`** — `id: string` (ULID), `whatDoing: string`, `whatFound: string`, `whyMatters: string`, `whyNotNow: string`, `relatedSubsystems: string[]`, `blocking: boolean`, `inScope: boolean`
-**`finding-triaged`** — `findingId: string`, `disposition: "reshape-epic" | "new-epic" | "expand-target" | "defer-side-quest" | "defer-task" | "drop"`, `rationale: string`
+**`finding-captured`** — `id: string` (slug, e.g. `sse-compression-interaction`), `whatDoing: string`, `whatFound: string`, `whyMatters: string`, `whyNotNow: string`, `relatedSubsystems: string[]`, `blocking: boolean`, `inScope: boolean`
+**`finding-triaged`** — `findingId: string`, `disposition: "expand-current-slice" | "insert-slice-before" | "insert-slice-after" | "reshape-epic" | "promote-to-epic" | "new-epic" | "expand-target" | "defer-side-quest" | "defer-task" | "drop"`, `rationale: string`
 
 **Discovery matrix.** When a finding is captured during autonomous work, it's triaged on two dimensions: is it *blocking* (must be addressed before this slice/epic can proceed)? and is it *in-scope* (part of the current epic's target)?
 
 |                     | In-scope                  | Out-of-scope                     |
 |---------------------|---------------------------|----------------------------------|
-| **Blocking**        | Reshape current epic      | New epic; pause current epic     |
+| **Blocking**        | Reshape (5 options below) | New epic; pause current epic     |
 | **Non-blocking**    | Expand target             | Defer (side quest or task)       |
 
-The `finding-triaged` event records the disposition: `reshape-epic | new-epic | expand-target | defer-side-quest | defer-task | drop`. Each disposition triggers a specific follow-up:
+**Five reshape options for blocking + in-scope findings**, ordered by cost:
 
-- **Reshape current epic**: emit `reshape-proposed`; the slicing step re-evaluates affected slices; the epic's target is updated
-- **New epic; pause current**: emit `epic-paused` on current, `epic-created` for new; the current epic resumes after the new one lands
+| Response | When to pick | Cost |
+|---|---|---|
+| **Expand current slice** | Discovery is small, directly on the slice's path, doesn't change its goal. | Low. Plan edited; reviewers re-run on the delta only. |
+| **Insert a slice before this one** | Discovery is a prerequisite — distinct unit of work, blocks the current slice. | Medium. Current slice pauses; new slice runs through Plan/Build; current slice resumes against updated architecture. |
+| **Insert a slice after this one** | Discovery is needed for the epic to land but does NOT block the current slice. | Medium. Current slice continues; target updated; sequencing adjusted. |
+| **Reshape the epic** | Discovery invalidates `architecture-target.md` — the shape of what the epic is building has changed. | High. Return to Shape with accumulated context; re-draft target; re-slice affected portions. |
+| **Stop and promote to its own epic** | Discovery is out of scope entirely but blocking. | Very high. Only correct when in-place options would cause more damage. |
+
+Any reshape must update `architecture-target.md` first — you cannot edit slice plans in place without updating the target. Reshapes inherit upstream invariants (a reshape triggered by a pressure-test assumption must update the Pressure-Test Summary; one triggered by convergence failure must record that as the cause).
+
+The `finding-triaged` event records the disposition: `expand-current-slice | insert-slice-before | insert-slice-after | reshape-epic | promote-to-epic | new-epic | expand-target | defer-side-quest | defer-task | drop`. Each disposition triggers a specific follow-up:
+
+- **Expand current slice**: revise the current slice's plan; reviewers re-run on the delta
+- **Insert slice before/after**: emit `slice-created` with dependency on the relevant slice; update slice-set sequencing
+- **Reshape the epic**: emit `reshape-proposed`; the slicing step re-evaluates affected slices; the epic's target is updated
+- **Promote to its own epic / New epic; pause current**: emit `epic-paused` on current, `epic-created` for new; the current epic resumes after the new one lands
 - **Expand target**: add scope to the current epic's `architecture-target.md`; trigger a refinement round on the expanded target
 - **Defer side quest**: emit `side-quest-created` linked to the finding; runs independently after current epic lands (or in parallel if steering allows)
 - **Defer task**: append a lightweight task entry; no separate epic or side quest
+
+**Decay.** Findings older than N epics (default: 3) without promotion or reference are surfaced for culling during slice-land triage (and final-slice epic completion). The orientation skill presents each stale finding with a two-second prompt: promote, keep, or drop. This prevents the ledger from accumulating stale TODOs that no one reads. The decay trigger is `finding.age-in-epics > N AND NOT (promoted OR referenced-in-context-bundle-since-capture)`.
 
 #### Exploration
 
@@ -566,7 +603,9 @@ The `finding-triaged` event records the disposition: `reshape-epic | new-epic | 
 **`artifact-revised`** — `artifactType: string`, `from: ContentRef`, `to: ContentRef`, `producer: string`
 **`refinement-round-started`** — `artifactType: string`, `artifactRef: ContentRef`, `round: number`, `reviewers: string[]`, `rigor: "minimum" | "standard" | "full"`
 **`refinement-round-completed`** — `artifactType: string`, `artifactRef: ContentRef`, `round: number`, `scores: Record<string, number>`, `convergenceStatus: "converged" | "continue" | "circuit-broken"`, `reviewersRun: string[]`
-**`reviewer-scored`** — `artifactType: string`, `artifactVersion: ContentRef`, `reviewerId: string`, `reviewerVersion: string`, `round: number`, `dimensions: Record<string, number>`, `findings: Array<{ severity: "BLOCKING" | "CRITICAL" | "IMPORTANT" | "MINOR"; dimension: string; message: string; location: string | null }>`, `rationale: string`
+**`reviewer-scored`** — `artifactType: string`, `artifactVersion: ContentRef`, `reviewerId: string`, `reviewerVersion: string`, `round: number`, `dimensions: Record<string, number>`, `findings: Array<{ severity: "BLOCKING" | "CRITICAL" | "IMPORTANT" | "MINOR"; dimension: string; message: string; location: string | null }>`, `rationale: string`, `relevanceWeight: "high" | "medium" | "low"`
+
+**Relevance weighting.** The routing function assigns a `relevanceWeight` to each reviewer based on how central that reviewer's domain is to the artifact. A TypeScript reviewer scores `high` on a TS-heavy plan and `low` on a data-model-heavy plan. The convergence evaluator uses weight as a multiplier: `high`-weight below threshold is BLOCKING; `low`-weight below threshold is a WARNING (surfaced but non-blocking). This prevents low-relevance reviewers from gating convergence while ensuring high-relevance reviewers are load-bearing.
 **`refinement-synthesized`** — `artifactType: string`, `round: number`, `aggregated: ContentRef`
 **`refinement-converged`** — `artifactType: string`, `artifact: ContentRef`, `roundsTaken: number`, `bar: string` (rubric id)
 **`refinement-circuit-breaker-tripped`** — `artifactType: string`, `reason: "stuck-finding" | "reviewer-disagreement" | "round-budget-exceeded"`, `details: ContentRef`
@@ -581,12 +620,12 @@ The `finding-triaged` event records the disposition: `reshape-epic | new-epic | 
 
 #### Briefings
 
-**`briefing-written`** — `id: string` (ULID), `trigger: "r1" | "pre-flight" | "end-of-autonomy" | "non-convergence" | "unverifiable-chunk" | "shape-checkpoint" | "session-pause"`, `artifact: ContentRef`, `extracted: BriefingExtract`
+**`briefing-written`** — `id: string` (slug, e.g. `pre-flight-slice-01`), `trigger: "r1" | "pre-flight" | "end-of-autonomy" | "non-convergence" | "unverifiable-chunk" | "shape-checkpoint" | "session-pause"`, `artifact: ContentRef`, `extracted: BriefingExtract`
 
 #### Decisions & learnings
 
-**`decision-recorded`** — `id: string` (ULID), `domain: string`, `title: string`, `summary: string`, `supersedes: string | null`, `reconsiderWhen: string[]`, `file: ContentRef`
-**`learning-captured`** — `id: string` (ULID), `category: "domain" | "worked" | "didnt-work" | "do-differently"`, `summary: string`, `tags: string[]`, `subsystems: string[]`, `validUntil: string[] | null`, `file: ContentRef`
+**`decision-recorded`** — `id: string` (slug), `domain: string`, `title: string`, `summary: string`, `supersedes: string | null`, `reconsiderWhen: string[]`, `file: ContentRef`
+**`learning-captured`** — `id: string` (slug), `category: "domain" | "worked" | "didnt-work" | "do-differently"`, `summary: string`, `tags: string[]`, `subsystems: string[]`, `validUntil: string[] | null`, `file: ContentRef`
 **`learning-promoted`** — `learningId: string`, `to: "convention" | "invariant" | "architecture" | "subsystem-doc"`, `rationale: string`
 
 #### Pauses & steering
@@ -616,15 +655,15 @@ The `finding-triaged` event records the disposition: `reshape-epic | new-epic | 
 
 ```json
 {
-  "id": "01JPV5C6W3QK6Y7E8BZ3N1X4YF",
+  "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
   "ts": "2026-04-08T17:22:11.431Z",
   "scope": "epic",
-  "scopeRef": "2026-04-06_workflow-bug-fixes_a7k2z8",
+  "scopeRef": "workflow-bug-fixes",
   "actor": { "kind": "agent", "id": "reviewer-verification-plausibility@v1" },
   "branch": "epic/workflow-bug-fixes",
   "commitHint": "6f94683a",
   "type": "reviewer-scored",
-  "prevId": "01JPV5C6S8K4Q9M2N5B7T3H6WX",
+  "prevId": "f0e1d2c3-b4a5-4968-8f7e-6d5c4b3a2190",
   "payload": {
     "artifactType": "plan",
     "artifactVersion": {
@@ -673,6 +712,8 @@ Invariants are pure functions over the event stream for a scope. Core invariants
 | `epic.pressure-test-required-before-slice-set` | Pressure test runs before slicing | `slice-set-drafted` | precondition | `pressure-test-committed` exists for this epic | "pressure-test not committed" |
 | `slice.single-active-per-branch` | At most one slice may be in P10 (Implement) or P11 (Code refine) per branch at a time. Slices in earlier phases (P7 Plan-draft, P8 Plan-shape, P9 Plan-refine) may run in parallel across different slices on the same branch. Preserves focused implementation while allowing planning in parallel for independent slices. | `slice-implementation-started` | count_limit | count of slices on branch currently in P10–P11 ≤ 1 | "active slice already in implement/code-refine: {slug}" |
 | `side-quest.single-active-per-branch` | At most one active side quest per branch | `side-quest-plan-committed` | count_limit | count of in-flight side quests on branch ≤ 1 | "active side quest already exists: {slug}" |
+| `epic.architecture-shape-approval-required` | Pressure test cannot run on an unshaped architecture | `pressure-test-drafted` | precondition | `architecture-shape-approved` OR `architecture-shape-checkpoint-auto-shaped` for this epic | "architecture-shape checkpoint not closed" |
+| `epic.slice-shape-approval-required` | Slice-set refinement cannot run on unshaped slices | `refinement-round-started` where artifactType=slice-set | precondition | `slice-shape-approved` OR `slice-shape-checkpoint-auto-shaped` for this epic | "slice-shape checkpoint not closed" |
 | `slice.plan-shape-approval-required` | Refinement cannot run on an unshaped plan | `refinement-round-started` where artifactType=plan | precondition | `plan-shape-approved` OR `plan-shape-checkpoint-auto-shaped` for this plan | "plan-shape checkpoint not closed" |
 | `slice.plan-converged-before-implement` | No implementation without a converged plan | `slice-implementation-started` | precondition | `slice-plan-committed` for slice | "plan not converged" |
 | `slice.plan-chunks-decidable` | Every chunk must have a verificationType the CLI accepts | `slice-plan-committed` | all_match | every chunk in extracted plan has `verificationType` ∈ {live, supplementary-tests, impossible-with-reason} | "chunk {id} has no verificationType" |
@@ -752,7 +793,7 @@ Phase-boundary commands move from bare top-level verbs to the `gp phase:*` names
 | Command | Purpose | Emits |
 |---|---|---|
 | `gp init` | Initialize project (auto-detect onboard vs fresh) | `project-initialized`, `architecture-committed`, `conventions-committed`, `subsystem-registered`×n |
-| `gp status [--json]` | Derived-state snapshot of current scope | (read-only) |
+| `gp status [--json]` | Derived-state snapshot + suggested next steps | (read-only) |
 | `gp state [--scope=project\|epic\|side-quest]` | Dump full derived state | (read-only) |
 | `gp schema [--entity=<name>]` | Print Zod schemas for events and records | (read-only) |
 | `gp migrate [--from=<version>]` | Migrate legacy `.project/` or old `.goodplan/` | `project-initialized`, plus history import events |
@@ -786,7 +827,13 @@ Phase-boundary commands move from bare top-level verbs to the `gp phase:*` names
 | `gp epic:pressure-test-draft <slug>` | — | `{ artifactPath: string }` | `pressure-test-drafted` |
 | `gp epic:pressure-test-commit <slug>` | — | `{ artifactPath: string }` | `pressure-test-committed`, `pressure-test-finding-proposed`×n |
 | `gp epic:pressure-test-finding-disposition` | — | `{ findingId; disposition; promotedTo? }` | `pressure-test-finding-accepted`; MAY ALSO emit `invariant-proposed` when disposition includes `promotedTo: <invariant-id>` (mechanism by which accepted findings become durable constraints) |
+| `gp epic:architecture-shape-start <slug>` | — | — | `architecture-shape-checkpoint-reached` |
+| `gp epic:architecture-shape-approve <slug>` | `{ userConfirmation: string }` | — | `architecture-shape-approved` |
+| `gp epic:architecture-shape-auto <slug>` | `{ guessSummary, reasoning, briefingId }` | — | `architecture-shape-checkpoint-auto-shaped` |
 | `gp epic:slices-draft <slug>` | — | `{ artifactPath: string }` | `slice-set-drafted` |
+| `gp epic:slices-shape-start <slug>` | — | — | `slice-shape-checkpoint-reached` |
+| `gp epic:slices-shape-approve <slug>` | `{ userConfirmation: string }` | — | `slice-shape-approved` |
+| `gp epic:slices-shape-auto <slug>` | `{ guessSummary, reasoning, briefingId }` | — | `slice-shape-checkpoint-auto-shaped` |
 | `gp epic:slices-commit <slug>` | — | `{ artifactPath: string }` | `slice-set-committed`, `slice-created`×n |
 
 ### 6.4 Slice
@@ -825,7 +872,7 @@ The refinement loop is driven by commands under `refine:`. Skills use these to r
 | Command | Stdin | Emits |
 |---|---|---|
 | `gp refine:start` | `{ artifactType; artifactPath; rigor?: "minimum"\|"standard"\|"full"; subsystems?: string[] }` | `refinement-round-started` |
-| `gp refine:score` | `{ artifactType; artifactPath; reviewerId; round; dimensions; findings; rationale }` | `reviewer-scored` |
+| `gp refine:score` | `{ artifactType; artifactPath; reviewerId; round; dimensions; findings; rationale; relevanceWeight }` | `reviewer-scored` |
 | `gp refine:synthesize` | `{ artifactType; round; aggregatedPath }` | `refinement-synthesized` |
 | `gp refine:revise` | `{ artifactType; fromPath; toPath }` | `artifact-revised` |
 | `gp refine:evaluate --artifact=<path>` | — | stdout: `{ status: "CONVERGED" \| "NOT_CONVERGED" \| "STUCK", details }` (read-only; no event) |
@@ -843,7 +890,7 @@ The refinement loop is driven by commands under `refine:`. Skills use these to r
 | `gp phase:submit --name=<phase> --scope=<ref>` | `{ results: ... }` | phase-specific completion events |
 | `gp phase:transition --from=<p> --to=<q> --scope=<ref>` | — | verifies invariants; refuses if evidence missing; on success allows the skill to proceed |
 
-Phase names: `explore`, `architecture`, `pressure-test`, `slices`, `plan`, `plan-shape`, `refinement`, `implementation`, `code-refinement`, `slice-land`, `epic-land`, plus side-quest equivalents.
+Phase names: `explore`, `architecture`, `pressure-test`, `slices`, `plan`, `plan-shape`, `refinement`, `implementation`, `code-refinement`, `slice-land`, plus side-quest equivalents.
 
 ### 6.8 Reviewer / rubric registry
 
@@ -876,7 +923,7 @@ Phase names: `explore`, `architecture`, `pressure-test`, `slices`, `plan`, `plan
 
 | Command | Stdin | Emits |
 |---|---|---|
-| `gp subsystem:register` | `{ slug; maturity; filePath }` | `subsystem-registered` |
+| `gp subsystem:register` | `{ slug; maturity; dependentCount; filePath }` | `subsystem-registered` |
 | `gp subsystem:update-maturity <slug>` | `{ to; rationale }` | `subsystem-maturity-updated` |
 | `gp subsystem:retire <slug>` | `{ reason }` | `subsystem-retired` |
 | `gp subsystem:list [--maturity=]` | — | — |
@@ -893,7 +940,36 @@ Phase names: `explore`, `architecture`, `pressure-test`, `slices`, `plan`, `plan
 |---|---|---|
 | `gp milestone:commit --label=<s>` | Stage spine files + events.jsonl and git-commit | `milestone-committed` |
 
-### 6.12 Error output
+### 6.12 Suggested next steps (`gp status`)
+
+`gp status --json` includes a `suggestedNextSteps` array derived from the event log and invariant engine. The CLI computes:
+
+- **Current phase** — derived from the latest events per scope.
+- **Valid transitions** — which invariants are satisfied for which next actions.
+- **Blockers** — which invariants would fail and why.
+- **Recommendations** — heuristic ordering (next slice in dependency order, deferred findings count, etc.).
+
+```json
+{
+  "suggestedNextSteps": [
+    {
+      "command": "/gp:plan-slice real-time-notifications/02_notification-persistence",
+      "reason": "slice 01 landed, slice 02 has no unmet dependencies",
+      "priority": "primary"
+    },
+    {
+      "command": "/gp:create-side-quest",
+      "reason": "3 deferred findings from slice 01 available for promotion",
+      "priority": "optional"
+    }
+  ],
+  "blockers": []
+}
+```
+
+Skills use this to orient themselves: rather than re-deriving "where are we?", the skill reads the CLI's recommendation and acts on it. The `gp:status` skill surfaces these recommendations to the user in its orientation message.
+
+### 6.13 Error output
 
 All commands return JSON errors on stderr when `--json` is set:
 
@@ -911,7 +987,17 @@ Error codes: `INVARIANT_FAILED`, `SCHEMA_INVALID`, `NOT_FOUND`, `ALREADY_EXISTS`
 
 *"A plan can be correct and still useless if it assumes context the implementer doesn't have."* This is why context-accumulation is a first-class reviewer question, not a side effect. Every reviewer is asked, regardless of domain: "what context will the downstream consumer need that isn't in this artifact?"
 
-Reviewers are YAML-fronted markdown files at `.goodplan/reviewers/<id>.md` (project-level overrides) or shipped in the plugin at `plugin/reviewers/<id>.md` (default set). The initial set bootstraps hand-authored; subsequent changes go through refinement.
+Reviewers are YAML-fronted markdown files at `.goodplan/reviewers/<id>.md` (project-level overrides) or shipped in the plugin at `plugin/reviewers/<id>.md` (default set). The initial set uses the project's existing reviewer set as the starting point, mapped into the new registry format.
+
+**Retained reviewer diversity.** The existing reviewer set spans multiple domains and should carry over in full:
+
+- **Language-specific:** TypeScript/JavaScript, Python, Rust
+- **Web:** backend/API, frontend/UI, data layer, DevOps & infrastructure
+- **AI tooling:** agents & skills, MCP servers, hooks, plugins
+- **Specialists:** TUI & CLI, repo/tooling/docs, CI & GitHub workflows, UX & information architecture, API contracts
+- **Scientific specialists:** algorithm & numerical, performance & optimization, ML pipelines, data handling/validation & file formats & streaming ETL patterns & schemas
+
+Each is mapped to the new registry format with domains, applies_to, rubric dimensions, and prompt sketches. The routing function selects which reviewers apply based on artifact type and affected subsystems. Updates to reviewer contracts to include refinement-loop-specific requirements (change-scoped re-review, relevance weighting) are applied during the mapping.
 
 Every reviewer declares:
 
@@ -963,11 +1049,21 @@ passing_threshold_per_dimension: 3
 - Threshold: all pass; any BLOCKING.
 - Prompt sketch: *"For every chunk: Does the verification-method actually exercise what the chunk's description says changes? Is the expectation falsifiable? If `live`, is it really live (not a type check pretending)? If `supplementary-tests`, is the coverage demonstration concrete? Does the red-test exercise the chunk's expectation — not an adjacent property? Does the red-test test behavior, not implementation details? Is the red-test meaningful — if the chunk's change were reverted, would this test actually fail for the intended reason? Is the red-test distinct from the verification-method (unit-level vs live)? Remember: a test that passes because it tests almost nothing is worse than no test, because it manufactures confidence. End with live observation. Any chunk failing any check is BLOCKING."*
 
-**`reviewer-software-architecture`** — Architecture-level design.
+**`reviewer-software-architecture`** — Architecture-level design quality.
 - Applies to: `architecture-target`, `architecture-current`.
-- Dimensions: `subsystem-boundary-clarity`, `dependency-direction-sound`, `maturity-promotion-justified`, `breaking-change-surfaced` (1–5).
+- Dimensions (1–5 each):
+  - `subsystem-boundary-clarity` — boundaries defined by what each subsystem owns and what crosses them, not by file location.
+  - `dependency-direction-sound` — dependency graph is acyclic and justified; each dependency is intentional.
+  - `api-depth-vs-surface-area` — subsystems are deep (hide significant complexity behind simple, powerful APIs) not shallow (thin wrappers that force callers to understand internals). The ideal is maximum abstracted complexity per unit of API surface.
+  - `abstraction-leakage` — consumers can use each subsystem's API without knowing implementation details. No leaked internal types, no required knowledge of internal state transitions, no "you need to call X before Y" patterns that aren't enforced by the type system.
+  - `future-directions-preserved` — the architecture makes known long-term goals possible/easy without over-engineering for them. Explicitly identify which future directions become harder or impossible under this architecture.
+  - `user-flow-ergonomics` — the user flows captured in the goal and exploration can be accomplished naturally and ergonomically through the proposed subsystem APIs. Awkward multi-step patterns or workarounds are findings.
+  - `invalid-state-prevention` — the type system and API design make invalid states/actions hard or impossible to express. Classes of errors that are structurally prevented should be called out as design wins; classes that remain possible should be called out as risks.
+  - `edge-case-coverage` — null/empty/error/boundary cases in user flows have explicit architectural handling, not ad-hoc patches at call sites.
+  - `maturity-promotion-justified` — where maturity changes, the promotion is justified by evidence (dependent count, API stability, test coverage).
+  - `breaking-change-surfaced` — breaking changes to stable/foundational APIs are surfaced explicitly, not buried in subsystem docs.
 - Threshold: ≥3 each.
-- Prompt sketch: *"Are subsystem boundaries defined by what they own and what crosses them, not by file location? Are dependency directions acyclic and justified? Where maturity changes, is the promotion justified by evidence? Any breaking changes to stable APIs must be surfaced to the user explicitly, not buried in subsystem docs."*
+- Prompt sketch: *"Evaluate this architecture for design quality, not just structural correctness. For each subsystem: is it deep (hides complexity, simple API) or shallow (thin wrapper, leaks internals)? Can consumers use it without knowing how it works inside? For the overall architecture: do the user flows from the goal work naturally through these APIs, or do they require awkward workarounds? What classes of errors does this design make impossible by construction? What future directions does it preserve vs foreclose? Where maturity changes, is the promotion evidence-based? Any breaking changes to stable APIs must be surfaced explicitly."*
 
 **`reviewer-slice-set`** — Slice-set heuristics & justification.
 - Applies to: `slice-set`.
@@ -1008,7 +1104,7 @@ passing_threshold_per_dimension: 3
 
 **`reviewer-api-contract`** — `code-diff` where public API surface changes — `backward-compatibility`, `versioning-explicit`, `doc-updated` — ≥3 each — *"Are changes additive or behind a versioned surface? Is the change explicitly versioned, or is backward compatibility preserved? Is the API doc updated in the same slice?"*
 
-**`reviewer-verification-spot-check`** — audit role at slice-land and epic-land — samples N% of `chunk-verified` events, re-runs the verification method, compares observation to the one recorded. Divergence → IMPORTANT finding against the build agent; may retro-demote a chunk to unverified. *"Your job is to catch fabricated verification. Sample events. Re-run. Compare. Report divergence."*
+**`reviewer-verification-spot-check`** — audit role at slice-land — samples N% of `chunk-verified` events, re-runs the verification method, compares observation to the one recorded. Divergence → IMPORTANT finding against the build agent; may retro-demote a chunk to unverified. *"Your job is to catch fabricated verification. Sample events. Re-run. Compare. Report divergence."*
 
 ---
 
@@ -1024,7 +1120,7 @@ Extractors run at commit time (after refinement converges, before the event is e
   subsystems: Array<{
     id: string;
     name: string;
-    maturity: "experimental" | "stabilizing" | "foundational";
+    maturity: "experimental" | "stabilizing" | "stable" | "foundational";
     description: string;
     owns: string[];          // module paths, interface names
     dependsOn: string[];     // subsystem ids
@@ -1129,10 +1225,11 @@ Extractors run at commit time (after refinement converges, before the event is e
   description: string;
   api: Array<{ name: string; signature: string; stability: "experimental" | "stable" | "frozen" }>;
   dataModels: Array<{ name: string; shape: string }>;
+  dependentCount: number; // falsifiability check: "experimental" with 12 dependents is lying
   maintainedInvariants: string[]; // invariant ids
   knownLimitations: string[];
   futureDirections: string[];
-  maturity: "experimental" | "stabilizing" | "foundational";
+  maturity: "experimental" | "stabilizing" | "stable" | "foundational";
 }
 ```
 
@@ -1156,8 +1253,7 @@ Skills are orchestrators — they emit events through the CLI and consume derive
 | `gp:start-epic` | user | P6 | — | `epic:activate` |
 | `gp:plan-slice` | user | P7, P8, P9 | `plan-phase`, reviewers, `editor`, `synthesis` | `slice:plan-*`, `refine:*` |
 | `gp:implement-slice` | user | P10, P11 | `implement-phase` (per chunk), code-quality reviewers, `editor`, `synthesis` | `slice:chunk-*`, `slice:code-refine-*`, `refine:*` |
-| `gp:land-slice` | user | P12 | `completion-slice`, `reviewer-verification-spot-check` (sampling) | `slice:land`, `architecture:commit`, `finding:triage`, `milestone-committed` |
-| `gp:complete-epic` | user | P13 | `completion-epic`, reviewers | `epic:complete`, `architecture:commit`, `milestone-committed` |
+| `gp:land-slice` | user | P12 (+ epic completion if final slice) | `completion-slice`, `reviewer-verification-spot-check` (sampling); if final: `completion-epic` | `slice:land`, `architecture:commit`, `finding:triage`, `milestone-committed`; if final: `epic:complete` |
 | `gp:create-side-quest` | user | S0, S1 | `explore-phase`, `plan-phase`, reviewers | `side-quest:*`, `refine:*` |
 | `gp:implement-side-quest` | user | S2 | `implement-phase`, reviewers | `side-quest:chunk-*`, `side-quest:code-refine-*` |
 | `gp:land-side-quest` | user | S3 | `completion-side-quest` | `side-quest:land`, `milestone-committed` |
@@ -1203,7 +1299,7 @@ PHASE P9: Refine the plan.
     - Call `gp refine:evaluate`.
       - If CONVERGED: `gp slice:plan-commit`, return SUCCESS.
       - If NOT_CONVERGED: spawn editor to apply changes, `gp refine:revise`, next round.
-      - If STUCK: call `gp refine:stuck`, enter Pause Discipline with non-convergence briefing, return PARTIAL.
+      - If STUCK: call `gp refine:stuck`, enter Pause Discipline with non-convergence briefing, return PARTIAL. **Convergence cost is a slicing signal:** a plan that won't converge is evidence the slice is too big or ambiguous. The non-convergence briefing must include this framing and present reshape (split the slice, simplify scope) as the default recommendation over "more rounds."
 
 HARD RULES:
   - Never edit `.goodplan/` directly. Only CLI commands.
@@ -1292,16 +1388,18 @@ Agents are stateless sub-processes invoked via the Task tool. They receive a str
 
 ### 10.1 Types
 
-| Type | Tool allowance | Primary return | Escalation |
+All agent types have access to all tools (Read, Grep, Glob, Write, Edit, Bash, etc.). Starting permissive; tool restrictions can be added later based on actual problems. The type distinction is about **role and return contract**, not tool access.
+
+| Type | Role | Primary return | Escalation |
 |---|---|---|---|
-| **Phase agent** | Read, Grep, Glob, Write (scoped to temp output dir) | SUCCESS with artifact path OR PARTIAL with continuation | PARTIAL when user input genuinely needed; ask *one* answerable question |
-| **Reviewer agent** | Read, Grep, Glob, (no Write) | SUCCESS with `{ dimensions, findings, rationale }` | never PARTIAL; if the artifact is unreadable, return FAILED |
-| **Editor agent** | Read, Edit, Write (scoped) | SUCCESS with diff-paths | FAILED if the synthesized feedback is internally inconsistent |
-| **Synthesis agent** | Read (no Write) | SUCCESS with `{ aggregatedPath, disagreements }` | never PARTIAL |
-| **Pressure-test agent** | Read, Grep, Glob, Write (pressure-test.md) | SUCCESS with `{ artifactPath }` | PARTIAL if a locked-in assumption needs user confirmation to name |
-| **Extractor agent** | Read (no Write) | SUCCESS with structured extract | FAILED if the artifact cannot be parsed |
-| **Verifier agent** (build-time) | Read, Bash (for running verification methods), Write (scoped to evidence dir) | SUCCESS with `{ evidencePath, matched }` | PARTIAL on "verification impossible in environment" with structured reason |
-| **Completion agent** (slice, epic) | Read, Grep, Glob, Write (scoped) | SUCCESS with proposals | PARTIAL if a promotion decision needs user input |
+| **Phase agent** | Orchestrate a phase of work, produce artifacts | SUCCESS with artifact path OR PARTIAL with continuation | PARTIAL when user input genuinely needed; ask *one* answerable question |
+| **Reviewer agent** | Evaluate an artifact against rubric dimensions | SUCCESS with `{ dimensions, findings, rationale }` | never PARTIAL; if the artifact is unreadable, return FAILED |
+| **Editor agent** | Apply synthesized feedback to an artifact | SUCCESS with diff-paths | FAILED if the synthesized feedback is internally inconsistent |
+| **Synthesis agent** | Merge multiple reviewer outputs into aggregate assessment | SUCCESS with `{ aggregatedPath, disagreements }` | never PARTIAL |
+| **Pressure-test agent** | Adversarial analysis of architecture targets | SUCCESS with `{ artifactPath }` | PARTIAL if a locked-in assumption needs user confirmation to name |
+| **Extractor agent** | Parse structured data from artifacts | SUCCESS with structured extract | FAILED if the artifact cannot be parsed |
+| **Verifier agent** (build-time) | Run verification methods, capture evidence | SUCCESS with `{ evidencePath, matched }` | PARTIAL on "verification impossible in environment" with structured reason |
+| **Completion agent** (slice, epic) | Triage findings, propose spine updates, capture learnings | SUCCESS with proposals | PARTIAL if a promotion decision needs user input |
 
 ### 10.2 Return format
 
@@ -1364,8 +1462,8 @@ Each phase skill loads a context bundle at start. The CLI command `gp context:bu
 | P9 plan-refine | shaped plan, rubric plan/v1, subsystem invariants | plan-shape history | reviewer-registry list for this artifact | refinement events from current slice |
 | P10 implement | committed plan (chunks), affected subsystem docs, red-test harness config | learnings by subsystem | — | chunk events |
 | P11 code-refine | slice diff, committed plan, code/v1 rubric, affected subsystem docs | learnings | — | chunk verification events |
-| P12 slice-land | slice plan, diff, findings captured in slice, architecture-target, architecture-current | learnings | pending findings for epic | slice events + findings |
-| P13 epic-land | epic goal, all slice summaries, all learnings, architecture-current, architecture-target | per-slice plans | subsystem maturity changes during epic | full epic events |
+| P12 slice-land | slice plan, diff, findings captured in slice, architecture-target, architecture-current, conventions, invariants | learnings | pending findings for epic | slice events + findings |
+| P12 (final slice) | above + epic goal, all slice summaries, all learnings | per-slice plans | subsystem maturity changes during epic | full epic events |
 
 **Budget discipline.** The context bundler has a token budget. Inlined items consume budget first; referenced items are added to the bundle as path + 1-line summary so the agent can decide whether to Read them. "What context in this artifact is stale, unused, or crowding out what matters?" is answered at routing time, not by the agent.
 
@@ -1380,7 +1478,7 @@ User: "/gp:create-epic workflow-bug-fixes"
 
 Skill:
   gp epic:create --slug=workflow-bug-fixes
-    → epic-created { slug, dir: "2026-04-08_workflow-bug-fixes_x7k2z8", ... }
+    → epic-created { slug: "workflow-bug-fixes", dir: "2026-04-08_workflow-bug-fixes", ... }
   gp context:bundle --phase=epic-capture --scope=epic/workflow-bug-fixes...
   [design-tree interview with user]
   gp epic:set-steering < { value: "best-guess-and-flag", scope: "epic" }
@@ -1445,7 +1543,7 @@ Skill:
 ### 12.2 Planning a slice
 
 ```
-gp slice:plan-draft 2026-04-08_wbf_x7k2z8/03_routing-function
+gp slice:plan-draft workflow-bug-fixes/03_routing-function
   [plan-phase agent]
   → slice-plan-drafted
 
@@ -1545,7 +1643,7 @@ User: "/gp:status"
 
 Skill:
   gp briefing:latest --scope=current-branch
-    → returns the most recent briefing-written event (ULID-sorted)
+    → returns the most recent briefing-written event (sorted by timestamp)
   gp status --json
     → derived state: active epic, active slice, last chunk, last phase
   Skill presents:
@@ -1578,8 +1676,7 @@ Every session start is a return experience.
 | P9 plan-refine | `gp:plan-slice` | always-on trio, reviewer-plan, reviewer-verification-plausibility (BLOCKING), subsystem reviewers, editor, synthesis | refinement-round-*, reviewer-scored, refinement-converged, slice-plan-committed | plan.md (final) | plan refinement (BLOCKING on verification-plausibility) |
 | P10 implement | `gp:implement-slice` | implement-phase, verifier (per chunk) | chunk-red-*, chunk-green-achieved, chunk-verified, chunk-unverifiable, chunk-unverifiable-decided | code, evidence/* | all chunks decided |
 | P11 code-refine | `gp:implement-slice` | performance, reliability, security, domain-correctness, test-meaningfulness, code-style, subsystem reviewers, editor, synthesis | code-refinement-*, reviewer-scored, code-refinement-converged | code (revised) | code refinement convergence |
-| P12 slice-land | `gp:land-slice` | completion-slice, reviewer-verification-spot-check (sampling), light refiners for spine deltas | architecture-delta-committed, learning-captured, finding-triaged, slice-landed, milestone-committed | architecture-current.md (partial), slice-land.md | spine deltas refined + discoveries triaged |
-| P13 epic-land | `gp:complete-epic` | completion-epic, light refiners | epic-synthesis-committed, architecture-current-reconciled, epic-completed, milestone-committed | epic-land.md, architecture-current.md (final reconcile) | synthesis refined + reconcile converged |
+| P12 slice-land | `gp:land-slice` | completion-slice, reviewer-verification-spot-check (sampling), light refiners for spine deltas; if final: completion-epic | architecture-delta-committed, conventions-committed (if changed), invariants-committed (if changed), learning-captured, finding-triaged, slice-landed, milestone-committed; if final: epic-synthesis-committed, architecture-current-reconciled, epic-completed | architecture-current.md, conventions.md (if changed), invariants.md (if changed); if final: epic-synthesis.md | spine deltas refined + discoveries triaged; if final: synthesis refined + reconcile converged |
 | S0 SQ-capture | `gp:create-side-quest` | goal reviewers | side-quest-created, side-quest-goal-committed | goal.md | goal refinement (light) |
 | S1 SQ-explore-plan | `gp:create-side-quest` | explore-phase, plan-phase, reviewers | side-quest-plan-drafted, plan-shape-*, refinement-converged, side-quest-plan-committed | research/*, plan.md | plan refinement |
 | S2 SQ-implement | `gp:implement-side-quest` | implement-phase, verifier, code reviewers | chunk-*, code-refinement-converged | code, evidence/* | all chunks decided + code-refined |
@@ -1611,7 +1708,7 @@ Continuing from A–J in 07.
 
 **T. Pre-tool-use hooks protect these path patterns only: `.goodplan/**/*.jsonl`, `.goodplan/**/architecture-*.md`, `.goodplan/**/invariants.md`, `.goodplan/conventions.md`, `.goodplan/subsystems/**/*.md`, and `.goodplan/learnings/**/*.md`.** Alternative: block the entire `.goodplan/` tree. I chose narrow protection so that CLI-created scratch files inside epic dirs (draft artifacts, extracted content) can be edited during iterative drafting without hook fighting. The integrity targets are the spine and the log.
 
-**U. Briefings are full first-class artifacts written to `.goodplan/briefings/<ulid>.md`** and tracked by event, not reconstructed from the event log on demand. Alternative: lazy reconstruction. I chose eager because briefings are written *when context is fresh* and reconstruction after-the-fact loses the reasoning narrative. This is per the briefing discipline in 07.
+**U. Briefings are full first-class artifacts written to `.goodplan/briefings/<slug>.md`** (e.g. `pre-flight-slice-01.md`, `r1-routing-complexity.md`) and tracked by event, not reconstructed from the event log on demand. Alternative: lazy reconstruction. I chose eager because briefings are written *when context is fresh* and reconstruction after-the-fact loses the reasoning narrative. This is per the briefing discipline in 07.
 
 **V. The "architecture delta" during slice-land is not a separate artifact type.** It's an in-place edit of `architecture-current.md` that goes through the substrate as an `architecture-current` refinement round before commit. Alternative: a dedicated `architecture-delta` artifact type. I chose in-place because the delta is only meaningful relative to the current state; a separate type would invite drift where the delta "exists" but hasn't been applied.
 
@@ -1621,7 +1718,7 @@ Continuing from A–J in 07.
 
 **Y. `gp phase:transition` is a read-only check command that the skill consults** before invoking the actual transition-emitting command. Alternative: fold the check into every emit command. I kept it separate so skills can *ask* "am I allowed to transition?" without attempting; this supports dry-run and planning logic.
 
-**Z. The verifier agent is a distinct agent type from the implement-phase agent.** Alternative: fold verification into implement-phase. I chose separation because the two roles have different postures: implement-phase builds, verifier adversarially checks. A single agent that did both would be tempted to claim verification without running it (C-P12). The verifier has Bash and evidence-writing tools; the implementer has code-writing tools. The separation makes fakery structurally harder.
+**Z. The verifier agent is a distinct agent type from the implement-phase agent.** Alternative: fold verification into implement-phase. I chose separation because the two roles have different postures: implement-phase builds, verifier adversarially checks. A single agent that did both would be tempted to claim verification without running it (C-P12). Both have access to all tools (per the permissive-first policy), but the role separation in their prompts makes fakery structurally harder.
 
 **AA. Red-test evidence requires the captured output showing the initial failure, not just a boolean flag.** Alternative: record only the `failureMatchesIntent` boolean. I chose the full output because without it, the "test was observed to fail" claim collapses to an LLM assertion, which the meta-principle forbids.
 
@@ -1631,7 +1728,7 @@ Continuing from A–J in 07.
 
 **DD. The hybrid TypeScript-core + YAML-extensible invariant model ships with ~22 core invariants and 0 extensible invariants in the default project.** Projects add their own YAML invariants via `gp invariant:propose`. Alternative: all YAML. I chose the hybrid because core invariants guard the substrate itself and must not be overridable; allowing them in YAML would let a project disable "chunk.evidence-non-empty," which would defeat the whole design.
 
-**EE. The rigor dial maps maturity → rigor as a table, not a function.** `experimental → minimum`, `stabilizing → standard`, `foundational → full`. Alternative: a weighted function over multiple inputs. I chose a simple table because the whole point of the dial is to remove judgment from the gating; the simplest deterministic mapping is the clearest. Projects that want a richer function can override via an extensible invariant.
+**EE. The rigor dial maps maturity → rigor as a table, not a function.** `experimental → minimum`, `stabilizing → standard`, `stable → standard`, `foundational → full`. Four maturity levels, three rigor tiers. `stabilizing` and `stable` both map to `standard` rigor — the distinction is API stability expectations (stable means API is fixed, multiple dependents, breaking changes need justification), not review depth. Alternative: a weighted function over multiple inputs. I chose a simple table because the whole point of the dial is to remove judgment from the gating; the simplest deterministic mapping is the clearest. Projects that want a richer function can override via an extensible invariant.
 
 **FF. Milestones commit at: epic-shaped, epic-activated, each slice-landed, epic-completed, each side-quest-landed.** These are the points where the event log makes sense to a human reader and where rollback cost is bounded. Alternative: commit per event or per session. Per-event is too noisy; per-session is too coarse.
 
@@ -1667,6 +1764,27 @@ Continuing from A–J in 07.
 
 **UU. Between-slice review checkpoint added as optional between P12 and next P7.** Rationale: the user said "there might be times when the user wants to check the implementation before we move on to the next slice." Controlled by steering preference; in `always-consult` mode, the workflow pauses; in `best-guess-and-flag` mode, it proceeds and flags.
 
+**VV. Six IMPORTANT drift fixes from 08-vs-01 comparison (I1–I6).** Applied in a single pass:
+- **I1:** Restored 4-level maturity taxonomy (`experimental → stabilizing → stable → foundational`). 08 had collapsed `stable` out; 01 requires it. `stabilizing` and `stable` both map to `standard` rigor; the distinction is API stability expectations and breaking-change sensitivity.
+- **I2:** Added Discovery Ledger decay trigger. Findings older than N epics without promotion or reference are surfaced for culling during slice-land triage. Directly from 01's "explicit decay" requirement.
+- **I3:** Added convergence-cost-as-slicing-signal to the STUCK path in P9. When a plan won't converge, the non-convergence briefing now frames reshape (split/simplify) as the default recommendation. From 01: "the right response is reshape, not more rounds."
+- **I4:** Restored 5 granular reshape options for blocking+in-scope findings (expand current slice, insert before, insert after, reshape epic, promote to own epic). 08 had collapsed these into a single "reshape-epic" disposition. The `finding-triaged` event disposition enum now includes all five plus the existing out-of-scope options.
+- **I5:** Added `relevanceWeight` field (`high | medium | low`) to `reviewer-scored` events and `gp refine:score` command. The convergence evaluator uses weight as a multiplier: high-weight below threshold blocks; low-weight below threshold warns. From 01's "weighted scoring by relevance."
+- **I6:** Added `dependentCount` to `SubsystemExtract` and `subsystem-registered` event. The count is a falsifiability check: "experimental" with twelve dependents is lying. From 01's maturity tracking section.
+
+**WW. Collaboration-model event schemas and CLI commands added for architecture-shape and slice-shape checkpoints.** These were referenced in phase descriptions (P3, P5) and the Pause Discipline table but not formally defined. Added: 7 new events (`architecture-shape-checkpoint-reached`, `architecture-shape-approved`, `architecture-shape-checkpoint-auto-shaped`, `slice-set-drafted`, `slice-shape-checkpoint-reached`, `slice-shape-approved`, `slice-shape-checkpoint-auto-shaped`), 6 CLI commands (`gp epic:architecture-shape-{start,approve,auto}`, `gp epic:slices-shape-{start,approve,auto}`), and 2 invariants (`epic.architecture-shape-approval-required`, `epic.slice-shape-approval-required`). All follow the same pattern as the existing plan-shape checkpoint infrastructure.
+
+**XX. User feedback pass — 9 structural changes applied:**
+- **Simplified ID model.** Entity IDs = slugs (human-readable). Event IDs = UUIDs (globally unique across branches to prevent merge conflicts in JSONL files). Directory names = `<YYYY-MM-DD>_<slug>/` (date prefix for chronological sorting, no random suffix). ULIDs dropped in favor of standard UUIDs. Rationale: slugs are unique enough given the one-person-per-epic model; UUIDs prevent merge conflicts when branches append to the same event logs; dates in directory names help humans navigate.
+- **Hook-protected files, not write-blessed directories.** Reframed from "three write-blessed directories" to a specific list of integrity-critical files (events.jsonl, spine files) that are hook-protected from direct LLM writes. Artifact content files are LLM-writable. Aligns with judgment call T's narrow protection model.
+- **One person per epic, merge at completion.** Replaced the multi-person merge resilience section. One person works on one epic at a time, branched off main. Main has no active epic. Multiple people can work on different epics simultaneously on different branches. Merge conflicts resolved at merge time. Eliminates significant complexity.
+- **Enriched slice-land, eliminated separate epic-land.** P12 now updates architecture-current, conventions, invariants, and captures learnings at every slice boundary. The final slice detects it's the last one and triggers epic completion automatically (cross-slice synthesis, architecture reconciliation, maturity transitions, side-quest proposals). P13 removed from the phase list. Rationale: incremental spine updates are more accurate (context is fresh) and make epic-land redundant.
+- **Expanded reviewer-software-architecture.** Added 6 new dimensions: api-depth-vs-surface-area, abstraction-leakage, future-directions-preserved, user-flow-ergonomics, invalid-state-prevention, edge-case-coverage. Richer prompt that evaluates design quality, not just structural correctness.
+- **CLI status with suggested next steps.** `gp status --json` now returns a `suggestedNextSteps` array derived from the event log and invariant engine. Skills use this to orient themselves rather than re-deriving state.
+- **All 8 open questions resolved.** See §16 for decisions. Key: existing reviewer set as bootstrap starting point; maturity inference from git logs on onboarding; side-quests allowed during epic work; evidence stored in repo; task grouping on promotion to side-quest/epic.
+- **Agent tool restrictions: start permissive.** All agent types have access to all tools. Type distinction is about role and return contract, not tool access. Restrictions can be added later based on actual problems.
+- **Retained full reviewer diversity.** The existing reviewer set (language, web, AI tooling, specialists, scientific) is explicitly listed and carries over into the new registry format.
+
 ---
 
 ## 15. Scope boundary
@@ -1684,7 +1802,7 @@ What this document covers: the target implementation at specification level. Wha
 | Migration plan | Rollout strategy to installed plugin |
 | A later refinement pass | Full reviewer prompts (sketched here only) |
 | A later refinement pass | Full rubric YAML contents per rubric version (dimensions sketched here only) |
-| Bootstrapping | Initial reviewer registry — hand-authored; the honest loss from 07 §7 |
+| Bootstrapping | Mapping existing reviewer set into new YAML registry format (starting point defined; mapping is implementation work) |
 
 **Code drafter is authorized to decide:** module decomposition, helper function extraction, internal derived-state representation, test file layout, citty subcommand tree wiring, concrete reviewer registry file names, commit-hook script details, how context bundler implements token budgeting.
 
@@ -1692,25 +1810,25 @@ What this document covers: the target implementation at specification level. Wha
 
 ---
 
-## 16. Open questions for the user
+## 16. Resolved questions
 
-These are genuine uncertainties I could not resolve with best judgment alone.
+These were open questions resolved by user decisions:
 
-1. **Reviewer registry bootstrapping.** The honest loss from 07 §7 is still open. The initial reviewer set is hand-authored and not reviewed by the substrate (chicken-and-egg). Do you want: (a) user hand-authors ~15 reviewers as a one-time bootstrap, flagged in the repo as "trusted by fiat"; (b) write a small "bootstrap pressure test" that the user runs once to sanity-check the initial set against known good/bad artifacts; (c) import an existing reviewer set from a sibling project if one exists? I've assumed (a) in the doc; confirm or redirect.
+1. **Reviewer registry bootstrapping.** **Resolved: use existing reviewer set as starting point.** The project already has a rich reviewer set (language-specific, web, AI tooling, specialists, scientific). These are mapped into the new YAML registry format, updated to include refinement-loop-specific requirements (change-scoped re-review, relevance weighting), and refined from there. This is much better than hand-authoring from scratch. The reviewer set is flagged as "bootstrap — trusted by fiat" until the first full refinement cycle validates them.
 
-2. **Git-blob content addressing vs. a readable mirror.** §14.L chooses `git hash-object -w`. This makes artifact bodies addressable via git but means `cat .goodplan/epics/<dir>/slices/03/plan.md` always reads the *live* working-copy file, not the committed-at-event version. Do you want a readable mirror (e.g., a copy-on-commit into `.goodplan/events/<ulid>/plan.md`) in addition to the blob? If yes, it's another 50 lines of spec and one extra path to protect; if no, readers will need `gp events:show <id> --blob` to retrieve a historical version.
+2. **Git-blob content addressing vs. a readable mirror.** **Resolved: no mirror; CLI blob retrieval is sufficient.** `gp events:show <id> --blob` retrieves historical versions. The user can ask the LLM to pull up any historical document. No extra path to protect, no extra spec complexity.
 
-3. **Should `learning-captured` events be protected by hooks?** §14.T includes `.goodplan/learnings/**/*.md` in the protected set. Learnings are referenced from events and are ground-truth for grounding decisions, so protecting them matches the spine — but they are also frequently edited ad-hoc by users as they learn things. Should users be able to edit learning files directly, or must all edits go through `gp learning:*` commands? I defaulted to "protected, CLI-only"; confirm.
+3. **Should `learning-captured` events be protected by hooks?** **Resolved: yes, protected, CLI-only.** All edits go through `gp learning:*` commands. Start strict; relax later if this creates friction.
 
-4. **`gp:task` semantics.** The current skill is a lightweight quick-capture ("bug, idea, todo"). In the new model it becomes a specialization of `finding-captured`, but tasks are not the same as mid-flight findings — a task is captured *out of flow* (no "what I was doing" at the moment), while a finding is captured *in flow*. Do we keep `gp:task` as a distinct skill that emits `finding-captured` with a marker field `kind: "task"`, or fold it entirely into `gp:explore` / `gp:create-side-quest`? I've kept it as a marker-field variant; if that's wrong, `finding-captured`'s schema needs a discriminator.
+4. **`gp:task` semantics.** **Resolved: keep as marker-field variant.** Tasks are `finding-captured` with `kind: "task"`. When a task is promoted to a side quest or epic, the LLM scans all open tasks and proposes grouping related tasks into the same side-quest/epic ("these 3 tasks all touch the notification routing module — want to group them?").
 
-5. **Pre-existing subsystem maturity on onboarding.** When `gp init` runs `onboard-phase` on an existing codebase, what maturity does it assign to detected subsystems? All `experimental` is safe but means nothing is foundational until promotion, which means the rigor dial runs at minimum everywhere for a long time. Alternatives: (a) let the onboarding agent propose a maturity per detected subsystem based on heuristics (test coverage, file count, churn) and ask the user to confirm; (b) default everything to `stabilizing`; (c) default to `experimental` as I've specified. (a) is the honest answer but adds onboarding time. Confirm default.
+5. **Pre-existing subsystem maturity on onboarding.** **Resolved: LLM proposes maturity based on heuristics; user confirms.** The onboard agent examines git log frequency, contributor count, API stability (how often function signatures change), test coverage, and PR review patterns (if `gh` CLI is available and authenticated) to propose maturity levels per subsystem. The user corrects any that are wrong. This is better than defaulting everything to `experimental` and better than asking the user to classify from scratch.
 
-6. **Concurrent side-quests during P10.** The doc says "no active side-quest while a slice is in P10-P11." That's strict. A common pattern during implementation is "I need to fix an unrelated bug before I can continue" — a side-quest. Do we want to allow side-quest insertion mid-slice (with the slice paused) or forbid it? The current design forbids; the user may prefer "allowed but only when the current slice explicitly enters `slice-paused` status."
+6. **Concurrent side-quests during P10.** **Resolved: allow side-quests during epic/slice work.** Side quests may be needed to unblock the current slice (e.g., fix an unrelated bug). The `side-quest.single-active-per-branch` invariant still limits to one active side quest at a time, but it can run concurrent with an in-progress slice.
 
-7. **`architecture-current` editorial locking.** During P13 epic-land, the reconcile step edits `architecture-current.md`. If the user has concurrent work on another branch (they shouldn't, per Option 1, but in practice might), the reconciliation is a merge hazard. Do we want epic-land to refuse if the branch is not up to date with `main`? I've left this at invariant-level ("spine.write-only-via-milestone") but not added a pre-reconcile branch-freshness check.
+7. **`architecture-current` editorial locking.** **Resolved: no branch-freshness check.** Landing an epic without being up-to-date with main is fine. Merge conflicts in both code and `.goodplan/` state are resolved at merge time, same as today. The one-person-per-epic model makes this a normal rebase workflow.
 
-8. **Evidence-storage path.** `chunk-verified` carries `observation: ContentRef` and `evidenceRef: ContentRef`. Where do those bodies actually live physically before being blobbed? I've implied a scoped temp dir under `.goodplan/.scratch/<slice>/evidence/` that the CLI vacuums on `milestone:commit`. If the user wants evidence kept long-term as readable files, it needs a permanent home.
+8. **Evidence-storage path.** **Resolved: keep evidence in the repo under the epic/side-quest directory.** Evidence files live at `.goodplan/epics/<dir>/slices/<slice>/evidence/` (or equivalent for side quests). They are part of the project's decision history, are small (markdown + small text files), and belong in the repo for auditability. No temp dirs, no vacuum.
 
 ---
 
