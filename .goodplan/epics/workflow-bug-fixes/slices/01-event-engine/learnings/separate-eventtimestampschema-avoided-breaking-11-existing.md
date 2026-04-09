@@ -1,0 +1,1 @@
+Plan said to modify shared timestampSchema to precision:3. Implementation correctly created a separate eventTimestampSchema instead, preserving backward compatibility.

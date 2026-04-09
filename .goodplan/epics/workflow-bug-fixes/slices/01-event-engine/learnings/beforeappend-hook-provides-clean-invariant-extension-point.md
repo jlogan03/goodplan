@@ -1,0 +1,1 @@
+Optional beforeAppend callback lets slice-02 plug in precondition checks without modifying append.ts.

@@ -1,0 +1,1 @@
+Bun lacks native flock APIs. proper-lockfile with realpath:false works on macOS. LockHandle abstraction makes future swaps trivial.

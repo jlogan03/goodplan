@@ -1,0 +1,1 @@
+_AssertAssignable/_Check types ensure EventEnvelope<D,T,P> stays assignable to AnyEventEnvelope at zero runtime cost.

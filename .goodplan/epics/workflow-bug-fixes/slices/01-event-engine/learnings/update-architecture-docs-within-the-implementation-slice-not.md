@@ -1,0 +1,1 @@
+The plan deferred architecture drift as Risk 6. Since the delta is known at implementation time, updating docs in the same slice prevents confusion.

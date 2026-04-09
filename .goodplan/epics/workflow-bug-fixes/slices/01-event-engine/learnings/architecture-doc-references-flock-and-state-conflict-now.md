@@ -1,0 +1,1 @@
+engine.md said flock and STATE_CONFLICT but implementation uses proper-lockfile and DATA_CONCURRENT_MODIFICATION. Fixed within this slice.
