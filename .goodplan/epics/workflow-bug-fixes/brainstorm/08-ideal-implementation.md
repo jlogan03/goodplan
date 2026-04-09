@@ -65,6 +65,36 @@ Stated once here; the rest of the document assumes them.
 
 **Determinism vs. judgment.** Gating is deterministic — invariants check, rubrics score, convergence is mechanical. But the CONTENT that reviewers and agents produce — findings, reshape proposals, scope judgments, verification-plausibility assessments — is irreducibly judgment-laden by design. The mental models throughout this doc (the R1 question, the honest-intermediate-state rule, the tests-manufacture-confidence warning) exist precisely because checklists fail at these boundaries. The model is trusted to exercise judgment; the workflow provides scaffolding — context, prompts, blocking options — rather than rules.
 
+**Collaboration model: collaborative design, autonomous execution.** The workflow has two fundamentally different modes of user involvement:
+
+**Collaborative phases** require the user present. The LLM and user work together in real-time — the user's domain knowledge, intuitions, and preferences are essential inputs the LLM cannot substitute. These phases are conversational, back-and-forth, and use design-tree interviewing to explore the space. Collaborative phases cannot use the steering preference system; they always require the user. If the user is away, collaborative phases wait.
+
+**Autonomous-with-checkpoint phases** proceed independently. The LLM does mechanical work (refinement, implementation, verification, code review) and pauses at defined checkpoints for user input. Checkpoints respect the epic-level steering preference (always-consult / best-guess-and-flag / ask-in-the-moment). If the user is away and the preference allows, the LLM proceeds with best-guess and flags for return review.
+
+The overall shape is front-loaded collaboration, back-loaded autonomy — mirroring how real software development works: design is collaborative (whiteboard, discussion), execution is heads-down (individual work). The trust handoff between collaborative and autonomous phases is the shape checkpoint — the moment where collaborative intent gets locked into an artifact that autonomous processes can refine without losing the user's direction. This is why "artifacts are context transport" is load-bearing: it is the mechanism that lets the user step away during implementation without the LLM losing their intent.
+
+**Every major artifact has a lifecycle:** collaborative design (or autonomous draft) → shape checkpoint → autonomous refinement → optional post-refinement review → committed. The shape checkpoint is the trust handoff — the moment where collaborative intent gets locked into an artifact that autonomous processes can refine without losing the user's direction.
+
+| Phase | Mode | Why |
+|---|---|---|
+| **Explore** (P2) | **Collaborative** | User's domain knowledge seeds brainstorming; research → brainstorm cycles are conversational; the LLM alone under-explores the space |
+| **Architecture design** (P3) | **Collaborative** | User shapes subsystem boundaries, API decisions, communication patterns, invariants |
+| Architecture shape checkpoint | Checkpoint (new) | User reviews architecture before autonomous refinement |
+| Architecture refinement (P4) | Autonomous | Reviewers iterate mechanically |
+| Post-refinement architecture review | Optional checkpoint (new) | User may want to see what refinement changed before committing |
+| Slice definition (P5) | Autonomous | LLM proposes slices based on the refined architecture; user reviews at checkpoint |
+| Slice shape checkpoint | Checkpoint (new) | User reviews slice definitions, adjusts scope/ordering before refinement |
+| Slice refinement (P6 — future, if needed) | Autonomous | Reviewers iterate mechanically |
+| **Plan drafting** (P7) | **Collaborative** | User and LLM build the plan skeleton together for each slice |
+| Plan-shape checkpoint (P8) | Checkpoint (already designed) | User shapes the plan before autonomous refinement |
+| Plan refinement (P9) | Autonomous | Reviewers iterate mechanically |
+| Implementation (P10) | Autonomous | LLM codes and verifies per-chunk |
+| Code refinement (P11) | Autonomous | Reviewers iterate mechanically |
+| Slice Land (P12) | Mixed | Substeps 1–3 autonomous, substep 4 user review |
+| Between-slice review | Optional checkpoint (new) | User may want to check implementation before the next slice |
+
+**Key rule:** Collaborative phases (P2, P3, P7) cannot proceed without the user. Checkpoints respect the steering preference. Autonomous phases proceed independently.
+
 ---
 
 ## 3. Phases
@@ -126,8 +156,9 @@ For each phase: what must be true to enter, what the owning skill loads, what it
 
 **Not every design space is tree-shaped.** Some are graphs (branches interconnect), matrices (orthogonal dimensions), or flat (many parallel choices with no hierarchy). When the LLM recognizes the space isn't naturally tree-shaped, it says so and uses an appropriate alternative structure — a matrix for orthogonal dimensions, a diagram for interconnected branches, a list for flat parallel choices. The underlying principle is "systematic exploration of the design space"; the structure should match the space, not force it into a tree.
 
-#### P2 — Explore
+#### P2 — Explore (collaborative)
 
+- **Mode:** **Collaborative.** The brainstorming portions require the user present; the LLM cannot brainstorm alone because it lacks the user's domain knowledge and intuitions. Research portions are autonomous.
 - **Entry:** `epic-goal-committed` present; user triggered exploration OR skill decides exploration is needed.
 - **Skill:** `gp:explore`.
 - **Context bundle:** epic goal (inline), architecture-current (inline), conventions (reference), prior research in this epic (references), design-tree state (if prior).
@@ -137,16 +168,35 @@ For each phase: what must be true to enter, what the owning skill loads, what it
 - **Trust gate:** each artifact goes through light refinement (holistic + context-transport only). Prototypes are not refined — they are evidence for brainstorms.
 - **Exit:** user signals exploration-done OR skill detects design-tree "no open high-value branches."
 
-#### P3 — Shape: architecture
+**Exploration is a research/brainstorm cycle, not a single pass.** The pattern:
 
+1. **Research** (autonomous): LLM explores topics it identifies as needing investigation. Writes research files. The user need not be present.
+2. **Brainstorm** (collaborative): LLM and user discuss what the research revealed. User brings domain knowledge, intuitions, preferences. Design-tree interviewing structures the conversation. New questions, ideas, and research topics emerge from the dialogue.
+3. **Assess** (collaborative): LLM and user decide together — more research needed? More brainstorming? Or ready to move to architecture?
+4. **Loop** back to (1) if research, (2) if brainstorming, or exit to P3 if both LLM and user feel the problem and solution space is well-explored.
+
+The cycle alternates between autonomous research and collaborative brainstorming. If the user is away during a brainstorm cycle, the skill waits — it does not attempt to brainstorm alone.
+
+#### P3 — Shape: architecture (collaborative)
+
+- **Mode:** **Collaborative.** The user and LLM design the architecture together — subsystem boundaries, API decisions, communication patterns, invariants. The LLM uses design-tree interviewing. The user shapes the design based on their knowledge of the system and their preferences.
 - **Entry:** `epic-goal-committed`; exploration artifacts available.
 - **Skill:** `gp:create-epic` (resumes for shape sub-phase).
 - **Context bundle:** epic goal, architecture-current, affected subsystems (inline full contents), exploration outputs (inline tightly budgeted), pressure-test history for affected subsystems.
-- **Agents spawned:** `architecture-phase` (drafts `architecture-target.md`), reviewer set at full rigor.
-- **Events emitted:** `architecture-target-drafted`, `reviewer-scored` (multiple), `refinement-round-*`, `architecture-target-committed`.
+- **Agents spawned:** `architecture-phase` (drafts `architecture-target.md` collaboratively with user), reviewer set at full rigor (after shape checkpoint).
+- **Events emitted:** `architecture-target-drafted`, `architecture-shape-checkpoint-reached`, `architecture-shape-approved` OR `architecture-shape-checkpoint-auto-shaped`, `reviewer-scored` (multiple), `refinement-round-*`, `architecture-target-committed`.
 - **Artifacts:** `.goodplan/epics/<dir>/architecture-target.md`.
 - **Trust gate:** architecture artifact refinement, **rigor = max(maturity of affected subsystems)**. Always-on reviewers + subsystem-specific reviewers + `reviewer-software-architecture` + `reviewer-invariant-checker`.
 - **Exit:** `artifact-converged { artifact: architecture-target }`.
+
+**Architecture-shape checkpoint.** After collaborative design, before autonomous refinement begins. The same pattern as the plan-shape checkpoint:
+
+- Present the architecture draft to the user for review.
+- Allow the user to ask questions, suggest changes, reshape subsystem boundaries.
+- Only proceed to P4 (autonomous pressure-test and refinement) when the user explicitly signals readiness.
+- Since P3 is collaborative, the user is already present — the checkpoint is the transition from collaborative to autonomous.
+
+**Optional post-refinement architecture review.** Between P4 and P5, the user may want to see what the reviewers changed before the architecture is committed and slicing begins. This is optional, controlled by steering preference. In `always-consult` mode, the workflow pauses here. In `best-guess-and-flag` mode, the workflow proceeds and flags in the return briefing.
 
 #### P4 — Shape: pressure-test
 
@@ -161,16 +211,25 @@ For each phase: what must be true to enter, what the owning skill loads, what it
 
 **"Errors made impossible" is verbatim, load-bearing, non-negotiable** in the pressure-test prompt.
 
-#### P5 — Shape: slice set
+#### P5 — Shape: slice set (autonomous with checkpoint)
 
+- **Mode:** **Autonomous with checkpoint.** The LLM proposes slices based on the refined architecture; the user reviews and adjusts at a checkpoint rather than co-creating. Once the architecture exists, the LLM usually has enough information to propose a good set of slices.
 - **Entry:** `pressure-test-committed`.
 - **Skill:** `gp:create-epic` (resumes).
 - **Context bundle:** architecture-target, pressure-test report, affected subsystems with maturity, epic goal.
 - **Agents spawned:** `slices-phase`, reviewer set including the slicing reviewer whose contract is **"why didn't you apply this technique?"** not "did you apply it?"
-- **Events emitted:** `slice-set-drafted`, `reviewer-scored`, `slice-set-committed`, `slice-created` (one per slice).
+- **Events emitted:** `slice-set-drafted`, `slice-shape-checkpoint-reached`, `slice-shape-approved` OR `slice-shape-checkpoint-auto-shaped`, `reviewer-scored`, `slice-set-committed`, `slice-created` (one per slice).
 - **Artifacts:** `.goodplan/epics/<dir>/slices/<n>_<slug>/goal.md` per slice; `.goodplan/epics/<dir>/slice-set.md` (the set as a unit).
 - **Trust gate:** slice-set refinement. Slicing techniques (tracer bullet, observability early, known unknowns first) checked as heuristics; omissions need justification.
 - **Exit:** `slice-set-committed` AND every slice has a `slice-created` event with a committed goal.
+
+**Slice-shape checkpoint.** After the LLM drafts the slice set, before slice-set refinement begins:
+
+- Present the proposed slice set to the user.
+- Allow questions about scope, ordering, dependencies, tracer bullet choice, observability slice, known unknowns ordering.
+- Allow the user to add, remove, or adjust slices.
+- Only proceed to slice-set refinement when the user signals readiness.
+- Respects the steering preference: in `always-consult` mode, waits; in `best-guess-and-flag` mode, auto-shapes and flags.
 
 **These techniques are heuristics, not rules.** The slicing step weighs them against each other and against the epic's specific shape. Deviations are allowed and expected; reviewers ask about justification, not enforcement.
 
@@ -196,12 +255,13 @@ For each phase: what must be true to enter, what the owning skill loads, what it
 - **Trust gate:** user explicitly approves.
 - **Exit:** `epic-activated` present; `epic.single-active-per-branch` now holds with this epic as the active one.
 
-#### P7 — Slice-plan-draft
+#### P7 — Slice-plan-draft (collaborative)
 
+- **Mode:** **Collaborative.** The user and LLM build the plan skeleton together. The LLM brings the architecture context and the slice goal; the user brings their knowledge of how the code should work, what patterns to use, what pitfalls to avoid. This is a back-and-forth conversation, not the LLM producing a document alone.
 - **Entry:** `epic-activated` AND target slice has `slice-created` but no `slice-plan-drafted`; slice dependencies (declared in its goal) are all `slice-landed`.
 - **Skill:** `gp:plan-slice`.
 - **Context bundle:** slice goal, architecture-target, affected-subsystem files, related decisions, related learnings by subsystem tag, recent findings, reviewer rubric for `plan/v1`.
-- **Agents spawned:** `plan-phase`.
+- **Agents spawned:** `plan-phase` (interactive with user, not autonomous).
 - **Events emitted:** `slice-plan-drafted`.
 - **Artifacts:** `.goodplan/epics/<dir>/slices/<n>_<slug>/plan.md`.
 - **Trust gate:** none yet (draft is the *input* to the next phase).
@@ -266,6 +326,16 @@ If convergence returns `STUCK`, the Pause Discipline fires. If any chunk is `imp
 - **Trust gate:** each spine delta is itself a small refined artifact (light rigor).
 - **Exit:** `slice-landed`.
 
+**Between-slice review checkpoint (optional).** Between `slice-landed` and the next slice's P7 (plan drafting). The user can:
+
+- Review the implementation that just landed.
+- Check the updated `architecture-current.md`.
+- Review findings from the Discovery Ledger triage.
+- Adjust their approach for upcoming slices based on what they learned from this one.
+- Decide whether to proceed to the next slice, reshape the epic, or take a break.
+
+This checkpoint is optional, controlled by steering preference. In `always-consult` mode, the workflow pauses here. In `best-guess-and-flag` mode, the workflow proceeds to the next slice and flags the checkpoint in the return briefing.
+
 #### P13 — Epic-land
 
 - **Entry:** every slice in the epic has `slice-landed` OR `slice-abandoned` with recorded reason; no unresolved blocking findings.
@@ -327,7 +397,11 @@ Scheduled steering checkpoints built into the phase flow:
 
 | Checkpoint | When | Mechanism |
 |---|---|---|
+| Architecture-shape checkpoint | Between P3 (collaborative design) and P4 (pressure-test) | `pause-entered { trigger: "architecture-shape-checkpoint" }` |
+| Post-refinement architecture review | Between P4 and P5 (optional) | `pause-entered { trigger: "architecture-post-refinement-review" }` |
+| Slice-shape checkpoint | Between P5 (slice drafting) and slice-set refinement | `pause-entered { trigger: "slice-shape-checkpoint" }` |
 | Plan-shape checkpoint | Between P8 (plan drafted) and P9 (plan refinement) | `pause-entered { trigger: "plan-shape-checkpoint" }` |
+| Between-slice review | Between P12 (slice-landed) and next P7 (optional) | `pause-entered { trigger: "between-slice-review" }` |
 | Epic steering pre-flight | Start of epic work on a branch | `epic-steering-preference-set` event |
 
 **Reactive vs scheduled — the load-bearing distinction.**
@@ -1584,6 +1658,14 @@ Continuing from A–J in 07.
 **QQ. Blocking checks (like DAG acyclicity) separated from scored dimensions in reviewer contracts.** Rationale: binary facts don't belong on a 1-5 spectrum; conflating them creates false precision. Blocking checks are pass/fail and failing one causes immediate rejection regardless of other scores. Alternative: hack a 5=pass/1=fail scoring. Rejected for clarity and to avoid reviewer confusion.
 
 **PP. Multi-person merge subsection placed in §2 Foundational decisions.** Rationale: this is a premise about how the workflow handles concurrent collaboration, and §2 is where premises live. Alternative considered: §15 Scope boundary (as an implication of Option 1 PR policy). Rejected because it is a design assertion, not a scope statement.
+
+**RR. P2 (Explore) classified as collaborative with research/brainstorm cycles requiring user presence.** Rationale: the user explicitly stated "brainstorming and exploration sessions are extremely collaborative; they generally can't be done alone by the LLM." The research portions are autonomous; the brainstorming portions require the user. Alternative: keep P2 as autonomous with check-ins. Rejected per user direction.
+
+**SS. P5 (Slice definition) classified as autonomous-with-checkpoint, not collaborative.** Rationale: the user explicitly stated that once the architecture exists, "the LLM usually has enough information to propose a good set of slices." The user reviews and adjusts at a checkpoint rather than co-creating. Alternative: collaborative like P3. Rejected per user direction.
+
+**TT. Architecture-shape checkpoint added between P3 and P4.** Rationale: same pattern as plan-shape checkpoint; the user wants to shape the architecture before autonomous refinement begins. Post-refinement optional checkpoint also added so the user can review what refinement changed. Both follow the generalized artifact lifecycle pattern: collaborative design → shape checkpoint → autonomous refinement → optional post-refinement review → committed.
+
+**UU. Between-slice review checkpoint added as optional between P12 and next P7.** Rationale: the user said "there might be times when the user wants to check the implementation before we move on to the next slice." Controlled by steering preference; in `always-consult` mode, the workflow pauses; in `best-guess-and-flag` mode, it proceeds and flags.
 
 ---
 
