@@ -4,6 +4,8 @@ export { generateEventId, generateTimestamp } from "./id.js";
 export { acquireLock, withLock } from "./lock.js";
 export type { LockHandle } from "./lock.js";
 export { readLastEventId } from "./read-last-event.js";
+export { replayEvents } from "./replay.js";
+export type { ReplayFilter, ReplayOptions, ReplayResult } from "./replay.js";
 export type {
 	Actor,
 	AnyEventEnvelope,
