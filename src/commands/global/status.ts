@@ -1,294 +1,14 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { loadState } from "../../core/data/load.js";
-import { PROJECT_DIR_NAME, resolveProjectDir } from "../../core/data/project.js";
-import { getDir, getJson, getJsonl } from "../../core/data/tree.js";
-import type { DirectoryEntry, ProjectState } from "../../core/tree.js";
-import type { Artifacts, StatusResult } from "../../schemas/commands/status.js";
-import type { Epic } from "../../schemas/entities/epic.js";
-import type { UnifiedOverview } from "../../schemas/entities/overview.js";
-import type { Project } from "../../schemas/entities/project.js";
-import type { Quest } from "../../schemas/entities/quest.js";
-import type { Slice } from "../../schemas/entities/slice.js";
-import type { ActivityEntry } from "../../schemas/records/activity-log.js";
-import type { DecisionEntry } from "../../schemas/records/decision.js";
-import type { LearningEntry } from "../../schemas/records/learning.js";
-import { GoodplanError } from "../../util/errors.js";
+import { resolveProjectDir } from "../../core/data/project.js";
+import { replayAllScopes } from "../../engine/derived-state/index.js";
+import type { StatusResult } from "../../schemas/commands/status.js";
 import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
+import { buildStatusResult } from "./status/build-result.js";
 
-/**
- * Build a StatusResult from the current project state.
- * Uses loadState() which handles zero-state/missing-dir cases (returns ZERO_STATE)
- * and adds HMAC verification on non-cache-hit paths.
- *
- * Architecture: read-only commands bypass RPC and access the Data Layer directly.
- */
-export function buildStatusResult(projectDir?: string): StatusResult {
-	const dir = projectDir ?? resolveProjectDir();
-	const state = loadState(dir);
-
-	const project = getJson<Project>(state, "project.json");
-	if (project === undefined) {
-		throw new GoodplanError("DATA_NO_PROJECT", `No project.json found in ${PROJECT_DIR_NAME}/ directory`);
-	}
-
-	// ── Active entities ──
-	const activeEpic = resolveActiveEpic(project, state);
-	const activeSlice = resolveActiveSlice(project, state);
-	const activeQuest = resolveActiveQuest(project, state);
-
-	// ── Artifacts ──
-	const artifacts = countArtifacts(project, state);
-
-	// ── Recommendations & warnings ──
-	const recommendations: string[] = [];
-	const warnings: string[] = [];
-
-	generateRecommendations(
-		project,
-		activeEpic,
-		activeSlice,
-		activeQuest,
-		artifacts,
-		recommendations,
-	);
-	generateWarnings(project, state, warnings);
-
-	return {
-		project: {
-			name: project.name,
-			version: project.version,
-		},
-		activeEpic,
-		activeSlice,
-		activeQuest,
-		artifacts,
-		recommendations,
-		warnings,
-	};
-}
-
-// ── Active entity resolution ─────────────────────────────────
-
-function resolveActiveEpic(project: Project, state: ProjectState): StatusResult["activeEpic"] {
-	if (project.activeEpic === null) return null;
-	const epic = getJson<Epic>(state, `epics/${project.activeEpic}/epic.json`);
-	if (epic === undefined) return null;
-	return { name: epic.name, status: epic.status };
-}
-
-function resolveActiveSlice(project: Project, state: ProjectState): StatusResult["activeSlice"] {
-	if (project.activeSlice === null) return null;
-	if (project.activeEpic === null) return null;
-	const slice = getJson<Slice>(state, `epics/${project.activeEpic}/slices/${project.activeSlice}/slice.json`);
-	if (slice === undefined) return null;
-	return { name: slice.name, status: slice.status };
-}
-
-function resolveActiveQuest(project: Project, state: ProjectState): StatusResult["activeQuest"] {
-	if (project.activeQuest === null) return null;
-	const quest = getJson<Quest>(state, `quests/${project.activeQuest}/quest.json`);
-	if (quest === undefined) return null;
-	return { name: quest.name, status: quest.status };
-}
-
-// ── Artifact counting ────────────────────────────────────────
-
-/**
- * Collect .md filenames from a directory entry in the state tree.
- * Returns state-tree-relative paths (prefixed with `dirPath`).
- * Non-recursive — only direct children.
- */
-function collectMdFiles(state: ProjectState, dirPath: string): string[] {
-	const dir: DirectoryEntry | undefined = getDir(state, dirPath);
-	if (dir === undefined) return [];
-	const files: string[] = [];
-	for (const key of Object.keys(dir.contents)) {
-		if (key.endsWith(".md")) {
-			files.push(`${dirPath}/${key}`);
-		}
-	}
-	return files;
-}
-
-function countArtifacts(project: Project, state: ProjectState): Artifacts {
-	// Decisions and learnings from JSONL in state
-	const decisions = getJsonl<DecisionEntry>(state, "decisions.jsonl");
-	const learnings = getJsonl<LearningEntry>(state, "learnings.jsonl");
-
-	// Unified overview for slice and task counts
-	const overview = getJson<UnifiedOverview>(state, "overview.json");
-	let completedSlices = 0;
-	let totalSlices = 0;
-	if (overview !== undefined) {
-		for (const epicItem of overview.epics) {
-			for (const slice of epicItem.slices) {
-				totalSlices++;
-				if (slice.status === "completed") {
-					completedSlices++;
-				}
-			}
-		}
-	}
-
-	// Task overview for open/total counts
-	let openTasks = 0;
-	let totalTasks = 0;
-	if (overview !== undefined) {
-		totalTasks = overview.tasks.length;
-		for (const item of overview.tasks) {
-			if (item.status === "open") {
-				openTasks++;
-			}
-		}
-	}
-
-	// File-based artifacts — walk state tree for dual-directory aggregation
-	// (project-level + active epic). Files arrays use state-tree-relative paths
-	// (relative to .goodplan/) so consumers can distinguish origin directory.
-	let architectureFiles = collectMdFiles(state, "architecture");
-	let researchFiles = collectMdFiles(state, "research");
-	let brainstormFiles = collectMdFiles(state, "brainstorm");
-	let prototypeFiles = collectMdFiles(state, "prototypes");
-
-	if (project.activeEpic !== null) {
-		const epicBase = `epics/${project.activeEpic}`;
-		architectureFiles = architectureFiles.concat(collectMdFiles(state, `${epicBase}/architecture`));
-		researchFiles = researchFiles.concat(collectMdFiles(state, `${epicBase}/research`));
-		brainstormFiles = brainstormFiles.concat(collectMdFiles(state, `${epicBase}/brainstorm`));
-		prototypeFiles = prototypeFiles.concat(collectMdFiles(state, `${epicBase}/prototypes`));
-	}
-
-	return {
-		architecture: { count: architectureFiles.length, files: architectureFiles },
-		research: { count: researchFiles.length, files: researchFiles },
-		brainstorm: { count: brainstormFiles.length, files: brainstormFiles },
-		prototypes: { count: prototypeFiles.length, files: prototypeFiles },
-		decisions: decisions?.length ?? 0,
-		learnings: learnings?.length ?? 0,
-		completedSlices,
-		totalSlices,
-		openTasks,
-		totalTasks,
-	};
-}
-
-// ── Recommendations ──────────────────────────────────────────
-
-function generateRecommendations(
-	project: Project,
-	activeEpic: StatusResult["activeEpic"],
-	activeSlice: StatusResult["activeSlice"],
-	activeQuest: StatusResult["activeQuest"],
-	artifacts: Artifacts,
-	recommendations: string[],
-): void {
-	// No epic → suggest creating one
-	if (activeEpic === null && activeSlice === null && activeQuest === null) {
-		recommendations.push("Run epic:create to start");
-		return;
-	}
-
-	// Active slice recommendations based on status
-	if (activeSlice !== null) {
-		const statusActions: Record<string, string> = {
-			created: `Active slice ${activeSlice.name} is created — run slice:plan to begin planning`,
-			planning: `Active slice ${activeSlice.name} is in planning — waiting for submit-plan`,
-			"plan-created": `Active slice ${activeSlice.name} has a plan — run slice:refine-plan or slice:implement`,
-			refining: `Active slice ${activeSlice.name} is refining — waiting for submit-refinement`,
-			"plan-refined": `Active slice ${activeSlice.name} plan is refined — run slice:implement`,
-			implementing: `Active slice ${activeSlice.name} is implementing — waiting for submit-implementation`,
-			"implementation-complete": `Active slice ${activeSlice.name} implementation is complete — run slice:complete`,
-		};
-		const action = statusActions[activeSlice.status];
-		if (action !== undefined) {
-			recommendations.push(action);
-		}
-	}
-
-	// Active quest recommendations based on status
-	if (activeQuest !== null) {
-		const statusActions: Record<string, string> = {
-			created: `Active quest ${activeQuest.name} is created — run quest:plan to begin planning`,
-			planning: `Active quest ${activeQuest.name} is in planning — waiting for submit-plan`,
-			"plan-created": `Active quest ${activeQuest.name} has a plan — run quest:refine-plan or quest:implement`,
-			refining: `Active quest ${activeQuest.name} is refining — waiting for submit-refinement`,
-			"plan-refined": `Active quest ${activeQuest.name} plan is refined — run quest:implement`,
-			implementing: `Active quest ${activeQuest.name} is implementing — waiting for submit-implementation`,
-			"implementation-complete": `Active quest ${activeQuest.name} implementation is complete — run quest:complete`,
-		};
-		const action = statusActions[activeQuest.status];
-		if (action !== undefined) {
-			recommendations.push(action);
-		}
-	}
-
-	// Epic progress summary
-	if (activeEpic !== null && artifacts.totalSlices > 0) {
-		recommendations.push(
-			`Epic ${activeEpic.name}: ${artifacts.completedSlices}/${artifacts.totalSlices} slices complete`,
-		);
-	}
-}
-
-// ── Warnings ─────────────────────────────────────────────────
-
-const STALE_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-
-function generateWarnings(project: Project, state: ProjectState, warnings: string[]): void {
-	const activityLog = getJsonl<ActivityEntry>(state, "activity-log.jsonl");
-	if (activityLog === undefined || activityLog.length === 0) return;
-
-	const now = Date.now();
-
-	// Check for stale active entities
-	if (project.activeSlice !== null && project.activeEpic !== null) {
-		checkStale(
-			activityLog,
-			`epics/${project.activeEpic}/slices/${project.activeSlice}`,
-			project.activeSlice,
-			"slice",
-			now,
-			warnings,
-		);
-	}
-	if (project.activeQuest !== null) {
-		checkStale(
-			activityLog,
-			`quests/${project.activeQuest}`,
-			project.activeQuest,
-			"quest",
-			now,
-			warnings,
-		);
-	}
-}
-
-function checkStale(
-	activityLog: ActivityEntry[],
-	scopePrefix: string,
-	entityName: string,
-	entityType: string,
-	now: number,
-	warnings: string[],
-): void {
-	// Find most recent activity entry for this entity
-	let latestTs = 0;
-	for (const entry of activityLog) {
-		if (entry.scope === scopePrefix || entry.scope.startsWith(`${scopePrefix}/`)) {
-			const ts = new Date(entry.ts).getTime();
-			if (ts > latestTs) {
-				latestTs = ts;
-			}
-		}
-	}
-
-	if (latestTs > 0 && now - latestTs > STALE_THRESHOLD_MS) {
-		const days = Math.floor((now - latestTs) / (24 * 60 * 60 * 1000));
-		warnings.push(`Active ${entityType} ${entityName} has had no activity for ${days} days`);
-	}
-}
+// Re-export for backward compatibility (tests import from this module)
+export { buildStatusResult } from "./status/build-result.js";
 
 // ── Human-readable output ────────────────────────────────────
 
@@ -384,13 +104,16 @@ export function formatStatusHuman(status: StatusResult): string {
 }
 
 /**
- * `gp status` — show current project status.
+ * `gp status` (v2) — show current project status from event-sourced state.
+ *
+ * 1. Resolves .goodplan/ directory
+ * 2. Replays all event logs via replayAllScopes
+ * 3. Builds StatusResult via buildStatusResult
+ * 4. Outputs JSON or human-readable format
  *
  * Flags:
  * - --json: output as structured JSON
  * - --query <expr>: apply jq expression to JSON output (implies --json)
- *
- * --query is now handled by the shared output() function.
  */
 export const statusCommand = defineCommand({
 	meta: {
@@ -402,7 +125,9 @@ export const statusCommand = defineCommand({
 	},
 	setup() {},
 	async run({ args }) {
-		const status = buildStatusResult();
+		const goodplanDir = resolveProjectDir();
+		const state = await replayAllScopes(goodplanDir);
+		const status = buildStatusResult(state, goodplanDir);
 
 		// When --query is present, output() handles it (auto-implies json).
 		// When --json is explicit, pass structured data.
