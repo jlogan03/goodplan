@@ -1,0 +1,1 @@
+Changes to the repo source dont affect the installed gp CLI or plugin. This means slices can freely remove v1 capabilities and add v2 capabilities without worrying about intermediate states. The installed plugin remains v1 throughout the epic. This distinction also means new reviewer agents created in the repo cant be used during the current epic.
