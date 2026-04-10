@@ -34,3 +34,16 @@ export type {
 	CircuitBreakerResult,
 	RelevanceWeight,
 } from "./convergence/index.js";
+
+export { runRefinementLoop } from "./refinement-loop.js";
+export type {
+	RefinementLoopOptions,
+	RefinementLoopResult,
+	SynthesizedFeedback,
+	SynthesizedFinding,
+	RoundCompleteData,
+} from "./refinement-loop-types.js";
+
+export { synthesizeFeedback } from "./feedback-synthesizer.js";
+
+export type { ReviewerDispatcher, ReviewerError, ArtifactEditor } from "./interfaces/index.js";
