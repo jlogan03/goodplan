@@ -110,7 +110,7 @@ describe("smoke test: 14-event scenario with invariant hook", () => {
 		}
 	}
 
-	it("exercises 14-event scenario: 9 passes, 5 rejections, 8+ distinct invariants", async () => {
+	it("exercises 15-event scenario: 10 passes, 5 rejections, 8+ distinct invariants", async () => {
 		const violatedRuleIds = new Set<string>();
 
 		// 1. project-initialized (PASS)
@@ -122,7 +122,10 @@ describe("smoke test: 14-event scenario with invariant hook", () => {
 			"2: epic-created",
 		);
 
-		// 3. epic-goal-committed (PASS)
+		// 2b. epic-goal-drafted (PASS -- prerequisite for goal commit)
+		await expectPass({ type: "epic-goal-drafted" }, "2b: epic-goal-drafted");
+
+		// 3. epic-goal-committed (PASS -- goal was drafted)
 		await expectPass({ type: "epic-goal-committed" }, "3: epic-goal-committed");
 
 		// 4. exploration-cycle-started (PASS -- goal committed)
@@ -279,6 +282,7 @@ describe("smoke test: 14-event scenario with invariant hook", () => {
 		// Count expected successful events:
 		// 1: project-initialized
 		// 2: epic-created
+		// 2b: epic-goal-drafted
 		// 3: epic-goal-committed
 		// 4: exploration-cycle-started
 		// 7: architecture-target-committed
@@ -290,8 +294,8 @@ describe("smoke test: 14-event scenario with invariant hook", () => {
 		// 11: slice-implementation-started
 		// 12a: slice-created
 		// 13: pause-entered
-		// = 13 events
-		expect(lines).toHaveLength(13);
+		// = 14 events
+		expect(lines).toHaveLength(14);
 
 		// Every line is valid JSON matching the schema
 		for (const line of lines) {

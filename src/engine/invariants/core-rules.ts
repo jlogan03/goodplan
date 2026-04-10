@@ -6,7 +6,9 @@ import {
 	epicArchitectureShapeApprovalRequired,
 	epicArchitectureTargetRequiredBeforeSliceSet,
 	epicDirUnique,
+	epicExplorationConcludedBeforeArchitecture,
 	epicGoalCommittedBeforeExplore,
+	epicGoalDraftedBeforeCommit,
 	epicNotAbandoned,
 	epicNotCompleted,
 	epicPressureTestRequiredBeforeSliceSet,
@@ -38,10 +40,12 @@ export function createCoreRegistry(): InvariantRegistry {
 	// Project rules (1)
 	registry.register(projectExists);
 
-	// Epic rules (10)
+	// Epic rules (12)
 	registry.register(epicSingleActivePerBranch);
 	registry.register(epicDirUnique);
+	registry.register(epicGoalDraftedBeforeCommit);
 	registry.register(epicGoalCommittedBeforeExplore);
+	registry.register(epicExplorationConcludedBeforeArchitecture);
 	registry.register(epicArchitectureTargetRequiredBeforeSliceSet);
 	registry.register(epicPressureTestRequiredBeforeSliceSet);
 	registry.register(epicArchitectureShapeApprovalRequired);

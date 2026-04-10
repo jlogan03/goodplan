@@ -1,7 +1,7 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { begin } from "../../core/rpc/begin.js";
 import { resolveProjectDir } from "../../core/data/project.js";
+import { begin } from "../../core/rpc/begin.js";
 import { addVerificationInputSchema } from "../../schemas/commands/epic.js";
 import { output } from "../../util/output.js";
 import { readStdin } from "../../util/stdin.js";
@@ -18,7 +18,8 @@ import { globalArgs } from "../global-args.js";
 export const epicAddVerificationCommand = defineCommand({
 	meta: {
 		name: "epic:add-verification",
-		description: "Add a verification criterion to an epic via stdin. Requires --epic. Stdin: {verification: {description, status, addedDuring, modifiedDuring}}.",
+		description:
+			"Add a verification criterion to an epic via stdin. Requires --epic. Stdin: {verification: {description, status, addedDuring, modifiedDuring}}.",
 	},
 	args: {
 		...globalArgs,

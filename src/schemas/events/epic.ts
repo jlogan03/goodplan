@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SteeringPreferenceSchema } from "../entities/derived-state.js";
 import { ContentRefSchema } from "../envelope.js";
 
 // --- Phase 2 payload schemas ---
@@ -20,8 +21,7 @@ export const epicAbandonedPayloadSchema = z.object({
 });
 export type EpicAbandonedPayload = z.infer<typeof epicAbandonedPayloadSchema>;
 
-// --- Phase 3 payload schemas (stubs for EpicEventMap completeness) ---
-// These will be filled in during Phase 3 implementation.
+// --- Phase 3 payload schemas ---
 
 export const epicGoalDraftedPayloadSchema = z.object({
 	goal: ContentRefSchema,
@@ -32,6 +32,61 @@ export const epicGoalCommittedPayloadSchema = z.object({
 	goal: ContentRefSchema,
 });
 export type EpicGoalCommittedPayload = z.infer<typeof epicGoalCommittedPayloadSchema>;
+
+export const explorationCycleStartedPayloadSchema = z.object({
+	cycleNumber: z.number().int().positive(),
+});
+export type ExplorationCycleStartedPayload = z.infer<typeof explorationCycleStartedPayloadSchema>;
+
+export const explorationConcludedPayloadSchema = z.object({
+	summary: ContentRefSchema,
+});
+export type ExplorationConcludedPayload = z.infer<typeof explorationConcludedPayloadSchema>;
+
+export const researchCapturedPayloadSchema = z.object({
+	contentRef: ContentRefSchema,
+	title: z.string().min(1),
+});
+export type ResearchCapturedPayload = z.infer<typeof researchCapturedPayloadSchema>;
+
+export const brainstormCapturedPayloadSchema = z.object({
+	contentRef: ContentRefSchema,
+	title: z.string().min(1),
+});
+export type BrainstormCapturedPayload = z.infer<typeof brainstormCapturedPayloadSchema>;
+
+export const architectureTargetDraftedPayloadSchema = z.object({
+	architectureTarget: ContentRefSchema,
+});
+export type ArchitectureTargetDraftedPayload = z.infer<
+	typeof architectureTargetDraftedPayloadSchema
+>;
+
+export const architectureTargetCommittedPayloadSchema = z.object({
+	architectureTarget: ContentRefSchema,
+});
+export type ArchitectureTargetCommittedPayload = z.infer<
+	typeof architectureTargetCommittedPayloadSchema
+>;
+
+export const architectureShapeCheckpointReachedPayloadSchema = z.object({});
+export type ArchitectureShapeCheckpointReachedPayload = z.infer<
+	typeof architectureShapeCheckpointReachedPayloadSchema
+>;
+
+export const architectureShapeApprovedPayloadSchema = z.object({});
+export type ArchitectureShapeApprovedPayload = z.infer<
+	typeof architectureShapeApprovedPayloadSchema
+>;
+
+export const architectureShapeCheckpointAutoShapedPayloadSchema = z.object({
+	preference: SteeringPreferenceSchema,
+});
+export type ArchitectureShapeCheckpointAutoShapedPayload = z.infer<
+	typeof architectureShapeCheckpointAutoShapedPayloadSchema
+>;
+
+// --- Phase 4 payload schemas (stubs for EpicEventMap completeness) ---
 
 export const epicActivatedPayloadSchema = z.object({});
 export type EpicActivatedPayload = z.infer<typeof epicActivatedPayloadSchema>;
@@ -50,13 +105,25 @@ export type EpicResumedPayload = z.infer<typeof epicResumedPayloadSchema>;
 /**
  * Mapped type for all epic event types and their payload schemas.
  * The envelope `type` field serves as the discriminant (no `_type` in payloads).
- * Phases 3-4 will extend this map with additional event types.
+ * Phase 4 will extend this map with additional event types.
  */
 export const EpicEventMap = {
+	// Phase 2
 	"epic-created": epicCreatedPayloadSchema,
 	"epic-abandoned": epicAbandonedPayloadSchema,
+	// Phase 3
 	"epic-goal-drafted": epicGoalDraftedPayloadSchema,
 	"epic-goal-committed": epicGoalCommittedPayloadSchema,
+	"exploration-cycle-started": explorationCycleStartedPayloadSchema,
+	"exploration-concluded": explorationConcludedPayloadSchema,
+	"research-captured": researchCapturedPayloadSchema,
+	"brainstorm-captured": brainstormCapturedPayloadSchema,
+	"architecture-target-drafted": architectureTargetDraftedPayloadSchema,
+	"architecture-target-committed": architectureTargetCommittedPayloadSchema,
+	"architecture-shape-checkpoint-reached": architectureShapeCheckpointReachedPayloadSchema,
+	"architecture-shape-approved": architectureShapeApprovedPayloadSchema,
+	"architecture-shape-checkpoint-auto-shaped": architectureShapeCheckpointAutoShapedPayloadSchema,
+	// Phase 4 (stubs)
 	"epic-activated": epicActivatedPayloadSchema,
 	"epic-completed": epicCompletedPayloadSchema,
 	"epic-paused": epicPausedPayloadSchema,

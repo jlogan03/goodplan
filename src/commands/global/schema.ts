@@ -194,14 +194,66 @@ registerCommand("epic:show", "Show details for a specific epic.", {
 	...globalArgDefs,
 	epic: { type: "string", description: "Epic name", required: true },
 });
-registerCommand("epic:explore", "Begin exploration phase for an epic.", {
+registerCommand(
+	"epic:goal-draft",
+	"Draft an epic goal. Accepts --epic flag and stdin JSON { content }.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+	},
+);
+registerCommand(
+	"epic:goal-commit",
+	"Commit an epic goal. Accepts --epic flag and stdin JSON { content }.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+	},
+);
+registerCommand("epic:explore-start", "Start an exploration cycle for an epic.", {
 	...globalArgDefs,
 	epic: { type: "string", description: "Epic name", required: true },
 });
-registerCommand("epic:define-architecture", "Begin architecture definition for an epic.", {
+registerCommand("epic:explore-conclude", "Conclude exploration for an epic.", {
 	...globalArgDefs,
 	epic: { type: "string", description: "Epic name", required: true },
 });
+registerCommand("epic:research-capture", "Capture a research artifact for an epic.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand("epic:brainstorm-capture", "Capture a brainstorm artifact for an epic.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand("epic:architecture-draft", "Draft an architecture target for an epic.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand("epic:architecture-commit", "Commit the architecture target for an epic.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand(
+	"epic:architecture-shape-start",
+	"Start the architecture shape checkpoint for an epic.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+	},
+);
+registerCommand("epic:architecture-shape-approve", "Approve the architecture shape for an epic.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand(
+	"epic:architecture-shape-auto",
+	"Auto-shape the architecture checkpoint for an epic.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+	},
+);
 registerCommand("epic:refine-architecture", "Begin architecture refinement for an epic.", {
 	...globalArgDefs,
 	epic: { type: "string", description: "Epic name", required: true },

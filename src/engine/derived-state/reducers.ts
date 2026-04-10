@@ -11,6 +11,15 @@ import type {
  * Module-internal: NOT exported from the barrel.
  */
 import type { AnyEventEnvelope, ContentRef } from "../../schemas/envelope.js";
+import {
+	architectureTargetCommittedPayloadSchema,
+	architectureTargetDraftedPayloadSchema,
+	brainstormCapturedPayloadSchema,
+	epicGoalCommittedPayloadSchema,
+	epicGoalDraftedPayloadSchema,
+	explorationCycleStartedPayloadSchema,
+	researchCapturedPayloadSchema,
+} from "../../schemas/events/epic.js";
 
 // --- Entity Lifecycle Reducer ---
 
@@ -35,7 +44,10 @@ export function reduceEntityLifecycle(state: DerivedStateData, event: AnyEventEn
 		case "epic-goal-drafted": {
 			const epic = resolveEpic(state, event);
 			if (epic !== undefined) {
-				epic.goal = (payload.goal as ContentRef) ?? null;
+				const parsed = epicGoalDraftedPayloadSchema.safeParse(payload);
+				if (parsed.success) {
+					epic.goal = parsed.data.goal;
+				}
 			}
 			break;
 		}
@@ -43,7 +55,10 @@ export function reduceEntityLifecycle(state: DerivedStateData, event: AnyEventEn
 		case "epic-goal-committed": {
 			const epic = resolveEpic(state, event);
 			if (epic !== undefined) {
-				epic.goal = (payload.goal as ContentRef) ?? epic.goal;
+				const parsed = epicGoalCommittedPayloadSchema.safeParse(payload);
+				if (parsed.success) {
+					epic.goal = parsed.data.goal;
+				}
 				epic.phase = "P1";
 			}
 			break;
@@ -57,11 +72,46 @@ export function reduceEntityLifecycle(state: DerivedStateData, event: AnyEventEn
 			break;
 		}
 
+		case "architecture-target-drafted": {
+			const epic = resolveEpic(state, event);
+			if (epic !== undefined) {
+				const parsed = architectureTargetDraftedPayloadSchema.safeParse(payload);
+				if (parsed.success) {
+					epic.architectureTarget = parsed.data.architectureTarget;
+				}
+			}
+			break;
+		}
+
 		case "architecture-target-committed": {
 			const epic = resolveEpic(state, event);
 			if (epic !== undefined) {
-				epic.architectureTarget = (payload.architectureTarget as ContentRef) ?? null;
+				const parsed = architectureTargetCommittedPayloadSchema.safeParse(payload);
+				if (parsed.success) {
+					epic.architectureTarget = parsed.data.architectureTarget;
+				}
 				epic.phase = "P3";
+			}
+			break;
+		}
+
+		case "architecture-shape-checkpoint-reached": {
+			// No state change — checkpoint is informational
+			break;
+		}
+
+		case "architecture-shape-approved": {
+			const epic = resolveEpic(state, event);
+			if (epic !== undefined) {
+				epic.architectureShapeApproved = true;
+			}
+			break;
+		}
+
+		case "architecture-shape-checkpoint-auto-shaped": {
+			const epic = resolveEpic(state, event);
+			if (epic !== undefined) {
+				epic.architectureShapeApproved = true;
 			}
 			break;
 		}
@@ -375,8 +425,47 @@ export function reduceRefinement(state: DerivedStateData, _event: AnyEventEnvelo
 	void state;
 }
 
-export function reduceExploration(state: DerivedStateData, _event: AnyEventEnvelope): void {
-	void state;
+export function reduceExploration(state: DerivedStateData, event: AnyEventEnvelope): void {
+	const payload = event.payload as Record<string, unknown>;
+
+	switch (event.type) {
+		case "exploration-cycle-started": {
+			const epic = resolveEpic(state, event);
+			if (epic !== undefined) {
+				const parsed = explorationCycleStartedPayloadSchema.safeParse(payload);
+				if (parsed.success) {
+					epic.explorationCycles = parsed.data.cycleNumber;
+				}
+			}
+			break;
+		}
+
+		case "research-captured": {
+			const epic = resolveEpic(state, event);
+			if (epic !== undefined) {
+				const parsed = researchCapturedPayloadSchema.safeParse(payload);
+				if (parsed.success) {
+					epic.researchRefs.push(parsed.data.contentRef);
+				}
+			}
+			break;
+		}
+
+		case "brainstorm-captured": {
+			const epic = resolveEpic(state, event);
+			if (epic !== undefined) {
+				const parsed = brainstormCapturedPayloadSchema.safeParse(payload);
+				if (parsed.success) {
+					epic.brainstormRefs.push(parsed.data.contentRef);
+				}
+			}
+			break;
+		}
+
+		default:
+			// Silently skip unknown exploration event types (forward compat)
+			break;
+	}
 }
 
 export function reducePressureTest(state: DerivedStateData, _event: AnyEventEnvelope): void {
@@ -497,6 +586,11 @@ function createEmptyEpicState(dir: string): EpicState {
 		paused: false,
 		completed: false,
 		abandoned: false,
+		explorationCycles: 0,
+		researchRefs: [],
+		brainstormRefs: [],
+		architectureShapeApproved: false,
+		sliceSetShapeApproved: false,
 	};
 }
 

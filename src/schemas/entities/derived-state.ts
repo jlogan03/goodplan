@@ -113,6 +113,12 @@ export interface EpicState {
 	paused: boolean;
 	completed: boolean;
 	abandoned: boolean;
+	// Intermediate sub-phase fields (populated by exploration/architecture reducers)
+	explorationCycles: number;
+	researchRefs: ContentRef[];
+	brainstormRefs: ContentRef[];
+	architectureShapeApproved: boolean;
+	sliceSetShapeApproved: boolean;
 }
 
 // --- Side-Quest State ---

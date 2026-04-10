@@ -140,6 +140,7 @@ export const epicArchitectureShapeApprovalRequired: InvariantRule = {
 	check(event, ctx) {
 		if (event.type !== "pressure-test-drafted") return null;
 		if (hasEventOfType(ctx, "architecture-shape-approved")) return null;
+		if (hasEventOfType(ctx, "architecture-shape-checkpoint-auto-shaped")) return null;
 		return {
 			message: "Cannot draft pressure test without architecture shape approval.",
 		};
@@ -160,6 +161,41 @@ export const epicSliceShapeApprovalRequired: InvariantRule = {
 		if (hasEventOfType(ctx, "slice-set-shape-approved")) return null;
 		return {
 			message: "Cannot start slice refinement without slice set shape approval.",
+		};
+	},
+};
+
+/**
+ * epic.goal-drafted-before-commit: Goal must be drafted before it can be committed.
+ */
+export const epicGoalDraftedBeforeCommit: InvariantRule = {
+	id: "epic.goal-drafted-before-commit",
+	ruleType: "precondition",
+	description: "Epic goal must be drafted before it can be committed",
+	appliesTo: ["entity-lifecycle"],
+	check(event, ctx) {
+		if (event.type !== "epic-goal-committed") return null;
+		if (hasEventOfType(ctx, "epic-goal-drafted")) return null;
+		return {
+			message: "Cannot commit goal without a draft.",
+		};
+	},
+};
+
+/**
+ * epic.exploration-concluded-before-architecture: Exploration must be concluded
+ * before architecture can be drafted.
+ */
+export const epicExplorationConcludedBeforeArchitecture: InvariantRule = {
+	id: "epic.exploration-concluded-before-architecture",
+	ruleType: "precondition",
+	description: "Exploration must be concluded before architecture drafting",
+	appliesTo: ["entity-lifecycle"],
+	check(event, ctx) {
+		if (event.type !== "architecture-target-drafted") return null;
+		if (hasEventOfType(ctx, "exploration-concluded")) return null;
+		return {
+			message: "Cannot draft architecture without concluded exploration.",
 		};
 	},
 };

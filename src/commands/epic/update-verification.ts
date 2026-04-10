@@ -1,7 +1,7 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { begin } from "../../core/rpc/begin.js";
 import { resolveProjectDir } from "../../core/data/project.js";
+import { begin } from "../../core/rpc/begin.js";
 import { updateVerificationInputSchema } from "../../schemas/commands/epic.js";
 import { output } from "../../util/output.js";
 import { readStdin } from "../../util/stdin.js";
@@ -18,7 +18,8 @@ import { globalArgs } from "../global-args.js";
 export const epicUpdateVerificationCommand = defineCommand({
 	meta: {
 		name: "epic:update-verification",
-		description: "Update a verification criterion by index via stdin. Requires --epic and --index. Stdin: {verification: {description, status, addedDuring, modifiedDuring}}.",
+		description:
+			"Update a verification criterion by index via stdin. Requires --epic and --index. Stdin: {verification: {description, status, addedDuring, modifiedDuring}}.",
 	},
 	args: {
 		...globalArgs,

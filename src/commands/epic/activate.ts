@@ -1,7 +1,7 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { begin } from "../../core/rpc/begin.js";
 import { resolveProjectDir } from "../../core/data/project.js";
+import { begin } from "../../core/rpc/begin.js";
 import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
@@ -14,7 +14,8 @@ import { globalArgs } from "../global-args.js";
 export const epicActivateCommand = defineCommand({
 	meta: {
 		name: "epic:activate",
-		description: "Activate an epic for implementation. Requires verifications. Precondition: 'slices-defined' or 'slices-refined'. Transition: -> activated.",
+		description:
+			"Activate an epic for implementation. Requires verifications. Precondition: 'slices-defined' or 'slices-refined'. Transition: -> activated.",
 	},
 	args: {
 		...globalArgs,
@@ -32,7 +33,10 @@ export const epicActivateCommand = defineCommand({
 		if (args.json || args.query) {
 			output(result, args);
 		} else if (!args.quiet) {
-			output(`${pc.bold(result.entity)}: ${result.previousStatus} ${pc.dim("->")} ${pc.green(result.newStatus)}`, args);
+			output(
+				`${pc.bold(result.entity)}: ${result.previousStatus} ${pc.dim("->")} ${pc.green(result.newStatus)}`,
+				args,
+			);
 		}
 	},
 });

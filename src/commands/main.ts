@@ -6,14 +6,23 @@ import { decisionUpdateCommand } from "./decision/update.js";
 import { epicAbandonCommand } from "./epic/abandon.js";
 import { epicActivateCommand } from "./epic/activate.js";
 import { epicAddVerificationCommand } from "./epic/add-verification.js";
+import { epicArchitectureCommitCommand } from "./epic/architecture-commit.js";
+import { epicArchitectureDraftCommand } from "./epic/architecture-draft.js";
+import { epicArchitectureShapeApproveCommand } from "./epic/architecture-shape-approve.js";
+import { epicArchitectureShapeAutoCommand } from "./epic/architecture-shape-auto.js";
+import { epicArchitectureShapeStartCommand } from "./epic/architecture-shape-start.js";
+import { epicBrainstormCaptureCommand } from "./epic/brainstorm-capture.js";
 import { epicCompleteCommand } from "./epic/complete.js";
 import { epicCreateCommand } from "./epic/create.js";
-import { epicDefineArchitectureCommand } from "./epic/define-architecture.js";
 import { epicDefineSlicesCommand } from "./epic/define-slices.js";
-import { epicExploreCommand } from "./epic/explore.js";
+import { epicExploreConcludeCommand } from "./epic/explore-conclude.js";
+import { epicExploreStartCommand } from "./epic/explore-start.js";
+import { epicGoalCommitCommand } from "./epic/goal-commit.js";
+import { epicGoalDraftCommand } from "./epic/goal-draft.js";
 import { epicListCommand } from "./epic/list.js";
 import { epicRefineArchitectureCommand } from "./epic/refine-architecture.js";
 import { epicRefineSlicesCommand } from "./epic/refine-slices.js";
+import { epicResearchCaptureCommand } from "./epic/research-capture.js";
 import { epicShowCommand } from "./epic/show.js";
 import { epicUpdateVerificationCommand } from "./epic/update-verification.js";
 import { globalArgs } from "./global-args.js";
@@ -90,8 +99,17 @@ export const mainCommand = defineCommand({
 		"epic:create": epicCreateCommand,
 		"epic:list": epicListCommand,
 		"epic:show": epicShowCommand,
-		"epic:explore": epicExploreCommand,
-		"epic:define-architecture": epicDefineArchitectureCommand,
+		"epic:goal-draft": epicGoalDraftCommand,
+		"epic:goal-commit": epicGoalCommitCommand,
+		"epic:explore-start": epicExploreStartCommand,
+		"epic:explore-conclude": epicExploreConcludeCommand,
+		"epic:research-capture": epicResearchCaptureCommand,
+		"epic:brainstorm-capture": epicBrainstormCaptureCommand,
+		"epic:architecture-draft": epicArchitectureDraftCommand,
+		"epic:architecture-commit": epicArchitectureCommitCommand,
+		"epic:architecture-shape-start": epicArchitectureShapeStartCommand,
+		"epic:architecture-shape-approve": epicArchitectureShapeApproveCommand,
+		"epic:architecture-shape-auto": epicArchitectureShapeAutoCommand,
 		"epic:refine-architecture": epicRefineArchitectureCommand,
 		"epic:define-slices": epicDefineSlicesCommand,
 		"epic:refine-slices": epicRefineSlicesCommand,

@@ -1,7 +1,7 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { complete } from "../../core/rpc/complete.js";
 import { resolveProjectDir } from "../../core/data/project.js";
+import { complete } from "../../core/rpc/complete.js";
 import { completeEpicInputSchema } from "../../schemas/commands/epic.js";
 import { output } from "../../util/output.js";
 import { readStdin } from "../../util/stdin.js";
@@ -18,7 +18,8 @@ import { globalArgs } from "../global-args.js";
 export const epicCompleteCommand = defineCommand({
 	meta: {
 		name: "epic:complete",
-		description: "Complete an epic with verification results via stdin. Requires --epic. Stdin: {verificationResults: [{index, passed, notes}]}.",
+		description:
+			"Complete an epic with verification results via stdin. Requires --epic. Stdin: {verificationResults: [{index, passed, notes}]}.",
 	},
 	args: {
 		...globalArgs,
@@ -43,7 +44,10 @@ export const epicCompleteCommand = defineCommand({
 		if (args.json || args.query) {
 			output(result, args);
 		} else if (!args.quiet) {
-			output(`${pc.bold(result.entity)}: ${result.previousStatus} ${pc.dim("->")} ${pc.green(result.newStatus)}`, args);
+			output(
+				`${pc.bold(result.entity)}: ${result.previousStatus} ${pc.dim("->")} ${pc.green(result.newStatus)}`,
+				args,
+			);
 		}
 	},
 });

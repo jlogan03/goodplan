@@ -1,12 +1,19 @@
 /**
  * CLI integration tests for v2 epic commands.
  *
- * Exercises: epic:create, epic:list, epic:show, epic:abandon
+ * Exercises: epic:create, epic:list, epic:show, epic:abandon,
+ * and Phase 3 commands (goal, exploration, architecture)
  * via the compiled binary against a temp directory.
  */
 
+import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { buildBinary, runCommand, withTempDir } from "../integration/helpers.js";
+
+/** Initialize a git repo in the given directory (needed for storeContentRef). */
+function gitInit(cwd: string): void {
+	spawnSync("git", ["init"], { cwd, stdio: "pipe" });
+}
 
 describe("v2 epic commands", () => {
 	it("full epic lifecycle: create -> list -> show -> abandon", async () => {
@@ -178,6 +185,198 @@ describe("v2 epic commands", () => {
 			const listOutput = result.json as { items: unknown[]; total: number };
 			expect(listOutput.total).toBe(0);
 			expect(listOutput.items).toEqual([]);
+		});
+	});
+
+	it("full phase 3 flow: create -> goal-draft -> goal-commit -> explore-start -> explore-conclude -> architecture-draft -> architecture-commit", async () => {
+		await withTempDir(async (tmpDir) => {
+			const bin = buildBinary();
+			gitInit(tmpDir);
+
+			// Initialize project
+			const initResult = runCommand(bin, ["init", "--name", "test-project", "--json"], {
+				cwd: tmpDir,
+			});
+			expect(initResult.exitCode, `init failed: ${initResult.stderr}`).toBe(0);
+
+			// Create epic
+			const createResult = runCommand(bin, ["epic:create", "--name", "phase3-epic", "--json"], {
+				cwd: tmpDir,
+			});
+			expect(createResult.exitCode, `create failed: ${createResult.stderr}`).toBe(0);
+
+			// Verify P0
+			const show0 = runCommand(bin, ["epic:show", "--epic", "phase3-epic", "--json"], {
+				cwd: tmpDir,
+			});
+			expect((show0.json as { phase: string }).phase).toBe("P0");
+
+			// Goal draft
+			const goalDraftResult = runCommand(
+				bin,
+				["epic:goal-draft", "--epic", "phase3-epic", "--json"],
+				{
+					cwd: tmpDir,
+					stdin: JSON.stringify({ content: "# Epic Goal\n\nBuild a great thing." }),
+				},
+			);
+			expect(goalDraftResult.exitCode, `goal-draft failed: ${goalDraftResult.stderr}`).toBe(0);
+			expect((goalDraftResult.json as { ok: boolean }).ok).toBe(true);
+
+			// Still P0 after draft
+			const showAfterDraft = runCommand(bin, ["epic:show", "--epic", "phase3-epic", "--json"], {
+				cwd: tmpDir,
+			});
+			expect((showAfterDraft.json as { phase: string }).phase).toBe("P0");
+
+			// Goal commit
+			const goalCommitResult = runCommand(
+				bin,
+				["epic:goal-commit", "--epic", "phase3-epic", "--json"],
+				{
+					cwd: tmpDir,
+					stdin: JSON.stringify({ content: "# Epic Goal\n\nBuild a great thing." }),
+				},
+			);
+			expect(goalCommitResult.exitCode, `goal-commit failed: ${goalCommitResult.stderr}`).toBe(0);
+			expect((goalCommitResult.json as { ok: boolean }).ok).toBe(true);
+
+			// Verify P1
+			const show1 = runCommand(bin, ["epic:show", "--epic", "phase3-epic", "--json"], {
+				cwd: tmpDir,
+			});
+			expect((show1.json as { phase: string }).phase).toBe("P1");
+
+			// Explore start
+			const exploreStartResult = runCommand(
+				bin,
+				["epic:explore-start", "--epic", "phase3-epic", "--json"],
+				{
+					cwd: tmpDir,
+					stdin: JSON.stringify({ cycleNumber: 1 }),
+				},
+			);
+			expect(
+				exploreStartResult.exitCode,
+				`explore-start failed: ${exploreStartResult.stderr}`,
+			).toBe(0);
+			expect((exploreStartResult.json as { ok: boolean }).ok).toBe(true);
+
+			// Explore conclude
+			const exploreConcludeResult = runCommand(
+				bin,
+				["epic:explore-conclude", "--epic", "phase3-epic", "--json"],
+				{
+					cwd: tmpDir,
+					stdin: JSON.stringify({ content: "# Exploration Summary\n\nWe explored." }),
+				},
+			);
+			expect(
+				exploreConcludeResult.exitCode,
+				`explore-conclude failed: ${exploreConcludeResult.stderr}`,
+			).toBe(0);
+			expect((exploreConcludeResult.json as { ok: boolean }).ok).toBe(true);
+
+			// Verify P2
+			const show2 = runCommand(bin, ["epic:show", "--epic", "phase3-epic", "--json"], {
+				cwd: tmpDir,
+			});
+			expect((show2.json as { phase: string }).phase).toBe("P2");
+
+			// Architecture draft
+			const archDraftResult = runCommand(
+				bin,
+				["epic:architecture-draft", "--epic", "phase3-epic", "--json"],
+				{
+					cwd: tmpDir,
+					stdin: JSON.stringify({ content: "# Architecture\n\nDesign goes here." }),
+				},
+			);
+			expect(archDraftResult.exitCode, `architecture-draft failed: ${archDraftResult.stderr}`).toBe(
+				0,
+			);
+			expect((archDraftResult.json as { ok: boolean }).ok).toBe(true);
+
+			// Architecture commit
+			const archCommitResult = runCommand(
+				bin,
+				["epic:architecture-commit", "--epic", "phase3-epic", "--json"],
+				{
+					cwd: tmpDir,
+					stdin: JSON.stringify({ content: "# Architecture\n\nDesign goes here." }),
+				},
+			);
+			expect(
+				archCommitResult.exitCode,
+				`architecture-commit failed: ${archCommitResult.stderr}`,
+			).toBe(0);
+			expect((archCommitResult.json as { ok: boolean }).ok).toBe(true);
+
+			// Verify P3
+			const show3 = runCommand(bin, ["epic:show", "--epic", "phase3-epic", "--json"], {
+				cwd: tmpDir,
+			});
+			expect((show3.json as { phase: string }).phase).toBe("P3");
+		});
+	});
+
+	it("epic:goal-commit fails without prior goal-draft (invariant)", async () => {
+		await withTempDir(async (tmpDir) => {
+			const bin = buildBinary();
+			gitInit(tmpDir);
+
+			runCommand(bin, ["init", "--name", "test-project", "--json"], { cwd: tmpDir });
+			runCommand(bin, ["epic:create", "--name", "inv-epic", "--json"], { cwd: tmpDir });
+
+			const result = runCommand(bin, ["epic:goal-commit", "--epic", "inv-epic", "--json"], {
+				cwd: tmpDir,
+				stdin: JSON.stringify({ content: "# Goal" }),
+			});
+			expect(result.exitCode).not.toBe(0);
+			expect((result.json as { ok: boolean }).ok).toBe(false);
+		});
+	});
+
+	it("epic:explore-start fails without committed goal (invariant)", async () => {
+		await withTempDir(async (tmpDir) => {
+			const bin = buildBinary();
+			gitInit(tmpDir);
+
+			runCommand(bin, ["init", "--name", "test-project", "--json"], { cwd: tmpDir });
+			runCommand(bin, ["epic:create", "--name", "inv-epic", "--json"], { cwd: tmpDir });
+
+			const result = runCommand(bin, ["epic:explore-start", "--epic", "inv-epic", "--json"], {
+				cwd: tmpDir,
+			});
+			expect(result.exitCode).not.toBe(0);
+			expect((result.json as { ok: boolean }).ok).toBe(false);
+		});
+	});
+
+	it("epic:architecture-draft fails without concluded exploration (invariant)", async () => {
+		await withTempDir(async (tmpDir) => {
+			const bin = buildBinary();
+			gitInit(tmpDir);
+
+			runCommand(bin, ["init", "--name", "test-project", "--json"], { cwd: tmpDir });
+			runCommand(bin, ["epic:create", "--name", "inv-epic", "--json"], { cwd: tmpDir });
+
+			// Draft and commit goal, but skip exploration
+			runCommand(bin, ["epic:goal-draft", "--epic", "inv-epic", "--json"], {
+				cwd: tmpDir,
+				stdin: JSON.stringify({ content: "# Goal" }),
+			});
+			runCommand(bin, ["epic:goal-commit", "--epic", "inv-epic", "--json"], {
+				cwd: tmpDir,
+				stdin: JSON.stringify({ content: "# Goal" }),
+			});
+
+			const result = runCommand(bin, ["epic:architecture-draft", "--epic", "inv-epic", "--json"], {
+				cwd: tmpDir,
+				stdin: JSON.stringify({ content: "# Arch" }),
+			});
+			expect(result.exitCode).not.toBe(0);
+			expect((result.json as { ok: boolean }).ok).toBe(false);
 		});
 	});
 });

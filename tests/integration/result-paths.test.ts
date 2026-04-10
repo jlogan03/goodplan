@@ -6,7 +6,10 @@ import { runCommand, withFixture } from "./helpers.js";
 describe("RPC result paths", () => {
 	it("slice:plan --json includes paths.plan with absolute path", async () => {
 		await withFixture("epic-activated", ({ env, bin }) => {
-			const result = runCommand(bin, ["slice:plan", "--slice", "test-slice", "--json"], { env, stdin: "" });
+			const result = runCommand(bin, ["slice:plan", "--slice", "test-slice", "--json"], {
+				env,
+				stdin: "",
+			});
 			expect(result.exitCode).toBe(0);
 			expect(result.json).toBeDefined();
 
@@ -20,9 +23,13 @@ describe("RPC result paths", () => {
 		});
 	});
 
-	it("epic:explore --json includes paths.research and paths.brainstorm", async () => {
+	// Skipped: v1 epic:explore command replaced by v2 epic:explore-start in Phase 3
+	it.skip("epic:explore --json includes paths.research and paths.brainstorm", async () => {
 		await withFixture("epic-created", ({ env, bin }) => {
-			const result = runCommand(bin, ["epic:explore", "--epic", "test-epic", "--json"], { env, stdin: "" });
+			const result = runCommand(bin, ["epic:explore", "--epic", "test-epic", "--json"], {
+				env,
+				stdin: "",
+			});
 			expect(result.exitCode).toBe(0);
 			expect(result.json).toBeDefined();
 
@@ -48,7 +55,10 @@ describe("RPC result paths", () => {
 			fs.writeFileSync(path.join(sliceDir, "plan.md"), "# Plan\nContent");
 
 			// Submit plan
-			const result = runCommand(bin, ["submit-plan", "--slice", "test-slice", "--json"], { env, stdin: "" });
+			const result = runCommand(bin, ["submit-plan", "--slice", "test-slice", "--json"], {
+				env,
+				stdin: "",
+			});
 			expect(result.exitCode).toBe(0);
 			expect(result.json).toBeDefined();
 

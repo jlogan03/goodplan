@@ -1,7 +1,7 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { begin } from "../../core/rpc/begin.js";
 import { resolveProjectDir } from "../../core/data/project.js";
+import { begin } from "../../core/rpc/begin.js";
 import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
@@ -14,7 +14,8 @@ import { globalArgs } from "../global-args.js";
 export const epicDefineSlicesCommand = defineCommand({
 	meta: {
 		name: "epic:define-slices",
-		description: "Begin slice definition phase. Precondition: 'architecture-defined' or 'architecture-refined'. Transition: -> defining-slices.",
+		description:
+			"Begin slice definition phase. Precondition: 'architecture-defined' or 'architecture-refined'. Transition: -> defining-slices.",
 	},
 	args: {
 		...globalArgs,
@@ -32,7 +33,10 @@ export const epicDefineSlicesCommand = defineCommand({
 		if (args.json || args.query) {
 			output(result, args);
 		} else if (!args.quiet) {
-			output(`${pc.bold(result.entity)}: ${result.previousStatus} ${pc.dim("->")} ${pc.green(result.newStatus)}`, args);
+			output(
+				`${pc.bold(result.entity)}: ${result.previousStatus} ${pc.dim("->")} ${pc.green(result.newStatus)}`,
+				args,
+			);
 		}
 	},
 });

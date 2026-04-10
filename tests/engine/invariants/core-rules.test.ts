@@ -4,7 +4,7 @@ import { createCoreRegistry } from "../../../src/engine/invariants/core-rules.js
 describe("createCoreRegistry", () => {
 	it("registers exactly 26 core rules", () => {
 		const registry = createCoreRegistry();
-		expect(registry.getAll()).toHaveLength(26);
+		expect(registry.getAll()).toHaveLength(28);
 	});
 
 	it("has no duplicate IDs", () => {
@@ -22,7 +22,9 @@ describe("createCoreRegistry", () => {
 			"project.exists",
 			"epic.single-active-per-branch",
 			"epic.dir.unique",
+			"epic.goal-drafted-before-commit",
 			"epic.goal.committed-before-explore",
+			"epic.exploration-concluded-before-architecture",
 			"epic.architecture-target-required-before-slice-set",
 			"epic.pressure-test-required-before-slice-set",
 			"epic.architecture-shape-approval-required",
@@ -64,7 +66,7 @@ describe("createCoreRegistry", () => {
 		const a = createCoreRegistry();
 		const b = createCoreRegistry();
 		expect(a).not.toBe(b);
-		expect(a.getAll()).toHaveLength(26);
-		expect(b.getAll()).toHaveLength(26);
+		expect(a.getAll()).toHaveLength(28);
+		expect(b.getAll()).toHaveLength(28);
 	});
 });
