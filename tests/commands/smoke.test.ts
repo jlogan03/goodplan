@@ -98,7 +98,21 @@ describe("CLI smoke test: init -> status -> schema", () => {
 			expect(initDetail.description).toBeTruthy();
 			expect(initDetail.args).toHaveProperty("name");
 
-			// 8. gp init --name dupe --json (should fail -- project already exists)
+			// 8. gp migrate --json (should detect v2 project after init)
+			const migrateResult = runCommand(bin, ["migrate", "--json"], { cwd: tmpDir });
+			expect(migrateResult.exitCode, `migrate failed: ${migrateResult.stderr}`).toBe(0);
+			expect(migrateResult.json).toBeDefined();
+
+			const migrateOutput = migrateResult.json as {
+				version: string;
+				indicators: string[];
+				message: string;
+			};
+			expect(migrateOutput.version).toBe("v2");
+			expect(migrateOutput.indicators).toContain("events.jsonl");
+			expect(migrateOutput.message).toContain("Already a v2 project");
+
+			// 9. gp init --name dupe --json (should fail -- project already exists)
 			const dupeResult = runCommand(bin, ["init", "--name", "dupe", "--json"], {
 				cwd: tmpDir,
 			});

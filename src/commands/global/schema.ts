@@ -1,7 +1,6 @@
 import { defineCommand } from "citty";
 import { z } from "zod";
-import { LEGACY_DIR_NAME, PROJECT_DIR_NAME } from "../../core/data/project.js";
-import { migrationResponseSchema } from "../../core/rpc/migrate.js";
+import { PROJECT_DIR_NAME } from "../../core/data/project.js";
 import {
 	createDecisionInputSchema,
 	updateDecisionInputSchema,
@@ -71,7 +70,6 @@ export const stdinSchemaRegistry: Record<string, z.ZodType> = {
 	"submit-slices": submitSlicesInputSchema,
 	"submit-refine-architecture": submitRefineArchitectureInputSchema,
 	"submit-refine-slices": submitRefineSlicesInputSchema,
-	migrate: migrationResponseSchema,
 };
 
 // ── Command Registry ─────────────────────────────────────────
@@ -126,7 +124,7 @@ registerCommand("init", `Initialize a new ${PROJECT_DIR_NAME}/ directory`, {
 });
 registerCommand(
 	"migrate",
-	`Migrate a ${PROJECT_DIR_NAME}/ or legacy ${LEGACY_DIR_NAME}/ directory to CLI format. Stdin: {round, answers: [{id, data}]}. Accepts both ${PROJECT_DIR_NAME}/ (re-migration) and ${LEGACY_DIR_NAME}/ (legacy migration).`,
+	"Detect project version (v1 vs v2). Full migration deferred to a future release.",
 	{
 		...globalArgDefs,
 	},
