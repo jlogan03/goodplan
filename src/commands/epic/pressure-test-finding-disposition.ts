@@ -16,14 +16,14 @@ import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `gp epic:complete --epic <name>` (v2) — complete an epic.
+ * `gp epic:pressure-test-finding-disposition --epic <name> --finding <id> --disposition <accepted|dismissed>` (v2)
  *
- * Emits `epic-completed` with domain "entity-lifecycle".
+ * Emits `pressure-test-finding-accepted` with domain "entity-lifecycle".
  */
-export const epicCompleteCommand = defineCommand({
+export const epicPressureTestFindingDispositionCommand = defineCommand({
 	meta: {
-		name: "epic:complete",
-		description: "Complete an epic.",
+		name: "epic:pressure-test-finding-disposition",
+		description: "Set the disposition of a pressure test finding.",
 	},
 	args: {
 		...globalArgs,
@@ -32,9 +32,35 @@ export const epicCompleteCommand = defineCommand({
 			description: "Epic name",
 			required: true,
 		},
+		finding: {
+			type: "string",
+			description: "Finding ID",
+			required: true,
+		},
+		disposition: {
+			type: "string",
+			description: "Disposition: accepted or dismissed",
+			required: true,
+		},
 	},
 	setup() {},
 	async run({ args }) {
+		const disposition = args.disposition as string;
+		const validDispositions = ["accepted", "dismissed"];
+		if (!validDispositions.includes(disposition)) {
+			const errorOutput = {
+				ok: false,
+				error: `Invalid disposition: "${disposition}". Must be one of: ${validDispositions.join(", ")}`,
+				code: "VALIDATION_INVALID_INPUT",
+			};
+			if (args.json || args.query) {
+				output(errorOutput, args);
+			} else {
+				process.stderr.write(`${pc.red("Error")}: ${errorOutput.error}\n`);
+			}
+			process.exit(1);
+		}
+
 		const goodplanDir = resolveProjectDir();
 		const epicName = args.epic as string;
 		const epicEventsPath = path.join(goodplanDir, "epics", epicName, "events.jsonl");
@@ -69,19 +95,22 @@ export const epicCompleteCommand = defineCommand({
 				eventsPath: epicEventsPath,
 				scope: "epic",
 				scopeRef: epicName,
-				actor: { kind: "cli", id: "gp:epic:complete" },
+				actor: { kind: "cli", id: "gp:epic:pressure-test-finding-disposition" },
 				branch,
 				commitHint,
 				domain: "entity-lifecycle",
-				type: "epic-completed",
-				payload: {},
+				type: "pressure-test-finding-accepted",
+				payload: { findingId: args.finding as string, disposition },
 				beforeAppend,
 			});
 
 			if (args.json || args.query) {
 				output({ ok: true, event: result.event.id, entity: `epic:${epicName}` }, args);
 			} else if (!args.quiet) {
-				output(`Completed epic ${pc.bold(epicName)}`, args);
+				output(
+					`Finding ${pc.bold(args.finding as string)} ${disposition} for epic ${pc.bold(epicName)}`,
+					args,
+				);
 			}
 		} catch (error) {
 			if (error instanceof InvariantError) {

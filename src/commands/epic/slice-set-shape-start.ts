@@ -16,14 +16,14 @@ import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `gp epic:complete --epic <name>` (v2) — complete an epic.
+ * `gp epic:slice-set-shape-start --epic <name>` (v2) — start slice set shape checkpoint.
  *
- * Emits `epic-completed` with domain "entity-lifecycle".
+ * Emits `slice-set-shape-checkpoint-reached` with domain "entity-lifecycle".
  */
-export const epicCompleteCommand = defineCommand({
+export const epicSliceSetShapeStartCommand = defineCommand({
 	meta: {
-		name: "epic:complete",
-		description: "Complete an epic.",
+		name: "epic:slice-set-shape-start",
+		description: "Start the slice set shape checkpoint for an epic.",
 	},
 	args: {
 		...globalArgs,
@@ -69,11 +69,11 @@ export const epicCompleteCommand = defineCommand({
 				eventsPath: epicEventsPath,
 				scope: "epic",
 				scopeRef: epicName,
-				actor: { kind: "cli", id: "gp:epic:complete" },
+				actor: { kind: "cli", id: "gp:epic:slice-set-shape-start" },
 				branch,
 				commitHint,
 				domain: "entity-lifecycle",
-				type: "epic-completed",
+				type: "slice-set-shape-checkpoint-reached",
 				payload: {},
 				beforeAppend,
 			});
@@ -81,7 +81,7 @@ export const epicCompleteCommand = defineCommand({
 			if (args.json || args.query) {
 				output({ ok: true, event: result.event.id, entity: `epic:${epicName}` }, args);
 			} else if (!args.quiet) {
-				output(`Completed epic ${pc.bold(epicName)}`, args);
+				output(`Slice set shape checkpoint reached for epic ${pc.bold(epicName)}`, args);
 			}
 		} catch (error) {
 			if (error instanceof InvariantError) {

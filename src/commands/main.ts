@@ -20,10 +20,21 @@ import { epicExploreStartCommand } from "./epic/explore-start.js";
 import { epicGoalCommitCommand } from "./epic/goal-commit.js";
 import { epicGoalDraftCommand } from "./epic/goal-draft.js";
 import { epicListCommand } from "./epic/list.js";
+import { epicPauseCommand } from "./epic/pause.js";
+import { epicPressureTestCommitCommand } from "./epic/pressure-test-commit.js";
+import { epicPressureTestDraftCommand } from "./epic/pressure-test-draft.js";
+import { epicPressureTestFindingDispositionCommand } from "./epic/pressure-test-finding-disposition.js";
 import { epicRefineArchitectureCommand } from "./epic/refine-architecture.js";
 import { epicRefineSlicesCommand } from "./epic/refine-slices.js";
 import { epicResearchCaptureCommand } from "./epic/research-capture.js";
+import { epicResumeCommand } from "./epic/resume.js";
+import { epicSetSteeringCommand } from "./epic/set-steering.js";
 import { epicShowCommand } from "./epic/show.js";
+import { epicSliceSetShapeApproveCommand } from "./epic/slice-set-shape-approve.js";
+import { epicSliceSetShapeAutoCommand } from "./epic/slice-set-shape-auto.js";
+import { epicSliceSetShapeStartCommand } from "./epic/slice-set-shape-start.js";
+import { epicSlicesCommitCommand } from "./epic/slices-commit.js";
+import { epicSlicesDraftCommand } from "./epic/slices-draft.js";
 import { epicUpdateVerificationCommand } from "./epic/update-verification.js";
 import { globalArgs } from "./global-args.js";
 import { initCommand } from "./global/init.js";
@@ -110,6 +121,17 @@ export const mainCommand = defineCommand({
 		"epic:architecture-shape-start": epicArchitectureShapeStartCommand,
 		"epic:architecture-shape-approve": epicArchitectureShapeApproveCommand,
 		"epic:architecture-shape-auto": epicArchitectureShapeAutoCommand,
+		"epic:pressure-test-draft": epicPressureTestDraftCommand,
+		"epic:pressure-test-commit": epicPressureTestCommitCommand,
+		"epic:pressure-test-finding-disposition": epicPressureTestFindingDispositionCommand,
+		"epic:slices-draft": epicSlicesDraftCommand,
+		"epic:slices-commit": epicSlicesCommitCommand,
+		"epic:slice-set-shape-start": epicSliceSetShapeStartCommand,
+		"epic:slice-set-shape-approve": epicSliceSetShapeApproveCommand,
+		"epic:slice-set-shape-auto": epicSliceSetShapeAutoCommand,
+		"epic:set-steering": epicSetSteeringCommand,
+		"epic:pause": epicPauseCommand,
+		"epic:resume": epicResumeCommand,
 		"epic:refine-architecture": epicRefineArchitectureCommand,
 		"epic:define-slices": epicDefineSlicesCommand,
 		"epic:refine-slices": epicRefineSlicesCommand,

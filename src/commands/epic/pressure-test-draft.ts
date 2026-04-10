@@ -3,6 +3,7 @@ import * as path from "node:path";
 import { defineCommand } from "citty";
 import pc from "picocolors";
 import { resolveProjectDir } from "../../core/data/project.js";
+import { storeContentRef } from "../../engine/content/store.js";
 import { appendEvent } from "../../engine/events/append.js";
 import { replayEvents } from "../../engine/events/replay.js";
 import {
@@ -13,17 +14,19 @@ import {
 import { InvariantError } from "../../engine/invariants/index.js";
 import { getGitBranch, getGitCommitHint } from "../../util/git-info.js";
 import { output } from "../../util/output.js";
+import { readStdin } from "../../util/stdin.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `gp epic:complete --epic <name>` (v2) — complete an epic.
+ * `gp epic:pressure-test-draft --epic <name>` (v2) — draft a pressure test.
  *
- * Emits `epic-completed` with domain "entity-lifecycle".
+ * Accepts stdin JSON `{ content }`.
+ * Stores content as a git blob, emits `pressure-test-drafted` with domain "entity-lifecycle".
  */
-export const epicCompleteCommand = defineCommand({
+export const epicPressureTestDraftCommand = defineCommand({
 	meta: {
-		name: "epic:complete",
-		description: "Complete an epic.",
+		name: "epic:pressure-test-draft",
+		description: "Draft a pressure test for an epic.",
 	},
 	args: {
 		...globalArgs,
@@ -35,6 +38,23 @@ export const epicCompleteCommand = defineCommand({
 	},
 	setup() {},
 	async run({ args }) {
+		const stdin = await readStdin();
+		const content = stdin.content as string | undefined;
+
+		if (content === undefined || content === "") {
+			const errorOutput = {
+				ok: false,
+				error: "Pressure test content is required via stdin JSON { content }",
+				code: "VALIDATION_INVALID_INPUT",
+			};
+			if (args.json || args.query) {
+				output(errorOutput, args);
+			} else {
+				process.stderr.write(`${pc.red("Error")}: Pressure test content is required\n`);
+			}
+			process.exit(1);
+		}
+
 		const goodplanDir = resolveProjectDir();
 		const epicName = args.epic as string;
 		const epicEventsPath = path.join(goodplanDir, "epics", epicName, "events.jsonl");
@@ -53,6 +73,9 @@ export const epicCompleteCommand = defineCommand({
 			process.exit(1);
 		}
 
+		const ptPath = path.join("epics", epicName, "pressure-test.md");
+		const contentRef = await storeContentRef(content, ptPath, "text/markdown");
+
 		const branch = getGitBranch();
 		const commitHint = getGitCommitHint();
 
@@ -69,19 +92,19 @@ export const epicCompleteCommand = defineCommand({
 				eventsPath: epicEventsPath,
 				scope: "epic",
 				scopeRef: epicName,
-				actor: { kind: "cli", id: "gp:epic:complete" },
+				actor: { kind: "cli", id: "gp:epic:pressure-test-draft" },
 				branch,
 				commitHint,
 				domain: "entity-lifecycle",
-				type: "epic-completed",
-				payload: {},
+				type: "pressure-test-drafted",
+				payload: { pressureTest: contentRef },
 				beforeAppend,
 			});
 
 			if (args.json || args.query) {
 				output({ ok: true, event: result.event.id, entity: `epic:${epicName}` }, args);
 			} else if (!args.quiet) {
-				output(`Completed epic ${pc.bold(epicName)}`, args);
+				output(`Drafted pressure test for epic ${pc.bold(epicName)}`, args);
 			}
 		} catch (error) {
 			if (error instanceof InvariantError) {

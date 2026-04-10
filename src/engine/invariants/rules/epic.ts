@@ -149,18 +149,19 @@ export const epicArchitectureShapeApprovalRequired: InvariantRule = {
 
 /**
  * epic.slice-shape-approval-required: Slice set must be shape-approved
- * before slice refinement can begin.
+ * before slice refinement can begin or epic can be activated.
  */
 export const epicSliceShapeApprovalRequired: InvariantRule = {
 	id: "epic.slice-shape-approval-required",
 	ruleType: "precondition",
-	description: "Slice set shape must be approved before slice refinement",
+	description: "Slice set shape must be approved before slice refinement or activation",
 	appliesTo: ["entity-lifecycle", "refinement"],
 	check(event, ctx) {
-		if (event.type !== "slice-refinement-started") return null;
+		if (event.type !== "slice-refinement-started" && event.type !== "epic-activated") return null;
 		if (hasEventOfType(ctx, "slice-set-shape-approved")) return null;
+		if (hasEventOfType(ctx, "slice-set-shape-checkpoint-auto-shaped")) return null;
 		return {
-			message: "Cannot start slice refinement without slice set shape approval.",
+			message: "Cannot proceed without slice set shape approval.",
 		};
 	},
 };
@@ -233,6 +234,65 @@ export const epicNotCompleted: InvariantRule = {
 		return {
 			message: "Cannot modify a completed epic.",
 		};
+	},
+};
+
+/**
+ * epic.slice-set-committed-before-activate: Cannot activate without committed slice set.
+ */
+export const epicSliceSetCommittedBeforeActivate: InvariantRule = {
+	id: "epic.slice-set-committed-before-activate",
+	ruleType: "precondition",
+	description: "Slice set must be committed before epic activation",
+	appliesTo: ["entity-lifecycle"],
+	check(event, ctx) {
+		if (event.type !== "epic-activated") return null;
+		if (hasEventOfType(ctx, "slice-set-committed")) return null;
+		return {
+			message: "Cannot activate epic without a committed slice set.",
+		};
+	},
+};
+
+/**
+ * epic.not-already-paused: Cannot pause an already-paused epic.
+ */
+export const epicNotAlreadyPaused: InvariantRule = {
+	id: "epic.not-already-paused",
+	ruleType: "precondition",
+	description: "Cannot pause an already-paused epic",
+	appliesTo: ["entity-lifecycle"],
+	check(event, ctx) {
+		if (event.type !== "epic-paused") return null;
+		const paused = countMatching(ctx, (e) => e.type === "epic-paused");
+		const resumed = countMatching(ctx, (e) => e.type === "epic-resumed");
+		if (paused > resumed) {
+			return {
+				message: "Cannot pause an already-paused epic.",
+			};
+		}
+		return null;
+	},
+};
+
+/**
+ * epic.not-already-resumed: Cannot resume a non-paused epic.
+ */
+export const epicNotAlreadyResumed: InvariantRule = {
+	id: "epic.not-already-resumed",
+	ruleType: "precondition",
+	description: "Cannot resume a non-paused epic",
+	appliesTo: ["entity-lifecycle"],
+	check(event, ctx) {
+		if (event.type !== "epic-resumed") return null;
+		const paused = countMatching(ctx, (e) => e.type === "epic-paused");
+		const resumed = countMatching(ctx, (e) => e.type === "epic-resumed");
+		if (paused <= resumed) {
+			return {
+				message: "Cannot resume a non-paused epic.",
+			};
+		}
+		return null;
 	},
 };
 

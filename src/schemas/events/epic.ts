@@ -86,13 +86,58 @@ export type ArchitectureShapeCheckpointAutoShapedPayload = z.infer<
 	typeof architectureShapeCheckpointAutoShapedPayloadSchema
 >;
 
-// --- Phase 4 payload schemas (stubs for EpicEventMap completeness) ---
+// --- Phase 4 payload schemas ---
+
+export const pressureTestDraftedPayloadSchema = z.object({
+	pressureTest: ContentRefSchema,
+});
+export type PressureTestDraftedPayload = z.infer<typeof pressureTestDraftedPayloadSchema>;
+
+export const pressureTestCommittedPayloadSchema = z.object({
+	pressureTest: ContentRefSchema,
+});
+export type PressureTestCommittedPayload = z.infer<typeof pressureTestCommittedPayloadSchema>;
+
+export const pressureTestFindingDispositionPayloadSchema = z.object({
+	findingId: z.string().min(1),
+	disposition: z.enum(["accepted", "dismissed"]),
+});
+export type PressureTestFindingDispositionPayload = z.infer<
+	typeof pressureTestFindingDispositionPayloadSchema
+>;
+
+export const sliceSetDraftedPayloadSchema = z.object({
+	sliceSet: ContentRefSchema,
+});
+export type SliceSetDraftedPayload = z.infer<typeof sliceSetDraftedPayloadSchema>;
+
+export const sliceSetCommittedPayloadSchema = z.object({
+	sliceSet: ContentRefSchema,
+});
+export type SliceSetCommittedPayload = z.infer<typeof sliceSetCommittedPayloadSchema>;
+
+export const sliceSetShapeCheckpointReachedPayloadSchema = z.object({});
+export type SliceSetShapeCheckpointReachedPayload = z.infer<
+	typeof sliceSetShapeCheckpointReachedPayloadSchema
+>;
+
+export const sliceSetShapeApprovedPayloadSchema = z.object({});
+export type SliceSetShapeApprovedPayload = z.infer<typeof sliceSetShapeApprovedPayloadSchema>;
+
+export const sliceSetShapeCheckpointAutoShapedPayloadSchema = z.object({});
+export type SliceSetShapeCheckpointAutoShapedPayload = z.infer<
+	typeof sliceSetShapeCheckpointAutoShapedPayloadSchema
+>;
 
 export const epicActivatedPayloadSchema = z.object({});
 export type EpicActivatedPayload = z.infer<typeof epicActivatedPayloadSchema>;
 
-export const epicCompletedPayloadSchema = z.object({});
-export type EpicCompletedPayload = z.infer<typeof epicCompletedPayloadSchema>;
+export const epicSteeringPreferenceSetPayloadSchema = z.object({
+	preference: SteeringPreferenceSchema,
+});
+export type EpicSteeringPreferenceSetPayload = z.infer<
+	typeof epicSteeringPreferenceSetPayloadSchema
+>;
 
 export const epicPausedPayloadSchema = z.object({});
 export type EpicPausedPayload = z.infer<typeof epicPausedPayloadSchema>;
@@ -100,12 +145,14 @@ export type EpicPausedPayload = z.infer<typeof epicPausedPayloadSchema>;
 export const epicResumedPayloadSchema = z.object({});
 export type EpicResumedPayload = z.infer<typeof epicResumedPayloadSchema>;
 
+export const epicCompletedPayloadSchema = z.object({});
+export type EpicCompletedPayload = z.infer<typeof epicCompletedPayloadSchema>;
+
 // --- EpicEventMap: maps event type strings to payload schemas ---
 
 /**
  * Mapped type for all epic event types and their payload schemas.
  * The envelope `type` field serves as the discriminant (no `_type` in payloads).
- * Phase 4 will extend this map with additional event types.
  */
 export const EpicEventMap = {
 	// Phase 2
@@ -123,11 +170,20 @@ export const EpicEventMap = {
 	"architecture-shape-checkpoint-reached": architectureShapeCheckpointReachedPayloadSchema,
 	"architecture-shape-approved": architectureShapeApprovedPayloadSchema,
 	"architecture-shape-checkpoint-auto-shaped": architectureShapeCheckpointAutoShapedPayloadSchema,
-	// Phase 4 (stubs)
+	// Phase 4
+	"pressure-test-drafted": pressureTestDraftedPayloadSchema,
+	"pressure-test-committed": pressureTestCommittedPayloadSchema,
+	"pressure-test-finding-accepted": pressureTestFindingDispositionPayloadSchema,
+	"slice-set-drafted": sliceSetDraftedPayloadSchema,
+	"slice-set-committed": sliceSetCommittedPayloadSchema,
+	"slice-set-shape-checkpoint-reached": sliceSetShapeCheckpointReachedPayloadSchema,
+	"slice-set-shape-approved": sliceSetShapeApprovedPayloadSchema,
+	"slice-set-shape-checkpoint-auto-shaped": sliceSetShapeCheckpointAutoShapedPayloadSchema,
 	"epic-activated": epicActivatedPayloadSchema,
-	"epic-completed": epicCompletedPayloadSchema,
+	"epic-steering-preference-set": epicSteeringPreferenceSetPayloadSchema,
 	"epic-paused": epicPausedPayloadSchema,
 	"epic-resumed": epicResumedPayloadSchema,
+	"epic-completed": epicCompletedPayloadSchema,
 } as const;
 
 /** Union of all epic event type strings. */

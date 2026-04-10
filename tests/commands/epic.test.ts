@@ -353,6 +353,144 @@ describe("v2 epic commands", () => {
 		});
 	});
 
+	it("full phase 4 flow: P3 -> architecture-shape -> pressure-test -> slices -> activate (P6)", async () => {
+		await withTempDir(async (tmpDir) => {
+			const bin = buildBinary();
+			gitInit(tmpDir);
+
+			// Initialize project
+			runCommand(bin, ["init", "--name", "test-project", "--json"], { cwd: tmpDir });
+
+			// Create epic and reach P3
+			runCommand(bin, ["epic:create", "--name", "p4-epic", "--json"], { cwd: tmpDir });
+			runCommand(bin, ["epic:goal-draft", "--epic", "p4-epic", "--json"], {
+				cwd: tmpDir,
+				stdin: JSON.stringify({ content: "# Goal" }),
+			});
+			runCommand(bin, ["epic:goal-commit", "--epic", "p4-epic", "--json"], {
+				cwd: tmpDir,
+				stdin: JSON.stringify({ content: "# Goal" }),
+			});
+			runCommand(bin, ["epic:explore-start", "--epic", "p4-epic", "--json"], {
+				cwd: tmpDir,
+				stdin: JSON.stringify({ cycleNumber: 1 }),
+			});
+			runCommand(bin, ["epic:explore-conclude", "--epic", "p4-epic", "--json"], {
+				cwd: tmpDir,
+				stdin: JSON.stringify({ content: "# Summary" }),
+			});
+			runCommand(bin, ["epic:architecture-draft", "--epic", "p4-epic", "--json"], {
+				cwd: tmpDir,
+				stdin: JSON.stringify({ content: "# Architecture" }),
+			});
+			runCommand(bin, ["epic:architecture-commit", "--epic", "p4-epic", "--json"], {
+				cwd: tmpDir,
+				stdin: JSON.stringify({ content: "# Architecture" }),
+			});
+
+			// Verify P3
+			const show3 = runCommand(bin, ["epic:show", "--epic", "p4-epic", "--json"], {
+				cwd: tmpDir,
+			});
+			expect((show3.json as { phase: string }).phase).toBe("P3");
+
+			// Architecture shape approve
+			const shapeResult = runCommand(
+				bin,
+				["epic:architecture-shape-approve", "--epic", "p4-epic", "--json"],
+				{ cwd: tmpDir },
+			);
+			expect(shapeResult.exitCode, `shape-approve failed: ${shapeResult.stderr}`).toBe(0);
+
+			// Pressure test draft
+			const ptDraftResult = runCommand(
+				bin,
+				["epic:pressure-test-draft", "--epic", "p4-epic", "--json"],
+				{
+					cwd: tmpDir,
+					stdin: JSON.stringify({ content: "# Pressure Test\n\nRisks analyzed." }),
+				},
+			);
+			expect(ptDraftResult.exitCode, `pt-draft failed: ${ptDraftResult.stderr}`).toBe(0);
+			expect((ptDraftResult.json as { ok: boolean }).ok).toBe(true);
+
+			// Pressure test commit
+			const ptCommitResult = runCommand(
+				bin,
+				["epic:pressure-test-commit", "--epic", "p4-epic", "--json"],
+				{
+					cwd: tmpDir,
+					stdin: JSON.stringify({ content: "# Pressure Test\n\nRisks analyzed." }),
+				},
+			);
+			expect(ptCommitResult.exitCode, `pt-commit failed: ${ptCommitResult.stderr}`).toBe(0);
+
+			// Verify P4
+			const show4 = runCommand(bin, ["epic:show", "--epic", "p4-epic", "--json"], {
+				cwd: tmpDir,
+			});
+			expect((show4.json as { phase: string }).phase).toBe("P4");
+
+			// Slices draft
+			const slicesDraftResult = runCommand(
+				bin,
+				["epic:slices-draft", "--epic", "p4-epic", "--json"],
+				{
+					cwd: tmpDir,
+					stdin: JSON.stringify({ content: "# Slices\n\n1. Slice A\n2. Slice B" }),
+				},
+			);
+			expect(slicesDraftResult.exitCode, `slices-draft failed: ${slicesDraftResult.stderr}`).toBe(
+				0,
+			);
+
+			// Slices commit
+			const slicesCommitResult = runCommand(
+				bin,
+				["epic:slices-commit", "--epic", "p4-epic", "--json"],
+				{
+					cwd: tmpDir,
+					stdin: JSON.stringify({ content: "# Slices\n\n1. Slice A\n2. Slice B" }),
+				},
+			);
+			expect(
+				slicesCommitResult.exitCode,
+				`slices-commit failed: ${slicesCommitResult.stderr}`,
+			).toBe(0);
+
+			// Verify P5
+			const show5 = runCommand(bin, ["epic:show", "--epic", "p4-epic", "--json"], {
+				cwd: tmpDir,
+			});
+			expect((show5.json as { phase: string }).phase).toBe("P5");
+
+			// Slice set shape approve
+			const sliceShapeResult = runCommand(
+				bin,
+				["epic:slice-set-shape-approve", "--epic", "p4-epic", "--json"],
+				{ cwd: tmpDir },
+			);
+			expect(
+				sliceShapeResult.exitCode,
+				`slice-shape-approve failed: ${sliceShapeResult.stderr}`,
+			).toBe(0);
+
+			// Activate
+			const activateResult = runCommand(bin, ["epic:activate", "--epic", "p4-epic", "--json"], {
+				cwd: tmpDir,
+			});
+			expect(activateResult.exitCode, `activate failed: ${activateResult.stderr}`).toBe(0);
+			expect((activateResult.json as { ok: boolean }).ok).toBe(true);
+
+			// Verify P6
+			const show6 = runCommand(bin, ["epic:show", "--epic", "p4-epic", "--json"], {
+				cwd: tmpDir,
+			});
+			expect((show6.json as { phase: string }).phase).toBe("P6");
+			expect((show6.json as { active: boolean }).active).toBe(true);
+		});
+	});
+
 	it("epic:architecture-draft fails without concluded exploration (invariant)", async () => {
 		await withTempDir(async (tmpDir) => {
 			const bin = buildBinary();

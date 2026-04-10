@@ -16,14 +16,14 @@ import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `gp epic:complete --epic <name>` (v2) — complete an epic.
+ * `gp epic:slice-set-shape-auto --epic <name>` (v2) — auto-shape slice set checkpoint.
  *
- * Emits `epic-completed` with domain "entity-lifecycle".
+ * Emits `slice-set-shape-checkpoint-auto-shaped` with domain "entity-lifecycle".
  */
-export const epicCompleteCommand = defineCommand({
+export const epicSliceSetShapeAutoCommand = defineCommand({
 	meta: {
-		name: "epic:complete",
-		description: "Complete an epic.",
+		name: "epic:slice-set-shape-auto",
+		description: "Auto-shape the slice set checkpoint for an epic.",
 	},
 	args: {
 		...globalArgs,
@@ -69,11 +69,11 @@ export const epicCompleteCommand = defineCommand({
 				eventsPath: epicEventsPath,
 				scope: "epic",
 				scopeRef: epicName,
-				actor: { kind: "cli", id: "gp:epic:complete" },
+				actor: { kind: "cli", id: "gp:epic:slice-set-shape-auto" },
 				branch,
 				commitHint,
 				domain: "entity-lifecycle",
-				type: "epic-completed",
+				type: "slice-set-shape-checkpoint-auto-shaped",
 				payload: {},
 				beforeAppend,
 			});
@@ -81,7 +81,7 @@ export const epicCompleteCommand = defineCommand({
 			if (args.json || args.query) {
 				output({ ok: true, event: result.event.id, entity: `epic:${epicName}` }, args);
 			} else if (!args.quiet) {
-				output(`Completed epic ${pc.bold(epicName)}`, args);
+				output(`Slice set shape auto-shaped for epic ${pc.bold(epicName)}`, args);
 			}
 		} catch (error) {
 			if (error instanceof InvariantError) {

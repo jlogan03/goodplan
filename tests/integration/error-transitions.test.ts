@@ -6,11 +6,10 @@ import { runCommand, withFixture } from "./helpers.js";
 describe("error: invalid state transitions", () => {
 	it("slice:plan on unknown slice returns STATE_INVALID_TRANSITION", async () => {
 		await withFixture("epic-activated", ({ env, bin }) => {
-			const result = runCommand(
-				bin,
-				["slice:plan", "--slice", "nonexistent-slice", "--json"],
-				{ env, stdin: "" },
-			);
+			const result = runCommand(bin, ["slice:plan", "--slice", "nonexistent-slice", "--json"], {
+				env,
+				stdin: "",
+			});
 
 			expect(result.exitCode).toBe(3);
 			expect(result.json).toBeDefined();
@@ -21,56 +20,30 @@ describe("error: invalid state transitions", () => {
 		});
 	});
 
-	it("epic:activate without verification criteria returns STATE_MISSING_VERIFICATIONS", async () => {
+	it("epic:activate on v1 fixture without events.jsonl returns ENTITY_NOT_FOUND", async () => {
 		await withFixture("epic-created", ({ env, bin }) => {
-			// Advance epic to slices-refined using skip paths
-			const r1 = runCommand(bin, ["submit-explore", "--epic", "test-epic", "--json"], { env, stdin: "" });
-			expect(r1.exitCode, `submit-explore failed: ${r1.stderr}`).toBe(0);
-
-			const r2 = runCommand(bin, ["submit-architecture", "--epic", "test-epic", "--json"], { env, stdin: "" });
-			expect(r2.exitCode, `submit-architecture failed: ${r2.stderr}`).toBe(0);
-
-			const r3 = runCommand(bin, ["submit-refine-architecture", "--epic", "test-epic", "--json"], {
+			// v2 epic:activate uses event-sourced state (events.jsonl).
+			// The epic-created fixture is v1 (no events.jsonl), so activate fails with ENTITY_NOT_FOUND.
+			const activateResult = runCommand(bin, ["epic:activate", "--epic", "test-epic", "--json"], {
 				env,
-				stdin: JSON.stringify({ scores: { correctness: 9, completeness: 9 } }),
+				stdin: "",
 			});
-			expect(r3.exitCode, `submit-refine-architecture failed: ${r3.stderr}`).toBe(0);
 
-			const r4 = runCommand(bin, ["epic:define-slices", "--epic", "test-epic", "--json"], { env, stdin: "" });
-			expect(r4.exitCode, `define-slices failed: ${r4.stderr}`).toBe(0);
-
-			const r5 = runCommand(bin, ["submit-slices", "--epic", "test-epic", "--json"], { env, stdin: "" });
-			expect(r5.exitCode, `submit-slices failed: ${r5.stderr}`).toBe(0);
-
-			const r6 = runCommand(bin, ["submit-refine-slices", "--epic", "test-epic", "--json"], {
-				env,
-				stdin: JSON.stringify({ scores: { correctness: 9, completeness: 9 } }),
-			});
-			expect(r6.exitCode, `submit-refine-slices failed: ${r6.stderr}`).toBe(0);
-
-			// Now try to activate without adding verification criteria
-			const activateResult = runCommand(
-				bin,
-				["epic:activate", "--epic", "test-epic", "--json"],
-				{ env, stdin: "" },
-			);
-
-			expect(activateResult.exitCode).toBe(3);
+			expect(activateResult.exitCode).toBe(1);
 			expect(activateResult.json).toBeDefined();
-			const json = activateResult.json as { error: { code: string; message: string } };
-			expect(json.error).toBeDefined();
-			expect(json.error.code).toBe("STATE_MISSING_VERIFICATIONS");
+			const json = activateResult.json as { ok: boolean; error: string; code: string };
+			expect(json.ok).toBe(false);
+			expect(json.code).toBe("ENTITY_NOT_FOUND");
 		});
 	});
 
 	it("slice:implement before plan is refined returns STATE_INVALID_TRANSITION", async () => {
 		await withFixture("epic-activated", ({ env, bin }) => {
 			// test-slice is in 'created' status -- try to implement directly
-			const result = runCommand(
-				bin,
-				["slice:implement", "--slice", "test-slice", "--json"],
-				{ env, stdin: "" },
-			);
+			const result = runCommand(bin, ["slice:implement", "--slice", "test-slice", "--json"], {
+				env,
+				stdin: "",
+			});
 
 			expect(result.exitCode).toBe(3);
 			expect(result.json).toBeDefined();
@@ -82,11 +55,10 @@ describe("error: invalid state transitions", () => {
 
 	it("JSON error output includes error code and message", async () => {
 		await withFixture("epic-activated", ({ env, bin }) => {
-			const result = runCommand(
-				bin,
-				["slice:plan", "--slice", "nonexistent-slice", "--json"],
-				{ env, stdin: "" },
-			);
+			const result = runCommand(bin, ["slice:plan", "--slice", "nonexistent-slice", "--json"], {
+				env,
+				stdin: "",
+			});
 
 			expect(result.exitCode).toBe(3);
 			expect(result.json).toBeDefined();
@@ -134,11 +106,10 @@ describe("error: invalid state transitions", () => {
 			expect(createResult.exitCode).toBe(0);
 
 			// Try to plan the second slice — should be blocked by test-slice not being terminal
-			const planResult = runCommand(
-				bin,
-				["slice:plan", "--slice", "second-slice", "--json"],
-				{ env, stdin: "" },
-			);
+			const planResult = runCommand(bin, ["slice:plan", "--slice", "second-slice", "--json"], {
+				env,
+				stdin: "",
+			});
 
 			expect(planResult.exitCode).toBe(3);
 			expect(planResult.json).toBeDefined();

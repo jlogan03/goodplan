@@ -17,8 +17,14 @@ import {
 	brainstormCapturedPayloadSchema,
 	epicGoalCommittedPayloadSchema,
 	epicGoalDraftedPayloadSchema,
+	epicSteeringPreferenceSetPayloadSchema,
 	explorationCycleStartedPayloadSchema,
+	pressureTestCommittedPayloadSchema,
+	pressureTestDraftedPayloadSchema,
+	pressureTestFindingDispositionPayloadSchema,
 	researchCapturedPayloadSchema,
+	sliceSetCommittedPayloadSchema,
+	sliceSetDraftedPayloadSchema,
 } from "../../schemas/events/epic.js";
 
 // --- Entity Lifecycle Reducer ---
@@ -116,10 +122,24 @@ export function reduceEntityLifecycle(state: DerivedStateData, event: AnyEventEn
 			break;
 		}
 
+		case "pressure-test-drafted": {
+			const epic = resolveEpic(state, event);
+			if (epic !== undefined) {
+				const parsed = pressureTestDraftedPayloadSchema.safeParse(payload);
+				if (parsed.success) {
+					epic.pressureTest = parsed.data.pressureTest;
+				}
+			}
+			break;
+		}
+
 		case "pressure-test-committed": {
 			const epic = resolveEpic(state, event);
 			if (epic !== undefined) {
-				epic.pressureTest = (payload.pressureTest as ContentRef) ?? null;
+				const parsed = pressureTestCommittedPayloadSchema.safeParse(payload);
+				if (parsed.success) {
+					epic.pressureTest = parsed.data.pressureTest;
+				}
 				epic.phase = "P4";
 			}
 			break;
@@ -128,12 +148,23 @@ export function reduceEntityLifecycle(state: DerivedStateData, event: AnyEventEn
 		case "pressure-test-finding-accepted": {
 			const epic = resolveEpic(state, event);
 			if (epic !== undefined) {
-				const findingId = payload.findingId as string | undefined;
-				if (findingId !== undefined) {
-					const finding = epic.findings.find((f) => f.id === findingId);
+				const parsed = pressureTestFindingDispositionPayloadSchema.safeParse(payload);
+				if (parsed.success) {
+					const finding = epic.findings.find((f) => f.id === parsed.data.findingId);
 					if (finding !== undefined) {
-						finding.disposition = "accepted";
+						finding.disposition = parsed.data.disposition;
 					}
+				}
+			}
+			break;
+		}
+
+		case "slice-set-drafted": {
+			const epic = resolveEpic(state, event);
+			if (epic !== undefined) {
+				const parsed = sliceSetDraftedPayloadSchema.safeParse(payload);
+				if (parsed.success) {
+					epic.sliceSet = parsed.data.sliceSet;
 				}
 			}
 			break;
@@ -142,8 +173,32 @@ export function reduceEntityLifecycle(state: DerivedStateData, event: AnyEventEn
 		case "slice-set-committed": {
 			const epic = resolveEpic(state, event);
 			if (epic !== undefined) {
-				epic.sliceSet = (payload.sliceSet as ContentRef) ?? null;
+				const parsed = sliceSetCommittedPayloadSchema.safeParse(payload);
+				if (parsed.success) {
+					epic.sliceSet = parsed.data.sliceSet;
+				}
 				epic.phase = "P5";
+			}
+			break;
+		}
+
+		case "slice-set-shape-checkpoint-reached": {
+			// No state change — checkpoint is informational
+			break;
+		}
+
+		case "slice-set-shape-approved": {
+			const epic = resolveEpic(state, event);
+			if (epic !== undefined) {
+				epic.sliceSetShapeApproved = true;
+			}
+			break;
+		}
+
+		case "slice-set-shape-checkpoint-auto-shaped": {
+			const epic = resolveEpic(state, event);
+			if (epic !== undefined) {
+				epic.sliceSetShapeApproved = true;
 			}
 			break;
 		}
@@ -507,9 +562,9 @@ export function reducePauseSteering(state: DerivedStateData, event: AnyEventEnve
 		case "epic-steering-preference-set": {
 			const epic = resolveEpic(state, event);
 			if (epic !== undefined) {
-				const pref = payload.preference as SteeringPreference | undefined;
-				if (pref !== undefined) {
-					epic.steeringPreference = pref;
+				const parsed = epicSteeringPreferenceSetPayloadSchema.safeParse(payload);
+				if (parsed.success) {
+					epic.steeringPreference = parsed.data.preference;
 				}
 			}
 			break;

@@ -266,6 +266,73 @@ registerCommand("epic:refine-slices", "Begin slice refinement for an epic.", {
 	...globalArgDefs,
 	epic: { type: "string", description: "Epic name", required: true },
 });
+registerCommand(
+	"epic:pressure-test-draft",
+	"Draft a pressure test for an epic. Stdin: { content }.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+	},
+);
+registerCommand(
+	"epic:pressure-test-commit",
+	"Commit the pressure test for an epic. Stdin: { content }.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+	},
+);
+registerCommand(
+	"epic:pressure-test-finding-disposition",
+	"Set the disposition of a pressure test finding.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+		finding: { type: "string", description: "Finding ID", required: true },
+		disposition: {
+			type: "string",
+			description: "Disposition: accepted or dismissed",
+			required: true,
+		},
+	},
+);
+registerCommand("epic:slices-draft", "Draft a slice set for an epic. Stdin: { content }.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand("epic:slices-commit", "Commit the slice set for an epic. Stdin: { content }.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand("epic:slice-set-shape-start", "Start the slice set shape checkpoint for an epic.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand("epic:slice-set-shape-approve", "Approve the slice set shape for an epic.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand("epic:slice-set-shape-auto", "Auto-shape the slice set checkpoint for an epic.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand("epic:pause", "Pause an epic.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand("epic:resume", "Resume a paused epic.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand("epic:set-steering", "Set the steering preference for an epic.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+	preference: {
+		type: "string",
+		description: "Steering preference: always-consult, best-guess-and-flag, or ask-in-the-moment",
+		required: true,
+	},
+});
 registerCommand("epic:activate", "Activate an epic for work.", {
 	...globalArgDefs,
 	epic: { type: "string", description: "Epic name", required: true },

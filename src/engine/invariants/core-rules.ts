@@ -10,9 +10,12 @@ import {
 	epicGoalCommittedBeforeExplore,
 	epicGoalDraftedBeforeCommit,
 	epicNotAbandoned,
+	epicNotAlreadyPaused,
+	epicNotAlreadyResumed,
 	epicNotCompleted,
 	epicPressureTestRequiredBeforeSliceSet,
 	epicSingleActivePerBranch,
+	epicSliceSetCommittedBeforeActivate,
 	epicSliceShapeApprovalRequired,
 } from "./rules/epic.js";
 import { pressureTestFindingsAllAcceptedBeforeSliceSet } from "./rules/pressure-test.js";
@@ -50,7 +53,10 @@ export function createCoreRegistry(): InvariantRegistry {
 	registry.register(epicPressureTestRequiredBeforeSliceSet);
 	registry.register(epicArchitectureShapeApprovalRequired);
 	registry.register(epicSliceShapeApprovalRequired);
+	registry.register(epicSliceSetCommittedBeforeActivate);
 	registry.register(epicAllSlicesLandedBeforeComplete);
+	registry.register(epicNotAlreadyPaused);
+	registry.register(epicNotAlreadyResumed);
 	registry.register(epicNotAbandoned);
 	registry.register(epicNotCompleted);
 
