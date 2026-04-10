@@ -1,0 +1,1 @@
+Circuit breaker uses 2-field key (severity+dimension) as coarse safety-net. Feedback synthesizer uses 3-field key (severity+dimension+description80) to avoid losing distinct findings.

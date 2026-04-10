@@ -24,10 +24,10 @@
 					"status": "completed"
 				},
 				{
-					"completed": null,
+					"completed": "2026-04-10T15:26:50.479Z",
 					"created": "2026-04-09T22:27:17.271Z",
 					"name": "04-refinement-loop-extractors",
-					"status": "plan-refined"
+					"status": "completed"
 				},
 				{
 					"completed": null,

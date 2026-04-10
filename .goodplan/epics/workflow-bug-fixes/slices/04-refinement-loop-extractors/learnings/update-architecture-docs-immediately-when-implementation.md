@@ -1,0 +1,1 @@
+Five definitions in trust.md now diverge from implementation. Should update docs per phase, not defer to completion.
