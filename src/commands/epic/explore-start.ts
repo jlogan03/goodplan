@@ -15,6 +15,7 @@ import { getGitBranch, getGitCommitHint } from "../../util/git-info.js";
 import { output } from "../../util/output.js";
 import { readStdin } from "../../util/stdin.js";
 import { globalArgs } from "../global-args.js";
+import { buildEpicContextBundle } from "./context-helper.js";
 
 /**
  * `gp epic:explore-start --epic <name>` (v2) — start an exploration cycle.
@@ -85,7 +86,18 @@ export const epicExploreStartCommand = defineCommand({
 			});
 
 			if (args.json || args.query) {
-				output({ ok: true, event: result.event.id, entity: `epic:${epicName}`, cycleNumber }, args);
+				const { events: allEvents } = await replayEvents({ eventsPath: epicEventsPath });
+				const contextBundle = buildEpicContextBundle(allEvents, "P1", epicName);
+				output(
+					{
+						ok: true,
+						event: result.event.id,
+						entity: `epic:${epicName}`,
+						cycleNumber,
+						...(contextBundle !== undefined ? { contextBundle } : {}),
+					},
+					args,
+				);
 			} else if (!args.quiet) {
 				output(`Started exploration cycle ${cycleNumber} for epic ${pc.bold(epicName)}`, args);
 			}

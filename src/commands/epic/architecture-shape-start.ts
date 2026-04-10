@@ -14,6 +14,7 @@ import { InvariantError } from "../../engine/invariants/index.js";
 import { getGitBranch, getGitCommitHint } from "../../util/git-info.js";
 import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
+import { buildEpicContextBundle } from "./context-helper.js";
 
 /**
  * `gp epic:architecture-shape-start --epic <name>` (v2) — start architecture shape checkpoint.
@@ -79,7 +80,17 @@ export const epicArchitectureShapeStartCommand = defineCommand({
 			});
 
 			if (args.json || args.query) {
-				output({ ok: true, event: result.event.id, entity: `epic:${epicName}` }, args);
+				const { events: allEvents } = await replayEvents({ eventsPath: epicEventsPath });
+				const contextBundle = buildEpicContextBundle(allEvents, "P3", epicName);
+				output(
+					{
+						ok: true,
+						event: result.event.id,
+						entity: `epic:${epicName}`,
+						...(contextBundle !== undefined ? { contextBundle } : {}),
+					},
+					args,
+				);
 			} else if (!args.quiet) {
 				output(`Architecture shape checkpoint reached for epic ${pc.bold(epicName)}`, args);
 			}

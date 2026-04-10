@@ -14,6 +14,7 @@ import { InvariantError } from "../../engine/invariants/index.js";
 import { getGitBranch, getGitCommitHint } from "../../util/git-info.js";
 import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
+import { buildEpicContextBundle } from "./context-helper.js";
 
 /**
  * `gp epic:slice-set-shape-start --epic <name>` (v2) — start slice set shape checkpoint.
@@ -79,7 +80,17 @@ export const epicSliceSetShapeStartCommand = defineCommand({
 			});
 
 			if (args.json || args.query) {
-				output({ ok: true, event: result.event.id, entity: `epic:${epicName}` }, args);
+				const { events: allEvents } = await replayEvents({ eventsPath: epicEventsPath });
+				const contextBundle = buildEpicContextBundle(allEvents, "P5", epicName);
+				output(
+					{
+						ok: true,
+						event: result.event.id,
+						entity: `epic:${epicName}`,
+						...(contextBundle !== undefined ? { contextBundle } : {}),
+					},
+					args,
+				);
 			} else if (!args.quiet) {
 				output(`Slice set shape checkpoint reached for epic ${pc.bold(epicName)}`, args);
 			}

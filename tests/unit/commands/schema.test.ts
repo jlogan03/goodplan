@@ -265,8 +265,7 @@ describe("stdinSchemaRegistry drift detection", () => {
 		const stdinCommands = [
 			"epic:create",
 			"epic:complete",
-			"epic:add-verification",
-			"epic:update-verification",
+			// v1 epic:add-verification, epic:update-verification removed (core/rpc dependency)
 			"slice:create",
 			"slice:complete",
 			"quest:create",
@@ -277,11 +276,8 @@ describe("stdinSchemaRegistry drift detection", () => {
 			"submit-plan",
 			"submit-refinement",
 			"submit-implementation",
-			"submit-explore",
-			"submit-architecture",
-			"submit-slices",
-			"submit-refine-architecture",
-			"submit-refine-slices",
+			// v1 epic subagent commands removed (submit-explore, submit-architecture,
+			// submit-slices, submit-refine-architecture, submit-refine-slices)
 		];
 
 		const registryKeys = Object.keys(stdinSchemaRegistry);

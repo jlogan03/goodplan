@@ -5,23 +5,13 @@ import {
 	createDecisionInputSchema,
 	updateDecisionInputSchema,
 } from "../../schemas/commands/decision.js";
-import {
-	addVerificationInputSchema,
-	completeEpicInputSchema,
-	createEpicInputSchema,
-	updateVerificationInputSchema,
-} from "../../schemas/commands/epic.js";
+import { completeEpicInputSchema, createEpicInputSchema } from "../../schemas/commands/epic.js";
 import { completeQuestInputSchema, createQuestInputSchema } from "../../schemas/commands/quest.js";
 import { completeSliceInputSchema, createSliceInputSchema } from "../../schemas/commands/slice.js";
 import {
-	submitArchitectureInputSchema,
-	submitExploreInputSchema,
 	submitImplementationInputSchema,
 	submitPlanInputSchema,
-	submitRefineArchitectureInputSchema,
-	submitRefineSlicesInputSchema,
 	submitRefinementInputSchema,
-	submitSlicesInputSchema,
 } from "../../schemas/commands/submit.js";
 import { taskCreateInputSchema } from "../../schemas/commands/task.js";
 import { projectInitializedPayloadSchema } from "../../schemas/events/index.js";
@@ -53,8 +43,6 @@ interface CommandRegistryEntry {
 export const stdinSchemaRegistry: Record<string, z.ZodType> = {
 	"epic:create": createEpicInputSchema,
 	"epic:complete": completeEpicInputSchema,
-	"epic:add-verification": addVerificationInputSchema,
-	"epic:update-verification": updateVerificationInputSchema,
 	"slice:create": createSliceInputSchema,
 	"slice:complete": completeSliceInputSchema,
 	"quest:create": createQuestInputSchema,
@@ -65,11 +53,6 @@ export const stdinSchemaRegistry: Record<string, z.ZodType> = {
 	"submit-plan": submitPlanInputSchema,
 	"submit-refinement": submitRefinementInputSchema,
 	"submit-implementation": submitImplementationInputSchema,
-	"submit-explore": submitExploreInputSchema,
-	"submit-architecture": submitArchitectureInputSchema,
-	"submit-slices": submitSlicesInputSchema,
-	"submit-refine-architecture": submitRefineArchitectureInputSchema,
-	"submit-refine-slices": submitRefineSlicesInputSchema,
 };
 
 // ── Command Registry ─────────────────────────────────────────
@@ -254,18 +237,8 @@ registerCommand(
 		epic: { type: "string", description: "Epic name", required: true },
 	},
 );
-registerCommand("epic:refine-architecture", "Begin architecture refinement for an epic.", {
-	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
-});
-registerCommand("epic:define-slices", "Begin slice definition for an epic.", {
-	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
-});
-registerCommand("epic:refine-slices", "Begin slice refinement for an epic.", {
-	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
-});
+// v1 epic:refine-architecture, epic:define-slices, epic:refine-slices removed
+// (deferred to slice 07 / superseded by v2 equivalents)
 registerCommand(
 	"epic:pressure-test-draft",
 	"Draft a pressure test for an epic. Stdin: { content }.",
@@ -346,23 +319,8 @@ registerCommand("epic:abandon", "Abandon an epic.", {
 	epic: { type: "string", description: "Epic name", required: true },
 	reason: { type: "string", description: "Reason for abandoning", required: true },
 });
-registerCommand(
-	"epic:add-verification",
-	"Add a verification criterion to an epic. Stdin: {verification}.",
-	{
-		...globalArgDefs,
-		epic: { type: "string", description: "Epic name", required: true },
-	},
-);
-registerCommand(
-	"epic:update-verification",
-	"Update a verification criterion. Stdin: {verification}.",
-	{
-		...globalArgDefs,
-		epic: { type: "string", description: "Epic name", required: true },
-		index: { type: "string", description: "Verification index", required: true },
-	},
-);
+// v1 epic:add-verification, epic:update-verification removed
+// (core/rpc dependency; will be migrated to v2 events in a future slice)
 
 // Slice commands
 registerCommand("slice:create", "Create a new slice. Stdin: {name, goal}.", {
@@ -550,36 +508,8 @@ registerCommand("start-implementation", "Get context for implementing a slice or
 	quest: { type: "string", description: "Quest name" },
 	inline: { type: "string", description: "Include inlined content (boolean or byte budget)" },
 });
-registerCommand(
-	"start-explore",
-	"Get context for exploring an epic or quest. Requires --epic or --quest (mutually exclusive).",
-	{
-		...globalArgDefs,
-		epic: { type: "string", description: "Epic name" },
-		quest: { type: "string", description: "Quest name" },
-		inline: { type: "string", description: "Include inlined content (boolean or byte budget)" },
-	},
-);
-registerCommand("start-architecture", "Get context for defining epic architecture.", {
-	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
-	inline: { type: "string", description: "Include inlined content (boolean or byte budget)" },
-});
-registerCommand("start-slices", "Get context for defining epic slices.", {
-	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
-	inline: { type: "string", description: "Include inlined content (boolean or byte budget)" },
-});
-registerCommand("start-refine-architecture", "Get context for refining epic architecture.", {
-	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
-	inline: { type: "string", description: "Include inlined content (boolean or byte budget)" },
-});
-registerCommand("start-refine-slices", "Get context for refining epic slices.", {
-	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
-	inline: { type: "string", description: "Include inlined content (boolean or byte budget)" },
-});
+// v1 epic subagent commands removed (start-explore, start-architecture, start-slices,
+// start-refine-architecture, start-refine-slices) — superseded by v2 context bundler integration
 registerCommand("submit-plan", "Submit a completed plan.", {
 	...globalArgDefs,
 	slice: { type: "string", description: "Slice name" },
@@ -601,41 +531,8 @@ registerCommand("submit-implementation", "Submit implementation results.", {
 	slice: { type: "string", description: "Slice name" },
 	quest: { type: "string", description: "Quest name" },
 });
-registerCommand(
-	"submit-explore",
-	"Submit exploration results. Requires --epic or --quest (mutually exclusive).",
-	{
-		...globalArgDefs,
-		epic: { type: "string", description: "Epic name" },
-		quest: { type: "string", description: "Quest name" },
-	},
-);
-registerCommand("submit-architecture", "Submit architecture definition.", {
-	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
-});
-registerCommand("submit-slices", "Submit slice definitions.", {
-	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
-});
-registerCommand("submit-refine-architecture", "Submit architecture refinement scores.", {
-	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
-	override: {
-		type: "boolean",
-		description: "Bypass score threshold circuit breaker",
-		default: false,
-	},
-});
-registerCommand("submit-refine-slices", "Submit slice refinement scores.", {
-	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
-	override: {
-		type: "boolean",
-		description: "Bypass score threshold circuit breaker",
-		default: false,
-	},
-});
+// v1 epic submit commands removed (submit-explore, submit-architecture, submit-slices,
+// submit-refine-architecture, submit-refine-slices) — superseded by v2 event commands
 
 // ── Event Schema Registry ───────────────────────────────────
 
