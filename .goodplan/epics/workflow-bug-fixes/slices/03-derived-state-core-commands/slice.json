@@ -3,7 +3,7 @@
 	"deferred": [],
 	"epic": "workflow-bug-fixes",
 	"goal": "Build derived state computer and core bootstrap commands: gp init, gp status, gp schema",
-	"implementationPhase": null,
+	"implementationPhase": 5,
 	"name": "03-derived-state-core-commands",
 	"refinement": {
 		"maxRounds": 10,
@@ -20,6 +20,6 @@
 			}
 		]
 	},
-	"status": "plan-refined",
-	"updated": "2026-04-10T03:12:07.226Z"
+	"status": "implementing",
+	"updated": "2026-04-10T04:23:53.757Z"
 }
