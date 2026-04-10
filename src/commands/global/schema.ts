@@ -25,6 +25,7 @@ import {
 	submitSlicesInputSchema,
 } from "../../schemas/commands/submit.js";
 import { taskCreateInputSchema } from "../../schemas/commands/task.js";
+import { projectInitializedPayloadSchema } from "../../schemas/events/index.js";
 import { GoodplanError } from "../../util/errors.js";
 import { output } from "../../util/output.js";
 import { globalArgs, listArgs } from "../global-args.js";
@@ -136,6 +137,11 @@ registerCommand("status", "Show current project status", {
 registerCommand("schema", "Show CLI command tree with input/output schemas", {
 	...globalArgDefs,
 	command: { type: "string", description: "Show detail for a specific command" },
+	events: {
+		type: "boolean",
+		description: "Show event type catalog with payload schemas",
+		default: false,
+	},
 });
 registerCommand(
 	"state",
@@ -298,10 +304,14 @@ registerCommand("quest:explore", "Begin exploration phase for a quest.", {
 	...globalArgDefs,
 	quest: { type: "string", description: "Quest name", required: true },
 });
-registerCommand("quest:plan", "Begin planning for a quest. Precondition: 'created' or 'explored' status.", {
-	...globalArgDefs,
-	quest: { type: "string", description: "Quest name", required: true },
-});
+registerCommand(
+	"quest:plan",
+	"Begin planning for a quest. Precondition: 'created' or 'explored' status.",
+	{
+		...globalArgDefs,
+		quest: { type: "string", description: "Quest name", required: true },
+	},
+);
 registerCommand("quest:refine-plan", "Begin plan refinement for a quest.", {
 	...globalArgDefs,
 	quest: { type: "string", description: "Quest name", required: true },
@@ -422,12 +432,16 @@ registerCommand("start-implementation", "Get context for implementing a slice or
 	quest: { type: "string", description: "Quest name" },
 	inline: { type: "string", description: "Include inlined content (boolean or byte budget)" },
 });
-registerCommand("start-explore", "Get context for exploring an epic or quest. Requires --epic or --quest (mutually exclusive).", {
-	...globalArgDefs,
-	epic: { type: "string", description: "Epic name" },
-	quest: { type: "string", description: "Quest name" },
-	inline: { type: "string", description: "Include inlined content (boolean or byte budget)" },
-});
+registerCommand(
+	"start-explore",
+	"Get context for exploring an epic or quest. Requires --epic or --quest (mutually exclusive).",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name" },
+		quest: { type: "string", description: "Quest name" },
+		inline: { type: "string", description: "Include inlined content (boolean or byte budget)" },
+	},
+);
 registerCommand("start-architecture", "Get context for defining epic architecture.", {
 	...globalArgDefs,
 	epic: { type: "string", description: "Epic name", required: true },
@@ -469,11 +483,15 @@ registerCommand("submit-implementation", "Submit implementation results.", {
 	slice: { type: "string", description: "Slice name" },
 	quest: { type: "string", description: "Quest name" },
 });
-registerCommand("submit-explore", "Submit exploration results. Requires --epic or --quest (mutually exclusive).", {
-	...globalArgDefs,
-	epic: { type: "string", description: "Epic name" },
-	quest: { type: "string", description: "Quest name" },
-});
+registerCommand(
+	"submit-explore",
+	"Submit exploration results. Requires --epic or --quest (mutually exclusive).",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name" },
+		quest: { type: "string", description: "Quest name" },
+	},
+);
 registerCommand("submit-architecture", "Submit architecture definition.", {
 	...globalArgDefs,
 	epic: { type: "string", description: "Epic name", required: true },
@@ -500,6 +518,16 @@ registerCommand("submit-refine-slices", "Submit slice refinement scores.", {
 		default: false,
 	},
 });
+
+// ── Event Schema Registry ───────────────────────────────────
+
+/**
+ * Maps event type names to their Zod payload schemas.
+ * Used by `gp schema --events` to produce a JSON Schema catalog.
+ */
+export const eventSchemaRegistry: Record<string, z.ZodType> = {
+	"project-initialized": projectInitializedPayloadSchema,
+};
 
 // ── Schema command ───────────────────────────────────────────
 
@@ -537,10 +565,24 @@ function buildCommandDetail(commandName: string): Record<string, unknown> {
 }
 
 /**
+ * Build the event type catalog with JSON Schema payloads.
+ */
+function buildEventCatalog(): {
+	events: Array<{ type: string; payloadSchema: Record<string, unknown> }>;
+} {
+	const events = Object.entries(eventSchemaRegistry).map(([type, schema]) => ({
+		type,
+		payloadSchema: z.toJSONSchema(schema, { unrepresentable: "any" }) as Record<string, unknown>,
+	}));
+	return { events };
+}
+
+/**
  * `gp schema` — show CLI command tree with input/output schemas.
  *
- * Without `--command`: returns `{ commands: [...] }` with all registered commands.
+ * Without flags: returns `{ commands: [...] }` with all registered commands.
  * With `--command <name>`: returns that command's detail including stdin schema (if any).
+ * With `--events`: returns event type catalog with JSON Schema payloads.
  *
  * INV-006: schema output reflects actual command signatures via parallel registry
  * and Zod-derived JSON Schema from actual schema objects.
@@ -557,14 +599,27 @@ export const schemaCommand = defineCommand({
 			description: "Show detail for a specific command",
 			required: false,
 		},
+		events: {
+			type: "boolean",
+			description: "Show event type catalog with payload schemas",
+			default: false,
+		},
 	},
 	setup() {},
 	async run({ args }) {
-		const data = args.command ? buildCommandDetail(args.command) : buildCommandHierarchy();
+		let data: unknown;
+		if (args.events) {
+			data = buildEventCatalog();
+		} else if (args.command) {
+			data = buildCommandDetail(args.command);
+		} else {
+			data = buildCommandHierarchy();
+		}
+
 		if (args.json || args.query) {
 			output(data, args);
 		} else {
-			// Human-readable: indented JSON
+			// Human-readable: indented JSON (schema is inherently structured)
 			process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
 		}
 	},

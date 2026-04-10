@@ -1,12 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 import { globalArgs } from "../../../src/commands/global-args.js";
-import { commandRegistry, stdinSchemaRegistry } from "../../../src/commands/global/schema.js";
+import {
+	commandRegistry,
+	eventSchemaRegistry,
+	stdinSchemaRegistry,
+} from "../../../src/commands/global/schema.js";
 import { mainCommand } from "../../../src/commands/main.js";
 
 describe("schema command", () => {
 	async function runSchema(args: {
 		json?: boolean;
 		command?: string;
+		events?: boolean;
 		query?: string;
 		quiet?: boolean;
 		verbose?: boolean;
@@ -18,6 +23,7 @@ describe("schema command", () => {
 				args: {
 					json: args.json ?? false,
 					command: args.command ?? undefined,
+					events: args.events ?? false,
 					query: args.query ?? undefined,
 					quiet: args.quiet ?? false,
 					verbose: args.verbose ?? false,
@@ -143,6 +149,33 @@ describe("schema command", () => {
 
 		vi.restoreAllMocks();
 	});
+
+	it("returns event catalog with --events --json", async () => {
+		const chunks: string[] = [];
+		vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
+			chunks.push(String(chunk));
+			return true;
+		});
+
+		await runSchema({ json: true, events: true });
+
+		const outputStr = chunks.join("");
+		const parsed = JSON.parse(outputStr);
+		expect(parsed).toHaveProperty("events");
+		expect(Array.isArray(parsed.events)).toBe(true);
+		expect(parsed.events.length).toBeGreaterThan(0);
+
+		// Verify project-initialized event is present with JSON Schema payload
+		const projectInit = parsed.events.find(
+			(e: { type: string }) => e.type === "project-initialized",
+		);
+		expect(projectInit).toBeDefined();
+		expect(projectInit.payloadSchema).toBeDefined();
+		expect(projectInit.payloadSchema.type).toBe("object");
+		expect(projectInit.payloadSchema.properties).toHaveProperty("name");
+
+		vi.restoreAllMocks();
+	});
 });
 
 describe("command registry drift detection (INV-006)", () => {
@@ -206,6 +239,20 @@ describe("command registry drift detection (INV-006)", () => {
 				registryArgKeys,
 				`registry arg keys for "${name}" don't match actual command definition`,
 			).toEqual(actualArgKeys);
+		}
+	});
+});
+
+describe("eventSchemaRegistry", () => {
+	it("contains project-initialized event", () => {
+		expect(eventSchemaRegistry).toHaveProperty("project-initialized");
+	});
+
+	it("every entry is a valid Zod schema", () => {
+		for (const [type, schema] of Object.entries(eventSchemaRegistry)) {
+			expect(schema, `event "${type}" should be a Zod schema with safeParse`).toHaveProperty(
+				"safeParse",
+			);
 		}
 	});
 });

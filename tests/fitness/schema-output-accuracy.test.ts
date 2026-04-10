@@ -108,6 +108,24 @@ describe("INV-006: Schema output accuracy", () => {
 		}
 	});
 
+	it("--events returns event catalog with JSON Schema payloads", () => {
+		const result = runCommand(bin, ["schema", "--events", "--json"]);
+		expect(result.exitCode).toBe(0);
+		expect(result.json).toBeDefined();
+
+		const catalog = result.json as {
+			events: Array<{ type: string; payloadSchema: Record<string, unknown> }>;
+		};
+		expect(Array.isArray(catalog.events)).toBe(true);
+		expect(catalog.events.length).toBeGreaterThan(0);
+
+		// Verify project-initialized event is present with valid JSON Schema
+		const projectInit = catalog.events.find((e) => e.type === "project-initialized");
+		expect(projectInit, "should include project-initialized event").toBeDefined();
+		expect(projectInit?.payloadSchema.type).toBe("object");
+		expect(projectInit?.payloadSchema.properties).toHaveProperty("name");
+	});
+
 	it("per-command detail args match list-view args", () => {
 		const listResult = runCommand(bin, ["schema", "--json"]);
 		const schema = listResult.json as {
