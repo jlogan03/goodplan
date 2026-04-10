@@ -1,5 +1,7 @@
 import { z } from "zod";
 import type { ContentRef } from "../envelope.js";
+import type { ConvergenceState } from "../trust/convergence.js";
+import type { DimensionResult } from "../trust/reviewer-payload.js";
 
 // --- Phase ---
 
@@ -41,22 +43,24 @@ export const SteeringPreferenceSchema = z.enum([
 ]);
 export type SteeringPreference = z.infer<typeof SteeringPreferenceSchema>;
 
-// --- Placeholder trust types ---
+// --- Trust types (canonical definitions in src/schemas/trust/) ---
 
-/** Placeholder for convergence snapshot (fleshed out in trust layer) */
+/**
+ * Convergence snapshot for derived state.
+ * Uses ConvergenceState from the trust layer's canonical schema.
+ */
 export interface ConvergenceSnapshot {
 	scopeRef: string;
 	artifactType: string;
-	converged: boolean;
+	state: ConvergenceState;
 	round: number;
 }
 
-/** Placeholder for dimension score (fleshed out in trust layer) */
-export interface DimensionScore {
-	dimension: string;
-	score: number;
-	maxScore: number;
-}
+/**
+ * Dimension score for derived state.
+ * Aligned with DimensionResult from the trust layer's canonical schema.
+ */
+export type DimensionScore = DimensionResult;
 
 // --- Finding ---
 
