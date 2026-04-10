@@ -1,0 +1,1 @@
+Derived state computer replays ~200-400 events per scope in <50ms. No-cache approach justified for v2.

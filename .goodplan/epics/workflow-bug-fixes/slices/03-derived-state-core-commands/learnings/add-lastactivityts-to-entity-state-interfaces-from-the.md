@@ -1,0 +1,1 @@
+Stale entity detection stubbed because DerivedStateData lacks per-entity timestamps.

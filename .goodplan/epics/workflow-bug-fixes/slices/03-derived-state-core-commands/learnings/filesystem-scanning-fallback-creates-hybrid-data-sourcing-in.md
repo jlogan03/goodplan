@@ -1,0 +1,1 @@
+Artifact file lists from filesystem, entity counts from derived state. Resolve as events added.

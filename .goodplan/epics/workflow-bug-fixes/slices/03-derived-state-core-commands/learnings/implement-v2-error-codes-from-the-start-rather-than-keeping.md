@@ -1,0 +1,1 @@
+STATE_ALREADY_INITIALIZED (v1) instead of ALREADY_EXISTS (v2). Creates migration debt.

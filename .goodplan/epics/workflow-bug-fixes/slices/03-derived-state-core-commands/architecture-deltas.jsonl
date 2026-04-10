@@ -1,0 +1,4 @@
+{"description":"Full derived state computer: computeDerivedState, reducers, accessors, serialize, replayAllScopes","subsystem":"engine/derived-state","ts":"2026-04-10T04:27:31.711Z","type":"add"}
+{"description":"Four v1 commands replaced with v2: init, status, schema, migrate","subsystem":"commands/global","ts":"2026-04-10T04:27:31.711Z","type":"modify"}
+{"description":"New src/schemas/events/ with project.ts. Convention: one file per entity.","subsystem":"schemas/events","ts":"2026-04-10T04:27:31.711Z","type":"add"}
+{"description":"CheckContext extended with optional derivedState field","subsystem":"engine/invariants","ts":"2026-04-10T04:27:31.711Z","type":"modify"}

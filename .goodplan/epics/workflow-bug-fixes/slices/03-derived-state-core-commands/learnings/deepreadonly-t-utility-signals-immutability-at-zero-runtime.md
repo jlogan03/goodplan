@@ -1,0 +1,1 @@
+Recursive type handling Map, Set, Array, plain objects. No Object.freeze overhead.
