@@ -1,23 +1,33 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { loadState } from "../../core/data/load.js";
 import { resolveProjectDir } from "../../core/data/project.js";
-import { getJson } from "../../core/tree.js";
-import type { UnifiedOverview } from "../../schemas/entities/overview.js";
+import { replayAllScopes } from "../../engine/derived-state/replay-all-scopes.js";
 import { output } from "../../util/output.js";
 import { applyPagination, formatPaginationFooter } from "../../util/pagination.js";
 import { globalArgs, listArgs } from "../global-args.js";
 
 /**
- * `gp epic:list` — list all epics.
+ * Epic summary for list output.
+ */
+interface EpicSummary {
+	name: string;
+	phase: string;
+	active: boolean;
+	paused: boolean;
+	completed: boolean;
+	abandoned: boolean;
+}
+
+/**
+ * `gp epic:list` (v2) — list all epics from event-sourced state.
  *
- * Read-only: goes directly to the data layer, no RPC.
- * Returns { items: Array<{ name, status, created, completed }> } from overview.json.
+ * Replays all scopes via replayAllScopes(), extracts epic entries
+ * from DerivedStateData.epics Map.
  */
 export const epicListCommand = defineCommand({
 	meta: {
 		name: "epic:list",
-		description: "List all epics with name, status, created, and completed timestamps.",
+		description: "List all epics with phase, active status, and completion state.",
 	},
 	args: {
 		...globalArgs,
@@ -25,12 +35,22 @@ export const epicListCommand = defineCommand({
 	},
 	setup() {},
 	async run({ args }) {
-		const projectDir = resolveProjectDir();
-		const state = loadState(projectDir);
+		const goodplanDir = resolveProjectDir();
+		const state = await replayAllScopes(goodplanDir);
 
-		// Treat missing overview.json as empty list (supports fresh projects with no epics yet)
-		const overview = getJson<UnifiedOverview>(state, "overview.json");
-		const paginated = applyPagination(overview?.epics ?? [], args);
+		const items: EpicSummary[] = [];
+		for (const [name, epic] of state.epics) {
+			items.push({
+				name,
+				phase: epic.phase,
+				active: epic.active,
+				paused: epic.paused,
+				completed: epic.completed,
+				abandoned: epic.abandoned,
+			});
+		}
+
+		const paginated = applyPagination(items, args);
 
 		if (args.json || args.query) {
 			output(paginated, args);
@@ -43,8 +63,14 @@ export const epicListCommand = defineCommand({
 					lines.push("No epics in this range.");
 				}
 				for (const item of paginated.items) {
-					const completedStr = item.completed !== null ? ` (completed ${item.completed})` : "";
-					lines.push(`  ${pc.bold(item.name)}  ${item.status}${completedStr}`);
+					const status = item.abandoned
+						? pc.yellow("abandoned")
+						: item.completed
+							? pc.green("completed")
+							: item.active
+								? pc.cyan("active")
+								: pc.dim(item.phase);
+					lines.push(`  ${pc.bold(item.name)}  ${status}`);
 				}
 				const footer = formatPaginationFooter(paginated);
 				if (footer !== undefined) {

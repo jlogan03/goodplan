@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { runCommand, withFixture } from "./helpers.js";
+import { buildBinary, runCommand, withFixture, withTempDir } from "./helpers.js";
 
 describe("show --json artifacts", () => {
 	it("slice:show --json includes artifacts field", async () => {
@@ -24,24 +24,24 @@ describe("show --json artifacts", () => {
 		});
 	});
 
-	it("epic:show --json includes artifacts field", async () => {
-		await withFixture("epic-activated", ({ env, bin }) => {
-			const result = runCommand(bin, ["epic:show", "--epic", "test-epic", "--json"], { env });
+	it("epic:show --json returns epic state (v2)", async () => {
+		await withTempDir(async (tmpDir) => {
+			const bin = buildBinary();
+
+			// Initialize and create epic
+			runCommand(bin, ["init", "--name", "test", "--json"], { cwd: tmpDir });
+			runCommand(bin, ["epic:create", "--name", "test-epic", "--json"], { cwd: tmpDir });
+
+			const result = runCommand(bin, ["epic:show", "--epic", "test-epic", "--json"], {
+				cwd: tmpDir,
+			});
 			expect(result.exitCode).toBe(0);
 			expect(result.json).toBeDefined();
 
-			const json = result.json as Record<string, unknown>;
-			expect(json.artifacts).toBeDefined();
-
-			const artifacts = json.artifacts as Record<string, unknown>;
-			// epic-activated has a goal, architecture/_overview.md, slices/sequencing.md
-			expect(artifacts.goal).toBe(true);
-			expect(artifacts.architectureDefined).toBe(true);
-			expect(artifacts.slicesDefined).toBe(true);
-			// Always false for epics
-			expect(artifacts.plan).toBe(false);
-			expect(artifacts.planRefined).toBe(false);
-			expect(artifacts.implementation).toBe(false);
+			const json = result.json as { ok: boolean; dir: string; phase: string };
+			expect(json.ok).toBe(true);
+			expect(json.dir).toBe("test-epic");
+			expect(json.phase).toBe("P0");
 		});
 	});
 
@@ -54,11 +54,16 @@ describe("show --json artifacts", () => {
 		});
 	});
 
-	it("epic:show without --json omits artifacts", async () => {
-		await withFixture("epic-activated", ({ env, bin }) => {
-			const result = runCommand(bin, ["epic:show", "--epic", "test-epic"], { env });
+	it("epic:show without --json shows human output (v2)", async () => {
+		await withTempDir(async (tmpDir) => {
+			const bin = buildBinary();
+
+			runCommand(bin, ["init", "--name", "test", "--json"], { cwd: tmpDir });
+			runCommand(bin, ["epic:create", "--name", "test-epic", "--json"], { cwd: tmpDir });
+
+			const result = runCommand(bin, ["epic:show", "--epic", "test-epic"], { cwd: tmpDir });
 			expect(result.exitCode).toBe(0);
-			expect(result.stdout).not.toContain("artifacts");
+			expect(result.stdout).toContain("test-epic");
 		});
 	});
 

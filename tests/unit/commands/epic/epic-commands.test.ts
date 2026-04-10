@@ -2,8 +2,8 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { rpcInit } from "../../../../src/core/rpc/init.js";
 import { begin } from "../../../../src/core/rpc/begin.js";
+import { rpcInit } from "../../../../src/core/rpc/init.js";
 import { submit } from "../../../../src/core/rpc/submit.js";
 import type { Verification } from "../../../../src/schemas/entities/epic.js";
 
@@ -103,7 +103,9 @@ async function runEpicAbandon(args: Record<string, unknown>) {
 }
 
 async function runEpicDefineArchitecture(args: Record<string, unknown>) {
-	const { epicDefineArchitectureCommand } = await import("../../../../src/commands/epic/define-architecture.js");
+	const { epicDefineArchitectureCommand } = await import(
+		"../../../../src/commands/epic/define-architecture.js"
+	);
 	const def = await epicDefineArchitectureCommand;
 	if (def.run) {
 		await def.run({
@@ -115,7 +117,9 @@ async function runEpicDefineArchitecture(args: Record<string, unknown>) {
 }
 
 async function runEpicRefineArchitecture(args: Record<string, unknown>) {
-	const { epicRefineArchitectureCommand } = await import("../../../../src/commands/epic/refine-architecture.js");
+	const { epicRefineArchitectureCommand } = await import(
+		"../../../../src/commands/epic/refine-architecture.js"
+	);
 	const def = await epicRefineArchitectureCommand;
 	if (def.run) {
 		await def.run({
@@ -127,7 +131,9 @@ async function runEpicRefineArchitecture(args: Record<string, unknown>) {
 }
 
 async function runEpicDefineSlices(args: Record<string, unknown>) {
-	const { epicDefineSlicesCommand } = await import("../../../../src/commands/epic/define-slices.js");
+	const { epicDefineSlicesCommand } = await import(
+		"../../../../src/commands/epic/define-slices.js"
+	);
 	const def = await epicDefineSlicesCommand;
 	if (def.run) {
 		await def.run({
@@ -139,7 +145,9 @@ async function runEpicDefineSlices(args: Record<string, unknown>) {
 }
 
 async function runEpicRefineSlices(args: Record<string, unknown>) {
-	const { epicRefineSlicesCommand } = await import("../../../../src/commands/epic/refine-slices.js");
+	const { epicRefineSlicesCommand } = await import(
+		"../../../../src/commands/epic/refine-slices.js"
+	);
 	const def = await epicRefineSlicesCommand;
 	if (def.run) {
 		await def.run({
@@ -176,10 +184,15 @@ async function runEpicComplete(args: Record<string, unknown>, stdin: Record<stri
 	}
 }
 
-async function runEpicAddVerification(args: Record<string, unknown>, stdin: Record<string, unknown> = {}) {
+async function runEpicAddVerification(
+	args: Record<string, unknown>,
+	stdin: Record<string, unknown> = {},
+) {
 	const stdinModule = await import("../../../../src/util/stdin.js");
 	vi.spyOn(stdinModule, "readStdin").mockResolvedValue(stdin);
-	const { epicAddVerificationCommand } = await import("../../../../src/commands/epic/add-verification.js");
+	const { epicAddVerificationCommand } = await import(
+		"../../../../src/commands/epic/add-verification.js"
+	);
 	const def = await epicAddVerificationCommand;
 	if (def.run) {
 		await def.run({
@@ -190,10 +203,15 @@ async function runEpicAddVerification(args: Record<string, unknown>, stdin: Reco
 	}
 }
 
-async function runEpicUpdateVerification(args: Record<string, unknown>, stdin: Record<string, unknown> = {}) {
+async function runEpicUpdateVerification(
+	args: Record<string, unknown>,
+	stdin: Record<string, unknown> = {},
+) {
 	const stdinModule = await import("../../../../src/util/stdin.js");
 	vi.spyOn(stdinModule, "readStdin").mockResolvedValue(stdin);
-	const { epicUpdateVerificationCommand } = await import("../../../../src/commands/epic/update-verification.js");
+	const { epicUpdateVerificationCommand } = await import(
+		"../../../../src/commands/epic/update-verification.js"
+	);
 	const def = await epicUpdateVerificationCommand;
 	if (def.run) {
 		await def.run({
@@ -204,7 +222,7 @@ async function runEpicUpdateVerification(args: Record<string, unknown>, stdin: R
 	}
 }
 
-// ── epic:create ──────────────────────────────────────────────
+// ── epic:create (v2) ─────────────────────────────────────────
 
 describe("epic:create", () => {
 	it("creates epic and returns JSON result", async () => {
@@ -215,14 +233,13 @@ describe("epic:create", () => {
 
 		const outputStr = chunks.join("");
 		const parsed = JSON.parse(outputStr);
-		expect(parsed.entity).toBe("my-epic");
-		expect(parsed.phase).toBe("create");
-		expect(parsed.previousStatus).toBe("none");
-		expect(parsed.newStatus).toBe("created");
+		expect(parsed.ok).toBe(true);
+		expect(parsed.entity).toBe("epic:my-epic");
+		expect(parsed.event).toBeTruthy();
 
-		// Verify on disk
-		const epicJson = path.join(projectDir, "epics", "my-epic", "epic.json");
-		expect(fs.existsSync(epicJson)).toBe(true);
+		// Verify events.jsonl on disk (v2 stores events, not epic.json)
+		const eventsJsonl = path.join(projectDir, "epics", "my-epic", "events.jsonl");
+		expect(fs.existsSync(eventsJsonl)).toBe(true);
 
 		restore();
 	});
@@ -235,8 +252,7 @@ describe("epic:create", () => {
 
 		const outputStr = chunks.join("");
 		expect(outputStr).toContain("my-epic");
-		expect(outputStr).toContain("->");
-		expect(outputStr).toContain("created");
+		expect(outputStr).toContain("Created");
 
 		restore();
 	});
@@ -249,26 +265,32 @@ describe("epic:create", () => {
 
 		expect(chunks.join("")).toBe("");
 
-		// But epic should still be created
-		const epicJson = path.join(projectDir, "epics", "my-epic", "epic.json");
-		expect(fs.existsSync(epicJson)).toBe(true);
+		// But epic events should still be created
+		const eventsJsonl = path.join(projectDir, "epics", "my-epic", "events.jsonl");
+		expect(fs.existsSync(eventsJsonl)).toBe(true);
 
 		restore();
 	});
 
-	it("rejects missing name", async () => {
+	it("rejects missing name via process.exit", async () => {
 		initProject();
 		const { restore } = captureStdout();
 
-		await expect(
-			runEpicCreate({ json: true }, { goal: "No name" }),
-		).rejects.toThrow();
+		// v2 epic:create calls process.exit(1) for missing name
+		const exitSpy = vi.spyOn(process, "exit").mockImplementation(() => {
+			throw new Error("process.exit called");
+		});
 
+		await expect(runEpicCreate({ json: true }, { goal: "No name" })).rejects.toThrow(
+			"process.exit called",
+		);
+
+		exitSpy.mockRestore();
 		restore();
 	});
 });
 
-// ── epic:list ────────────────────────────────────────────────
+// ── epic:list (v2) ───────────────────────────────────────────
 
 describe("epic:list", () => {
 	it("returns empty items when no epics exist", async () => {
@@ -279,13 +301,15 @@ describe("epic:list", () => {
 
 		const parsed = JSON.parse(chunks.join(""));
 		expect(parsed.items).toEqual([]);
+		expect(parsed.total).toBe(0);
 
 		restore();
 	});
 
 	it("returns epic items after creation", async () => {
 		initProject();
-		begin(projectDir, "create", { type: "epic", name: "e1" }, { name: "e1", goal: "G1" });
+		// Create epic via v2 command (event engine)
+		await runEpicCreate({ json: true }, { name: "e1" });
 
 		const { chunks, restore } = captureStdout();
 		await runEpicList({ json: true });
@@ -293,11 +317,7 @@ describe("epic:list", () => {
 		const parsed = JSON.parse(chunks.join(""));
 		expect(parsed.items).toHaveLength(1);
 		expect(parsed.items[0].name).toBe("e1");
-		expect(parsed.items[0].status).toBe("created");
-		expect(parsed.items[0].created).toBeDefined();
-		expect(parsed.items[0].completed).toBeNull();
-		// overview items do NOT include goal
-		expect(parsed.items[0].goal).toBeUndefined();
+		expect(parsed.items[0].phase).toBe("P0");
 
 		restore();
 	});
@@ -315,48 +335,53 @@ describe("epic:list", () => {
 	});
 });
 
-// ── epic:show ────────────────────────────────────────────────
+// ── epic:show (v2) ───────────────────────────────────────────
 
 describe("epic:show", () => {
-	it("returns full epic entity as JSON", async () => {
+	it("returns full epic state as JSON", async () => {
 		initProject();
-		begin(projectDir, "create", { type: "epic", name: "e1" }, { name: "e1", goal: "Test goal" });
+		// Create epic via v2 command
+		await runEpicCreate({ json: true }, { name: "e1" });
 
 		const { chunks, restore } = captureStdout();
 		await runEpicShow({ epic: "e1", json: true });
 
 		const parsed = JSON.parse(chunks.join(""));
-		expect(parsed.name).toBe("e1");
-		expect(parsed.status).toBe("created");
-		expect(parsed.goal).toBe("Test goal");
-		expect(parsed.verifications).toEqual([]);
-		expect(parsed.refinement).toBeNull();
+		expect(parsed.ok).toBe(true);
+		expect(parsed.dir).toBe("e1");
+		expect(parsed.phase).toBe("P0");
+		expect(parsed.active).toBe(false);
+		expect(parsed.abandoned).toBe(false);
 
 		restore();
 	});
 
-	it("throws for nonexistent epic", async () => {
+	it("exits with error for nonexistent epic", async () => {
 		initProject();
 		const { restore } = captureStdout();
 
-		await expect(
-			runEpicShow({ epic: "nonexistent", json: true }),
-		).rejects.toThrow("not found");
+		const exitSpy = vi.spyOn(process, "exit").mockImplementation(() => {
+			throw new Error("process.exit called");
+		});
 
+		await expect(runEpicShow({ epic: "nonexistent", json: true })).rejects.toThrow(
+			"process.exit called",
+		);
+
+		exitSpy.mockRestore();
 		restore();
 	});
 
 	it("shows human-readable epic details", async () => {
 		initProject();
-		begin(projectDir, "create", { type: "epic", name: "e1" }, { name: "e1", goal: "Test" });
+		await runEpicCreate({ json: true }, { name: "e1" });
 
 		const { chunks, restore } = captureStdout();
 		await runEpicShow({ epic: "e1" });
 
 		const outputStr = chunks.join("");
 		expect(outputStr).toContain("e1");
-		expect(outputStr).toContain("created");
-		expect(outputStr).toContain("Goal:");
+		expect(outputStr).toContain("P0");
 
 		restore();
 	});
@@ -433,7 +458,12 @@ describe("epic:define-slices", () => {
 		begin(projectDir, "define-architecture", { type: "epic", name: "e1" }, {});
 		submit(projectDir, "architecture", { type: "epic", name: "e1" }, { phase: "architecture" });
 		// Skip refine-architecture via COMPLETE_REFINE_ARCHITECTURE from architecture-defined
-		submit(projectDir, "refine-architecture", { type: "epic", name: "e1" }, { phase: "refine-architecture", scores: {} });
+		submit(
+			projectDir,
+			"refine-architecture",
+			{ type: "epic", name: "e1" },
+			{ phase: "refine-architecture", scores: {} },
+		);
 
 		const { chunks, restore } = captureStdout();
 		await runEpicDefineSlices({ epic: "e1", json: true });
@@ -456,7 +486,12 @@ describe("epic:refine-slices", () => {
 		submit(projectDir, "explore", { type: "epic", name: "e1" }, { phase: "explore" });
 		begin(projectDir, "define-architecture", { type: "epic", name: "e1" }, {});
 		submit(projectDir, "architecture", { type: "epic", name: "e1" }, { phase: "architecture" });
-		submit(projectDir, "refine-architecture", { type: "epic", name: "e1" }, { phase: "refine-architecture", scores: {} });
+		submit(
+			projectDir,
+			"refine-architecture",
+			{ type: "epic", name: "e1" },
+			{ phase: "refine-architecture", scores: {} },
+		);
 		begin(projectDir, "define-slices", { type: "epic", name: "e1" }, {});
 		submit(projectDir, "slices", { type: "epic", name: "e1" }, { phase: "slices" });
 
@@ -471,19 +506,20 @@ describe("epic:refine-slices", () => {
 	});
 });
 
-// ── epic:abandon ─────────────────────────────────────────────
+// ── epic:abandon (v2) ────────────────────────────────────────
 
 describe("epic:abandon", () => {
-	it("transitions epic to abandoned with reason", async () => {
+	it("abandons epic and returns JSON result", async () => {
 		initProject();
-		begin(projectDir, "create", { type: "epic", name: "e1" }, { name: "e1", goal: "G" });
+		// Create epic via v2 command
+		await runEpicCreate({ json: true }, { name: "e1" });
 
 		const { chunks, restore } = captureStdout();
 		await runEpicAbandon({ epic: "e1", reason: "Not needed", json: true });
 
 		const parsed = JSON.parse(chunks.join(""));
-		expect(parsed.previousStatus).toBe("created");
-		expect(parsed.newStatus).toBe("abandoned");
+		expect(parsed.ok).toBe(true);
+		expect(parsed.entity).toBe("epic:e1");
 
 		restore();
 	});
@@ -569,10 +605,20 @@ describe("epic:activate", () => {
 		submit(projectDir, "explore", { type: "epic", name: "e1" }, { phase: "explore" });
 		begin(projectDir, "define-architecture", { type: "epic", name: "e1" }, {});
 		submit(projectDir, "architecture", { type: "epic", name: "e1" }, { phase: "architecture" });
-		submit(projectDir, "refine-architecture", { type: "epic", name: "e1" }, { phase: "refine-architecture", scores: {} });
+		submit(
+			projectDir,
+			"refine-architecture",
+			{ type: "epic", name: "e1" },
+			{ phase: "refine-architecture", scores: {} },
+		);
 		begin(projectDir, "define-slices", { type: "epic", name: "e1" }, {});
 		submit(projectDir, "slices", { type: "epic", name: "e1" }, { phase: "slices" });
-		submit(projectDir, "refine-slices", { type: "epic", name: "e1" }, { phase: "refine-slices", scores: {} });
+		submit(
+			projectDir,
+			"refine-slices",
+			{ type: "epic", name: "e1" },
+			{ phase: "refine-slices", scores: {} },
+		);
 
 		// Add verification (required for activation)
 		const v: Verification = {
@@ -600,16 +646,24 @@ describe("epic:activate", () => {
 		submit(projectDir, "explore", { type: "epic", name: "e1" }, { phase: "explore" });
 		begin(projectDir, "define-architecture", { type: "epic", name: "e1" }, {});
 		submit(projectDir, "architecture", { type: "epic", name: "e1" }, { phase: "architecture" });
-		submit(projectDir, "refine-architecture", { type: "epic", name: "e1" }, { phase: "refine-architecture", scores: {} });
+		submit(
+			projectDir,
+			"refine-architecture",
+			{ type: "epic", name: "e1" },
+			{ phase: "refine-architecture", scores: {} },
+		);
 		begin(projectDir, "define-slices", { type: "epic", name: "e1" }, {});
 		submit(projectDir, "slices", { type: "epic", name: "e1" }, { phase: "slices" });
-		submit(projectDir, "refine-slices", { type: "epic", name: "e1" }, { phase: "refine-slices", scores: {} });
+		submit(
+			projectDir,
+			"refine-slices",
+			{ type: "epic", name: "e1" },
+			{ phase: "refine-slices", scores: {} },
+		);
 
 		const { restore } = captureStdout();
 
-		await expect(
-			runEpicActivate({ epic: "e1", json: true }),
-		).rejects.toThrow();
+		await expect(runEpicActivate({ epic: "e1", json: true })).rejects.toThrow();
 
 		restore();
 	});
@@ -625,10 +679,20 @@ describe("epic:complete", () => {
 		submit(projectDir, "explore", { type: "epic", name: "e1" }, { phase: "explore" });
 		begin(projectDir, "define-architecture", { type: "epic", name: "e1" }, {});
 		submit(projectDir, "architecture", { type: "epic", name: "e1" }, { phase: "architecture" });
-		submit(projectDir, "refine-architecture", { type: "epic", name: "e1" }, { phase: "refine-architecture", scores: {} });
+		submit(
+			projectDir,
+			"refine-architecture",
+			{ type: "epic", name: "e1" },
+			{ phase: "refine-architecture", scores: {} },
+		);
 		begin(projectDir, "define-slices", { type: "epic", name: "e1" }, {});
 		submit(projectDir, "slices", { type: "epic", name: "e1" }, { phase: "slices" });
-		submit(projectDir, "refine-slices", { type: "epic", name: "e1" }, { phase: "refine-slices", scores: {} });
+		submit(
+			projectDir,
+			"refine-slices",
+			{ type: "epic", name: "e1" },
+			{ phase: "refine-slices", scores: {} },
+		);
 
 		const v: Verification = {
 			description: "It works",
@@ -643,9 +707,7 @@ describe("epic:complete", () => {
 		await runEpicComplete(
 			{ epic: "e1", json: true },
 			{
-				verificationResults: [
-					{ index: 0, passed: true, notes: "All good" },
-				],
+				verificationResults: [{ index: 0, passed: true, notes: "All good" }],
 			},
 		);
 
@@ -657,83 +719,50 @@ describe("epic:complete", () => {
 	});
 });
 
-// ── Full lifecycle walkthrough ───────────────────────────────
+// ── v2 lifecycle walkthrough ─────────────────────────────────
 
-describe("full epic lifecycle via CLI commands", () => {
-	it("init -> create -> explore -> define-architecture -> define-slices -> add-verification -> activate -> abandon (second epic)", async () => {
+describe("v2 epic lifecycle via CLI commands", () => {
+	it("create -> show -> list -> abandon -> list (v2 event engine)", async () => {
 		initProject();
 		const { chunks, restore } = captureStdout();
 
-		// Create
-		await runEpicCreate({ json: true }, { name: "e1", goal: "Build it" });
+		// Create first epic
+		await runEpicCreate({ json: true }, { name: "e1" });
 		let parsed = JSON.parse(chunks.join(""));
-		expect(parsed.newStatus).toBe("created");
+		expect(parsed.ok).toBe(true);
+		expect(parsed.entity).toBe("epic:e1");
 		chunks.length = 0;
 
-		// Explore
-		await runEpicExplore({ epic: "e1", json: true });
+		// Show epic
+		await runEpicShow({ epic: "e1", json: true });
 		parsed = JSON.parse(chunks.join(""));
-		expect(parsed.newStatus).toBe("exploring");
+		expect(parsed.ok).toBe(true);
+		expect(parsed.phase).toBe("P0");
 		chunks.length = 0;
 
-		// Submit explore (via RPC directly since submit commands are Phase 6)
-		submit(projectDir, "explore", { type: "epic", name: "e1" }, { phase: "explore" });
-
-		// Define architecture
-		await runEpicDefineArchitecture({ epic: "e1", json: true });
-		parsed = JSON.parse(chunks.join(""));
-		expect(parsed.newStatus).toBe("defining-architecture");
+		// Create second epic
+		await runEpicCreate({ json: true }, { name: "e2" });
 		chunks.length = 0;
 
-		// Submit architecture
-		submit(projectDir, "architecture", { type: "epic", name: "e1" }, { phase: "architecture" });
-
-		// Skip refine-architecture
-		submit(projectDir, "refine-architecture", { type: "epic", name: "e1" }, { phase: "refine-architecture", scores: {} });
-
-		// Define slices
-		await runEpicDefineSlices({ epic: "e1", json: true });
-		parsed = JSON.parse(chunks.join(""));
-		expect(parsed.newStatus).toBe("defining-slices");
-		chunks.length = 0;
-
-		// Submit slices
-		submit(projectDir, "slices", { type: "epic", name: "e1" }, { phase: "slices" });
-
-		// Skip refine-slices
-		submit(projectDir, "refine-slices", { type: "epic", name: "e1" }, { phase: "refine-slices", scores: {} });
-
-		// Add verification
-		const v: Verification = {
-			description: "It works",
-			status: "pending",
-			addedDuring: "defining-slices",
-			modifiedDuring: null,
-		};
-		await runEpicAddVerification({ epic: "e1", json: true }, { verification: v });
-		parsed = JSON.parse(chunks.join(""));
-		expect(parsed.entity).toBe("e1");
-		chunks.length = 0;
-
-		// Activate
-		await runEpicActivate({ epic: "e1", json: true });
-		parsed = JSON.parse(chunks.join(""));
-		expect(parsed.newStatus).toBe("activated");
-		chunks.length = 0;
-
-		// Create second epic and abandon it
-		await runEpicCreate({ json: true }, { name: "e2", goal: "Another epic" });
-		chunks.length = 0;
-
-		await runEpicAbandon({ epic: "e2", reason: "Changed plans", json: true });
-		parsed = JSON.parse(chunks.join(""));
-		expect(parsed.newStatus).toBe("abandoned");
-		chunks.length = 0;
-
-		// List should show both epics
+		// List should show both
 		await runEpicList({ json: true });
 		parsed = JSON.parse(chunks.join(""));
 		expect(parsed.items).toHaveLength(2);
+		expect(parsed.total).toBe(2);
+		chunks.length = 0;
+
+		// Abandon second epic
+		await runEpicAbandon({ epic: "e2", reason: "Changed plans", json: true });
+		parsed = JSON.parse(chunks.join(""));
+		expect(parsed.ok).toBe(true);
+		expect(parsed.entity).toBe("epic:e2");
+		chunks.length = 0;
+
+		// Show abandoned epic
+		await runEpicShow({ epic: "e2", json: true });
+		parsed = JSON.parse(chunks.join(""));
+		expect(parsed.ok).toBe(true);
+		expect(parsed.abandoned).toBe(true);
 
 		restore();
 	});

@@ -7,6 +7,8 @@ import {
 	epicArchitectureTargetRequiredBeforeSliceSet,
 	epicDirUnique,
 	epicGoalCommittedBeforeExplore,
+	epicNotAbandoned,
+	epicNotCompleted,
 	epicPressureTestRequiredBeforeSliceSet,
 	epicSingleActivePerBranch,
 	epicSliceShapeApprovalRequired,
@@ -36,7 +38,7 @@ export function createCoreRegistry(): InvariantRegistry {
 	// Project rules (1)
 	registry.register(projectExists);
 
-	// Epic rules (8)
+	// Epic rules (10)
 	registry.register(epicSingleActivePerBranch);
 	registry.register(epicDirUnique);
 	registry.register(epicGoalCommittedBeforeExplore);
@@ -45,6 +47,8 @@ export function createCoreRegistry(): InvariantRegistry {
 	registry.register(epicArchitectureShapeApprovalRequired);
 	registry.register(epicSliceShapeApprovalRequired);
 	registry.register(epicAllSlicesLandedBeforeComplete);
+	registry.register(epicNotAbandoned);
+	registry.register(epicNotCompleted);
 
 	// Slice rules (7)
 	registry.register(sliceSingleActivePerBranch);

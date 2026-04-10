@@ -178,8 +178,9 @@ registerCommand(
 );
 
 // Epic commands
-registerCommand("epic:create", "Create a new epic. Stdin: {name, goal}.", {
+registerCommand("epic:create", "Create a new epic. Accepts --name flag or stdin JSON { name }.", {
 	...globalArgDefs,
+	name: { type: "string", description: "Epic name (used as directory slug)", required: false },
 });
 registerCommand(
 	"epic:list",

@@ -2,6 +2,13 @@ import { z } from "zod";
 import type { InvariantRule } from "../types.js";
 import { countMatching, hasEventOfType, narrowPayload } from "./_helpers.js";
 
+/**
+ * Set of event types that represent terminal states.
+ * These event types should NOT be blocked by not-abandoned/not-completed rules
+ * because they are the events that SET those states.
+ */
+const TERMINAL_EVENT_TYPES = new Set(["epic-created", "epic-completed", "epic-abandoned"]);
+
 // Payload schema for epic-created events (directory field)
 const EpicCreatedPayload = z.object({
 	directory: z.string().min(1),
@@ -153,6 +160,42 @@ export const epicSliceShapeApprovalRequired: InvariantRule = {
 		if (hasEventOfType(ctx, "slice-set-shape-approved")) return null;
 		return {
 			message: "Cannot start slice refinement without slice set shape approval.",
+		};
+	},
+};
+
+/**
+ * epic.not-abandoned: Cannot append events to an abandoned epic.
+ * Terminal events (epic-created, epic-completed, epic-abandoned) are exempt.
+ */
+export const epicNotAbandoned: InvariantRule = {
+	id: "epic.not-abandoned",
+	ruleType: "precondition",
+	description: "Cannot append events to an abandoned epic",
+	appliesTo: ["entity-lifecycle", "exploration", "pressure-test", "refinement", "pause-steering"],
+	check(event, ctx) {
+		if (TERMINAL_EVENT_TYPES.has(event.type)) return null;
+		if (!hasEventOfType(ctx, "epic-abandoned")) return null;
+		return {
+			message: "Cannot modify an abandoned epic.",
+		};
+	},
+};
+
+/**
+ * epic.not-completed: Cannot append events to a completed epic.
+ * Terminal events (epic-created, epic-completed, epic-abandoned) are exempt.
+ */
+export const epicNotCompleted: InvariantRule = {
+	id: "epic.not-completed",
+	ruleType: "precondition",
+	description: "Cannot append events to a completed epic",
+	appliesTo: ["entity-lifecycle", "exploration", "pressure-test", "refinement", "pause-steering"],
+	check(event, ctx) {
+		if (TERMINAL_EVENT_TYPES.has(event.type)) return null;
+		if (!hasEventOfType(ctx, "epic-completed")) return null;
+		return {
+			message: "Cannot modify a completed epic.",
 		};
 	},
 };

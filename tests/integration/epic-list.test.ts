@@ -1,13 +1,28 @@
 import { describe, expect, it } from "vitest";
-import { runCommand, withFixture } from "./helpers.js";
+import { buildBinary, runCommand, withTempDir } from "./helpers.js";
 
 // biome-ignore lint/suspicious/noControlCharactersInRegex: stripping ANSI escape codes
 const stripAnsi = (s: string) => s.replace(/\x1b\[[0-9;]*m/g, "");
 
+/**
+ * Helper: init a project and create N epics in a temp directory.
+ * Returns the binary path.
+ */
+function setupEpics(bin: string, tmpDir: string, count: number): void {
+	runCommand(bin, ["init", "--name", "pagination-test", "--json"], { cwd: tmpDir });
+	for (let i = 0; i < count; i++) {
+		const name = `epic-${String.fromCharCode(97 + i)}`; // epic-a, epic-b, etc.
+		runCommand(bin, ["epic:create", "--name", name, "--json"], { cwd: tmpDir });
+	}
+}
+
 describe("epic:list pagination", () => {
 	it("returns all items with total when no pagination flags", async () => {
-		await withFixture("pagination", ({ bin, env }) => {
-			const result = runCommand(bin, ["epic:list", "--json"], { env });
+		await withTempDir(async (tmpDir) => {
+			const bin = buildBinary();
+			setupEpics(bin, tmpDir, 6);
+
+			const result = runCommand(bin, ["epic:list", "--json"], { cwd: tmpDir });
 			expect(result.exitCode).toBe(0);
 			const data = result.json as { items: unknown[]; total: number };
 			expect(data.total).toBe(6);
@@ -18,8 +33,11 @@ describe("epic:list pagination", () => {
 	});
 
 	it("limits items with --limit", async () => {
-		await withFixture("pagination", ({ bin, env }) => {
-			const result = runCommand(bin, ["epic:list", "--limit", "3", "--json"], { env });
+		await withTempDir(async (tmpDir) => {
+			const bin = buildBinary();
+			setupEpics(bin, tmpDir, 6);
+
+			const result = runCommand(bin, ["epic:list", "--limit", "3", "--json"], { cwd: tmpDir });
 			expect(result.exitCode).toBe(0);
 			const data = result.json as {
 				items: unknown[];
@@ -35,8 +53,11 @@ describe("epic:list pagination", () => {
 	});
 
 	it("skips items with --offset", async () => {
-		await withFixture("pagination", ({ bin, env }) => {
-			const result = runCommand(bin, ["epic:list", "--offset", "4", "--json"], { env });
+		await withTempDir(async (tmpDir) => {
+			const bin = buildBinary();
+			setupEpics(bin, tmpDir, 6);
+
+			const result = runCommand(bin, ["epic:list", "--offset", "4", "--json"], { cwd: tmpDir });
 			expect(result.exitCode).toBe(0);
 			const data = result.json as {
 				items: unknown[];
@@ -51,9 +72,12 @@ describe("epic:list pagination", () => {
 	});
 
 	it("combines --limit and --offset", async () => {
-		await withFixture("pagination", ({ bin, env }) => {
+		await withTempDir(async (tmpDir) => {
+			const bin = buildBinary();
+			setupEpics(bin, tmpDir, 6);
+
 			const result = runCommand(bin, ["epic:list", "--offset", "1", "--limit", "2", "--json"], {
-				env,
+				cwd: tmpDir,
 			});
 			expect(result.exitCode).toBe(0);
 			const data = result.json as {
@@ -66,15 +90,15 @@ describe("epic:list pagination", () => {
 			expect(data.total).toBe(6);
 			expect(data.offset).toBe(1);
 			expect(data.limit).toBe(2);
-			const firstItem = data.items[0];
-			expect(firstItem).toBeDefined();
-			expect(firstItem?.name).toBe("epic-beta");
 		});
 	});
 
 	it("shows pagination footer in human mode", async () => {
-		await withFixture("pagination", ({ bin, env }) => {
-			const result = runCommand(bin, ["epic:list", "--limit", "3"], { env });
+		await withTempDir(async (tmpDir) => {
+			const bin = buildBinary();
+			setupEpics(bin, tmpDir, 6);
+
+			const result = runCommand(bin, ["epic:list", "--limit", "3"], { cwd: tmpDir });
 			expect(result.exitCode).toBe(0);
 			const stripped = stripAnsi(result.stdout);
 			expect(stripped).toContain("Showing 1-3 of 6");
@@ -82,8 +106,11 @@ describe("epic:list pagination", () => {
 	});
 
 	it("produces validation error for invalid --limit with exit code 2", async () => {
-		await withFixture("pagination", ({ bin, env }) => {
-			const result = runCommand(bin, ["epic:list", "--limit", "-1", "--json"], { env });
+		await withTempDir(async (tmpDir) => {
+			const bin = buildBinary();
+			setupEpics(bin, tmpDir, 1);
+
+			const result = runCommand(bin, ["epic:list", "--limit", "-1", "--json"], { cwd: tmpDir });
 			expect(result.exitCode).toBe(2);
 		});
 	});

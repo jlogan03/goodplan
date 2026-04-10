@@ -4,3 +4,27 @@
 
 export { projectInitializedPayloadSchema } from "./project.js";
 export type { ProjectInitializedPayload } from "./project.js";
+
+export {
+	EpicEventMap,
+	epicCreatedPayloadSchema,
+	epicAbandonedPayloadSchema,
+	epicGoalDraftedPayloadSchema,
+	epicGoalCommittedPayloadSchema,
+	epicActivatedPayloadSchema,
+	epicCompletedPayloadSchema,
+	epicPausedPayloadSchema,
+	epicResumedPayloadSchema,
+} from "./epic.js";
+export type {
+	EpicEventType,
+	EpicEventPayload,
+	EpicCreatedPayload,
+	EpicAbandonedPayload,
+	EpicGoalDraftedPayload,
+	EpicGoalCommittedPayload,
+	EpicActivatedPayload,
+	EpicCompletedPayload,
+	EpicPausedPayload,
+	EpicResumedPayload,
+} from "./epic.js";

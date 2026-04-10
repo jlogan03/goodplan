@@ -26,7 +26,7 @@ export function reduceEntityLifecycle(state: DerivedStateData, event: AnyEventEn
 		}
 
 		case "epic-created": {
-			const dir = (payload.dir as string) ?? event.scopeRef ?? "";
+			const dir = (payload.directory as string) ?? (payload.dir as string) ?? event.scopeRef ?? "";
 			const epicState = createEmptyEpicState(dir);
 			state.epics.set(dir, epicState);
 			break;

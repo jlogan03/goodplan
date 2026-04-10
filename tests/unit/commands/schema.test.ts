@@ -267,7 +267,6 @@ describe("stdinSchemaRegistry drift detection", () => {
 			"epic:complete",
 			"epic:add-verification",
 			"epic:update-verification",
-			"migrate",
 			"slice:create",
 			"slice:complete",
 			"quest:create",
