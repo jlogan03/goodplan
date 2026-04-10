@@ -15,3 +15,8 @@ export { architectureTargetExtractor } from "./architecture-target.js";
 export { planExtractor } from "./plan.js";
 export { epicGoalExtractor } from "./epic-goal.js";
 export { sliceGoalExtractor } from "./slice-goal.js";
+export { sideQuestGoalExtractor } from "./side-quest-goal.js";
+export { briefingExtractor } from "./briefing.js";
+export { pressureTestExtractor } from "./pressure-test.js";
+export { findingExtractor } from "./finding.js";
+export { subsystemExtractor } from "./subsystem.js";
