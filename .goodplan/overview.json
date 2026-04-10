@@ -27,7 +27,7 @@
 					"completed": null,
 					"created": "2026-04-09T22:27:17.271Z",
 					"name": "04-refinement-loop-extractors",
-					"status": "created"
+					"status": "plan-refined"
 				},
 				{
 					"completed": null,
@@ -81,6 +81,13 @@
 			"status": "activated"
 		}
 	],
-	"quests": [],
+	"quests": [
+		{
+			"completed": null,
+			"created": "2026-04-10T14:24:28.373Z",
+			"name": "tracer-bullet-integration",
+			"status": "implementing"
+		}
+	],
 	"tasks": []
 }

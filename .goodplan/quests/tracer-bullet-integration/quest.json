@@ -1,0 +1,20 @@
+{
+	"created": "2026-04-10T14:24:28.373Z",
+	"goal": "Insert tracer bullet integration testing into the epic sequencing so v2 code is exercised through the Agent SDK harness incrementally after each command/skill slice, rather than deferring all integration testing to slice 12",
+	"name": "tracer-bullet-integration",
+	"refinement": {
+		"maxRounds": 10,
+		"round": 1,
+		"scoreHistory": [
+			{
+				"round": 1,
+				"scores": {
+					"holistic": 9,
+					"software-architecture": 9
+				}
+			}
+		]
+	},
+	"status": "implementing",
+	"updated": "2026-04-10T14:48:25.749Z"
+}
