@@ -1,0 +1,1 @@
+Avoids JS keyword collision and event.type confusion. Architecture doc needs updating.

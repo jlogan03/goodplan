@@ -1,0 +1,1 @@
+lastEvent, findLatest, countMatching, hasEventOfType, narrowPayload used across all rules.

@@ -1,0 +1,1 @@
+Pre-building Map<string, events[]> indexes eliminated per-rule linear scans and kept rule implementations to 3-15 lines each.
