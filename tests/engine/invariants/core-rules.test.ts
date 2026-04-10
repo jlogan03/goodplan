@@ -1,0 +1,59 @@
+import { describe, expect, it } from "vitest";
+import { createCoreRegistry } from "../../../src/engine/invariants/core-rules.js";
+
+describe("createCoreRegistry", () => {
+	it("registers exactly 17 entity-lifecycle rules", () => {
+		const registry = createCoreRegistry();
+		expect(registry.getAll()).toHaveLength(17);
+	});
+
+	it("has no duplicate IDs", () => {
+		const registry = createCoreRegistry();
+		const ids = registry.getAll().map((r) => r.id);
+		expect(new Set(ids).size).toBe(ids.length);
+	});
+
+	it("contains all expected rule IDs", () => {
+		const registry = createCoreRegistry();
+		const ids = new Set(registry.getAll().map((r) => r.id));
+
+		const expected = [
+			"project.exists",
+			"epic.single-active-per-branch",
+			"epic.dir.unique",
+			"epic.goal.committed-before-explore",
+			"epic.architecture-target-required-before-slice-set",
+			"epic.pressure-test-required-before-slice-set",
+			"epic.architecture-shape-approval-required",
+			"epic.slice-shape-approval-required",
+			"epic.all-slices-landed-before-complete",
+			"slice.single-active-per-branch",
+			"slice.plan-shape-approval-required",
+			"slice.plan-converged-before-implement",
+			"slice.plan-chunks-decidable",
+			"slice.chunks-all-decided-before-code-refine",
+			"slice.code-refinement-converged-before-land",
+			"slice.deps-landed-before-start",
+			"side-quest.single-active-per-branch",
+		];
+
+		for (const id of expected) {
+			expect(ids.has(id)).toBe(true);
+		}
+	});
+
+	it("returns rules retrievable by domain", () => {
+		const registry = createCoreRegistry();
+		const entityLifecycle = registry.getByDomain("entity-lifecycle");
+		// All 17 rules include entity-lifecycle in their appliesTo
+		expect(entityLifecycle.length).toBeGreaterThanOrEqual(17);
+	});
+
+	it("returns a fresh registry each call (no shared state)", () => {
+		const a = createCoreRegistry();
+		const b = createCoreRegistry();
+		expect(a).not.toBe(b);
+		expect(a.getAll()).toHaveLength(17);
+		expect(b.getAll()).toHaveLength(17);
+	});
+});
