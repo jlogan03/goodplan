@@ -2,6 +2,12 @@ export {
 	ExtractorRegistry,
 	parseFrontmatter,
 	extractFencedYaml,
+	createCoreExtractorRegistry,
+	architectureExtractor,
+	architectureTargetExtractor,
+	planExtractor,
+	epicGoalExtractor,
+	sliceGoalExtractor,
 } from "./extractors/index.js";
 export type {
 	ExtractErrorCode,
