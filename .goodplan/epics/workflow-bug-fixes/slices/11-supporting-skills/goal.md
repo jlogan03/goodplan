@@ -32,6 +32,17 @@ Build the supporting skills for v2: `create-side-quest`, `implement-side-quest`,
 5. Side-quest lifecycle end-to-end: create -> implement -> land
 6. All skills follow patterns established in slice 08
 
+## Verification Tier
+
+**Tier: Agent SDK harness tests**
+
+Create or extend `tools/dogfood/test-supporting-skills-v2.ts` exercising side-quest and audit skills through the Agent SDK harness.
+
+At minimum, cover:
+- `create-side-quest` skill creates a side quest via v2 `gp side-quest:*` commands
+- Side-quest lifecycle: create -> implement -> land through skills
+- `audit` skill dispatches to agents and produces structured findings
+
 ## Estimated Sessions
 
 1-2

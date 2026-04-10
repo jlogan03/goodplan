@@ -36,6 +36,18 @@ Rewrite the core Claude Code skills for v2: `workflow-guide` (always-on orientat
 5. `task` skill captures lightweight tasks using v2 commands
 6. All 5 skills follow consistent patterns for CLI invocation, error handling, and output
 
+## Verification Tier
+
+**Tier: Agent SDK harness tests**
+
+Create `tools/dogfood/test-core-skills-v2.ts` exercising each skill through the Agent SDK harness. Pattern: `query()` with `permissionMode: "bypassPermissions"`, `plugins: [{ type: "local", path: PLUGIN_DIR }]`, `settingSources: []`, `env: createTestEnv(PLUGIN_DIR)`.
+
+At minimum, cover:
+- `/gp:init` skill initializes a project in a temp directory (existing `test-init.ts` pattern, adapted for v2 commands)
+- `/gp:status` skill returns structured project state
+- `workflow-guide` skill provides orientation text referencing v2 commands
+- All skills invoke the local `gp` binary (not v1 state mutations) for state changes
+
 ## Estimated Sessions
 
 1-2

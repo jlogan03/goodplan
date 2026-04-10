@@ -301,3 +301,43 @@ export default defineCommand({
   },
 });
 ```
+
+## Command Integration Test Pattern
+
+All command-layer slices (05, 06, 07b) and trust-layer slice 07a include CLI binary integration tests. The pattern uses `Bun.spawnSync` to invoke the built `gp` binary (resolved via absolute path) against fixture repos:
+
+```typescript
+import { spawnSync } from "bun";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { createTestEnv } from "./utils";
+
+// Resolve binary path absolutely (not relative ./gp)
+const GP_BIN = join(import.meta.dir, "..", "gp");
+
+// Setup
+const dir = mkdtempSync(join(tmpdir(), "gp-test-"));
+const gp = (args: string[]) => {
+  const result = spawnSync([GP_BIN, ...args], { cwd: dir, env: createTestEnv(dir) });
+  return {
+    exitCode: result.exitCode,
+    stdout: result.stdout.toString(),
+    stderr: result.stderr.toString(),
+    json: () => JSON.parse(result.stdout.toString()),
+  };
+};
+
+// Init fixture
+gp(["init", "--non-interactive"]);
+
+// Exercise commands
+const createResult = gp(["epic:create", "--name", "test-epic", "--json"]);
+assert(createResult.exitCode === 0);
+assert(createResult.json().ok === true);
+
+// Teardown
+rmSync(dir, { recursive: true });
+```
+
+This pattern extends the approach from `scripts/smoke-event-engine.ts` but operates at the CLI binary level rather than importing modules directly. Each command-layer slice adds tests to `tests/commands/<namespace>/`.

@@ -42,6 +42,20 @@ Implement all remaining CLI commands for supporting entities: side-quests, findi
 9. `gp project:show` displays project state, `gp project:set-steering` updates steering config
 10. All invariants enforced (e.g., can't land a side-quest that hasn't started, can't supersede a non-existent decision)
 
+## Verification Tier
+
+**Tier: CLI binary integration tests**
+
+Integration tests in `tests/commands/` exercising all ~25 supporting entity commands via `Bun.spawnSync`. Pattern: create temp dir, init, create epic (for scoping), then exercise entity commands.
+
+At minimum, cover:
+- Side-quest lifecycle: create -> implement-start -> chunk-start -> chunk-verify -> land
+- Finding lifecycle: capture -> triage -> list/show
+- Decision lifecycle: record -> supersede -> list/show
+- Learning lifecycle: capture -> promote -> list/show
+- Events query: events:tail returns recent events
+- Invariant enforcement on each entity type
+
 ## Estimated Sessions
 
 2-3

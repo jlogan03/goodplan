@@ -47,6 +47,30 @@ If the slice overflows 3 sessions, split at the boundary between step 2 and step
 5. Context bundle returned by phase-starting commands contains expected fields
 6. `gp epic:pause` / `resume` / `abandon` work correctly with proper invariant enforcement
 
+## Verification Tier
+
+**Tier: CLI binary integration tests + Context Bundler unit tests**
+
+This slice owns the Context Bundler (`src/context/`), which is a pure computational module. It requires both:
+
+1. **Unit tests** in `tests/context/` exercising the Context Bundler with mock `DerivedStateData` inputs (no CLI needed)
+2. **CLI binary integration tests** in `tests/commands/epic/` exercising the `gp` binary via `Bun.spawnSync` against a fixture repo in `/tmp`
+
+This supplements the existing integration tests in `tests/commands/` referenced in the slice goal.
+
+CLI integration test pattern:
+
+1. Create a temp directory with `gp init` (via spawnSync, using absolute binary path)
+2. Run the command sequence under test (e.g., `gp epic:create`, `gp epic:goal-draft`, etc.)
+3. Assert on exit codes, stdout JSON (parsed), and resulting event log entries
+4. Clean up the temp directory
+
+At minimum, cover:
+- Epic creation + list/show round-trip
+- Full lifecycle: create -> goal -> architecture -> pressure-test -> slices -> activate -> complete
+- Error paths: invariant violations produce correct error codes and messages
+- Context bundle: phase-starting commands return expected bundle fields
+
 ## Estimated Sessions
 
 3-4

@@ -33,6 +33,22 @@ Build the full reviewer registry (YAML frontmatter, routing function, relevance 
 7. `gp rubric:show <id>` displays rubric criteria and scoring dimensions
 8. `gp rubric:validate` detects missing rubrics, orphaned references, and schema errors
 
+## Verification Tier
+
+**Tier: Trust-layer unit tests + CLI binary integration tests**
+
+Slice 07a is architecturally in the Trust layer, not the Command layer. It has a dual nature: trust-layer logic (reviewer registry, routing, YAML rubric parsing) and CLI commands (`gp reviewer:*`, `gp rubric:*`). Both need verification:
+
+1. **Unit tests** in `tests/trust/` exercising reviewer registry, routing logic, and YAML rubric parsing with mock data (no CLI needed)
+2. **CLI binary integration tests** in `tests/trust/` exercising reviewer and rubric CLI commands via `Bun.spawnSync` against a fixture repo in `/tmp`
+
+At minimum, cover:
+- `gp reviewer:list` returns all registered reviewers with valid metadata
+- `gp reviewer:show <id>` returns correct reviewer details
+- `gp rubric:list` returns all rubrics
+- `gp rubric:validate` detects intentionally broken rubric fixtures
+- Registry correctly routes review requests to matching reviewers (unit test)
+
 ## Estimated Sessions
 
 1-2

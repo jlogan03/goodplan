@@ -36,6 +36,19 @@ Implement the full `gp slice:*` command surface (~14 commands) including the chu
 6. Context bundle returned by phase-starting commands contains expected fields
 7. Invariants enforce correct ordering (e.g., can't land without completing implementation)
 
+## Verification Tier
+
+**Tier: CLI binary integration tests**
+
+Integration tests in `tests/commands/slice/` exercising the `gp` binary (resolved via absolute path) using `Bun.spawnSync` against a fixture repo. Pattern: create temp dir, init, create epic, activate, then exercise slice commands.
+
+At minimum, cover:
+- Slice creation within an active epic + list/show round-trip
+- Full lifecycle: create -> plan-draft -> plan-commit -> implement-start -> chunk lifecycle -> code-refine -> land
+- Chunk lifecycle paths: start -> verify -> complete, and start -> fail, and start -> skip
+- Invariant enforcement: can't land without completing implementation, can't start chunk before implement-start
+- Context bundle fields from phase-starting commands
+
 ## Estimated Sessions
 
 2-3

@@ -34,6 +34,18 @@ Build the slice execution skills for v2: `plan-slice` (P7+P8+P9 with plan-shape 
 5. Code refinement boundary event (`code-refinement-converged`) correctly triggers P11->P12 transition
 6. Dogfood harness exercises the full slice pipeline (plan -> implement -> land)
 
+## Verification Tier
+
+**Tier: Agent SDK harness tests**
+
+Create or extend `tools/dogfood/test-slice-execution-v2.ts` exercising the slice execution pipeline through the Agent SDK harness.
+
+At minimum, cover:
+- `plan-slice` skill produces a plan via v2 `gp slice:*` commands
+- `implement-slice` skill emits chunk lifecycle events
+- `land-slice` skill completes the slice and detects final-slice epic completion
+- Full pipeline: plan -> implement -> land produces expected event sequence
+
 ## Estimated Sessions
 
 2-3

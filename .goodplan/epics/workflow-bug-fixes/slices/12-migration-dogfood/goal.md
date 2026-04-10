@@ -2,7 +2,7 @@
 
 ## Goal
 
-Implement the full `gp migrate` command (v1 -> v2 state migration) and update the dogfood test harness to exercise the complete v2 system end-to-end against real project state.
+Implement the full `gp migrate` command (v1 -> v2 state migration) and run the capstone end-to-end dogfood test against real project state. By this point, each preceding slice has its own tier-appropriate integration tests (CLI binary tests for 05-07b, Agent SDK harness tests for 08-11). This slice validates the full system works together against real `.goodplan/` state, and that migration from v1 produces a valid v2 event log.
 
 ## In Scope
 

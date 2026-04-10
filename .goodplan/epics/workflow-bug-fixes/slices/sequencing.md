@@ -27,6 +27,23 @@ This epic replaces the mutable-state-machine CLI with an event-sourced system. T
 
 **Total estimated sessions: 24-33**
 
+## Verification Strategy
+
+Each slice includes tier-appropriate integration testing. The tiers escalate with architectural layer:
+
+| Layer | Slices | Verification Tier | Pattern | Location |
+|---|---|---|---|---|
+| Engine (L0) | 01-03 | Unit tests + smoke script | Direct module imports, `Bun.spawnSync` on `gp` binary | `tests/`, `scripts/smoke-event-engine.ts` |
+| Trust Foundation (L1) | 04 | Unit tests + smoke script | Same as L0 | `tests/` |
+| Trust (L1) | 07a | Unit tests + CLI binary integration tests | Unit tests for registry/routing/parsing; `Bun.spawnSync` for CLI commands | `tests/trust/` |
+| Command (L2) | 05, 06, 07b | CLI binary integration tests (+unit tests for 05 Context Bundler) | `Bun.spawnSync` on `gp` binary against fixture repos in `/tmp` | `tests/commands/`, `tests/context/` |
+| Skill (L3) | 08-11 | Agent SDK harness tests | `query()` with local plugin, isolated env | `tools/dogfood/` |
+| Capstone (L4) | 12 | Full end-to-end dogfood | Agent SDK harness against real `.goodplan/` state | `tools/dogfood/` |
+
+**Principle: cheapest effective verification.** CLI binary tests (`Bun.spawnSync`) are sufficient for command-layer slices because they exercise the full command path (args -> derived state -> invariants -> event append -> output). Agent SDK harness tests are needed for skill-layer slices because they exercise the skill-to-CLI boundary (LLM decides which commands to call, parses output, handles errors).
+
+**Repo vs installed plugin:** Changes to the repo do not affect the installed `gp` CLI or plugin. Slices can freely replace v1 commands with v2 commands. The installed plugin remains v1 throughout the epic. Test harnesses use the local `gp` build (resolved via absolute path, e.g., `join(import.meta.dir, "..", "gp")`) and `plugins: [{ type: "local", path: PLUGIN_DIR }]` (local plugin build), never the installed versions.
+
 ## Dependency Graph
 
 ```

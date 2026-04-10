@@ -30,6 +30,18 @@ Rewrite the epic creation and exploration skills for v2: `create-epic` (design-t
 5. `explore` skill correctly handles collaborative mode (waits for user input)
 6. Dogfood harness exercises the create-epic pipeline end-to-end
 
+## Verification Tier
+
+**Tier: Agent SDK harness tests**
+
+Create or extend `tools/dogfood/test-create-epic-v2.ts` exercising the create-epic pipeline through the Agent SDK harness.
+
+At minimum, cover:
+- `create-epic` skill produces an epic with goal, architecture, and slices via v2 `gp epic:*` commands
+- Shape checkpoint commands are called during the flow
+- `start-epic` skill activates the epic
+- Event log contains expected event sequence (verified via `gp events:tail --json`)
+
 ## Estimated Sessions
 
 1-2
