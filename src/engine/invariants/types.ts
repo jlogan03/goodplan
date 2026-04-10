@@ -1,3 +1,4 @@
+import type { DerivedStateData } from "../../schemas/entities/derived-state.js";
 import type { AnyEventEnvelope, EventDomain } from "../../schemas/envelope.js";
 
 export type InvariantRuleType =
@@ -11,8 +12,8 @@ export type InvariantRuleType =
 
 /**
  * Context passed to every invariant check function.
- * Currently wraps priorEvents; designed for forward-compatible extension
- * with derivedState in slice 03 without bulk-refactoring all 24 invariants.
+ * Extended in slice 03 with optional derivedState for richer checks.
+ * Existing invariants continue to work unchanged (field is optional).
  */
 export interface CheckContext {
 	/** All prior events in this scope, unfiltered, in log order */
@@ -21,13 +22,19 @@ export interface CheckContext {
 	eventsByType: ReadonlyMap<string, readonly AnyEventEnvelope[]>;
 	/** Pre-indexed events by scopeRef for O(1) entity-scoped lookups */
 	eventsByScopeRef: ReadonlyMap<string, readonly AnyEventEnvelope[]>;
+	/** Derived state computed from the same event array. Optional for backward compat. */
+	derivedState?: DerivedStateData;
 }
 
 /**
  * Build a CheckContext from a raw event array.
  * Pre-indexes events by type and scopeRef for efficient rule evaluation.
+ * Optionally injects derivedState (computed from the same events, zero additional I/O).
  */
-export function buildCheckContext(priorEvents: AnyEventEnvelope[]): CheckContext {
+export function buildCheckContext(
+	priorEvents: AnyEventEnvelope[],
+	derivedState?: DerivedStateData,
+): CheckContext {
 	const eventsByType = new Map<string, AnyEventEnvelope[]>();
 	const eventsByScopeRef = new Map<string, AnyEventEnvelope[]>();
 	for (const e of priorEvents) {
@@ -48,11 +55,19 @@ export function buildCheckContext(priorEvents: AnyEventEnvelope[]): CheckContext
 			}
 		}
 	}
-	return { allEvents: priorEvents, eventsByType, eventsByScopeRef };
+	return {
+		allEvents: priorEvents,
+		eventsByType,
+		eventsByScopeRef,
+		...(derivedState !== undefined ? { derivedState } : {}),
+	};
 }
 
-/** Type for a function that provides a CheckContext on demand */
-export type GetCheckContext = () => CheckContext;
+/**
+ * Type for a function that provides a CheckContext on demand.
+ * NOTE: The canonical GetCheckContext with eventsPath parameter is defined in
+ * create-before-append-hook.ts. This simpler form is for test convenience only.
+ */
 
 export interface InvariantRule {
 	/** Unique rule ID, e.g. "epic.single-active-per-branch" */
