@@ -49,6 +49,7 @@ export type ConvergenceResult = z.infer<typeof convergenceResultSchema>;
 export const convergenceConfigSchema = z.object({
 	maxRounds: z.number(),
 	stagnationWindow: z.number(),
+	disagreementThreshold: z.number(),
 	reductionThreshold: z.number(),
 });
 export type ConvergenceConfig = z.infer<typeof convergenceConfigSchema>;
