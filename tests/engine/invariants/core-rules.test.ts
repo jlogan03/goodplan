@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { createCoreRegistry } from "../../../src/engine/invariants/core-rules.js";
 
 describe("createCoreRegistry", () => {
-	it("registers exactly 17 entity-lifecycle rules", () => {
+	it("registers exactly 24 core rules", () => {
 		const registry = createCoreRegistry();
-		expect(registry.getAll()).toHaveLength(17);
+		expect(registry.getAll()).toHaveLength(24);
 	});
 
 	it("has no duplicate IDs", () => {
@@ -18,6 +18,7 @@ describe("createCoreRegistry", () => {
 		const ids = new Set(registry.getAll().map((r) => r.id));
 
 		const expected = [
+			// Entity-lifecycle (17)
 			"project.exists",
 			"epic.single-active-per-branch",
 			"epic.dir.unique",
@@ -35,6 +36,14 @@ describe("createCoreRegistry", () => {
 			"slice.code-refinement-converged-before-land",
 			"slice.deps-landed-before-start",
 			"side-quest.single-active-per-branch",
+			// Domain invariants (7)
+			"chunk.evidence-non-empty",
+			"chunk.red-test-failed-before-green",
+			"refinement.bar-matches-rubric",
+			"spine.write-only-via-milestone",
+			"event.prev-id-chain",
+			"pressure-test.findings-all-accepted-before-slice-set",
+			"briefing.written-at-pause",
 		];
 
 		for (const id of expected) {
@@ -45,7 +54,7 @@ describe("createCoreRegistry", () => {
 	it("returns rules retrievable by domain", () => {
 		const registry = createCoreRegistry();
 		const entityLifecycle = registry.getByDomain("entity-lifecycle");
-		// All 17 rules include entity-lifecycle in their appliesTo
+		// 17 entity-lifecycle rules + pressure-test rule + event.prev-id-chain (empty appliesTo = all)
 		expect(entityLifecycle.length).toBeGreaterThanOrEqual(17);
 	});
 
@@ -53,7 +62,7 @@ describe("createCoreRegistry", () => {
 		const a = createCoreRegistry();
 		const b = createCoreRegistry();
 		expect(a).not.toBe(b);
-		expect(a.getAll()).toHaveLength(17);
-		expect(b.getAll()).toHaveLength(17);
+		expect(a.getAll()).toHaveLength(24);
+		expect(b.getAll()).toHaveLength(24);
 	});
 });
