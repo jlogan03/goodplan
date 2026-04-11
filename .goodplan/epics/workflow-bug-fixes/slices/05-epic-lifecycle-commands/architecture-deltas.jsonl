@@ -1,0 +1,4 @@
+{"description":"src/context/ module implemented with bundler.ts, types.ts, phase-specs.ts, token-estimate.ts, index.ts. Budget-aware context bundling for all 18 phases.","subsystem":"Context Layer","ts":"2026-04-10T18:28:31.774Z","type":"add"}
+{"description":"src/engine/content/store.ts and resolve.ts added. ContentRef git blob storage and retrieval.","subsystem":"Engine Layer","ts":"2026-04-10T18:28:31.774Z","type":"add"}
+{"description":"26 v2 epic commands registered. 15 v1 commands de-registered. Emergent context-helper.ts pattern for advisory context bundles.","subsystem":"Command Layer","ts":"2026-04-10T18:28:31.774Z","type":"modify"}
+{"description":"src/schemas/events/epic.ts defines Zod payload schemas for 23 epic event types with EpicEventMap and EpicEventPayload<T> generic.","subsystem":"Schemas","ts":"2026-04-10T18:28:31.774Z","type":"add"}

@@ -30,16 +30,16 @@
 					"status": "completed"
 				},
 				{
-					"completed": null,
+					"completed": "2026-04-10T18:28:31.774Z",
 					"created": "2026-04-09T22:27:17.335Z",
 					"name": "05-epic-lifecycle-commands",
-					"status": "plan-refined"
+					"status": "completed"
 				},
 				{
 					"completed": null,
 					"created": "2026-04-09T22:27:17.399Z",
 					"name": "06-slice-lifecycle-commands",
-					"status": "created"
+					"status": "refining"
 				},
 				{
 					"completed": null,

@@ -1,0 +1,1 @@
+The context-helper.ts pattern wraps buildContextBundle in try/catch returning undefined on failure. Context bundles are optimization hints for skills, not correctness requirements.
