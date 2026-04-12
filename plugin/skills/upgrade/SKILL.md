@@ -220,7 +220,11 @@ The CLI returns a completion response: `{ "status": "complete", "summary": { "pr
 
 1. Migration is complete — include entity counts from the summary.
 2. The backup directory (`<dir>-old-<timestamp>/`) contains the original pre-CLI directory and can be deleted after verification.
-3. Suggest running `gp status --json` to verify the new state.
+3. Suggest running verification commands:
+   - `gp status --json` — overall project state
+   - `gp task:list --json` — any open tasks that carried over
+   - `gp decision:list --json` — active decisions
+   - `gp learning:list --json` — accumulated learnings
 
 ## Step 8 — CLAUDE.md Path Audit
 
@@ -234,7 +238,7 @@ After migration, check whether CLAUDE.md contains `.goodplan/` paths that may ha
 
    If no matches or no CLAUDE.md, skip this step.
 
-2. **Validate each path**: For each `.goodplan/` reference found, check whether the target still exists at that path. Paths that no longer resolve are stale.
+2. **Validate each path**: For each `.goodplan/` reference found, check whether the target still exists at that path. Paths that no longer resolve are stale. Also flag references to `.goodplan/tasks/` or `.goodplan/decisions/` — these directories do not exist. Tasks, decisions, and learnings are JSONL-managed entities accessed via CLI commands (`task:list`, `decision:list`, `learning:list`), not directory-based.
 
 3. **Present findings to the user**: Show a table of stale paths with suggested replacements based on the new structure. Do NOT auto-edit CLAUDE.md — it is user-owned content.
 
@@ -252,6 +256,8 @@ After migration, check whether CLAUDE.md contains `.goodplan/` paths that may ha
 ## Migration Heuristics
 
 Rules for inferring entity status from pre-CLI project directory filesystem artifacts. All paths use `$PROJ_DIR` — substitute with whichever directory exists (see Step 4).
+
+**Note:** Tasks, decisions, and learnings are JSONL-managed entries — they are not directory-based entities and do not need entity-level migration. The `gp migrate` command handles them internally.
 
 ### Status Inference Rules
 
