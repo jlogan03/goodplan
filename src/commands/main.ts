@@ -33,6 +33,8 @@ import { epicSliceSetShapeAutoCommand } from "./epic/slice-set-shape-auto.js";
 import { epicSliceSetShapeStartCommand } from "./epic/slice-set-shape-start.js";
 import { epicSlicesCommitCommand } from "./epic/slices-commit.js";
 import { epicSlicesDraftCommand } from "./epic/slices-draft.js";
+import { eventsQueryCommand } from "./events/query.js";
+import { eventsTailCommand } from "./events/tail.js";
 import { findingCaptureCommand } from "./finding/capture.js";
 import { findingListCommand } from "./finding/list.js";
 import { findingTriageCommand } from "./finding/triage.js";
@@ -127,6 +129,8 @@ export const mainCommand = defineCommand({
 		"decision:list": decisionListCommand,
 		"decision:show": decisionShowCommand,
 		"decision:update": decisionUpdateCommand,
+		"events:tail": eventsTailCommand,
+		"events:query": eventsQueryCommand,
 		"epic:create": epicCreateCommand,
 		"epic:list": epicListCommand,
 		"epic:show": epicShowCommand,
