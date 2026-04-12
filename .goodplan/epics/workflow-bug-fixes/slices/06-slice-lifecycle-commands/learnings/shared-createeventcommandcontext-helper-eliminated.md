@@ -1,0 +1,1 @@
+Generic overload pattern (requireSlice: true/false) provides type-safe sliceName access without runtime casts. Single extraction point reduced ~15 lines per command file and centralized event-command wiring.

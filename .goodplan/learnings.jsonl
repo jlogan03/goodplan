@@ -1,0 +1,1 @@
+{"category":"worked","file":"learnings/conditional-spread-pattern-solves-exactoptionalpropertytypes.md","rollup":true,"rollupTo":["epic","project"],"source":"epics/workflow-bug-fixes/slices/06-slice-lifecycle-commands","summary":"Conditional spread pattern solves exactOptionalPropertyTypes + Zod optional arrays","tags":["typescript-strictness","zod","exactOptionalPropertyTypes"]}

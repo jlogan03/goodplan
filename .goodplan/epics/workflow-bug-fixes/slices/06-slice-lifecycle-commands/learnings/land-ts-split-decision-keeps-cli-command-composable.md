@@ -1,0 +1,1 @@
+slice:land emits event only. Deferred-item routing, learnings rollup, and architecture delta propagation are skill-level concerns.

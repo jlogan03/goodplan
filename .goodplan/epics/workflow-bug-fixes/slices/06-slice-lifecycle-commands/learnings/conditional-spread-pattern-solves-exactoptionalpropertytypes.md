@@ -1,0 +1,1 @@
+Under exactOptionalPropertyTypes, z.array(...).optional() infers T[] | undefined which is not assignable to optional properties. Pattern: ...(value ? { field: value } : {}) used consistently.

@@ -12,7 +12,7 @@
 	],
 	"epic": "workflow-bug-fixes",
 	"goal": "Implement ~14 gp slice:* commands including chunk lifecycle, code refinement, and landing",
-	"implementationPhase": 4,
+	"implementationPhase": 5,
 	"name": "06-slice-lifecycle-commands",
 	"refinement": {
 		"maxRounds": 10,
@@ -29,6 +29,6 @@
 			}
 		]
 	},
-	"status": "implementing",
-	"updated": "2026-04-12T17:01:35.773Z"
+	"status": "completed",
+	"updated": "2026-04-12T17:14:39.566Z"
 }
