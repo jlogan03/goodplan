@@ -347,6 +347,34 @@ export const sliceChunksAllDecidedBeforeCodeRefine: InvariantRule = {
 };
 
 /**
+ * slice.code-refinement-started-before-converged: Code refinement must be started
+ * before it can converge.
+ */
+export const sliceCodeRefinementStartedBeforeConverged: InvariantRule = {
+	id: "slice.code-refinement-started-before-converged",
+	ruleType: "precondition",
+	description: "Code refinement must be started before it can converge",
+	appliesTo: ["entity-lifecycle"],
+	check(event, ctx) {
+		if (event.type !== "code-refinement-converged") return null;
+		const sliceRef = narrowPayload(event.payload, SliceRefPayload);
+		if (sliceRef === null) return null;
+
+		const startEvents = ctx.eventsByType.get("slice-code-refinement-started");
+		if (startEvents) {
+			for (const e of startEvents) {
+				const p = narrowPayload(e.payload, SliceRefPayload);
+				if (p !== null && p.sliceRef === sliceRef.sliceRef) return null;
+			}
+		}
+		return {
+			message: `Cannot converge code refinement for slice "${sliceRef.sliceRef}" — refinement not started.`,
+			context: { sliceRef: sliceRef.sliceRef },
+		};
+	},
+};
+
+/**
  * slice.code-refinement-converged-before-land: Code refinement must converge
  * before a slice can land.
  */

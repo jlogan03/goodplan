@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { SteeringPreferenceSchema } from "../entities/derived-state.js";
+import { ArchitectureDeltaSchema, DeferredItemSchema } from "../entities/slice-artifacts.js";
 import { ContentRefSchema } from "../envelope.js";
+import { learningInputSchema } from "../records/learning.js";
 import { planExtractSchema } from "../trust/extracts.js";
 
 // --- Phase 1 payload schemas (management commands) ---
@@ -180,6 +182,42 @@ export const chunkUnverifiableDecidedPayloadSchema = z.object({
 });
 export type ChunkUnverifiableDecidedPayload = z.infer<typeof chunkUnverifiableDecidedPayloadSchema>;
 
+// --- Phase 4 payload schemas (code refinement & landing commands) ---
+
+/**
+ * Payload for `slice-code-refinement-started` events.
+ */
+export const sliceCodeRefinementStartedPayloadSchema = z.object({
+	sliceRef: z.string().min(1),
+});
+export type SliceCodeRefinementStartedPayload = z.infer<
+	typeof sliceCodeRefinementStartedPayloadSchema
+>;
+
+/**
+ * Payload for `code-refinement-converged` events.
+ * Note: no `slice-` prefix per architecture naming convention.
+ */
+export const codeRefinementConvergedPayloadSchema = z.object({
+	sliceRef: z.string().min(1),
+});
+export type CodeRefinementConvergedPayload = z.infer<typeof codeRefinementConvergedPayloadSchema>;
+
+/**
+ * Payload for `slice-landed` events.
+ * Contains optional deferred items, learnings, and architecture deltas.
+ * These are stored inline in the event for downstream replay by `epic:complete`.
+ *
+ * exactOptionalPropertyTypes hazard: use conditional spread at call sites.
+ */
+export const sliceLandedPayloadSchema = z.object({
+	sliceRef: z.string().min(1),
+	deferred: z.array(DeferredItemSchema).optional(),
+	learnings: z.array(learningInputSchema).optional(),
+	architectureDelta: z.array(ArchitectureDeltaSchema).optional(),
+});
+export type SliceLandedPayload = z.infer<typeof sliceLandedPayloadSchema>;
+
 // --- SliceEventMap: maps event type strings to payload schemas ---
 
 /**
@@ -207,6 +245,10 @@ export const SliceEventMap = {
 	"chunk-verified": chunkVerifiedPayloadSchema,
 	"chunk-unverifiable": chunkUnverifiablePayloadSchema,
 	"chunk-unverifiable-decided": chunkUnverifiableDecidedPayloadSchema,
+	// Phase 4
+	"slice-code-refinement-started": sliceCodeRefinementStartedPayloadSchema,
+	"code-refinement-converged": codeRefinementConvergedPayloadSchema,
+	"slice-landed": sliceLandedPayloadSchema,
 } as const;
 
 /** Union of all slice event type strings. */

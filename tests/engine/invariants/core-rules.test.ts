@@ -4,7 +4,7 @@ import { createCoreRegistry } from "../../../src/engine/invariants/core-rules.js
 describe("createCoreRegistry", () => {
 	it("registers exactly 36 core rules", () => {
 		const registry = createCoreRegistry();
-		expect(registry.getAll()).toHaveLength(36);
+		expect(registry.getAll()).toHaveLength(37);
 	});
 
 	it("has no duplicate IDs", () => {
@@ -44,6 +44,7 @@ describe("createCoreRegistry", () => {
 			"slice.plan-converged-before-implement",
 			"slice.plan-chunks-decidable",
 			"slice.chunks-all-decided-before-code-refine",
+			"slice.code-refinement-started-before-converged",
 			"slice.code-refinement-converged-before-land",
 			"slice.deps-landed-before-start",
 			"slice.implementation-started-before-chunk",
@@ -74,7 +75,7 @@ describe("createCoreRegistry", () => {
 		const a = createCoreRegistry();
 		const b = createCoreRegistry();
 		expect(a).not.toBe(b);
-		expect(a.getAll()).toHaveLength(36);
-		expect(b.getAll()).toHaveLength(36);
+		expect(a.getAll()).toHaveLength(37);
+		expect(b.getAll()).toHaveLength(37);
 	});
 });

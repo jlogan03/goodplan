@@ -25,6 +25,7 @@ import { sideQuestSingleActivePerBranch } from "./rules/side-quest.js";
 import {
 	sliceChunksAllDecidedBeforeCodeRefine,
 	sliceCodeRefinementConvergedBeforeLand,
+	sliceCodeRefinementStartedBeforeConverged,
 	sliceCreatedBeforePlan,
 	sliceDepsLandedBeforeStart,
 	sliceImplementationStartedBeforeChunk,
@@ -40,7 +41,7 @@ import { spineWriteOnlyViaMilestone } from "./rules/spine.js";
 import { eventPrevIdChain } from "./rules/structural.js";
 
 /**
- * Create an InvariantRegistry pre-loaded with all 24 core invariant rules.
+ * Create an InvariantRegistry pre-loaded with all 25 core invariant rules.
  */
 export function createCoreRegistry(): InvariantRegistry {
 	const registry = new InvariantRegistry();
@@ -65,7 +66,7 @@ export function createCoreRegistry(): InvariantRegistry {
 	registry.register(epicNotAbandoned);
 	registry.register(epicNotCompleted);
 
-	// Slice rules (11)
+	// Slice rules (12)
 	registry.register(sliceSingleActivePerBranch);
 	registry.register(sliceCreatedBeforePlan);
 	registry.register(slicePlanDraftedBeforeCommit);
@@ -75,6 +76,7 @@ export function createCoreRegistry(): InvariantRegistry {
 	registry.register(slicePlanConvergedBeforeImplement);
 	registry.register(slicePlanChunksDecidable);
 	registry.register(sliceChunksAllDecidedBeforeCodeRefine);
+	registry.register(sliceCodeRefinementStartedBeforeConverged);
 	registry.register(sliceCodeRefinementConvergedBeforeLand);
 	registry.register(sliceDepsLandedBeforeStart);
 	registry.register(sliceImplementationStartedBeforeChunk);

@@ -57,8 +57,11 @@ import { sliceChunkRedWrittenCommand } from "./slice/chunk-red-written.js";
 import { sliceChunkStartCommand } from "./slice/chunk-start.js";
 import { sliceChunkUnverifiableCommand } from "./slice/chunk-unverifiable.js";
 import { sliceChunkVerifyCommand } from "./slice/chunk-verify.js";
+import { sliceCodeRefineCommitCommand } from "./slice/code-refine-commit.js";
+import { sliceCodeRefineStartCommand } from "./slice/code-refine-start.js";
 import { sliceCreateCommand } from "./slice/create.js";
 import { sliceImplementStartCommand } from "./slice/implement-start.js";
+import { sliceLandCommand } from "./slice/land.js";
 import { sliceListCommand } from "./slice/list.js";
 import { slicePlanCommitCommand } from "./slice/plan-commit.js";
 import { slicePlanDraftCommand } from "./slice/plan-draft.js";
@@ -164,6 +167,9 @@ export const mainCommand = defineCommand({
 		"slice:chunk-verify": sliceChunkVerifyCommand,
 		"slice:chunk-unverifiable": sliceChunkUnverifiableCommand,
 		"slice:chunk-decide": sliceChunkDecideCommand,
+		"slice:code-refine-start": sliceCodeRefineStartCommand,
+		"slice:code-refine-commit": sliceCodeRefineCommitCommand,
+		"slice:land": sliceLandCommand,
 		"start-plan": startPlanCommand,
 		"start-refinement": startRefinementCommand,
 		"start-implementation": startImplementationCommand,

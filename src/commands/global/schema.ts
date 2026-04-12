@@ -452,6 +452,25 @@ registerCommand(
 		chunk: { type: "string", description: "Chunk ID", required: true },
 	},
 );
+registerCommand("slice:code-refine-start", "Start code refinement for a slice.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+	slice: { type: "string", description: "Slice name", required: true },
+});
+registerCommand("slice:code-refine-commit", "Record code refinement convergence for a slice.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+	slice: { type: "string", description: "Slice name", required: true },
+});
+registerCommand(
+	"slice:land",
+	"Land a slice after code refinement convergence. Stdin: {deferred?, learnings?, architectureDelta?}.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+		slice: { type: "string", description: "Slice name", required: true },
+	},
+);
 
 // Quest commands
 registerCommand("quest:create", "Create a new quest. Stdin: {name, goal}.", {
