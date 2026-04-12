@@ -1,0 +1,1 @@
+All new entities computed via single-pass computeDerivedState() reducers. Validates the slice 02 design decision.

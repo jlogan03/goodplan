@@ -126,10 +126,10 @@
 					"status": "completed"
 				},
 				{
-					"completed": null,
+					"completed": "2026-04-12T22:00:20.225Z",
 					"created": "2026-04-12T19:34:24.827Z",
 					"name": "07b-entity-commands",
-					"status": "implementing"
+					"status": "completed"
 				},
 				{
 					"completed": null,

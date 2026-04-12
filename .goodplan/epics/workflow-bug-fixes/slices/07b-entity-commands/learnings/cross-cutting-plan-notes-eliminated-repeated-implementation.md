@@ -1,0 +1,1 @@
+11 cross-cutting notes in the plan were referenced throughout all phases and prevented recurring errors.

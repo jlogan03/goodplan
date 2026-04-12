@@ -1,0 +1,1 @@
+Every new case branch uses narrowPayload(event, schema) for safe type narrowing.
