@@ -52,6 +52,12 @@ import { questShowCommand } from "./quest/show.js";
 import { sliceAbandonCommand } from "./slice/abandon.js";
 import { sliceCreateCommand } from "./slice/create.js";
 import { sliceListCommand } from "./slice/list.js";
+import { slicePlanCommitCommand } from "./slice/plan-commit.js";
+import { slicePlanDraftCommand } from "./slice/plan-draft.js";
+import { slicePlanShapeApproveCommand } from "./slice/plan-shape-approve.js";
+import { slicePlanShapeAutoCommand } from "./slice/plan-shape-auto.js";
+import { slicePlanShapeReviseCommand } from "./slice/plan-shape-revise.js";
+import { slicePlanShapeStartCommand } from "./slice/plan-shape-start.js";
 import { sliceShowCommand } from "./slice/show.js";
 import { startImplementationCommand } from "./subagent/start-implementation.js";
 import { startPlanCommand } from "./subagent/start-plan.js";
@@ -136,6 +142,12 @@ export const mainCommand = defineCommand({
 		"slice:list": sliceListCommand,
 		"slice:show": sliceShowCommand,
 		"slice:abandon": sliceAbandonCommand,
+		"slice:plan-draft": slicePlanDraftCommand,
+		"slice:plan-commit": slicePlanCommitCommand,
+		"slice:plan-shape-start": slicePlanShapeStartCommand,
+		"slice:plan-shape-revise": slicePlanShapeReviseCommand,
+		"slice:plan-shape-approve": slicePlanShapeApproveCommand,
+		"slice:plan-shape-auto": slicePlanShapeAutoCommand,
 		"start-plan": startPlanCommand,
 		"start-refinement": startRefinementCommand,
 		"start-implementation": startImplementationCommand,

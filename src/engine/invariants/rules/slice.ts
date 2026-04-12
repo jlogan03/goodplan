@@ -2,6 +2,9 @@ import { z } from "zod";
 import type { InvariantRule } from "../types.js";
 import { countMatching, hasEventOfType, narrowPayload } from "./_helpers.js";
 
+// Shared payload schema to extract sliceRef from any slice event payload
+const SliceRefPayload = z.object({ sliceRef: z.string().min(1) });
+
 // Payload schema for slice-plan-committed events (chunks with verificationType)
 const SlicePlanCommittedPayload = z.object({
 	chunks: z.array(
@@ -51,20 +54,176 @@ export const sliceSingleActivePerBranch: InvariantRule = {
 };
 
 /**
- * slice.plan-shape-approval-required: Plan must be shape-approved before
- * plan refinement can begin.
+ * slice.plan-shape-approval-required: Plan must be shape-approved or auto-shaped
+ * before plan can be committed.
+ * Retargeted from the v1 `slice-plan-refinement-started` event.
  */
 export const slicePlanShapeApprovalRequired: InvariantRule = {
 	id: "slice.plan-shape-approval-required",
 	ruleType: "precondition",
-	description: "Plan shape must be approved before plan refinement",
-	appliesTo: ["entity-lifecycle", "refinement"],
+	description: "Plan shape must be approved or auto-shaped before plan commit",
+	appliesTo: ["entity-lifecycle"],
 	check(event, ctx) {
-		if (event.type !== "slice-plan-refinement-started") return null;
-		if (hasEventOfType(ctx, "slice-plan-shape-approved")) return null;
+		if (event.type !== "slice-plan-committed") return null;
+		const sliceRef = narrowPayload(event.payload, SliceRefPayload);
+		if (sliceRef === null) return null;
+		// Approved or auto-shaped for the same sliceRef satisfies
+		for (const type of ["plan-shape-approved", "plan-shape-checkpoint-auto-shaped"] as const) {
+			const events = ctx.eventsByType.get(type);
+			if (events) {
+				for (const e of events) {
+					const p = narrowPayload(e.payload, SliceRefPayload);
+					if (p !== null && p.sliceRef === sliceRef.sliceRef) return null;
+				}
+			}
+		}
 		return {
-			message: "Cannot start plan refinement without plan shape approval.",
+			message: `Cannot commit plan for slice "${sliceRef.sliceRef}" without plan shape approval or auto-shape.`,
+			context: { sliceRef: sliceRef.sliceRef },
 		};
+	},
+};
+
+/**
+ * slice.created-before-plan: Slice must exist (have a slice-created event)
+ * before a plan can be drafted.
+ */
+export const sliceCreatedBeforePlan: InvariantRule = {
+	id: "slice.created-before-plan",
+	ruleType: "precondition",
+	description: "Slice must exist before plan can be drafted",
+	appliesTo: ["entity-lifecycle"],
+	check(event, ctx) {
+		if (event.type !== "slice-plan-drafted") return null;
+		const sliceRef = narrowPayload(event.payload, SliceRefPayload);
+		if (sliceRef === null) return null;
+		const createEvents = ctx.eventsByType.get("slice-created");
+		if (createEvents) {
+			for (const e of createEvents) {
+				const p = narrowPayload(e.payload, SliceRefPayload);
+				if (p !== null && p.sliceRef === sliceRef.sliceRef) return null;
+			}
+		}
+		return {
+			message: `Cannot draft plan for slice "${sliceRef.sliceRef}" — slice does not exist.`,
+			context: { sliceRef: sliceRef.sliceRef },
+		};
+	},
+};
+
+/**
+ * slice.plan-drafted-before-commit: Plan must be drafted (or shape-approved)
+ * before it can be committed.
+ */
+export const slicePlanDraftedBeforeCommit: InvariantRule = {
+	id: "slice.plan-drafted-before-commit",
+	ruleType: "precondition",
+	description: "Plan must be drafted before commit",
+	appliesTo: ["entity-lifecycle"],
+	check(event, ctx) {
+		if (event.type !== "slice-plan-committed") return null;
+		const sliceRef = narrowPayload(event.payload, SliceRefPayload);
+		if (sliceRef === null) return null;
+		for (const type of ["slice-plan-drafted", "plan-shape-approved"] as const) {
+			const events = ctx.eventsByType.get(type);
+			if (events) {
+				for (const e of events) {
+					const p = narrowPayload(e.payload, SliceRefPayload);
+					if (p !== null && p.sliceRef === sliceRef.sliceRef) return null;
+				}
+			}
+		}
+		return {
+			message: `Cannot commit plan for slice "${sliceRef.sliceRef}" — plan not yet drafted.`,
+			context: { sliceRef: sliceRef.sliceRef },
+		};
+	},
+};
+
+/**
+ * slice.plan-drafted-before-shape: Plan must be drafted before shape
+ * checkpoint can start.
+ */
+export const slicePlanDraftedBeforeShape: InvariantRule = {
+	id: "slice.plan-drafted-before-shape",
+	ruleType: "precondition",
+	description: "Plan must be drafted before shape checkpoint",
+	appliesTo: ["entity-lifecycle"],
+	check(event, ctx) {
+		if (event.type !== "plan-shape-checkpoint-reached") return null;
+		const sliceRef = narrowPayload(event.payload, SliceRefPayload);
+		if (sliceRef === null) return null;
+		const draftEvents = ctx.eventsByType.get("slice-plan-drafted");
+		if (draftEvents) {
+			for (const e of draftEvents) {
+				const p = narrowPayload(e.payload, SliceRefPayload);
+				if (p !== null && p.sliceRef === sliceRef.sliceRef) return null;
+			}
+		}
+		return {
+			message: `Cannot start shape checkpoint for slice "${sliceRef.sliceRef}" — plan not yet drafted.`,
+			context: { sliceRef: sliceRef.sliceRef },
+		};
+	},
+};
+
+/**
+ * slice.plan-shape-checkpoint-active: Shape checkpoint must be started
+ * and not yet approved/auto-shaped for the given slice.
+ * Guards plan-shape-revise, plan-shape-approve, plan-shape-auto.
+ */
+export const slicePlanShapeCheckpointActive: InvariantRule = {
+	id: "slice.plan-shape-checkpoint-active",
+	ruleType: "precondition",
+	description: "Shape checkpoint must be active (started, not yet approved/auto-shaped)",
+	appliesTo: ["entity-lifecycle"],
+	check(event, ctx) {
+		if (
+			event.type !== "plan-shape-revision-proposed" &&
+			event.type !== "plan-shape-approved" &&
+			event.type !== "plan-shape-checkpoint-auto-shaped"
+		) {
+			return null;
+		}
+		const sliceRef = narrowPayload(event.payload, SliceRefPayload);
+		if (sliceRef === null) return null;
+
+		// Must have a checkpoint-reached for this sliceRef
+		let checkpointStarted = false;
+		const reachedEvents = ctx.eventsByType.get("plan-shape-checkpoint-reached");
+		if (reachedEvents) {
+			for (const e of reachedEvents) {
+				const p = narrowPayload(e.payload, SliceRefPayload);
+				if (p !== null && p.sliceRef === sliceRef.sliceRef) {
+					checkpointStarted = true;
+					break;
+				}
+			}
+		}
+		if (!checkpointStarted) {
+			return {
+				message: `No active shape checkpoint for slice "${sliceRef.sliceRef}".`,
+				context: { sliceRef: sliceRef.sliceRef },
+			};
+		}
+
+		// Must not already be approved or auto-shaped for this sliceRef
+		for (const type of ["plan-shape-approved", "plan-shape-checkpoint-auto-shaped"] as const) {
+			const events = ctx.eventsByType.get(type);
+			if (events) {
+				for (const e of events) {
+					const p = narrowPayload(e.payload, SliceRefPayload);
+					if (p !== null && p.sliceRef === sliceRef.sliceRef) {
+						return {
+							message: `Shape checkpoint for slice "${sliceRef.sliceRef}" already resolved.`,
+							context: { sliceRef: sliceRef.sliceRef },
+						};
+					}
+				}
+			}
+		}
+
+		return null;
 	},
 };
 

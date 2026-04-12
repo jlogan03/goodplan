@@ -50,19 +50,55 @@ describe("slice.single-active-per-branch", () => {
 });
 
 describe("slice.plan-shape-approval-required", () => {
-	it("passes when plan shape approved", () => {
-		const approval = makeEnvelope({ type: "slice-plan-shape-approved" });
-		const event = makeEnvelope({ type: "slice-plan-refinement-started", domain: "refinement" });
+	it("passes when plan shape approved for same sliceRef", () => {
+		const approval = makeEnvelope({
+			type: "plan-shape-approved",
+			payload: { sliceRef: "s1" },
+		});
+		const event = makeEnvelope({
+			type: "slice-plan-committed",
+			payload: { sliceRef: "s1" },
+		});
 		const ctx = buildCheckContext([approval]);
 		expect(slicePlanShapeApprovalRequired.check(event, ctx)).toBeNull();
 	});
 
-	it("fails without plan shape approval", () => {
-		const event = makeEnvelope({ type: "slice-plan-refinement-started", domain: "refinement" });
+	it("passes when plan shape auto-shaped for same sliceRef", () => {
+		const autoShaped = makeEnvelope({
+			type: "plan-shape-checkpoint-auto-shaped",
+			payload: { sliceRef: "s1", preference: "best-guess-and-flag" },
+		});
+		const event = makeEnvelope({
+			type: "slice-plan-committed",
+			payload: { sliceRef: "s1" },
+		});
+		const ctx = buildCheckContext([autoShaped]);
+		expect(slicePlanShapeApprovalRequired.check(event, ctx)).toBeNull();
+	});
+
+	it("fails without plan shape approval or auto-shape", () => {
+		const event = makeEnvelope({
+			type: "slice-plan-committed",
+			payload: { sliceRef: "s1" },
+		});
 		const ctx = buildCheckContext([]);
 		const result = slicePlanShapeApprovalRequired.check(event, ctx);
 		expect(result).not.toBeNull();
 		expect(result?.message).toContain("plan shape approval");
+	});
+
+	it("fails when approval is for different sliceRef", () => {
+		const approval = makeEnvelope({
+			type: "plan-shape-approved",
+			payload: { sliceRef: "s2" },
+		});
+		const event = makeEnvelope({
+			type: "slice-plan-committed",
+			payload: { sliceRef: "s1" },
+		});
+		const ctx = buildCheckContext([approval]);
+		const result = slicePlanShapeApprovalRequired.check(event, ctx);
+		expect(result).not.toBeNull();
 	});
 });
 

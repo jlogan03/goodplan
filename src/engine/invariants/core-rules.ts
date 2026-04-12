@@ -25,10 +25,14 @@ import { sideQuestSingleActivePerBranch } from "./rules/side-quest.js";
 import {
 	sliceChunksAllDecidedBeforeCodeRefine,
 	sliceCodeRefinementConvergedBeforeLand,
+	sliceCreatedBeforePlan,
 	sliceDepsLandedBeforeStart,
 	slicePlanChunksDecidable,
 	slicePlanConvergedBeforeImplement,
+	slicePlanDraftedBeforeCommit,
+	slicePlanDraftedBeforeShape,
 	slicePlanShapeApprovalRequired,
+	slicePlanShapeCheckpointActive,
 	sliceSingleActivePerBranch,
 } from "./rules/slice.js";
 import { spineWriteOnlyViaMilestone } from "./rules/spine.js";
@@ -60,9 +64,13 @@ export function createCoreRegistry(): InvariantRegistry {
 	registry.register(epicNotAbandoned);
 	registry.register(epicNotCompleted);
 
-	// Slice rules (7)
+	// Slice rules (11)
 	registry.register(sliceSingleActivePerBranch);
+	registry.register(sliceCreatedBeforePlan);
+	registry.register(slicePlanDraftedBeforeCommit);
+	registry.register(slicePlanDraftedBeforeShape);
 	registry.register(slicePlanShapeApprovalRequired);
+	registry.register(slicePlanShapeCheckpointActive);
 	registry.register(slicePlanConvergedBeforeImplement);
 	registry.register(slicePlanChunksDecidable);
 	registry.register(sliceChunksAllDecidedBeforeCodeRefine);

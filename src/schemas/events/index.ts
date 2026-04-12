@@ -33,10 +33,22 @@ export {
 	SliceEventMap,
 	sliceCreatedPayloadSchema,
 	sliceAbandonedPayloadSchema,
+	slicePlanDraftedPayloadSchema,
+	slicePlanCommittedPayloadSchema,
+	planShapeCheckpointReachedPayloadSchema,
+	planShapeRevisionProposedPayloadSchema,
+	planShapeApprovedPayloadSchema,
+	planShapeCheckpointAutoShapedPayloadSchema,
 } from "./slice.js";
 export type {
 	SliceEventType,
 	SliceEventPayload,
 	SliceCreatedPayload,
 	SliceAbandonedPayload,
+	SlicePlanDraftedPayload,
+	SlicePlanCommittedPayload,
+	PlanShapeCheckpointReachedPayload,
+	PlanShapeRevisionProposedPayload,
+	PlanShapeApprovedPayload,
+	PlanShapeCheckpointAutoShapedPayload,
 } from "./slice.js";

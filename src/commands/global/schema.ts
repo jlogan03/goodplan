@@ -351,6 +351,48 @@ registerCommand("slice:abandon", "Abandon a slice with a reason.", {
 	epic: { type: "string", description: "Epic name", required: true },
 	reason: { type: "string", description: "Reason for abandoning", required: true },
 });
+registerCommand(
+	"slice:plan-draft",
+	"Draft a slice plan. Accepts --epic and --slice flags and stdin JSON { content }.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+		slice: { type: "string", description: "Slice name", required: true },
+	},
+);
+registerCommand(
+	"slice:plan-commit",
+	"Commit a slice plan. Accepts --epic and --slice flags and stdin JSON { content }.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+		slice: { type: "string", description: "Slice name", required: true },
+	},
+);
+registerCommand("slice:plan-shape-start", "Start the plan shape checkpoint for a slice.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+	slice: { type: "string", description: "Slice name", required: true },
+});
+registerCommand(
+	"slice:plan-shape-revise",
+	"Propose a plan shape revision. Accepts --epic, --slice, and stdin JSON { content, revision }.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+		slice: { type: "string", description: "Slice name", required: true },
+	},
+);
+registerCommand("slice:plan-shape-approve", "Approve the plan shape for a slice.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+	slice: { type: "string", description: "Slice name", required: true },
+});
+registerCommand("slice:plan-shape-auto", "Auto-shape the plan checkpoint for a slice.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+	slice: { type: "string", description: "Slice name", required: true },
+});
 
 // Quest commands
 registerCommand("quest:create", "Create a new quest. Stdin: {name, goal}.", {
