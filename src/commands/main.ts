@@ -49,6 +49,11 @@ import { questListCommand } from "./quest/list.js";
 import { questPlanCommand } from "./quest/plan.js";
 import { questRefinePlanCommand } from "./quest/refine-plan.js";
 import { questShowCommand } from "./quest/show.js";
+import { reviewerListCommand } from "./reviewer/list.js";
+import { reviewerShowCommand } from "./reviewer/show.js";
+import { rubricListCommand } from "./rubric/list.js";
+import { rubricShowCommand } from "./rubric/show.js";
+import { rubricValidateCommand } from "./rubric/validate.js";
 import { sliceAbandonCommand } from "./slice/abandon.js";
 import { sliceChunkDecideCommand } from "./slice/chunk-decide.js";
 import { sliceChunkGreenCommand } from "./slice/chunk-green.js";
@@ -135,6 +140,11 @@ export const mainCommand = defineCommand({
 		"epic:abandon": epicAbandonCommand,
 		"learning:list": learningListCommand,
 		"learning:rollup": learningRollupCommand,
+		"reviewer:list": reviewerListCommand,
+		"reviewer:show": reviewerShowCommand,
+		"rubric:list": rubricListCommand,
+		"rubric:show": rubricShowCommand,
+		"rubric:validate": rubricValidateCommand,
 		"quest:create": questCreateCommand,
 		"quest:list": questListCommand,
 		"quest:show": questShowCommand,
