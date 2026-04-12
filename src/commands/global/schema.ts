@@ -1,6 +1,7 @@
 import { defineCommand } from "citty";
 import { z } from "zod";
 import { PROJECT_DIR_NAME } from "../../core/data/project.js";
+import { writeBriefingInputSchema } from "../../schemas/commands/briefing.js";
 import {
 	createDecisionInputSchema,
 	updateDecisionInputSchema,
@@ -18,6 +19,7 @@ import {
 	updateMaturityInputSchema,
 } from "../../schemas/commands/subsystem.js";
 import { taskCreateInputSchema } from "../../schemas/commands/task.js";
+import { briefingWrittenPayloadSchema } from "../../schemas/events/briefing.js";
 import { projectInitializedPayloadSchema } from "../../schemas/events/index.js";
 import {
 	subsystemMaturityUpdatedPayloadSchema,
@@ -59,6 +61,7 @@ export const stdinSchemaRegistry: Record<string, z.ZodType> = {
 	"task:create": taskCreateInputSchema,
 	"decision:create": createDecisionInputSchema,
 	"decision:update": updateDecisionInputSchema,
+	"briefing:write": writeBriefingInputSchema,
 	"subsystem:register": registerSubsystemInputSchema,
 	"subsystem:update-maturity": updateMaturityInputSchema,
 	"submit-plan": submitPlanInputSchema,
@@ -683,6 +686,40 @@ registerCommand("subsystem:retire", "Retire a subsystem. Requires --name flag.",
 	name: { type: "string", description: "Subsystem name", required: true },
 });
 
+// ── Briefing commands ──────────────────────────────────────
+
+registerCommand(
+	"briefing:write",
+	"Write a structured briefing. Accepts stdin JSON and --scope (project|epic) flag.",
+	{
+		...globalArgDefs,
+		scope: {
+			type: "string",
+			description: 'Briefing scope: "project" or "epic" (default: "project")',
+			default: "project",
+		},
+		epic: { type: "string", description: "Epic name (required when --scope epic)" },
+	},
+);
+registerCommand("briefing:latest", "Return the most recent briefing for a given scope.", {
+	...globalArgDefs,
+	scope: { type: "string", description: 'Filter scope: "project" or "epic"' },
+	"scope-ref": { type: "string", description: "Scope reference (e.g., epic name) to filter by" },
+});
+
+// ── Project commands ──────────────────────────────────────
+
+registerCommand("project:show", "Show project metadata and subsystem summary.", {
+	...globalArgDefs,
+});
+registerCommand(
+	"project:set-steering",
+	"Set the project steering preference. Accepts stdin JSON { preference }.",
+	{
+		...globalArgDefs,
+	},
+);
+
 // ── Event Schema Registry ───────────────────────────────────
 
 /**
@@ -691,6 +728,7 @@ registerCommand("subsystem:retire", "Retire a subsystem. Requires --name flag.",
  */
 export const eventSchemaRegistry: Record<string, z.ZodType> = {
 	"project-initialized": projectInitializedPayloadSchema,
+	"briefing-written": briefingWrittenPayloadSchema,
 	"subsystem-registered": subsystemRegisteredPayloadSchema,
 	"subsystem-maturity-updated": subsystemMaturityUpdatedPayloadSchema,
 	"subsystem-retired": subsystemRetiredPayloadSchema,

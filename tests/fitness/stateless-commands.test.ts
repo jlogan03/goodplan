@@ -25,20 +25,33 @@ const READ_ONLY_COMMANDS = new Set([
 	"learning:list",
 	"task:list",
 	"task:show",
+	"briefing:latest",
+	"project:show",
+	"subsystem:list",
 ]);
 
 /**
  * Entity-identifying arg names. At least one of these (or a stdin schema
  * with a required name/id field) must be present on mutation commands.
  */
-const ENTITY_ARGS = new Set(["epic", "slice", "quest", "task", "id", "from", "to"]);
+const ENTITY_ARGS = new Set([
+	"epic",
+	"slice",
+	"quest",
+	"task",
+	"id",
+	"from",
+	"to",
+	"name",
+	"scope",
+]);
 
 /**
  * Commands that operate on the entire project rather than targeting a specific entity.
  * Note: `init` is also project-scoped but lives in `READ_ONLY_COMMANDS`.
  */
 /** verify --fix writes project.json (signature repair), like migrate writes during schema upgrades. */
-const ENTITY_EXEMPT_COMMANDS = new Set(["migrate", "verify"]);
+const ENTITY_EXEMPT_COMMANDS = new Set(["migrate", "verify", "project:set-steering"]);
 
 /** Commands that accept stdin with required entity-identifying fields. */
 const STDIN_ENTITY_COMMANDS = new Set([
@@ -46,6 +59,7 @@ const STDIN_ENTITY_COMMANDS = new Set([
 	"quest:create", // stdin has required 'name'
 	"task:create", // stdin has required 'name'
 	"decision:create", // stdin has required 'id'
+	"subsystem:register", // stdin has required 'name'
 ]);
 
 describe("INV-004: Stateless commands — entity-identifying flags required", () => {

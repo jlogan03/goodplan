@@ -34,6 +34,7 @@ export function createEmptyState(): DerivedStateData {
 		latestDimensionScores: new Map(),
 		subsystems: new Map(),
 		customInvariants: new Map(),
+		briefings: [],
 	};
 }
 

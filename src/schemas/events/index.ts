@@ -77,3 +77,13 @@ export type {
 	SubsystemMaturityUpdatedPayload,
 	SubsystemRetiredPayload,
 } from "./subsystem.js";
+
+export {
+	BriefingEventMap,
+	briefingWrittenPayloadSchema,
+} from "./briefing.js";
+export type {
+	BriefingEventType,
+	BriefingEventPayload,
+	BriefingWrittenPayload,
+} from "./briefing.js";

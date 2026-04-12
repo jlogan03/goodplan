@@ -182,6 +182,21 @@ export interface CustomInvariantState {
 	status: "proposed" | "active" | "inactive";
 }
 
+// --- Briefing State ---
+
+export interface Briefing {
+	scope: "project" | "epic";
+	scopeRef: string | null;
+	timeContext: string;
+	currentPosition: string;
+	lastAction: string;
+	whereStopped: string;
+	nextAction: string;
+	attentionItems: string[];
+	deepLinks?: Array<{ label: string; path: string }>;
+	writtenAt: string;
+}
+
 // --- Derived State Data ---
 
 export interface DerivedStateData {
@@ -192,4 +207,5 @@ export interface DerivedStateData {
 	latestDimensionScores: Map<string, DimensionScore[]>;
 	subsystems: Map<string, SubsystemState>;
 	customInvariants: Map<string, CustomInvariantState>;
+	briefings: Briefing[];
 }

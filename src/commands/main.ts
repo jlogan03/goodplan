@@ -1,4 +1,6 @@
 import { defineCommand } from "citty";
+import { briefingLatestCommand } from "./briefing/latest.js";
+import { briefingWriteCommand } from "./briefing/write.js";
 import { decisionCreateCommand } from "./decision/create.js";
 import { decisionListCommand } from "./decision/list.js";
 import { decisionShowCommand } from "./decision/show.js";
@@ -187,6 +189,8 @@ export const mainCommand = defineCommand({
 		"slice:code-refine-start": sliceCodeRefineStartCommand,
 		"slice:code-refine-commit": sliceCodeRefineCommitCommand,
 		"slice:land": sliceLandCommand,
+		"briefing:write": briefingWriteCommand,
+		"briefing:latest": briefingLatestCommand,
 		"project:show": projectShowCommand,
 		"project:set-steering": projectSetSteeringCommand,
 		"subsystem:register": subsystemRegisterCommand,

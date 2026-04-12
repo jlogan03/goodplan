@@ -11,6 +11,7 @@ import type {
  * Module-internal: NOT exported from the barrel.
  */
 import type { AnyEventEnvelope, ContentRef } from "../../schemas/envelope.js";
+import { briefingWrittenPayloadSchema } from "../../schemas/events/briefing.js";
 import {
 	architectureTargetCommittedPayloadSchema,
 	architectureTargetDraftedPayloadSchema,
@@ -576,8 +577,32 @@ export function reduceFinding(state: DerivedStateData, _event: AnyEventEnvelope)
 	void state;
 }
 
-export function reduceBriefing(state: DerivedStateData, _event: AnyEventEnvelope): void {
-	void state;
+export function reduceBriefing(state: DerivedStateData, event: AnyEventEnvelope): void {
+	switch (event.type) {
+		case "briefing-written": {
+			const parsed = briefingWrittenPayloadSchema.safeParse(event.payload);
+			if (parsed.success) {
+				const d = parsed.data;
+				state.briefings.push({
+					scope: event.scopeRef === null ? "project" : "epic",
+					scopeRef: event.scopeRef,
+					timeContext: d.timeContext,
+					currentPosition: d.currentPosition,
+					lastAction: d.lastAction,
+					whereStopped: d.whereStopped,
+					nextAction: d.nextAction,
+					attentionItems: d.attentionItems,
+					...(d.deepLinks !== undefined ? { deepLinks: d.deepLinks } : {}),
+					writtenAt: event.timestamp,
+				});
+			}
+			break;
+		}
+
+		default:
+			// Silently skip unknown briefing event types (forward compat)
+			break;
+	}
 }
 
 export function reduceDecisionLearning(state: DerivedStateData, _event: AnyEventEnvelope): void {
