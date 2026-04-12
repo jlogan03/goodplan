@@ -3,4 +3,4 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-node "$SCRIPT_DIR/build-plugin-target.mjs" claude
+node "$SCRIPT_DIR/build-plugin-target.mjs" codex
