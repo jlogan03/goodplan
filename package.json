@@ -16,7 +16,8 @@
     "build": "bash scripts/build-plugin.sh",
     "build:claude": "bash scripts/build-plugin.sh",
     "build:codex": "bash scripts/build-codex-plugin.sh",
-    "build:all": "bash scripts/build-plugin.sh && bash scripts/build-codex-plugin.sh"
+    "build:all": "bash scripts/build-plugin.sh && bash scripts/build-codex-plugin.sh",
+    "install:codex:home": "bash scripts/install-codex-plugin-home.sh"
   },
   "dependencies": {
     "@michaelhomer/jqjs": "github:mwh/jqjs",

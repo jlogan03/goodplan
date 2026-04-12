@@ -36,6 +36,14 @@ bash scripts/build-codex-plugin.sh
 #   .agents/plugins/marketplace.json
 ```
 
+To make the plugin available from any repo on the current machine, install it into the home-local Codex marketplace layout:
+
+```bash
+bash scripts/install-codex-plugin-home.sh --build
+```
+
+That installs the plugin into `~/plugins/goodplan` and adds or updates `~/.agents/plugins/marketplace.json`.
+
 In Codex, the command wrappers use `/gp-...` names instead of Claude's `/gp:...` names. For example:
 
 - `/gp-init`
