@@ -78,10 +78,10 @@
 					"status": "abandoned"
 				},
 				{
-					"completed": "2026-04-12T18:07:28.171Z",
+					"completed": "2026-04-12T19:24:15.098Z",
 					"created": "2026-04-12T18:03:06.411Z",
 					"name": "07a-reviewer-registry-rubrics",
-					"status": "implementing"
+					"status": "completed"
 				},
 				{
 					"completed": "2026-04-12T18:09:47.000Z",
@@ -120,10 +120,10 @@
 					"status": "abandoned"
 				},
 				{
-					"completed": null,
+					"completed": "2026-04-12T19:24:15.098Z",
 					"created": "2026-04-12T18:08:32.560Z",
 					"name": "07a-reviewer-registry-rubrics",
-					"status": "implementing"
+					"status": "completed"
 				}
 			],
 			"status": "activated"

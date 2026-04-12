@@ -1,0 +1,3 @@
+{"description":"Implemented src/trust/reviewers/ with ReviewerRegistry class, loader, routing function, and barrel exports.","subsystem":"Reviewer Registry","ts":"2026-04-12T19:24:15.098Z","type":"add"}
+{"description":"Added plugin/rubrics/ with 5 YAML rubric files plus rubric-loader.ts and rubric-validator.ts with cross-reference validation.","subsystem":"Rubric System","ts":"2026-04-12T19:24:15.098Z","type":"add"}
+{"description":"Added 5 read-only plugin-introspection commands (reviewer:list, reviewer:show, rubric:list, rubric:show, rubric:validate).","subsystem":"CLI Commands","ts":"2026-04-12T19:24:15.098Z","type":"modify"}
