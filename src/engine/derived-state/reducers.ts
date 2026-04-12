@@ -26,6 +26,11 @@ import {
 	sliceSetCommittedPayloadSchema,
 	sliceSetDraftedPayloadSchema,
 } from "../../schemas/events/epic.js";
+import {
+	subsystemMaturityUpdatedPayloadSchema,
+	subsystemRegisteredPayloadSchema,
+	subsystemRetiredPayloadSchema,
+} from "../../schemas/events/subsystem.js";
 
 // --- Entity Lifecycle Reducer ---
 
@@ -468,12 +473,49 @@ export function reduceEntityLifecycle(state: DerivedStateData, event: AnyEventEn
 
 // --- Spine Reducer ---
 
-export function reduceSpine(state: DerivedStateData, _event: AnyEventEnvelope): void {
-	// Spine events (architecture-committed, conventions-committed, subsystem-registered)
-	// currently do not mutate DerivedStateData fields.
-	// They affect spine files managed by the milestone system.
-	// Stub: silently skip.
-	void state;
+export function reduceSpine(state: DerivedStateData, event: AnyEventEnvelope): void {
+	const payload = event.payload as Record<string, unknown>;
+
+	switch (event.type) {
+		case "subsystem-registered": {
+			const parsed = subsystemRegisteredPayloadSchema.safeParse(payload);
+			if (parsed.success) {
+				state.subsystems.set(parsed.data.name, {
+					name: parsed.data.name,
+					maturity: parsed.data.maturity,
+					owns: parsed.data.owns,
+					retired: false,
+				});
+			}
+			break;
+		}
+
+		case "subsystem-maturity-updated": {
+			const parsed = subsystemMaturityUpdatedPayloadSchema.safeParse(payload);
+			if (parsed.success) {
+				const existing = state.subsystems.get(parsed.data.name);
+				if (existing !== undefined) {
+					existing.maturity = parsed.data.maturity;
+				}
+			}
+			break;
+		}
+
+		case "subsystem-retired": {
+			const parsed = subsystemRetiredPayloadSchema.safeParse(payload);
+			if (parsed.success) {
+				const existing = state.subsystems.get(parsed.data.name);
+				if (existing !== undefined) {
+					existing.retired = true;
+				}
+			}
+			break;
+		}
+
+		default:
+			// Silently skip unknown spine event types (forward compat)
+			break;
+	}
 }
 
 // --- Stub reducers for other domains ---

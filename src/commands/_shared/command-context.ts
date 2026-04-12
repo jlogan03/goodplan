@@ -121,6 +121,45 @@ export function createEventCommandContext<T extends EventCommandContextOptions>(
 	return base as EventCommandContext<T>;
 }
 
+// ── Project-scope context ──────────────────────────────────
+
+/** Context for project-scope commands (subsystem, project, etc.). */
+export interface ProjectEventCommandContext {
+	goodplanDir: string;
+	projectEventsPath: string;
+	branch: string;
+	commitHint: string | null;
+	beforeAppend: (envelope: AnyEventEnvelope) => void | Promise<void>;
+}
+
+/**
+ * Create a project-scope event command context.
+ * Resolves the project directory, wires up invariant engine for
+ * the project-level events.jsonl.
+ */
+export function createProjectCommandContext(): ProjectEventCommandContext {
+	const goodplanDir = resolveProjectDir();
+	const projectEventsPath = path.join(goodplanDir, "events.jsonl");
+	const branch = getGitBranch();
+	const commitHint = getGitCommitHint();
+
+	const registry = createCoreRegistry();
+	const getContext = createReplayGetContext(replayEvents);
+	const beforeAppend = createBeforeAppendHook({
+		eventsPath: projectEventsPath,
+		registry,
+		getContext,
+	});
+
+	return {
+		goodplanDir,
+		projectEventsPath,
+		branch,
+		commitHint,
+		beforeAppend,
+	};
+}
+
 // ── InvariantError handler ──────────────────────────────────
 
 /**

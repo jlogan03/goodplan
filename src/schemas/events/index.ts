@@ -52,3 +52,19 @@ export type {
 	PlanShapeApprovedPayload,
 	PlanShapeCheckpointAutoShapedPayload,
 } from "./slice.js";
+
+export {
+	SubsystemEventMap,
+	SubsystemMaturitySchema,
+	subsystemRegisteredPayloadSchema,
+	subsystemMaturityUpdatedPayloadSchema,
+	subsystemRetiredPayloadSchema,
+} from "./subsystem.js";
+export type {
+	SubsystemMaturity,
+	SubsystemEventType,
+	SubsystemEventPayload,
+	SubsystemRegisteredPayload,
+	SubsystemMaturityUpdatedPayload,
+	SubsystemRetiredPayload,
+} from "./subsystem.js";

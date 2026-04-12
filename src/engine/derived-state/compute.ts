@@ -32,6 +32,8 @@ export function createEmptyState(): DerivedStateData {
 		sideQuests: new Map(),
 		convergenceSnapshots: new Map(),
 		latestDimensionScores: new Map(),
+		subsystems: new Map(),
+		customInvariants: new Map(),
 	};
 }
 

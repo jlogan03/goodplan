@@ -13,8 +13,17 @@ import {
 	submitPlanInputSchema,
 	submitRefinementInputSchema,
 } from "../../schemas/commands/submit.js";
+import {
+	registerSubsystemInputSchema,
+	updateMaturityInputSchema,
+} from "../../schemas/commands/subsystem.js";
 import { taskCreateInputSchema } from "../../schemas/commands/task.js";
 import { projectInitializedPayloadSchema } from "../../schemas/events/index.js";
+import {
+	subsystemMaturityUpdatedPayloadSchema,
+	subsystemRegisteredPayloadSchema,
+	subsystemRetiredPayloadSchema,
+} from "../../schemas/events/subsystem.js";
 import { GoodplanError } from "../../util/errors.js";
 import { output } from "../../util/output.js";
 import { globalArgs, listArgs } from "../global-args.js";
@@ -50,6 +59,8 @@ export const stdinSchemaRegistry: Record<string, z.ZodType> = {
 	"task:create": taskCreateInputSchema,
 	"decision:create": createDecisionInputSchema,
 	"decision:update": updateDecisionInputSchema,
+	"subsystem:register": registerSubsystemInputSchema,
+	"subsystem:update-maturity": updateMaturityInputSchema,
 	"submit-plan": submitPlanInputSchema,
 	"submit-refinement": submitRefinementInputSchema,
 	"submit-implementation": submitImplementationInputSchema,
@@ -642,6 +653,36 @@ registerCommand("submit-implementation", "Submit implementation results.", {
 // v1 epic submit commands removed (submit-explore, submit-architecture, submit-slices,
 // submit-refine-architecture, submit-refine-slices) — superseded by v2 event commands
 
+// ── Subsystem commands ──────────────────────────────────────
+
+registerCommand(
+	"subsystem:register",
+	"Register a new subsystem. Accepts stdin JSON { name, maturity, owns }.",
+	{
+		...globalArgDefs,
+	},
+);
+registerCommand("subsystem:list", "List all registered subsystems with maturity and ownership.", {
+	...globalArgDefs,
+	...listArgDefs,
+});
+registerCommand("subsystem:show", "Show full subsystem details. Requires --name flag.", {
+	...globalArgDefs,
+	name: { type: "string", description: "Subsystem name", required: true },
+});
+registerCommand(
+	"subsystem:update-maturity",
+	"Update a subsystem's maturity level. Requires --name flag and stdin JSON { maturity }.",
+	{
+		...globalArgDefs,
+		name: { type: "string", description: "Subsystem name", required: true },
+	},
+);
+registerCommand("subsystem:retire", "Retire a subsystem. Requires --name flag.", {
+	...globalArgDefs,
+	name: { type: "string", description: "Subsystem name", required: true },
+});
+
 // ── Event Schema Registry ───────────────────────────────────
 
 /**
@@ -650,6 +691,9 @@ registerCommand("submit-implementation", "Submit implementation results.", {
  */
 export const eventSchemaRegistry: Record<string, z.ZodType> = {
 	"project-initialized": projectInitializedPayloadSchema,
+	"subsystem-registered": subsystemRegisteredPayloadSchema,
+	"subsystem-maturity-updated": subsystemMaturityUpdatedPayloadSchema,
+	"subsystem-retired": subsystemRetiredPayloadSchema,
 };
 
 // ── Schema command ───────────────────────────────────────────

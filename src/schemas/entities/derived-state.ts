@@ -165,6 +165,23 @@ export interface Transition {
 	description: string;
 }
 
+// --- Subsystem State ---
+
+export interface SubsystemState {
+	name: string;
+	maturity: "experimental" | "stable" | "mature" | "deprecated";
+	owns: string[];
+	retired: boolean;
+}
+
+// --- Custom Invariant State ---
+
+export interface CustomInvariantState {
+	id: string;
+	description: string;
+	status: "proposed" | "active" | "inactive";
+}
+
 // --- Derived State Data ---
 
 export interface DerivedStateData {
@@ -173,4 +190,6 @@ export interface DerivedStateData {
 	sideQuests: Map<string, SideQuestState>;
 	convergenceSnapshots: Map<string, ConvergenceSnapshot>;
 	latestDimensionScores: Map<string, DimensionScore[]>;
+	subsystems: Map<string, SubsystemState>;
+	customInvariants: Map<string, CustomInvariantState>;
 }

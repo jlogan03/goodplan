@@ -276,6 +276,8 @@ describe("stdinSchemaRegistry drift detection", () => {
 			"submit-plan",
 			"submit-refinement",
 			"submit-implementation",
+			"subsystem:register",
+			"subsystem:update-maturity",
 			// v1 epic subagent commands removed (submit-explore, submit-architecture,
 			// submit-slices, submit-refine-architecture, submit-refine-slices)
 		];

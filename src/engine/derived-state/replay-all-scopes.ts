@@ -28,6 +28,14 @@ export async function replayAllScopes(
 	const projectState = computeDerivedState(projectResult.events);
 	state.project = { ...projectState.project };
 
+	// Merge project-scope subsystems and custom invariants
+	for (const [key, sub] of projectState.subsystems) {
+		state.subsystems.set(key, { ...sub, owns: [...sub.owns] });
+	}
+	for (const [key, inv] of projectState.customInvariants) {
+		state.customInvariants.set(key, { ...inv });
+	}
+
 	// 2. Scan epics directory
 	const epicsDir = path.join(goodplanDir, "epics");
 	if (fs.existsSync(epicsDir)) {

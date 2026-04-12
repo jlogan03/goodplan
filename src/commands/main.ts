@@ -81,6 +81,11 @@ import { startRefinementCommand } from "./subagent/start-refinement.js";
 import { submitImplementationCommand } from "./subagent/submit-implementation.js";
 import { submitPlanCommand } from "./subagent/submit-plan.js";
 import { submitRefinementCommand } from "./subagent/submit-refinement.js";
+import { subsystemListCommand } from "./subsystem/list.js";
+import { subsystemRegisterCommand } from "./subsystem/register.js";
+import { subsystemRetireCommand } from "./subsystem/retire.js";
+import { subsystemShowCommand } from "./subsystem/show.js";
+import { subsystemUpdateMaturityCommand } from "./subsystem/update-maturity.js";
 import { taskConvertCommand } from "./task/convert.js";
 import { taskCreateCommand } from "./task/create.js";
 import { taskDropCommand } from "./task/drop.js";
@@ -180,6 +185,11 @@ export const mainCommand = defineCommand({
 		"slice:code-refine-start": sliceCodeRefineStartCommand,
 		"slice:code-refine-commit": sliceCodeRefineCommitCommand,
 		"slice:land": sliceLandCommand,
+		"subsystem:register": subsystemRegisterCommand,
+		"subsystem:list": subsystemListCommand,
+		"subsystem:show": subsystemShowCommand,
+		"subsystem:update-maturity": subsystemUpdateMaturityCommand,
+		"subsystem:retire": subsystemRetireCommand,
 		"start-plan": startPlanCommand,
 		"start-refinement": startRefinementCommand,
 		"start-implementation": startImplementationCommand,
