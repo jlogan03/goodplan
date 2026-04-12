@@ -1,0 +1,11 @@
+{
+	"created": "2026-04-12T18:03:06.411Z",
+	"deferred": [],
+	"epic": "workflow-bug-fixes",
+	"goal": "Build the full reviewer registry (YAML frontmatter, routing function, relevance weighting) and rubric set (extracted from prose to YAML), plus commands for querying and validating reviewers and rubrics.",
+	"implementationPhase": null,
+	"name": "07a-reviewer-registry-rubrics",
+	"refinement": null,
+	"status": "created",
+	"updated": "2026-04-12T18:03:06.411Z"
+}

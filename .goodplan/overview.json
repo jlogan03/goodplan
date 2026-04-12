@@ -76,6 +76,12 @@
 					"created": "2026-04-09T22:27:17.793Z",
 					"name": "12-migration-dogfood",
 					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-12T18:03:06.411Z",
+					"name": "07a-reviewer-registry-rubrics",
+					"status": "created"
 				}
 			],
 			"status": "activated"
