@@ -2,6 +2,24 @@
 name: reviewer-holistic
 description: Reviews artifacts for goal alignment, completeness, coherence, phasing, and process quality. Always included in every review round. Spawned by pipeline orchestrators during refinement loops.
 model: opus
+version: 1
+domains:
+  - alignment
+  - completeness
+  - coherence
+applies_to:
+  - plan
+  - architecture
+  - goal
+  - slice-set
+  - pressure-test
+  - code
+rubric_ref: holistic
+score_range: [1, 5]
+passing_threshold_per_dimension:
+  alignment: 4
+  completeness: 4
+  coherence: 4
 ---
 
 # Holistic Reviewer Agent

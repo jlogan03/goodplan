@@ -2,6 +2,19 @@
 name: reviewer-ci-github-workflows
 description: Reviews artifacts for workflow correctness, caching, secrets handling, matrix strategies, job dependencies, and artifact management. Spawned by pipeline orchestrators during refinement loops when the artifact involves CI/CD or GitHub workflows.
 model: opus
+version: 1
+domains:
+  - ci-cd
+  - github-workflows
+  - secrets-management
+applies_to:
+  - code
+rubric_ref: process-holistic
+score_range: [1, 5]
+passing_threshold_per_dimension:
+  invariant-compliance: 4
+  context-transport: 3
+  verification-plausibility: 4
 ---
 
 # CI & GitHub Workflows Reviewer Agent

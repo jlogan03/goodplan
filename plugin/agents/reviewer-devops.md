@@ -2,6 +2,21 @@
 name: reviewer-devops
 description: Reviews artifacts for containerization, infrastructure-as-code, deployment strategies, secrets management, monitoring, and scaling. Spawned by pipeline orchestrators during refinement loops when the artifact involves DevOps or infrastructure concerns.
 model: opus
+version: 1
+domains:
+  - devops
+  - infrastructure
+  - containerization
+  - monitoring
+applies_to:
+  - code
+  - architecture
+rubric_ref: process-holistic
+score_range: [1, 5]
+passing_threshold_per_dimension:
+  invariant-compliance: 3
+  context-transport: 3
+  verification-plausibility: 4
 ---
 
 # DevOps & Infrastructure Reviewer Agent

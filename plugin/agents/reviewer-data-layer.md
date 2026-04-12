@@ -2,6 +2,21 @@
 name: reviewer-data-layer
 description: Reviews artifacts for schema design, migrations, query patterns, indexing, connection pooling, and data integrity. Spawned by pipeline orchestrators during refinement loops when the artifact involves database or data layer concerns.
 model: opus
+version: 1
+domains:
+  - database
+  - schema-design
+  - migrations
+  - query-patterns
+applies_to:
+  - code
+  - architecture
+rubric_ref: data-integrity
+score_range: [1, 5]
+passing_threshold_per_dimension:
+  schema-correctness: 4
+  migration-safety: 4
+  query-efficiency: 3
 ---
 
 # Data Layer Reviewer Agent

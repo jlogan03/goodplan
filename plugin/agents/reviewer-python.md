@@ -2,6 +2,20 @@
 name: reviewer-python
 description: Reviews artifacts for Python type hints, packaging, async patterns, virtual environments, and dependency management. Spawned by pipeline orchestrators during refinement loops when the artifact involves Python code.
 model: opus
+version: 1
+domains:
+  - python
+  - type-hints
+  - packaging
+  - async
+applies_to:
+  - code
+rubric_ref: code-quality
+score_range: [1, 5]
+passing_threshold_per_dimension:
+  type-safety: 4
+  module-design: 3
+  runtime-correctness: 4
 ---
 
 # Python Reviewer Agent

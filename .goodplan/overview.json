@@ -81,7 +81,7 @@
 					"completed": "2026-04-12T18:07:28.171Z",
 					"created": "2026-04-12T18:03:06.411Z",
 					"name": "07a-reviewer-registry-rubrics",
-					"status": "plan-refined"
+					"status": "implementing"
 				},
 				{
 					"completed": "2026-04-12T18:09:47.000Z",
@@ -123,7 +123,7 @@
 					"completed": null,
 					"created": "2026-04-12T18:08:32.560Z",
 					"name": "07a-reviewer-registry-rubrics",
-					"status": "plan-refined"
+					"status": "implementing"
 				}
 			],
 			"status": "activated"

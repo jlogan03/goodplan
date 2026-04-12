@@ -2,6 +2,21 @@
 name: reviewer-backend
 description: Reviews artifacts for API design, auth patterns, database access, middleware, error handling, and input validation. Spawned by pipeline orchestrators during refinement loops when the artifact involves backend services.
 model: opus
+version: 1
+domains:
+  - backend
+  - api-design
+  - auth
+  - middleware
+applies_to:
+  - code
+  - architecture
+rubric_ref: code-quality
+score_range: [1, 5]
+passing_threshold_per_dimension:
+  type-safety: 4
+  module-design: 4
+  runtime-correctness: 4
 ---
 
 # Backend Reviewer Agent

@@ -47,3 +47,11 @@ export type {
 export { synthesizeFeedback } from "./feedback-synthesizer.js";
 
 export type { ReviewerDispatcher, ReviewerError, ArtifactEditor } from "./interfaces/index.js";
+
+export {
+	ReviewerRegistry,
+	createReviewerRegistry,
+	loadReviewerAgents,
+	routeReviewers,
+} from "./reviewers/index.js";
+export type { ReviewerRegistryEntry, ReviewerRoute, ArtifactType } from "./reviewers/index.js";
