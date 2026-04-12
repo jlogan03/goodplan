@@ -1,12 +1,14 @@
 # goodplan
 
-**Tools that keep Claude on track across sessions, branches, and features.**
+**Tools that keep coding agents on track across sessions, branches, and features.**
 
 Claude Code changed how I build software. But on real projects — multi-week, multi-session, large and complex — I struggle to keep Claude on track. Context evaporates between sessions. Patterns get applied inconsistently, leaving the codebase fragmented. I become the verification bottleneck, manually checking work Claude could check itself. Discoveries get dropped. The same mistakes repeat. And Claude always wants to jump straight into code instead of thinking first.
 
-I built goodplan to fix this. It's a Claude Code plugin that keeps project state — architecture, decisions, conventions, and learnings — in your repo, and proactively delivers the right context to Claude at each phase of the workflow. The result: you can take on ambitious, long-lived projects without the codebase falling apart.
+I built goodplan to fix this. It's a workflow plugin that keeps project state — architecture, decisions, conventions, and learnings — in your repo, and proactively delivers the right context to the coding agent at each phase of the workflow. The result: you can take on ambitious, long-lived projects without the codebase falling apart.
 
 ## Install
+
+### Claude Code
 
 ```bash
 # Add the goodplan marketplace:
@@ -17,6 +19,32 @@ claude plugin install goodplan
 ```
 
 Then start Claude Code in your project directory and run `/gp:create-epic` to get started, or `/gp:init` to add goodplan to an existing codebase.
+
+### Codex
+
+Codex support is currently a repo-local plugin build. The Claude marketplace flow remains unchanged.
+
+```bash
+# Build the repo-local Codex plugin.
+# Requires Bun on PATH for a real binary build.
+bash scripts/build-codex-plugin.sh
+
+# The build writes the plugin to:
+#   plugins/goodplan/
+#
+# And the repo-local marketplace entry already points Codex at:
+#   .agents/plugins/marketplace.json
+```
+
+In Codex, the command wrappers use `/gp-...` names instead of Claude's `/gp:...` names. For example:
+
+- `/gp-init`
+- `/gp-create-epic`
+- `/gp-plan-slice`
+- `/gp-implement`
+- `/gp-audit`
+
+The underlying workflow content is the same in both hosts. The current Codex build, like the Claude build, compiles a macOS arm64 binary.
 
 ## Features
 
@@ -92,7 +120,7 @@ Project
 
 ### Skills
 
-Each step produces artifacts that persist across sessions. Use `/gp:status` at any time to see where you are and what to do next. All 12 skills are namespaced under `/gp:`.
+Each step produces artifacts that persist across sessions. Use `/gp:status` in Claude Code or `/gp-status` in Codex at any time to see where you are and what to do next.
 
 **Getting started:**
 - `/gp:init` — Initialize a new project or onboard an existing codebase

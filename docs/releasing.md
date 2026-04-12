@@ -22,6 +22,17 @@ gh workflow run publish-plugin.yml
 
 This runs the build and smoke tests but skips release creation and release branch publishing.
 
+## Codex target
+
+Codex support is currently repo-local only.
+
+- Build it with `bash scripts/build-codex-plugin.sh`
+- The generated plugin lives at `plugins/goodplan/`
+- The repo-local marketplace entry lives at `.agents/plugins/marketplace.json`
+- The current release workflow does **not** publish the Codex target
+
+This keeps the existing Claude release path unchanged while still making the repo usable as a Codex plugin.
+
 ## Version contract
 
 `package.json` version must match the tag (without `v` prefix). The workflow's post-build assertion enforces this:
@@ -50,6 +61,8 @@ plugins/
 ```
 
 Users install via: `/plugin marketplace add ian97531/goodplan`
+
+The release branch does not currently include the repo-local Codex marketplace file or `plugins/goodplan/`. Codex installation is still done from the working tree after running the local build.
 
 ## Rollback
 
