@@ -3,7 +3,7 @@
 	"deferred": [],
 	"epic": "workflow-bug-fixes",
 	"goal": "Rewrite core Claude Code skills for v2: workflow-guide (always-on orientation), status (project state query), init (project bootstrap), upgrade (migration from pre-CLI state), and task (lightweight task capture). Establish patterns for all subsequent skills.",
-	"implementationPhase": null,
+	"implementationPhase": 0,
 	"name": "08-core-skills-v2",
 	"refinement": {
 		"maxRounds": 10,
@@ -19,6 +19,6 @@
 			}
 		]
 	},
-	"status": "plan-refined",
-	"updated": "2026-04-12T22:17:21.885Z"
+	"status": "implementing",
+	"updated": "2026-04-12T22:39:47.492Z"
 }

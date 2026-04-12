@@ -21,7 +21,14 @@ The `gp` binary is on PATH (added by the plugin's `bin/` directory). All skill i
 gp status --json              # project state, active entities
 gp --help                     # discover available commands
 gp schema --json              # full command tree with schemas
+gp task:list --json           # open tasks
+gp decision:list --json       # active decisions
+gp learning:list --json       # accumulated learnings
 ```
+
+## CLI Command Categories
+
+Run `gp schema --json` for the full command tree. Key entity command groups: `subsystem:*`, `project:*`, `briefing:*`, `task:*`, `decision:*`, `learning:*`.
 
 ## .goodplan/ Write Restrictions
 
@@ -71,6 +78,22 @@ If a workflow was interrupted mid-execution:
 - **STATE_ALREADY_INITIALIZED**: Project already initialized. Proceed with other commands.
 - **Stale run directory detected**: Skills with iteration loops (not the CLI) check for incomplete run directories and offer to resume or start fresh.
 - **Partial implementation**: If implementation was interrupted, re-running `/gp:implement` detects completed phases and resumes from the next one.
+- **STATE_CONTENT_MISSING**: Required file not found — copy or regenerate the file and retry.
+- **STATE_MAX_ROUNDS_REACHED**: Refinement round limit exceeded — use `--override` to force, or improve review scores.
+- **STATE_SLICE_NOT_READY**: Previous slices not in terminal status — complete or abandon them first.
+
+## Task & Decision Quick Reference
+
+Common cross-skill operations for capturing tasks and decisions mid-workflow:
+
+```bash
+# Capture a task during any workflow
+echo '{"name":"...","title":"...","description":"..."}' | gp task:create --json
+# Convert task to a quest
+gp task:convert --task <name> --json
+# Record a decision
+echo '{"title":"...","rationale":"...","alternatives":[...]}' | gp decision:create --json
+```
 
 ## Error Handling Quick Reference
 
