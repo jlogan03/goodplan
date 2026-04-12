@@ -87,3 +87,15 @@ export type {
 	BriefingEventPayload,
 	BriefingWrittenPayload,
 } from "./briefing.js";
+
+export {
+	FindingEventMap,
+	findingCapturedPayloadSchema,
+	findingTriagedPayloadSchema,
+} from "./finding.js";
+export type {
+	FindingEventType,
+	FindingEventPayload,
+	FindingCapturedPayload,
+	FindingTriagedPayload,
+} from "./finding.js";

@@ -67,7 +67,7 @@ export type DimensionScore = DimensionResult;
 export interface Finding {
 	id: string;
 	summary: string;
-	disposition: "accepted" | "dismissed" | "pending";
+	disposition: "accepted" | "dismissed" | "deferred" | "pending";
 }
 
 // --- Chunk State ---

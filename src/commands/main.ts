@@ -33,6 +33,9 @@ import { epicSliceSetShapeAutoCommand } from "./epic/slice-set-shape-auto.js";
 import { epicSliceSetShapeStartCommand } from "./epic/slice-set-shape-start.js";
 import { epicSlicesCommitCommand } from "./epic/slices-commit.js";
 import { epicSlicesDraftCommand } from "./epic/slices-draft.js";
+import { findingCaptureCommand } from "./finding/capture.js";
+import { findingListCommand } from "./finding/list.js";
+import { findingTriageCommand } from "./finding/triage.js";
 import { globalArgs } from "./global-args.js";
 import { initCommand } from "./global/init.js";
 import { migrateCommand } from "./global/migrate.js";
@@ -189,6 +192,9 @@ export const mainCommand = defineCommand({
 		"slice:code-refine-start": sliceCodeRefineStartCommand,
 		"slice:code-refine-commit": sliceCodeRefineCommitCommand,
 		"slice:land": sliceLandCommand,
+		"finding:capture": findingCaptureCommand,
+		"finding:list": findingListCommand,
+		"finding:triage": findingTriageCommand,
 		"briefing:write": briefingWriteCommand,
 		"briefing:latest": briefingLatestCommand,
 		"project:show": projectShowCommand,

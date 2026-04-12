@@ -27,6 +27,7 @@ import {
 	sliceSetCommittedPayloadSchema,
 	sliceSetDraftedPayloadSchema,
 } from "../../schemas/events/epic.js";
+import { findingTriagedPayloadSchema } from "../../schemas/events/finding.js";
 import {
 	subsystemMaturityUpdatedPayloadSchema,
 	subsystemRegisteredPayloadSchema,
@@ -462,6 +463,20 @@ export function reduceEntityLifecycle(state: DerivedStateData, event: AnyEventEn
 					disposition: "pending" as const,
 				};
 				epic.findings.push(finding);
+			}
+			break;
+		}
+
+		case "finding-triaged": {
+			const epic = resolveEpic(state, event);
+			if (epic !== undefined) {
+				const parsed = findingTriagedPayloadSchema.safeParse(payload);
+				if (parsed.success) {
+					const finding = epic.findings.find((f) => f.id === parsed.data.findingId);
+					if (finding !== undefined) {
+						finding.disposition = parsed.data.disposition;
+					}
+				}
 			}
 			break;
 		}
