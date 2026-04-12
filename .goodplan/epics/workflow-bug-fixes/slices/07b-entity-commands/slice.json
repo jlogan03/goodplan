@@ -3,7 +3,7 @@
 	"deferred": [],
 	"epic": "workflow-bug-fixes",
 	"goal": "Implement all remaining CLI commands for supporting entities: side-quests, findings, briefings, decisions, learnings, events, subsystems, invariants, and project-level commands.",
-	"implementationPhase": 5,
+	"implementationPhase": 6,
 	"name": "07b-entity-commands",
 	"refinement": {
 		"maxRounds": 10,
@@ -21,5 +21,5 @@
 		]
 	},
 	"status": "implementing",
-	"updated": "2026-04-12T21:49:40.781Z"
+	"updated": "2026-04-12T21:53:35.616Z"
 }
