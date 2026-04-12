@@ -2,8 +2,17 @@
 // One file per entity (project.ts, epic.ts, slice.ts, etc.).
 // Coexists with v1 src/schemas/state-events.ts until full migration.
 
-export { projectInitializedPayloadSchema } from "./project.js";
-export type { ProjectInitializedPayload } from "./project.js";
+export {
+	ProjectEventMap,
+	projectInitializedPayloadSchema,
+	steeringPreferenceSetPayloadSchema,
+} from "./project.js";
+export type {
+	ProjectEventType,
+	ProjectEventPayload,
+	ProjectInitializedPayload,
+	SteeringPreferenceSetPayload,
+} from "./project.js";
 
 export {
 	EpicEventMap,

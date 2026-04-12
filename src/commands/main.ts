@@ -40,6 +40,8 @@ import { statusCommand } from "./global/status.js";
 import { verifyCommand } from "./global/verify.js";
 import { learningListCommand } from "./learning/list.js";
 import { learningRollupCommand } from "./learning/rollup.js";
+import { projectSetSteeringCommand } from "./project/set-steering.js";
+import { projectShowCommand } from "./project/show.js";
 import { questAbandonCommand } from "./quest/abandon.js";
 import { questCompleteCommand } from "./quest/complete.js";
 import { questCreateCommand } from "./quest/create.js";
@@ -185,6 +187,8 @@ export const mainCommand = defineCommand({
 		"slice:code-refine-start": sliceCodeRefineStartCommand,
 		"slice:code-refine-commit": sliceCodeRefineCommitCommand,
 		"slice:land": sliceLandCommand,
+		"project:show": projectShowCommand,
+		"project:set-steering": projectSetSteeringCommand,
 		"subsystem:register": subsystemRegisterCommand,
 		"subsystem:list": subsystemListCommand,
 		"subsystem:show": subsystemShowCommand,
