@@ -28,15 +28,17 @@ jobs:
         run: bun run build
         env:
           GP_HMAC_KEY: ${{ secrets.GP_HMAC_KEY }}
-          GOODPLAN_BINARY_PLATFORM: macos-arm64
+          GOODPLAN_BINARY_PLATFORMS: macos-arm64,macos-x64,linux-arm64,linux-x64
 
       - name: Post-build version assertion
         run: |
-          BINARY_VERSION=$(./dist/gp-plugin/binaries/macos-arm64/gp --version --json | python3 -c "import sys,json; print(json.load(sys.stdin)['version'])")
           TAG_VERSION="${GITHUB_REF_NAME#v}"
-          echo "Binary version: $BINARY_VERSION"
-          echo "Tag version: $TAG_VERSION"
-          [ "$BINARY_VERSION" = "$TAG_VERSION" ] || { echo "Version mismatch: binary=$BINARY_VERSION tag=$TAG_VERSION"; exit 1; }
+          for PLATFORM in macos-arm64 macos-x64 linux-arm64 linux-x64; do
+            BINARY_VERSION=$(./dist/gp-plugin/binaries/$PLATFORM/gp --version --json | python3 -c "import sys,json; print(json.load(sys.stdin)['version'])")
+            echo "Binary version ($PLATFORM): $BINARY_VERSION"
+            echo "Tag version: $TAG_VERSION"
+            [ "$BINARY_VERSION" = "$TAG_VERSION" ] || { echo "Version mismatch for $PLATFORM: binary=$BINARY_VERSION tag=$TAG_VERSION"; exit 1; }
+          done
 
       - name: Smoke test hooks
         run: |

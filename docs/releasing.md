@@ -30,7 +30,7 @@ Codex has a separate publish workflow:
 - Build locally with `bash scripts/build-codex-plugin.sh`
 - The generated plugin lives at `plugins/goodplan/`
 - The marketplace entry lives at `.agents/plugins/marketplace.json`
-- Local builds compile the native host platform by default. Set `GOODPLAN_BINARY_PLATFORM=<platform>` to override.
+- Local builds compile the native host platform by default. Set `GOODPLAN_BINARY_PLATFORM=<platform>` to override, or `GOODPLAN_BINARY_PLATFORMS=<comma-separated platforms>` to build a multi-platform payload.
 - Tagged releases publish a dedicated `codex-release` branch containing only:
   - `.agents/plugins/marketplace.json`
   - `plugins/goodplan/`
@@ -59,6 +59,9 @@ plugins/
       plugin.json
     binaries/
       macos-arm64/gp    # compiled CLI binary
+      macos-x64/gp
+      linux-arm64/gp
+      linux-x64/gp
     skills/             # all workflow skills
     hooks/              # state protection hooks
     CLAUDE.md           # universal goodplan instructions
@@ -66,7 +69,7 @@ plugins/
 
 Users install via: `/plugin marketplace add ian97531/goodplan`
 
-The separate `codex-release` branch contains the Codex marketplace payload (`.agents/plugins/marketplace.json` plus `plugins/goodplan/`). Both release workflows pin `GOODPLAN_BINARY_PLATFORM=macos-arm64` so the published payload stays stable. The `release` branch remains Claude-only.
+The separate `codex-release` branch contains the Codex marketplace payload (`.agents/plugins/marketplace.json` plus `plugins/goodplan/`). Both release workflows set `GOODPLAN_BINARY_PLATFORMS=macos-arm64,macos-x64,linux-arm64,linux-x64` so the published payload includes the full supported binary matrix. The `release` branch remains Claude-only.
 
 ## Rollback
 

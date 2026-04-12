@@ -80,9 +80,9 @@ const expectedCodexCommands = [
 	"gp-task.md",
 	"gp-upgrade.md",
 ];
-let buildPlatform;
+let buildPlatforms;
 try {
-	buildPlatform = resolveBuildPlatform();
+	buildPlatforms = resolveBuildPlatforms();
 } catch (error) {
 	console.error(error instanceof Error ? error.message : String(error));
 	process.exit(1);
@@ -169,44 +169,82 @@ function hostPlatformKey() {
 	return `${process.platform}-${process.arch}`;
 }
 
-function resolveBuildPlatform() {
-	const requestedPlatform = process.env.GOODPLAN_BINARY_PLATFORM?.trim();
-	if (requestedPlatform) {
+function normalizeRequestedPlatforms(requestedValue, envName) {
+	const requestedPlatforms = requestedValue
+		.split(",")
+		.map((value) => value.trim())
+		.filter(Boolean);
+	if (requestedPlatforms.length === 0) {
+		throw new Error(`FAIL: ${envName} is set but empty. Expected one or more of: ${supportedPlatformList()}`);
+	}
+	const seen = new Set();
+	return requestedPlatforms.flatMap((requestedPlatform) => {
 		const requestedConfig = supportedBuildPlatforms[requestedPlatform];
 		if (!requestedConfig) {
 			throw new Error(
-				`FAIL: unsupported GOODPLAN_BINARY_PLATFORM=${requestedPlatform}. Expected one of: ${supportedPlatformList()}`,
+				`FAIL: unsupported ${envName} entry ${requestedPlatform}. Expected one of: ${supportedPlatformList()}`,
 			);
 		}
-		return {
-			binaryDir: requestedPlatform,
-			...requestedConfig,
+		if (seen.has(requestedPlatform)) {
+			return [];
+		}
+		seen.add(requestedPlatform);
+		return [
+			{
+				binaryDir: requestedPlatform,
+				...requestedConfig,
+			},
+		];
+	});
+}
+
+function resolveBuildPlatforms() {
+	const requestedPlatforms = process.env.GOODPLAN_BINARY_PLATFORMS?.trim();
+	const requestedPlatform = process.env.GOODPLAN_BINARY_PLATFORM?.trim();
+	if (requestedPlatforms && requestedPlatform) {
+		throw new Error("FAIL: set only one of GOODPLAN_BINARY_PLATFORM or GOODPLAN_BINARY_PLATFORMS");
+	}
+	if (requestedPlatforms) {
+		return normalizeRequestedPlatforms(requestedPlatforms, "GOODPLAN_BINARY_PLATFORMS").map((platform) => ({
+			...platform,
+			source: `GOODPLAN_BINARY_PLATFORMS=${requestedPlatforms}`,
+		}));
+	}
+	if (requestedPlatform) {
+		return normalizeRequestedPlatforms(requestedPlatform, "GOODPLAN_BINARY_PLATFORM").map((platform) => ({
+			...platform,
 			source: `GOODPLAN_BINARY_PLATFORM=${requestedPlatform}`,
-		};
+		}));
 	}
 
 	const nativeHost = hostPlatformKey();
 	for (const [binaryDir, config] of Object.entries(supportedBuildPlatforms)) {
 		if (config.host === nativeHost) {
-			return {
-				binaryDir,
-				...config,
-				source: `native host ${nativeHost}`,
-			};
+			return [
+				{
+					binaryDir,
+					...config,
+					source: `native host ${nativeHost}`,
+				},
+			];
 		}
 	}
 
 	throw new Error(
-		`FAIL: unsupported native platform ${nativeHost}. Set GOODPLAN_BINARY_PLATFORM to one of: ${supportedPlatformList()}`,
+		`FAIL: unsupported native platform ${nativeHost}. Set GOODPLAN_BINARY_PLATFORM or GOODPLAN_BINARY_PLATFORMS to one of: ${supportedPlatformList()}`,
 	);
 }
 
-function compiledBinaryPath() {
+function compiledBinaryPath(buildPlatform) {
 	return join(pluginRoot, "binaries", buildPlatform.binaryDir, "gp");
 }
 
-function writePlaceholderBinary() {
-	const placeholder = compiledBinaryPath();
+function compiledBinaryPaths() {
+	return buildPlatforms.map((buildPlatform) => compiledBinaryPath(buildPlatform));
+}
+
+function writePlaceholderBinary(buildPlatform) {
+	const placeholder = compiledBinaryPath(buildPlatform);
 	saveText(
 		placeholder,
 		[
@@ -220,26 +258,40 @@ function writePlaceholderBinary() {
 	console.log(`  GOODPLAN_SKIP_COMPILE=1 set: wrote placeholder gp binary for ${buildPlatform.binaryDir}`);
 }
 
-function compileBinary() {
+function compileBinaries() {
 	console.log(`Building ${target} plugin v${version}...`);
-	console.log(`  binary target: ${buildPlatform.binaryDir} (${buildPlatform.bunTarget}; ${buildPlatform.source})`);
-	ensureDir(join(pluginRoot, "binaries", buildPlatform.binaryDir));
+	console.log(
+		`  binary targets: ${buildPlatforms.map((buildPlatform) => buildPlatform.binaryDir).join(", ")}`,
+	);
 	if (process.env.GOODPLAN_SKIP_COMPILE === "1") {
-		writePlaceholderBinary();
+		for (const buildPlatform of buildPlatforms) {
+			ensureDir(join(pluginRoot, "binaries", buildPlatform.binaryDir));
+			writePlaceholderBinary(buildPlatform);
+		}
 		return;
 	}
-	run("bun", [
-		"build",
-		"--compile",
-		"src/index.ts",
-		"--outfile",
-		compiledBinaryPath(),
-		`--target=${buildPlatform.bunTarget}`,
-		"--define",
-		`__GOODPLAN_VERSION__="${version}"`,
-		"--define",
-		`__GP_HMAC_KEY__="${process.env.GP_HMAC_KEY ?? "goodplan-dev-hmac-key"}"`,
-	]);
+	for (const buildPlatform of buildPlatforms) {
+		console.log(`  compiling ${buildPlatform.binaryDir} (${buildPlatform.bunTarget}; ${buildPlatform.source})`);
+		ensureDir(join(pluginRoot, "binaries", buildPlatform.binaryDir));
+		run("bun", [
+			"build",
+			"--compile",
+			"src/index.ts",
+			"--outfile",
+			compiledBinaryPath(buildPlatform),
+			`--target=${buildPlatform.bunTarget}`,
+			"--define",
+			`__GOODPLAN_VERSION__="${version}"`,
+			"--define",
+			`__GP_HMAC_KEY__="${process.env.GP_HMAC_KEY ?? "goodplan-dev-hmac-key"}"`,
+		]);
+	}
+}
+
+function validateCompiledBinaries() {
+	for (const binaryPath of compiledBinaryPaths()) {
+		statSync(binaryPath);
+	}
 }
 
 function copySharedAssets() {
@@ -544,12 +596,12 @@ function validateClaudeArtifacts() {
 	JSON.parse(loadText(join(pluginRoot, "hooks", "hooks.json")));
 	statSync(join(pluginRoot, "hooks", "protect-state.sh"));
 	statSync(join(pluginRoot, "hooks", "warn-bash-state.sh"));
-	statSync(compiledBinaryPath());
+	validateCompiledBinaries();
 	statSync(join(pluginRoot, "bin", "gp"));
 	console.log("  plugin.json: valid JSON");
 	console.log("  hooks.json: valid JSON");
 	console.log("  hook scripts: present");
-	console.log(`  binary: present (${buildPlatform.binaryDir})`);
+	console.log(`  binaries: present (${buildPlatforms.map((buildPlatform) => buildPlatform.binaryDir).join(", ")})`);
 	console.log("  bin/gp launcher: present");
 }
 
@@ -557,7 +609,7 @@ function validateCodexArtifacts() {
 	console.log("\nValidating Codex plugin artifacts...");
 	JSON.parse(loadText(join(pluginRoot, ".codex-plugin", "plugin.json")));
 	JSON.parse(loadText(join(pluginRoot, "hooks.json")));
-	statSync(compiledBinaryPath());
+	validateCompiledBinaries();
 	const marketplace = JSON.parse(loadText(join(repoRoot, ".agents", "plugins", "marketplace.json")));
 	const goodplanEntry = marketplace.plugins.find((entry) => entry.name === "goodplan");
 	if (!goodplanEntry || goodplanEntry.source?.path !== "./plugins/goodplan") {
@@ -578,7 +630,7 @@ function validateCodexArtifacts() {
 	}
 	console.log("  plugin.json: valid JSON");
 	console.log("  hooks.json: valid JSON");
-	console.log(`  binary: present (${buildPlatform.binaryDir})`);
+	console.log(`  binaries: present (${buildPlatforms.map((buildPlatform) => buildPlatform.binaryDir).join(", ")})`);
 	console.log("  marketplace.json: points to ./plugins/goodplan");
 	console.log("  Claude-only placeholders: clean");
 }
@@ -592,7 +644,7 @@ function printSummary() {
 
 rmSync(pluginRoot, { recursive: true, force: true });
 copySharedAssets();
-compileBinary();
+compileBinaries();
 
 if (target === "claude") {
 	writeClaudeManifest();

@@ -28,19 +28,21 @@ jobs:
         run: bun run build:codex
         env:
           GP_HMAC_KEY: ${{ secrets.GP_HMAC_KEY }}
-          GOODPLAN_BINARY_PLATFORM: macos-arm64
+          GOODPLAN_BINARY_PLATFORMS: macos-arm64,macos-x64,linux-arm64,linux-x64
 
       - name: Post-build version assertion
         run: |
-          BINARY_VERSION=$(./plugins/goodplan/binaries/macos-arm64/gp --version --json | python3 -c "import sys,json; print(json.load(sys.stdin)['version'])")
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
             EXPECTED_VERSION="${GITHUB_REF_NAME#v}"
           else
             EXPECTED_VERSION=$(node -p 'require("./package.json").version')
           fi
-          echo "Binary version: $BINARY_VERSION"
-          echo "Expected version: $EXPECTED_VERSION"
-          [ "$BINARY_VERSION" = "$EXPECTED_VERSION" ] || { echo "Version mismatch: binary=$BINARY_VERSION expected=$EXPECTED_VERSION"; exit 1; }
+          for PLATFORM in macos-arm64 macos-x64 linux-arm64 linux-x64; do
+            BINARY_VERSION=$(./plugins/goodplan/binaries/$PLATFORM/gp --version --json | python3 -c "import sys,json; print(json.load(sys.stdin)['version'])")
+            echo "Binary version ($PLATFORM): $BINARY_VERSION"
+            echo "Expected version: $EXPECTED_VERSION"
+            [ "$BINARY_VERSION" = "$EXPECTED_VERSION" ] || { echo "Version mismatch for $PLATFORM: binary=$BINARY_VERSION expected=$EXPECTED_VERSION"; exit 1; }
+          done
 
       - name: Validate Codex marketplace payload
         run: |
