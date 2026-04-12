@@ -119,6 +119,10 @@ Write `${projectDir}/idea.md` using the Write tool with the user's description:
 > - `.goodplan/project.json` — project metadata
 >
 > **Next step:** `/gp:create-epic` to define the first development direction.
+>
+> **Also available:**
+> - `/gp:task` — quickly capture bugs, ideas, or improvements
+> - `/gp:explore` — research a specific area before committing to a plan (after creating an epic)
 
 Stop here for new projects.
 
@@ -181,7 +185,10 @@ Present the onboarding summary:
 > - `.goodplan/conventions.md` — conventions detected
 > - `.goodplan/architecture/_overview.md` — subsystems identified
 >
-> **Recommended next step:** `/gp:create-epic` to define the first development direction, or `/gp:explore` to investigate a specific area first.
+> **Recommended next step:** `/gp:create-epic` to define the first development direction, or `/gp:explore` (after creating an epic) to investigate a specific area first.
+>
+> **Also available:**
+> - `/gp:task` — quickly capture bugs, ideas, or improvements as you notice them
 
 ## Scope & Intentional Omissions
 
@@ -191,6 +198,7 @@ The init/onboard path is a lighter-weight version of full project onboarding. Th
 - **Side quest creation** for detected migrations/debt — deferred to `/gp:audit`
 - **Expertise profiling** — deferred to `/gp:audit`
 - **Optional epic creation** — deferred to user running `/gp:create-epic`
+- **Task capture** — available immediately via `/gp:task` after init completes
 
 Init gets the project scaffolded with conventions, architecture overview, and idea.md. Deeper workflow steps are handled by the skills above.
 
