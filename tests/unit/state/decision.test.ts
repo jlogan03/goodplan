@@ -32,7 +32,7 @@ describe("reduce — CREATE_DECISION", () => {
 
 		const decisions = getJsonl<DecisionEntry>(newState, "decisions.jsonl");
 		expect(decisions).toHaveLength(1);
-		const d = decisions![0]!;
+		const d = decisions?.[0]!;
 		expect(d.id).toBe("2026-03-20-layered-arch");
 		expect(d.status).toBe("active");
 		expect(d.domain).toBe("architecture");
@@ -78,7 +78,7 @@ describe("reduce — CREATE_DECISION", () => {
 		}) as ProjectState;
 
 		const log = getJsonl<Record<string, unknown>>(result, "activity-log.jsonl");
-		const entry = log![log!.length - 1]!;
+		const entry = log?.[log?.length - 1]!;
 		expect(entry.phase).toBe("create-decision");
 		expect(entry.scope).toBe("decisions/dec-1");
 	});
@@ -88,7 +88,12 @@ describe("reduce — CREATE_DECISION with provenance fields", () => {
 	it("creates entry with entityPath and reconsiderWhen", () => {
 		let s = initProject();
 		// Create an epic so the entityPath resolves (state machine only — no entityPath validation here)
-		s = reduce(s, { type: "CREATE_EPIC", name: "my-epic", goal: "Test epic", ts: TS }) as ProjectState;
+		s = reduce(s, {
+			type: "CREATE_EPIC",
+			name: "my-epic",
+			goal: "Test epic",
+			ts: TS,
+		}) as ProjectState;
 
 		const result = reduce(s, {
 			type: "CREATE_DECISION",
@@ -105,7 +110,7 @@ describe("reduce — CREATE_DECISION with provenance fields", () => {
 		const newState = result as ProjectState;
 		const decisions = getJsonl<DecisionEntry>(newState, "decisions.jsonl");
 		expect(decisions).toHaveLength(1);
-		const d = decisions![0]!;
+		const d = decisions?.[0]!;
 		expect(d.entityPath).toBe("epics/my-epic");
 		expect(d.reconsiderWhen).toEqual(["Binary exceeds 100MB", "Multi-platform needed"]);
 	});
@@ -125,7 +130,7 @@ describe("reduce — CREATE_DECISION with provenance fields", () => {
 		const newState = result as ProjectState;
 		const decisions = getJsonl<DecisionEntry>(newState, "decisions.jsonl");
 		expect(decisions).toHaveLength(1);
-		const d = decisions![0]!;
+		const d = decisions?.[0]!;
 		expect(d.entityPath).toBeUndefined();
 		expect(d.reconsiderWhen).toBeUndefined();
 		// Core fields still present
@@ -150,7 +155,7 @@ describe("reduce — CREATE_DECISION with provenance fields", () => {
 		expect(isStateError(result)).toBe(false);
 		const newState = result as ProjectState;
 		const decisions = getJsonl<DecisionEntry>(newState, "decisions.jsonl");
-		const d = decisions![0]!;
+		const d = decisions?.[0]!;
 		expect(d.entityPath).toBe("epics/e1");
 		expect(d.reconsiderWhen).toBeUndefined();
 	});
@@ -170,7 +175,7 @@ describe("reduce — CREATE_DECISION with provenance fields", () => {
 		expect(isStateError(result)).toBe(false);
 		const newState = result as ProjectState;
 		const decisions = getJsonl<DecisionEntry>(newState, "decisions.jsonl");
-		const d = decisions![0]!;
+		const d = decisions?.[0]!;
 		expect(d.entityPath).toBeUndefined();
 		expect(d.reconsiderWhen).toEqual(["When tests slow down"]);
 	});
@@ -200,7 +205,7 @@ describe("reduce — UPDATE_DECISION", () => {
 		}) as ProjectState;
 
 		const decisions = getJsonl<DecisionEntry>(result, "decisions.jsonl");
-		expect(decisions![0]!.status).toBe("revisiting");
+		expect(decisions?.[0]?.status).toBe("revisiting");
 	});
 
 	it("active -> superseded with supersededBy", () => {
@@ -213,8 +218,8 @@ describe("reduce — UPDATE_DECISION", () => {
 		}) as ProjectState;
 
 		const decisions = getJsonl<DecisionEntry>(result, "decisions.jsonl");
-		expect(decisions![0]!.status).toBe("superseded");
-		expect(decisions![0]!.supersededBy).toBe("dec-2");
+		expect(decisions?.[0]?.status).toBe("superseded");
+		expect(decisions?.[0]?.supersededBy).toBe("dec-2");
 	});
 
 	it("revisiting -> active", () => {
@@ -234,7 +239,7 @@ describe("reduce — UPDATE_DECISION", () => {
 		}) as ProjectState;
 
 		const decisions = getJsonl<DecisionEntry>(result, "decisions.jsonl");
-		expect(decisions![0]!.status).toBe("active");
+		expect(decisions?.[0]?.status).toBe("active");
 	});
 
 	it("revisiting -> superseded", () => {
@@ -254,8 +259,8 @@ describe("reduce — UPDATE_DECISION", () => {
 		}) as ProjectState;
 
 		const decisions = getJsonl<DecisionEntry>(result, "decisions.jsonl");
-		expect(decisions![0]!.status).toBe("superseded");
-		expect(decisions![0]!.supersededBy).toBe("dec-2");
+		expect(decisions?.[0]?.status).toBe("superseded");
+		expect(decisions?.[0]?.supersededBy).toBe("dec-2");
 	});
 
 	it("revisiting -> revisiting rejected as invalid transition", () => {
@@ -334,9 +339,9 @@ describe("reduce — UPDATE_DECISION", () => {
 		}) as ProjectState;
 
 		const decisions = getJsonl<DecisionEntry>(result, "decisions.jsonl");
-		expect(decisions![0]!.title).toBe("Updated Title");
-		expect(decisions![0]!.summary).toBe("Updated Summary");
-		expect(decisions![0]!.status).toBe("active"); // unchanged
+		expect(decisions?.[0]?.title).toBe("Updated Title");
+		expect(decisions?.[0]?.summary).toBe("Updated Summary");
+		expect(decisions?.[0]?.status).toBe("active"); // unchanged
 	});
 
 	it("appends activity log", () => {
@@ -349,7 +354,7 @@ describe("reduce — UPDATE_DECISION", () => {
 		}) as ProjectState;
 
 		const log = getJsonl<Record<string, unknown>>(result, "activity-log.jsonl");
-		const entry = log![log!.length - 1]!;
+		const entry = log?.[log?.length - 1]!;
 		expect(entry.phase).toBe("update-decision");
 		expect(entry.scope).toBe("decisions/dec-1");
 	});

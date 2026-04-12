@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { activityEntrySchema } from "../../../src/schemas/records/activity-log.js";
+import { architectureDeltaSchema } from "../../../src/schemas/records/architecture-delta.js";
 import { decisionEntrySchema } from "../../../src/schemas/records/decision.js";
 import { learningEntrySchema } from "../../../src/schemas/records/learning.js";
-import { architectureDeltaSchema } from "../../../src/schemas/records/architecture-delta.js";
 
 // --- Activity Log ---
 
@@ -34,22 +34,17 @@ describe("activityEntrySchema", () => {
 	});
 
 	it("rejects empty phase", () => {
-		expect(
-			activityEntrySchema.safeParse({ ...validActivity, phase: "" }).success,
-		).toBe(false);
+		expect(activityEntrySchema.safeParse({ ...validActivity, phase: "" }).success).toBe(false);
 	});
 
 	it("rejects empty scope", () => {
-		expect(
-			activityEntrySchema.safeParse({ ...validActivity, scope: "" }).success,
-		).toBe(false);
+		expect(activityEntrySchema.safeParse({ ...validActivity, scope: "" }).success).toBe(false);
 	});
 
 	it("rejects invalid timestamp", () => {
-		expect(
-			activityEntrySchema.safeParse({ ...validActivity, ts: "not-a-date" })
-				.success,
-		).toBe(false);
+		expect(activityEntrySchema.safeParse({ ...validActivity, ts: "not-a-date" }).success).toBe(
+			false,
+		);
 	});
 
 	it("rejects missing required fields", () => {
@@ -94,16 +89,13 @@ describe("decisionEntrySchema", () => {
 	});
 
 	it("rejects invalid status", () => {
-		expect(
-			decisionEntrySchema.safeParse({ ...validDecision, status: "bogus" })
-				.success,
-		).toBe(false);
+		expect(decisionEntrySchema.safeParse({ ...validDecision, status: "bogus" }).success).toBe(
+			false,
+		);
 	});
 
 	it("rejects empty id", () => {
-		expect(
-			decisionEntrySchema.safeParse({ ...validDecision, id: "" }).success,
-		).toBe(false);
+		expect(decisionEntrySchema.safeParse({ ...validDecision, id: "" }).success).toBe(false);
 	});
 
 	it("rejects missing fields", () => {
@@ -139,9 +131,7 @@ describe("learningEntrySchema", () => {
 	});
 
 	it("accepts learning with empty tags", () => {
-		expect(
-			learningEntrySchema.safeParse({ ...validLearning, tags: [] }).success,
-		).toBe(true);
+		expect(learningEntrySchema.safeParse({ ...validLearning, tags: [] }).success).toBe(true);
 	});
 
 	it("rejects missing rollup", () => {
@@ -160,10 +150,7 @@ describe("learningEntrySchema", () => {
 	});
 
 	it("rejects empty category", () => {
-		expect(
-			learningEntrySchema.safeParse({ ...validLearning, category: "" })
-				.success,
-		).toBe(false);
+		expect(learningEntrySchema.safeParse({ ...validLearning, category: "" }).success).toBe(false);
 	});
 
 	it("rejects missing fields", () => {
@@ -210,39 +197,29 @@ const validArchDelta = {
 
 describe("architectureDeltaSchema", () => {
 	it("accepts a valid architecture delta", () => {
-		expect(architectureDeltaSchema.safeParse(validArchDelta).success).toBe(
-			true,
-		);
+		expect(architectureDeltaSchema.safeParse(validArchDelta).success).toBe(true);
 	});
 
 	it("accepts all valid types", () => {
 		for (const t of ["add", "modify", "remove"]) {
-			expect(
-				architectureDeltaSchema.safeParse({ ...validArchDelta, type: t })
-					.success,
-			).toBe(true);
+			expect(architectureDeltaSchema.safeParse({ ...validArchDelta, type: t }).success).toBe(true);
 		}
 	});
 
 	it("rejects invalid type", () => {
-		expect(
-			architectureDeltaSchema.safeParse({ ...validArchDelta, type: "update" })
-				.success,
-		).toBe(false);
+		expect(architectureDeltaSchema.safeParse({ ...validArchDelta, type: "update" }).success).toBe(
+			false,
+		);
 	});
 
 	it("rejects empty subsystem", () => {
-		expect(
-			architectureDeltaSchema.safeParse({ ...validArchDelta, subsystem: "" })
-				.success,
-		).toBe(false);
+		expect(architectureDeltaSchema.safeParse({ ...validArchDelta, subsystem: "" }).success).toBe(
+			false,
+		);
 	});
 
 	it("rejects invalid timestamp", () => {
-		expect(
-			architectureDeltaSchema.safeParse({ ...validArchDelta, ts: "bad" })
-				.success,
-		).toBe(false);
+		expect(architectureDeltaSchema.safeParse({ ...validArchDelta, ts: "bad" }).success).toBe(false);
 	});
 
 	it("rejects missing fields", () => {

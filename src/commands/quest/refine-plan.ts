@@ -28,12 +28,7 @@ export const questRefinePlanCommand = defineCommand({
 	setup() {},
 	async run({ args }) {
 		const projectDir = resolveProjectDir();
-		const result = await begin(
-			projectDir,
-			"refine-plan",
-			{ type: "quest", name: args.quest },
-			{},
-		);
+		const result = await begin(projectDir, "refine-plan", { type: "quest", name: args.quest }, {});
 
 		if (args.json || args.query) {
 			output(result, args);

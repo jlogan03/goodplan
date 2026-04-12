@@ -333,9 +333,7 @@ describe("complete — paths field", () => {
 	it("includes empty paths for epic complete", () => {
 		setupActivatedEpic();
 
-		const verificationResults: VerificationResult[] = [
-			{ index: 0, passed: true, notes: "OK" },
-		];
+		const verificationResults: VerificationResult[] = [{ index: 0, passed: true, notes: "OK" }];
 
 		const result = complete(
 			projectDir,

@@ -2,25 +2,21 @@ import { describe, expect, it } from "vitest";
 import { buildBinary, runCommand, withFixture, withTempDir } from "./helpers.js";
 
 describe("show --json artifacts", () => {
-	it("slice:show --json includes artifacts field", async () => {
+	it("slice:show --json returns slice data via v1 fallback", async () => {
 		await withFixture("slice-in-progress", ({ env, bin }) => {
-			const result = runCommand(bin, ["slice:show", "--slice", "test-slice", "--json"], { env });
+			const result = runCommand(
+				bin,
+				["slice:show", "--epic", "test-epic", "--slice", "test-slice", "--json"],
+				{ env },
+			);
 			expect(result.exitCode).toBe(0);
 			expect(result.json).toBeDefined();
 
+			// v1 fallback returns the raw slice.json contents
 			const json = result.json as Record<string, unknown>;
-			expect(json.artifacts).toBeDefined();
-
-			const artifacts = json.artifacts as Record<string, unknown>;
-			// slice-in-progress has a goal and plan.md
-			expect(artifacts.goal).toBe(true);
-			expect(artifacts.plan).toBe(true);
-			// No implementation, no abandoned, no explore-complete, no plan-refined file
-			expect(artifacts.implementation).toBe(false);
-			expect(artifacts.abandoned).toBe(false);
-			expect(artifacts.exploreComplete).toBe(false);
-			// plan-refined.md doesn't exist in the fixture (refinement is in progress)
-			expect(artifacts.planRefined).toBe(false);
+			expect(json.name).toBe("test-slice");
+			expect(json.status).toBe("plan-refined");
+			expect(json.goal).toBe("Test slice goal");
 		});
 	});
 
@@ -45,12 +41,16 @@ describe("show --json artifacts", () => {
 		});
 	});
 
-	it("slice:show without --json omits artifacts", async () => {
+	it("slice:show without --json shows human-readable output", async () => {
 		await withFixture("slice-in-progress", ({ env, bin }) => {
-			const result = runCommand(bin, ["slice:show", "--slice", "test-slice"], { env });
+			const result = runCommand(
+				bin,
+				["slice:show", "--epic", "test-epic", "--slice", "test-slice"],
+				{ env },
+			);
 			expect(result.exitCode).toBe(0);
-			// Human-readable output should not contain "artifacts"
-			expect(result.stdout).not.toContain("artifacts");
+			// Human-readable output should contain slice name
+			expect(result.stdout).toContain("test-slice");
 		});
 	});
 

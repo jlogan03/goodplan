@@ -28,3 +28,15 @@ export type {
 	EpicPausedPayload,
 	EpicResumedPayload,
 } from "./epic.js";
+
+export {
+	SliceEventMap,
+	sliceCreatedPayloadSchema,
+	sliceAbandonedPayloadSchema,
+} from "./slice.js";
+export type {
+	SliceEventType,
+	SliceEventPayload,
+	SliceCreatedPayload,
+	SliceAbandonedPayload,
+} from "./slice.js";

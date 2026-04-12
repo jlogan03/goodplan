@@ -162,19 +162,31 @@ describe("resolvePathReferences", () => {
 		});
 
 		it("decision target → {}", () => {
-			const result = resolvePathReferences(PROJECT_DIR, { type: "decision", id: "d1" }, "create-decision");
+			const result = resolvePathReferences(
+				PROJECT_DIR,
+				{ type: "decision", id: "d1" },
+				"create-decision",
+			);
 			expect(result).toEqual({});
 		});
 
 		it("rollup target → {}", () => {
-			const result = resolvePathReferences(PROJECT_DIR, { type: "rollup", from: "a", to: "b" }, "rollup");
+			const result = resolvePathReferences(
+				PROJECT_DIR,
+				{ type: "rollup", from: "a", to: "b" },
+				"rollup",
+			);
 			expect(result).toEqual({});
 		});
 	});
 
 	describe("paths are absolute", () => {
 		it("all returned paths are absolute", () => {
-			const result = resolvePathReferences(PROJECT_DIR, { type: "slice", name: "s1", epic: "e1" }, "refine-plan");
+			const result = resolvePathReferences(
+				PROJECT_DIR,
+				{ type: "slice", name: "s1", epic: "e1" },
+				"refine-plan",
+			);
 			for (const value of Object.values(result)) {
 				expect(path.isAbsolute(value)).toBe(true);
 			}

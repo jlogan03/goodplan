@@ -44,47 +44,47 @@ describe("getPriorityTable", () => {
 
 	it("plan phase starts with entity-goal", () => {
 		const table = getPriorityTable("plan");
-		expect(table[0]!.key).toBe("entity-goal");
+		expect(table[0]?.key).toBe("entity-goal");
 	});
 
 	it("refinement phase starts with plan", () => {
 		const table = getPriorityTable("refinement");
-		expect(table[0]!.key).toBe("plan");
+		expect(table[0]?.key).toBe("plan");
 	});
 
 	it("implementation phase starts with refined-plan", () => {
 		const table = getPriorityTable("implementation");
-		expect(table[0]!.key).toBe("refined-plan");
+		expect(table[0]?.key).toBe("refined-plan");
 	});
 
 	it("complete phase starts with entity-goal", () => {
 		const table = getPriorityTable("complete");
-		expect(table[0]!.key).toBe("entity-goal");
+		expect(table[0]?.key).toBe("entity-goal");
 	});
 
 	it("explore phase starts with epic-goal", () => {
 		const table = getPriorityTable("explore");
-		expect(table[0]!.key).toBe("epic-goal");
+		expect(table[0]?.key).toBe("epic-goal");
 	});
 
 	it("architecture phase starts with epic-goal", () => {
 		const table = getPriorityTable("architecture");
-		expect(table[0]!.key).toBe("epic-goal");
+		expect(table[0]?.key).toBe("epic-goal");
 	});
 
 	it("slices phase starts with epic-goal", () => {
 		const table = getPriorityTable("slices");
-		expect(table[0]!.key).toBe("epic-goal");
+		expect(table[0]?.key).toBe("epic-goal");
 	});
 
 	it("refine-architecture phase starts with epic-goal", () => {
 		const table = getPriorityTable("refine-architecture");
-		expect(table[0]!.key).toBe("epic-goal");
+		expect(table[0]?.key).toBe("epic-goal");
 	});
 
 	it("refine-slices phase starts with epic-goal", () => {
 		const table = getPriorityTable("refine-slices");
-		expect(table[0]!.key).toBe("epic-goal");
+		expect(table[0]?.key).toBe("epic-goal");
 	});
 
 	it("all phases include conventions except complete", () => {

@@ -54,7 +54,8 @@ describe("schema command", () => {
 		expect(names).toContain("status");
 		expect(names).toContain("init");
 		expect(names).toContain("epic:create");
-		expect(names).toContain("slice:complete");
+		expect(names).toContain("slice:create");
+		expect(names).toContain("slice:abandon");
 		expect(names).toContain("decision:create");
 
 		vi.restoreAllMocks();
@@ -67,11 +68,11 @@ describe("schema command", () => {
 			return true;
 		});
 
-		await runSchema({ json: true, command: "slice:complete" });
+		await runSchema({ json: true, command: "quest:complete" });
 
 		const outputStr = chunks.join("");
 		const parsed = JSON.parse(outputStr);
-		expect(parsed.name).toBe("slice:complete");
+		expect(parsed.name).toBe("quest:complete");
 		expect(parsed.description).toBeTruthy();
 		expect(parsed.args).toBeTruthy();
 		expect(parsed.stdinSchema).toBeTruthy();
@@ -79,7 +80,6 @@ describe("schema command", () => {
 		// Verify stdin schema has expected properties
 		expect(parsed.stdinSchema.type).toBe("object");
 		expect(parsed.stdinSchema.properties).toHaveProperty("verificationPassed");
-		expect(parsed.stdinSchema.properties).toHaveProperty("slice");
 
 		vi.restoreAllMocks();
 	});

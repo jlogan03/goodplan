@@ -82,7 +82,7 @@ describe("resolve", () => {
 	it("resolves a top-level json entry", () => {
 		const entry = resolve(fixture, "project.json");
 		expect(entry).toBeDefined();
-		expect(entry!.type).toBe("json");
+		expect(entry?.type).toBe("json");
 		expect((entry as JsonEntry<unknown>).content).toEqual({
 			name: "test",
 			version: "1.0.0",
@@ -92,19 +92,19 @@ describe("resolve", () => {
 	it("resolves a nested directory", () => {
 		const entry = resolve(fixture, "epics/my-epic");
 		expect(entry).toBeDefined();
-		expect(entry!.type).toBe("directory");
+		expect(entry?.type).toBe("directory");
 	});
 
 	it("resolves a deeply nested entry", () => {
 		const entry = resolve(fixture, "epics/my-epic/epic.json");
 		expect(entry).toBeDefined();
-		expect(entry!.type).toBe("json");
+		expect(entry?.type).toBe("json");
 	});
 
 	it("resolves a deeply nested markdown", () => {
 		const entry = resolve(fixture, "epics/my-epic/architecture/_overview.md");
 		expect(entry).toBeDefined();
-		expect(entry!.type).toBe("markdown");
+		expect(entry?.type).toBe("markdown");
 	});
 
 	it("returns undefined for missing path", () => {
@@ -127,7 +127,7 @@ describe("resolve", () => {
 	it("handles leading and trailing slashes", () => {
 		const entry = resolve(fixture, "/project.json/");
 		expect(entry).toBeDefined();
-		expect(entry!.type).toBe("json");
+		expect(entry?.type).toBe("json");
 	});
 });
 
@@ -135,10 +135,7 @@ describe("resolve", () => {
 
 describe("getJson", () => {
 	it("returns typed content for a json entry", () => {
-		const content = getJson<{ name: string; version: string }>(
-			fixture,
-			"project.json",
-		);
+		const content = getJson<{ name: string; version: string }>(fixture, "project.json");
 		expect(content).toEqual({ name: "test", version: "1.0.0" });
 	});
 
@@ -159,12 +156,9 @@ describe("getJson", () => {
 
 describe("getJsonl", () => {
 	it("returns content array for a jsonl entry", () => {
-		const content = getJsonl<{ ts: string; phase: string }>(
-			fixture,
-			"activity-log.jsonl",
-		);
+		const content = getJsonl<{ ts: string; phase: string }>(fixture, "activity-log.jsonl");
 		expect(content).toHaveLength(2);
-		expect(content![0]!.phase).toBe("init");
+		expect(content?.[0]?.phase).toBe("init");
 	});
 
 	it("returns undefined for missing path", () => {
@@ -182,8 +176,8 @@ describe("getDir", () => {
 	it("returns a directory entry", () => {
 		const dir = getDir(fixture, "epics");
 		expect(dir).toBeDefined();
-		expect(dir!.type).toBe("directory");
-		expect(dir!.contents["my-epic"]).toBeDefined();
+		expect(dir?.type).toBe("directory");
+		expect(dir?.contents["my-epic"]).toBeDefined();
 	});
 
 	it("returns root for empty path", () => {
@@ -245,15 +239,11 @@ describe("hasChild", () => {
 	});
 
 	it("returns false for deeply nested missing child", () => {
-		expect(
-			hasChild(fixture, "epics/my-epic/architecture", "missing.md"),
-		).toBe(false);
+		expect(hasChild(fixture, "epics/my-epic/architecture", "missing.md")).toBe(false);
 	});
 
 	it("returns true for deeply nested existing child", () => {
-		expect(
-			hasChild(fixture, "epics/my-epic/architecture", "_overview.md"),
-		).toBe(true);
+		expect(hasChild(fixture, "epics/my-epic/architecture", "_overview.md")).toBe(true);
 	});
 });
 
@@ -283,9 +273,10 @@ describe("setEntry", () => {
 
 		expect(resolve(result, "project.json")).toEqual(replacement);
 		// Original unchanged
-		expect(
-			(resolve(fixture, "project.json") as JsonEntry<unknown>).content,
-		).toEqual({ name: "test", version: "1.0.0" });
+		expect((resolve(fixture, "project.json") as JsonEntry<unknown>).content).toEqual({
+			name: "test",
+			version: "1.0.0",
+		});
 	});
 
 	it("adds a nested entry within existing directory", () => {
@@ -293,11 +284,7 @@ describe("setEntry", () => {
 			type: "json",
 			content: { name: "new-epic" },
 		};
-		const result = setEntry(
-			fixture,
-			"epics/new-epic/epic.json",
-			newEpicJson,
-		);
+		const result = setEntry(fixture, "epics/new-epic/epic.json", newEpicJson);
 
 		expect(resolve(result, "epics/new-epic/epic.json")).toEqual(newEpicJson);
 		// Intermediate directory was created
@@ -311,11 +298,7 @@ describe("setEntry", () => {
 			type: "markdown",
 			content: "# Plan",
 		};
-		const result = setEntry(
-			ZERO_STATE,
-			"a/b/c/d/plan.md",
-			entry,
-		);
+		const result = setEntry(ZERO_STATE, "a/b/c/d/plan.md", entry);
 
 		expect(getDir(result, "a")).toBeDefined();
 		expect(getDir(result, "a/b")).toBeDefined();

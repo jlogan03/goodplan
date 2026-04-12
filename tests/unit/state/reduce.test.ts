@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ZERO_STATE } from "../../../src/core/data/tree.js";
 import type { ProjectState } from "../../../src/core/data/tree.js";
-import { getJson, getJsonl, getDir } from "../../../src/core/data/tree.js";
+import { getJson, getJsonl } from "../../../src/core/data/tree.js";
 import { reduce } from "../../../src/core/state/reduce.js";
 import { isStateError } from "../../../src/core/state/types.js";
 import type { StateError } from "../../../src/core/state/types.js";
@@ -10,7 +10,11 @@ import type { StateError } from "../../../src/core/state/types.js";
 
 describe("reduce — INIT_PROJECT", () => {
 	it("produces a valid initial tree from ZERO_STATE", () => {
-		const result = reduce(ZERO_STATE, { type: "INIT_PROJECT", name: "my-proj", ts: "2026-01-01T00:00:00.000Z" });
+		const result = reduce(ZERO_STATE, {
+			type: "INIT_PROJECT",
+			name: "my-proj",
+			ts: "2026-01-01T00:00:00.000Z",
+		});
 
 		expect(isStateError(result)).toBe(false);
 		const state = result as ProjectState;
@@ -26,44 +30,51 @@ describe("reduce — INIT_PROJECT", () => {
 			updated: string;
 		}>(state, "project.json");
 		expect(project).toBeDefined();
-		expect(project!.name).toBe("my-proj");
-		expect(project!.version).toBe("1.0.0");
-		expect(project!.activeEpic).toBeNull();
-		expect(project!.activeSlice).toBeNull();
-		expect(project!.activeQuest).toBeNull();
-		expect(project!.created).toBeDefined();
-		expect(project!.updated).toBeDefined();
+		expect(project?.name).toBe("my-proj");
+		expect(project?.version).toBe("1.0.0");
+		expect(project?.activeEpic).toBeNull();
+		expect(project?.activeSlice).toBeNull();
+		expect(project?.activeQuest).toBeNull();
+		expect(project?.created).toBeDefined();
+		expect(project?.updated).toBeDefined();
 
 		// Consolidated overview.json exists with empty arrays
-		const overview = getJson<{ epics: unknown[]; quests: unknown[]; tasks: unknown[] }>(state, "overview.json");
+		const overview = getJson<{ epics: unknown[]; quests: unknown[]; tasks: unknown[] }>(
+			state,
+			"overview.json",
+		);
 		expect(overview).toBeDefined();
-		expect(overview!.epics).toEqual([]);
-		expect(overview!.quests).toEqual([]);
-		expect(overview!.tasks).toEqual([]);
+		expect(overview?.epics).toEqual([]);
+		expect(overview?.quests).toEqual([]);
+		expect(overview?.tasks).toEqual([]);
 
 		// JSONL files exist
 		const activityLog = getJsonl<unknown>(state, "activity-log.jsonl");
 		expect(activityLog).toBeDefined();
-		expect(activityLog!.length).toBe(1);
+		expect(activityLog?.length).toBe(1);
 
 		const decisions = getJsonl<unknown>(state, "decisions.jsonl");
 		expect(decisions).toBeDefined();
-		expect(decisions!.length).toBe(0);
+		expect(decisions?.length).toBe(0);
 
 		const learnings = getJsonl<unknown>(state, "learnings.jsonl");
 		expect(learnings).toBeDefined();
-		expect(learnings!.length).toBe(0);
+		expect(learnings?.length).toBe(0);
 	});
 
 	it("activity log entry has correct shape (ts, phase, scope, status, summary)", () => {
-		const result = reduce(ZERO_STATE, { type: "INIT_PROJECT", name: "test", ts: "2026-01-01T00:00:00.000Z" });
+		const result = reduce(ZERO_STATE, {
+			type: "INIT_PROJECT",
+			name: "test",
+			ts: "2026-01-01T00:00:00.000Z",
+		});
 		const state = result as ProjectState;
 
 		const activityLog = getJsonl<Record<string, unknown>>(state, "activity-log.jsonl");
 		expect(activityLog).toBeDefined();
-		expect(activityLog!.length).toBe(1);
+		expect(activityLog?.length).toBe(1);
 
-		const entry = activityLog![0]!;
+		const entry = activityLog?.[0]!;
 
 		// Structural shape checks — plain object, NOT Zod
 		expect(typeof entry.ts).toBe("string");
@@ -77,7 +88,11 @@ describe("reduce — INIT_PROJECT", () => {
 
 	it("returns STATE_ALREADY_INITIALIZED when project.json exists", () => {
 		// First init to get a valid state
-		const initialState = reduce(ZERO_STATE, { type: "INIT_PROJECT", name: "existing", ts: "2026-01-01T00:00:00.000Z" });
+		const initialState = reduce(ZERO_STATE, {
+			type: "INIT_PROJECT",
+			name: "existing",
+			ts: "2026-01-01T00:00:00.000Z",
+		});
 		expect(isStateError(initialState)).toBe(false);
 
 		// Second init on the same state
@@ -111,7 +126,11 @@ describe("reduce — unknown event type", () => {
 
 describe("reduce — purity", () => {
 	it("same inputs produce identical outputs", () => {
-		const event = { type: "INIT_PROJECT" as const, name: "pure-test", ts: "2026-01-01T00:00:00.000Z" };
+		const event = {
+			type: "INIT_PROJECT" as const,
+			name: "pure-test",
+			ts: "2026-01-01T00:00:00.000Z",
+		};
 
 		const result1 = reduce(ZERO_STATE, event);
 		const result2 = reduce(ZERO_STATE, event);
@@ -126,7 +145,11 @@ describe("reduce — purity", () => {
 
 	it("does not mutate the input state", () => {
 		const before = JSON.stringify(ZERO_STATE);
-		reduce(ZERO_STATE, { type: "INIT_PROJECT", name: "immutable-test", ts: "2026-01-01T00:00:00.000Z" });
+		reduce(ZERO_STATE, {
+			type: "INIT_PROJECT",
+			name: "immutable-test",
+			ts: "2026-01-01T00:00:00.000Z",
+		});
 		const after = JSON.stringify(ZERO_STATE);
 
 		expect(before).toBe(after);

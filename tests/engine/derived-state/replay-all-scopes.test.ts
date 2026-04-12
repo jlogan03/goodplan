@@ -2,8 +2,8 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { AnyEventEnvelope } from "../../../src/schemas/envelope.js";
 import { replayAllScopes } from "../../../src/engine/derived-state/replay-all-scopes.js";
+import type { AnyEventEnvelope } from "../../../src/schemas/envelope.js";
 
 function makeEventLine(
 	overrides: Partial<AnyEventEnvelope> & { domain: string; type: string },

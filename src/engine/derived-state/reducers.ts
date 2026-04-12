@@ -250,7 +250,10 @@ export function reduceEntityLifecycle(state: DerivedStateData, event: AnyEventEn
 		case "slice-created": {
 			const epic = resolveEpic(state, event);
 			if (epic !== undefined) {
-				const dir = payload.dir as string | undefined;
+				const dir =
+					(payload.directory as string | undefined) ??
+					(payload.sliceRef as string | undefined) ??
+					(payload.dir as string | undefined);
 				if (dir !== undefined) {
 					const sliceState = createEmptySliceState(dir);
 					epic.slices.set(dir, sliceState);
@@ -609,7 +612,8 @@ function resolveSlice(
 	if (epicRef === null) return undefined;
 	const epic = state.epics.get(epicRef);
 	if (epic === undefined) return undefined;
-	const sliceDir = payload.sliceDir as string | undefined;
+	const sliceDir =
+		(payload.sliceRef as string | undefined) ?? (payload.sliceDir as string | undefined);
 	if (sliceDir === undefined) return undefined;
 	return epic.slices.get(sliceDir);
 }

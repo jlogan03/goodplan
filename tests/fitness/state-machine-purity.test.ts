@@ -33,9 +33,7 @@ const FORBIDDEN_MODULES = new Set([
  * Skips `import type` declarations which produce no runtime code.
  * Returns an array of {module, line} for any forbidden I/O imports.
  */
-function findForbiddenImports(
-	source: string,
-): Array<{ module: string; line: number }> {
+function findForbiddenImports(source: string): Array<{ module: string; line: number }> {
 	const results: Array<{ module: string; line: number }> = [];
 	const lines = source.split("\n");
 
@@ -76,22 +74,15 @@ describe("INV-003: State machine purity — no I/O imports", () => {
 	});
 
 	for (const file of files) {
-		const relativePath = path.relative(
-			path.resolve(import.meta.dirname, "../.."),
-			file,
-		);
+		const relativePath = path.relative(path.resolve(import.meta.dirname, "../.."), file);
 
 		it(`${relativePath} has no I/O value imports`, () => {
 			const source = fs.readFileSync(file, "utf-8");
 			const forbidden = findForbiddenImports(source);
 
 			if (forbidden.length > 0) {
-				const details = forbidden
-					.map((f) => `  line ${f.line}: ${f.module}`)
-					.join("\n");
-				expect.fail(
-					`Found forbidden I/O imports in ${relativePath}:\n${details}`,
-				);
+				const details = forbidden.map((f) => `  line ${f.line}: ${f.module}`).join("\n");
+				expect.fail(`Found forbidden I/O imports in ${relativePath}:\n${details}`);
 			}
 		});
 	}
@@ -109,10 +100,7 @@ describe("INV-003: State machine purity — no non-deterministic calls", () => {
 	];
 
 	for (const file of files) {
-		const relativePath = path.relative(
-			path.resolve(import.meta.dirname, "../.."),
-			file,
-		);
+		const relativePath = path.relative(path.resolve(import.meta.dirname, "../.."), file);
 
 		it(`${relativePath} has no non-deterministic calls`, () => {
 			const source = fs.readFileSync(file, "utf-8");

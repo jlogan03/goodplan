@@ -211,7 +211,10 @@ describe("migrate: full flow", () => {
 			// sliceSequence removed from epicSchema — no longer in on-disk output
 
 			const sliceJson = JSON.parse(
-				fs.readFileSync(path.join(outputDir, "epics", "test-epic", "slices", "first-slice", "slice.json"), "utf-8"),
+				fs.readFileSync(
+					path.join(outputDir, "epics", "test-epic", "slices", "first-slice", "slice.json"),
+					"utf-8",
+				),
 			) as Record<string, unknown>;
 			expect(sliceJson.status).toBe("completed");
 			expect(sliceJson.epic).toBe("test-epic");
@@ -437,7 +440,11 @@ describe("buildMigrationState", () => {
 		const overviewEntry = state.contents["overview.json"];
 		expect(overviewEntry).toBeDefined();
 		if (overviewEntry?.type !== "json") throw new Error("expected json");
-		const overviewContent = overviewEntry.content as { epics: unknown[]; quests: unknown[]; tasks: unknown[] };
+		const overviewContent = overviewEntry.content as {
+			epics: unknown[];
+			quests: unknown[];
+			tasks: unknown[];
+		};
 		expect(overviewContent.epics).toHaveLength(1);
 
 		// Epic entity
@@ -613,8 +620,9 @@ describe("buildMigrationState", () => {
 		const state = buildMigrationState(answers);
 		const overviewEntry = state.contents["overview.json"];
 		if (overviewEntry?.type !== "json") throw new Error("expected json");
-		const epics = (overviewEntry.content as { epics: Array<{ name: string; completed: string | null }> })
-			.epics;
+		const epics = (
+			overviewEntry.content as { epics: Array<{ name: string; completed: string | null }> }
+		).epics;
 
 		const doneEpic = epics.find((i) => i.name === "done-epic");
 		expect(doneEpic?.completed).not.toBeNull();

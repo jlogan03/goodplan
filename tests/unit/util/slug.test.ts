@@ -75,7 +75,8 @@ describe("deriveSlug", () => {
 	});
 
 	it("truncates long slug at last hyphen before 60", () => {
-		const summary = "this-word is-here and-more-words keep-going until-we-exceed the-sixty char-limit by-a-lot";
+		const summary =
+			"this-word is-here and-more-words keep-going until-we-exceed the-sixty char-limit by-a-lot";
 		const slug = deriveSlug(summary, new Set());
 		expect(slug.length).toBeLessThanOrEqual(60);
 		// Verify it ends at a word boundary (no trailing hyphen)

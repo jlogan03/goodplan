@@ -5,11 +5,11 @@ import { getJson, getJsonl, setEntry } from "../../../src/core/data/tree.js";
 import { reduce } from "../../../src/core/state/reduce.js";
 import { isStateError } from "../../../src/core/state/types.js";
 import type { StateError } from "../../../src/core/state/types.js";
-import type { Quest } from "../../../src/schemas/entities/quest.js";
-import type { Project } from "../../../src/schemas/entities/project.js";
 import type { UnifiedOverview } from "../../../src/schemas/entities/overview.js";
-import type { LearningEntry } from "../../../src/schemas/records/learning.js";
+import type { Project } from "../../../src/schemas/entities/project.js";
+import type { Quest } from "../../../src/schemas/entities/quest.js";
 import type { ArchitectureDelta } from "../../../src/schemas/records/architecture-delta.js";
+import type { LearningEntry } from "../../../src/schemas/records/learning.js";
 
 const TS = "2026-01-01T00:00:00.000Z";
 const TS2 = "2026-01-02T00:00:00.000Z";
@@ -20,7 +20,12 @@ function questInImplementationComplete(): ProjectState {
 	s = reduce(s, { type: "BEGIN_QUEST_PLAN", quest: "q1", ts: TS }) as ProjectState;
 	s = setEntry(s, "quests/q1/plan.md", { type: "markdown", content: "# Plan" });
 	s = reduce(s, { type: "COMPLETE_QUEST_PLAN", quest: "q1", ts: TS }) as ProjectState;
-	s = reduce(s, { type: "COMPLETE_QUEST_REFINEMENT_ROUND", quest: "q1", ts: TS, scores: { q: 10 } }) as ProjectState;
+	s = reduce(s, {
+		type: "COMPLETE_QUEST_REFINEMENT_ROUND",
+		quest: "q1",
+		ts: TS,
+		scores: { q: 10 },
+	}) as ProjectState;
 	s = setEntry(s, "quests/q1/plan-refined.md", { type: "markdown", content: "# Refined" });
 	s = reduce(s, { type: "BEGIN_QUEST_IMPLEMENTATION", quest: "q1", ts: TS }) as ProjectState;
 	s = reduce(s, { type: "COMPLETE_QUEST_IMPLEMENTATION", quest: "q1", ts: TS }) as ProjectState;
@@ -60,19 +65,19 @@ describe("reduce — COMPLETE_QUEST", () => {
 
 		// Quest completed
 		const quest = getJson<Quest>(newState, "quests/q1/quest.json");
-		expect(quest!.status).toBe("completed");
-		expect(quest!.updated).toBe(TS2);
+		expect(quest?.status).toBe("completed");
+		expect(quest?.updated).toBe(TS2);
 
 		// Overview synced
 		const overview = getJson<UnifiedOverview>(newState, "overview.json");
-		const item = overview!.quests.find((i) => i.name === "q1");
-		expect(item!.status).toBe("completed");
+		const item = overview?.quests.find((i) => i.name === "q1");
+		expect(item?.status).toBe("completed");
 
 		// Per-quest learnings
 		const questLearnings = getJsonl<LearningEntry>(newState, "quests/q1/learnings.jsonl");
 		expect(questLearnings).toHaveLength(1);
-		expect(questLearnings![0]!.source).toBe("quests/q1");
-		expect(questLearnings![0]!.rollup).toBe(true);
+		expect(questLearnings?.[0]?.source).toBe("quests/q1");
+		expect(questLearnings?.[0]?.rollup).toBe(true);
 
 		// Project learnings rollup
 		const projectLearnings = getJsonl<LearningEntry>(newState, "learnings.jsonl");
@@ -81,12 +86,12 @@ describe("reduce — COMPLETE_QUEST", () => {
 		// Architecture deltas
 		const deltas = getJsonl<ArchitectureDelta>(newState, "quests/q1/architecture-deltas.jsonl");
 		expect(deltas).toHaveLength(1);
-		expect(deltas![0]!.subsystem).toBe("logging");
-		expect(deltas![0]!.ts).toBe(TS2);
+		expect(deltas?.[0]?.subsystem).toBe("logging");
+		expect(deltas?.[0]?.ts).toBe(TS2);
 
 		// activeQuest cleared
 		const project = getJson<Project>(newState, "project.json");
-		expect(project!.activeQuest).toBeNull();
+		expect(project?.activeQuest).toBeNull();
 	});
 
 	it("verificationPassed: false returns error", () => {
@@ -111,15 +116,17 @@ describe("reduce — COMPLETE_QUEST", () => {
 			quest: "q1",
 			ts: TS2,
 			verificationPassed: true,
-			learnings: [{
-				category: "worked",
-				summary: "Test",
-				file: "learnings/test.md",
-				tags: [],
-				source: "quests/q1",
-				rollup: true,
-				rollupTo: ["epic"],
-			}],
+			learnings: [
+				{
+					category: "worked",
+					summary: "Test",
+					file: "learnings/test.md",
+					tags: [],
+					source: "quests/q1",
+					rollup: true,
+					rollupTo: ["epic"],
+				},
+			],
 			architectureDelta: [],
 		}) as ProjectState;
 
@@ -139,21 +146,23 @@ describe("reduce — COMPLETE_QUEST", () => {
 			quest: "q1",
 			ts: TS2,
 			verificationPassed: true,
-			learnings: [{
-				category: "domain",
-				summary: "Important",
-				file: "learnings/important.md",
-				tags: [],
-				source: "quests/q1",
-				rollup: true,
-				rollupTo: ["project"],
-			}],
+			learnings: [
+				{
+					category: "domain",
+					summary: "Important",
+					file: "learnings/important.md",
+					tags: [],
+					source: "quests/q1",
+					rollup: true,
+					rollupTo: ["project"],
+				},
+			],
 			architectureDelta: [],
 		}) as ProjectState;
 
 		const projectLearnings = getJsonl<LearningEntry>(result, "learnings.jsonl");
 		expect(projectLearnings).toHaveLength(1);
-		expect(projectLearnings![0]!.summary).toBe("Important");
+		expect(projectLearnings?.[0]?.summary).toBe("Important");
 	});
 
 	it("empty learnings and architectureDelta works", () => {
@@ -169,7 +178,7 @@ describe("reduce — COMPLETE_QUEST", () => {
 
 		expect(isStateError(result)).toBe(false);
 		const quest = getJson<Quest>(result as ProjectState, "quests/q1/quest.json");
-		expect(quest!.status).toBe("completed");
+		expect(quest?.status).toBe("completed");
 	});
 
 	it("rejects wrong status", () => {
@@ -201,7 +210,7 @@ describe("reduce — COMPLETE_QUEST", () => {
 		}) as ProjectState;
 
 		const log = getJsonl<Record<string, unknown>>(result, "activity-log.jsonl");
-		const entry = log![log!.length - 1]!;
+		const entry = log?.[log?.length - 1]!;
 		expect(entry.phase).toBe("complete-quest");
 		expect(entry.scope).toBe("quests/q1");
 	});

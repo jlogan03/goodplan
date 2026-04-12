@@ -36,7 +36,12 @@ export function handleAbandonSlice(
 		return {
 			code: "STATE_INVALID_TRANSITION",
 			message: `Cannot abandon slice "${event.slice}" in terminal status "${slice.status}"`,
-			detail: { slice: event.slice, epic: event.epic, event: "ABANDON_SLICE", currentStatus: slice.status },
+			detail: {
+				slice: event.slice,
+				epic: event.epic,
+				event: "ABANDON_SLICE",
+				currentStatus: slice.status,
+			},
 		};
 	}
 

@@ -3,7 +3,6 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { begin } from "../../../../src/core/rpc/begin.js";
-import { complete } from "../../../../src/core/rpc/complete.js";
 import { rpcInit } from "../../../../src/core/rpc/init.js";
 import { submit } from "../../../../src/core/rpc/submit.js";
 
@@ -127,9 +126,7 @@ async function runQuestPlan(args: Record<string, unknown>) {
 }
 
 async function runQuestRefinePlan(args: Record<string, unknown>) {
-	const { questRefinePlanCommand } = await import(
-		"../../../../src/commands/quest/refine-plan.js"
-	);
+	const { questRefinePlanCommand } = await import("../../../../src/commands/quest/refine-plan.js");
 	const def = await questRefinePlanCommand;
 	if (def.run) {
 		await def.run({
@@ -141,9 +138,7 @@ async function runQuestRefinePlan(args: Record<string, unknown>) {
 }
 
 async function runQuestImplement(args: Record<string, unknown>) {
-	const { questImplementCommand } = await import(
-		"../../../../src/commands/quest/implement.js"
-	);
+	const { questImplementCommand } = await import("../../../../src/commands/quest/implement.js");
 	const def = await questImplementCommand;
 	if (def.run) {
 		await def.run({

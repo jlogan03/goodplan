@@ -1,7 +1,7 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { submit } from "../../core/rpc/submit.js";
 import { resolveProjectDir } from "../../core/data/project.js";
+import { submit } from "../../core/rpc/submit.js";
 import { submitSlicesInputSchema } from "../../schemas/commands/submit.js";
 import { output } from "../../util/output.js";
 import { readStdin } from "../../util/stdin.js";
@@ -18,7 +18,8 @@ import { globalArgs } from "../global-args.js";
 export const submitSlicesCommand = defineCommand({
 	meta: {
 		name: "submit-slices",
-		description: "Submit slicing completion. Requires --epic. No stdin needed. Triggers COMPLETE_SLICING.",
+		description:
+			"Submit slicing completion. Requires --epic. No stdin needed. Triggers COMPLETE_SLICING.",
 	},
 	args: {
 		...globalArgs,
@@ -34,12 +35,20 @@ export const submitSlicesCommand = defineCommand({
 		const input = validateInput(submitSlicesInputSchema, args, stdin);
 
 		const projectDir = resolveProjectDir();
-		const result = submit(projectDir, "slices", { type: "epic", name: input.epic }, { phase: "slices" });
+		const result = submit(
+			projectDir,
+			"slices",
+			{ type: "epic", name: input.epic },
+			{ phase: "slices" },
+		);
 
 		if (args.json || args.query) {
 			output(result, args);
 		} else if (!args.quiet) {
-			output(`${pc.bold(result.entity)}: ${result.previousStatus} ${pc.dim("->")} ${pc.green(result.newStatus)}`, args);
+			output(
+				`${pc.bold(result.entity)}: ${result.previousStatus} ${pc.dim("->")} ${pc.green(result.newStatus)}`,
+				args,
+			);
 		}
 	},
 });

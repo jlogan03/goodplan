@@ -7,7 +7,11 @@ import type { Epic } from "../../schemas/entities/epic.js";
 import type { UnifiedOverview } from "../../schemas/entities/overview.js";
 import type { Quest } from "../../schemas/entities/quest.js";
 import type { Slice } from "../../schemas/entities/slice.js";
-import type { LearningEntry, LearningEventEntry, LearningInput } from "../../schemas/records/learning.js";
+import type {
+	LearningEntry,
+	LearningEventEntry,
+	LearningInput,
+} from "../../schemas/records/learning.js";
 import type { StateEvent } from "../../schemas/state-events.js";
 import { GoodplanError } from "../../util/errors.js";
 import { deriveSlug } from "../../util/slug.js";
@@ -74,7 +78,12 @@ export function complete(
 		writeMarkdownFiles(projectDir, markdownFiles);
 	}
 
-	commitState(projectDir, oldState, stampedResult, options?.force === true ? { force: true } : undefined);
+	commitState(
+		projectDir,
+		oldState,
+		stampedResult,
+		options?.force === true ? { force: true } : undefined,
+	);
 
 	const baseResult = buildCompleteResult(target, oldState, stampedResult);
 	const completeResult: CompleteResult = {
@@ -358,8 +367,14 @@ function buildSliceCompleteResult(
 
 		for (const tuple of allSliceTuples) {
 			if (tuple.name === sliceName && tuple.itemEpicName === epicName) continue;
-			const oldTarget = getJson<Slice>(oldState, `epics/${tuple.itemEpicName}/slices/${tuple.name}/slice.json`);
-			const newTarget = getJson<Slice>(newState, `epics/${tuple.itemEpicName}/slices/${tuple.name}/slice.json`);
+			const oldTarget = getJson<Slice>(
+				oldState,
+				`epics/${tuple.itemEpicName}/slices/${tuple.name}/slice.json`,
+			);
+			const newTarget = getJson<Slice>(
+				newState,
+				`epics/${tuple.itemEpicName}/slices/${tuple.name}/slice.json`,
+			);
 			if (newTarget === undefined) continue;
 			const oldDeferredCount = oldTarget?.deferred.length ?? 0;
 			if (newTarget.deferred.length > oldDeferredCount) {
@@ -404,7 +419,10 @@ function buildSliceCompleteResult(
 
 	// Architecture paths
 	if (newSlice !== undefined) {
-		const archDeltas = getJsonl<unknown>(newState, `epics/${epicName}/slices/${sliceName}/architecture-deltas.jsonl`);
+		const archDeltas = getJsonl<unknown>(
+			newState,
+			`epics/${epicName}/slices/${sliceName}/architecture-deltas.jsonl`,
+		);
 		if (archDeltas !== undefined && archDeltas.length > 0) {
 			result.architecturePaths = {
 				currentArchitecture: `epics/${newSlice.epic}/architecture`,

@@ -91,7 +91,10 @@ export function handleCompleteSlice(
 			ts: event.ts,
 		}));
 		const existingDeltas =
-			getJsonl<ArchitectureDelta>(tree, `epics/${event.epic}/slices/${event.slice}/architecture-deltas.jsonl`) ?? [];
+			getJsonl<ArchitectureDelta>(
+				tree,
+				`epics/${event.epic}/slices/${event.slice}/architecture-deltas.jsonl`,
+			) ?? [];
 		tree = setEntry(tree, `epics/${event.epic}/slices/${event.slice}/architecture-deltas.jsonl`, {
 			type: "jsonl",
 			content: [...existingDeltas, ...deltas],

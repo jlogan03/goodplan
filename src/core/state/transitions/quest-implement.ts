@@ -59,7 +59,12 @@ export function handleBeginQuestImplementation(
 	event: BeginQuestImplementationEvent,
 ): ProjectState | StateError {
 	const quest = getQuest(state, event.quest);
-	const questOrErr = guardQuestStatus(quest, event.quest, "plan-refined", "BEGIN_QUEST_IMPLEMENTATION");
+	const questOrErr = guardQuestStatus(
+		quest,
+		event.quest,
+		"plan-refined",
+		"BEGIN_QUEST_IMPLEMENTATION",
+	);
 	if (isStateError(questOrErr)) return questOrErr;
 
 	// Guard: plan-refined.md must exist

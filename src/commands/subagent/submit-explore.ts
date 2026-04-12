@@ -1,7 +1,7 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { submit } from "../../core/rpc/submit.js";
 import { resolveProjectDir } from "../../core/data/project.js";
+import { submit } from "../../core/rpc/submit.js";
 import type { Target } from "../../core/rpc/types.js";
 import { GoodplanError } from "../../util/errors.js";
 import { output } from "../../util/output.js";
@@ -17,7 +17,8 @@ import { globalArgs } from "../global-args.js";
 export const submitExploreCommand = defineCommand({
 	meta: {
 		name: "submit-explore",
-		description: "Submit exploration completion. Requires --epic or --quest (mutually exclusive). No stdin needed.",
+		description:
+			"Submit exploration completion. Requires --epic or --quest (mutually exclusive). No stdin needed.",
 	},
 	args: {
 		...globalArgs,
@@ -42,9 +43,8 @@ export const submitExploreCommand = defineCommand({
 			);
 		}
 
-		const target: Target = epicVal !== undefined
-			? { type: "epic", name: epicVal }
-			: { type: "quest", name: questVal! };
+		const target: Target =
+			epicVal !== undefined ? { type: "epic", name: epicVal } : { type: "quest", name: questVal! };
 
 		const projectDir = resolveProjectDir();
 		const result = submit(projectDir, "explore", target, { phase: "explore" });
@@ -52,7 +52,10 @@ export const submitExploreCommand = defineCommand({
 		if (args.json || args.query) {
 			output(result, args);
 		} else if (!args.quiet) {
-			output(`${pc.bold(result.entity)}: ${result.previousStatus} ${pc.dim("->")} ${pc.green(result.newStatus)}`, args);
+			output(
+				`${pc.bold(result.entity)}: ${result.previousStatus} ${pc.dim("->")} ${pc.green(result.newStatus)}`,
+				args,
+			);
 		}
 	},
 });

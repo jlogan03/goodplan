@@ -4,14 +4,10 @@ import { runCommand, withFixture } from "./helpers.js";
 describe("error: refinement circuit breaker", () => {
 	it("submit-refinement at max rounds returns STATE_MAX_ROUNDS_REACHED", async () => {
 		await withFixture("slice-refining-max-rounds", ({ env, bin }) => {
-			const result = runCommand(
-				bin,
-				["submit-refinement", "--slice", "test-slice", "--json"],
-				{
-					env,
-					stdin: JSON.stringify({ scores: { correctness: 5, completeness: 5 } }),
-				},
-			);
+			const result = runCommand(bin, ["submit-refinement", "--slice", "test-slice", "--json"], {
+				env,
+				stdin: JSON.stringify({ scores: { correctness: 5, completeness: 5 } }),
+			});
 
 			expect(result.exitCode).toBe(3);
 			expect(result.json).toBeDefined();
@@ -42,14 +38,10 @@ describe("error: refinement circuit breaker", () => {
 
 	it("submit-refinement with passing scores bypasses circuit breaker naturally", async () => {
 		await withFixture("slice-refining-max-rounds", ({ env, bin }) => {
-			const result = runCommand(
-				bin,
-				["submit-refinement", "--slice", "test-slice", "--json"],
-				{
-					env,
-					stdin: JSON.stringify({ scores: { correctness: 9, completeness: 9 } }),
-				},
-			);
+			const result = runCommand(bin, ["submit-refinement", "--slice", "test-slice", "--json"], {
+				env,
+				stdin: JSON.stringify({ scores: { correctness: 9, completeness: 9 } }),
+			});
 
 			expect(result.exitCode).toBe(0);
 			expect(result.json).toBeDefined();

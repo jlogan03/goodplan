@@ -1,5 +1,5 @@
 import { defineCommand } from "citty";
-import { startContext, DEFAULT_INLINE_BUDGET } from "../../core/context/index.js";
+import { DEFAULT_INLINE_BUDGET, startContext } from "../../core/context/index.js";
 import { loadState } from "../../core/data/load.js";
 import { resolveProjectDir } from "../../core/data/project.js";
 import type { Target } from "../../core/rpc/types.js";
@@ -16,7 +16,8 @@ import { globalArgs, parseInlineBudget } from "../global-args.js";
 export const startExploreCommand = defineCommand({
 	meta: {
 		name: "start-explore",
-		description: "Assemble context bundle for explore phase. Requires --epic or --quest (mutually exclusive).",
+		description:
+			"Assemble context bundle for explore phase. Requires --epic or --quest (mutually exclusive).",
 	},
 	args: {
 		...globalArgs,
@@ -45,17 +46,17 @@ export const startExploreCommand = defineCommand({
 			);
 		}
 
-		const target: Target = epicVal !== undefined
-			? { type: "epic", name: epicVal }
-			: { type: "quest", name: questVal! };
+		const target: Target =
+			epicVal !== undefined ? { type: "epic", name: epicVal } : { type: "quest", name: questVal! };
 
 		const projectDir = resolveProjectDir();
 		const state = loadState(projectDir);
 
 		const inlineBudget = parseInlineBudget(args.inline as string | undefined);
-		const options = inlineBudget !== undefined
-			? { inlineBudget: typeof inlineBudget === "number" ? inlineBudget : DEFAULT_INLINE_BUDGET }
-			: undefined;
+		const options =
+			inlineBudget !== undefined
+				? { inlineBudget: typeof inlineBudget === "number" ? inlineBudget : DEFAULT_INLINE_BUDGET }
+				: undefined;
 
 		const bundle = startContext(state, "explore", target, options);
 		output(bundle, { ...args, json: true });

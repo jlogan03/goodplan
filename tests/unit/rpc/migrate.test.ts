@@ -218,7 +218,9 @@ describe("rpcMigrate — Confirmation round", () => {
 
 		// Verify entity directories
 		expect(fs.existsSync(path.join(outputDir, "epics", "my-epic", "epic.json"))).toBe(true);
-		expect(fs.existsSync(path.join(outputDir, "epics", "my-epic", "slices", "slice-one", "slice.json"))).toBe(true);
+		expect(
+			fs.existsSync(path.join(outputDir, "epics", "my-epic", "slices", "slice-one", "slice.json")),
+		).toBe(true);
 		expect(fs.existsSync(path.join(outputDir, "quests", "my-quest", "quest.json"))).toBe(true);
 
 		// Verify activity log

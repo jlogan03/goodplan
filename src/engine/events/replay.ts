@@ -1,3 +1,4 @@
+import * as fs from "node:fs";
 import type { AnyEventEnvelope, EventDomain } from "../../schemas/envelope.js";
 import { AnyEventEnvelopeSchema } from "../../schemas/envelope.js";
 
@@ -71,8 +72,7 @@ export async function replayEvents(opts: ReplayOptions): Promise<ReplayResult> {
 	const skipCorrupt = opts.skipCorrupt ?? true;
 
 	// Non-existent file returns empty results
-	const file = Bun.file(eventsPath);
-	if (!(await file.exists())) {
+	if (!fs.existsSync(eventsPath)) {
 		return {
 			events: [],
 			skippedLines: 0,
@@ -81,7 +81,7 @@ export async function replayEvents(opts: ReplayOptions): Promise<ReplayResult> {
 		};
 	}
 
-	const content = await file.text();
+	const content = fs.readFileSync(eventsPath, "utf-8");
 
 	// Filter out empty lines before processing (trailing newline produces empty string)
 	const lines = content.split("\n").filter((line) => line !== "");

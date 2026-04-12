@@ -36,17 +36,25 @@ function captureStdout(): { chunks: string[]; restore: () => void } {
 }
 
 function createDecision(id: string, domain: string, title: string, summary: string) {
-	return begin(projectDir, "create-decision", { type: "decision", id }, {
-		id,
-		domain,
-		title,
-		summary,
-	});
+	return begin(
+		projectDir,
+		"create-decision",
+		{ type: "decision", id },
+		{
+			id,
+			domain,
+			title,
+			summary,
+		},
+	);
 }
 
 // ── Command runners ──────────────────────────────────────────
 
-async function runDecisionCreate(args: Record<string, unknown>, stdin: Record<string, unknown> = {}) {
+async function runDecisionCreate(
+	args: Record<string, unknown>,
+	stdin: Record<string, unknown> = {},
+) {
 	const stdinModule = await import("../../../../src/util/stdin.js");
 	vi.spyOn(stdinModule, "readStdin").mockResolvedValue(stdin);
 	const { decisionCreateCommand } = await import("../../../../src/commands/decision/create.js");
@@ -60,7 +68,10 @@ async function runDecisionCreate(args: Record<string, unknown>, stdin: Record<st
 	}
 }
 
-async function runDecisionUpdate(args: Record<string, unknown>, stdin: Record<string, unknown> = {}) {
+async function runDecisionUpdate(
+	args: Record<string, unknown>,
+	stdin: Record<string, unknown> = {},
+) {
 	const stdinModule = await import("../../../../src/util/stdin.js");
 	vi.spyOn(stdinModule, "readStdin").mockResolvedValue(stdin);
 	const { decisionUpdateCommand } = await import("../../../../src/commands/decision/update.js");
@@ -106,7 +117,12 @@ describe("decision:create", () => {
 		const { chunks, restore } = captureStdout();
 		await runDecisionCreate(
 			{ json: true },
-			{ id: "use-postgres", domain: "data", title: "Use PostgreSQL", summary: "Chosen for reliability" },
+			{
+				id: "use-postgres",
+				domain: "data",
+				title: "Use PostgreSQL",
+				summary: "Chosen for reliability",
+			},
 		);
 		restore();
 		const out = JSON.parse(chunks.join(""));
@@ -120,7 +136,12 @@ describe("decision:create", () => {
 		const { chunks, restore } = captureStdout();
 		await runDecisionCreate(
 			{},
-			{ id: "use-postgres", domain: "data", title: "Use PostgreSQL", summary: "Chosen for reliability" },
+			{
+				id: "use-postgres",
+				domain: "data",
+				title: "Use PostgreSQL",
+				summary: "Chosen for reliability",
+			},
 		);
 		restore();
 		const text = chunks.join("");
@@ -134,7 +155,12 @@ describe("decision:create", () => {
 		const { chunks, restore } = captureStdout();
 		await runDecisionCreate(
 			{ quiet: true },
-			{ id: "use-postgres", domain: "data", title: "Use PostgreSQL", summary: "Chosen for reliability" },
+			{
+				id: "use-postgres",
+				domain: "data",
+				title: "Use PostgreSQL",
+				summary: "Chosen for reliability",
+			},
 		);
 		restore();
 		expect(chunks.join("")).toBe("");
@@ -244,10 +270,7 @@ describe("decision:update", () => {
 		createDecision("d1", "arch", "Decision", "Summary");
 
 		const { chunks, restore } = captureStdout();
-		await runDecisionUpdate(
-			{ id: "d1" },
-			{ id: "d1", changes: { status: "revisiting" } },
-		);
+		await runDecisionUpdate({ id: "d1" }, { id: "d1", changes: { status: "revisiting" } });
 		restore();
 		const text = chunks.join("");
 		expect(text).toContain("d1");
@@ -283,10 +306,7 @@ describe("decision full lifecycle", () => {
 
 		// Update back to active
 		const { chunks: c3, restore: r3 } = captureStdout();
-		await runDecisionUpdate(
-			{ id: "d1", json: true },
-			{ id: "d1", changes: { status: "active" } },
-		);
+		await runDecisionUpdate({ id: "d1", json: true }, { id: "d1", changes: { status: "active" } });
 		r3();
 		const update2Out = JSON.parse(c3.join(""));
 		expect(update2Out.previousStatus).toBe("revisiting");

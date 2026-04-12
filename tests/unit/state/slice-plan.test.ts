@@ -5,8 +5,8 @@ import { getJson, getJsonl, setEntry } from "../../../src/core/data/tree.js";
 import { reduce } from "../../../src/core/state/reduce.js";
 import { isStateError } from "../../../src/core/state/types.js";
 import type { StateError } from "../../../src/core/state/types.js";
-import type { Slice } from "../../../src/schemas/entities/slice.js";
 import type { Project } from "../../../src/schemas/entities/project.js";
+import type { Slice } from "../../../src/schemas/entities/slice.js";
 
 const TS = "2026-01-01T00:00:00.000Z";
 const TS2 = "2026-01-02T00:00:00.000Z";
@@ -15,8 +15,20 @@ const TS3 = "2026-01-03T00:00:00.000Z";
 function initWithSlices(): ProjectState {
 	let s = reduce(ZERO_STATE, { type: "INIT_PROJECT", name: "test", ts: TS }) as ProjectState;
 	s = reduce(s, { type: "CREATE_EPIC", name: "e1", goal: "Build stuff", ts: TS }) as ProjectState;
-	s = reduce(s, { type: "CREATE_SLICE", name: "s1", epic: "e1", goal: "First slice", ts: TS }) as ProjectState;
-	s = reduce(s, { type: "CREATE_SLICE", name: "s2", epic: "e1", goal: "Second slice", ts: TS }) as ProjectState;
+	s = reduce(s, {
+		type: "CREATE_SLICE",
+		name: "s1",
+		epic: "e1",
+		goal: "First slice",
+		ts: TS,
+	}) as ProjectState;
+	s = reduce(s, {
+		type: "CREATE_SLICE",
+		name: "s2",
+		epic: "e1",
+		goal: "Second slice",
+		ts: TS,
+	}) as ProjectState;
 	return s;
 }
 
@@ -29,24 +41,34 @@ describe("reduce — BEGIN_PLAN", () => {
 		const newState = result as ProjectState;
 
 		const slice = getJson<Slice>(newState, "epics/e1/slices/s1/slice.json");
-		expect(slice!.status).toBe("planning");
-		expect(slice!.updated).toBe(TS2);
+		expect(slice?.status).toBe("planning");
+		expect(slice?.updated).toBe(TS2);
 	});
 
 	it("sets project.json activeSlice", () => {
 		const state = initWithSlices();
-		const result = reduce(state, { type: "BEGIN_PLAN", epic: "e1", slice: "s1", ts: TS2 }) as ProjectState;
+		const result = reduce(state, {
+			type: "BEGIN_PLAN",
+			epic: "e1",
+			slice: "s1",
+			ts: TS2,
+		}) as ProjectState;
 
 		const project = getJson<Project>(result, "project.json");
-		expect(project!.activeSlice).toBe("s1");
+		expect(project?.activeSlice).toBe("s1");
 	});
 
 	it("appends activity log entry", () => {
 		const state = initWithSlices();
-		const result = reduce(state, { type: "BEGIN_PLAN", epic: "e1", slice: "s1", ts: TS2 }) as ProjectState;
+		const result = reduce(state, {
+			type: "BEGIN_PLAN",
+			epic: "e1",
+			slice: "s1",
+			ts: TS2,
+		}) as ProjectState;
 
 		const log = getJsonl<Record<string, unknown>>(result, "activity-log.jsonl");
-		const entry = log![log!.length - 1]!;
+		const entry = log?.[log?.length - 1]!;
 		expect(entry.phase).toBe("begin-plan");
 		expect(entry.scope).toBe("epics/e1/slices/s1");
 	});
@@ -67,10 +89,29 @@ describe("reduce — BEGIN_PLAN", () => {
 		// Move through plan/refine/implement lifecycle
 		s = setEntry(s, "epics/e1/slices/s1/plan.md", { type: "markdown", content: "# Plan" });
 		s = reduce(s, { type: "COMPLETE_PLAN", epic: "e1", slice: "s1", ts: TS }) as ProjectState;
-		s = setEntry(s, "epics/e1/slices/s1/plan-refined.md", { type: "markdown", content: "# Refined" });
-		s = reduce(s, { type: "COMPLETE_REFINEMENT_ROUND", epic: "e1", slice: "s1", ts: TS, scores: { q: 10 } }) as ProjectState;
-		s = reduce(s, { type: "BEGIN_IMPLEMENTATION", epic: "e1", slice: "s1", ts: TS }) as ProjectState;
-		s = reduce(s, { type: "COMPLETE_IMPLEMENTATION", epic: "e1", slice: "s1", ts: TS }) as ProjectState;
+		s = setEntry(s, "epics/e1/slices/s1/plan-refined.md", {
+			type: "markdown",
+			content: "# Refined",
+		});
+		s = reduce(s, {
+			type: "COMPLETE_REFINEMENT_ROUND",
+			epic: "e1",
+			slice: "s1",
+			ts: TS,
+			scores: { q: 10 },
+		}) as ProjectState;
+		s = reduce(s, {
+			type: "BEGIN_IMPLEMENTATION",
+			epic: "e1",
+			slice: "s1",
+			ts: TS,
+		}) as ProjectState;
+		s = reduce(s, {
+			type: "COMPLETE_IMPLEMENTATION",
+			epic: "e1",
+			slice: "s1",
+			ts: TS,
+		}) as ProjectState;
 		s = reduce(s, {
 			type: "COMPLETE_SLICE",
 			epic: "e1",
@@ -85,16 +126,26 @@ describe("reduce — BEGIN_PLAN", () => {
 		// Now s2 should be allowed
 		const result = reduce(s, { type: "BEGIN_PLAN", epic: "e1", slice: "s2", ts: TS3 });
 		expect(isStateError(result)).toBe(false);
-		expect(getJson<Slice>(result as ProjectState, "epics/e1/slices/s2/slice.json")!.status).toBe("planning");
+		expect(getJson<Slice>(result as ProjectState, "epics/e1/slices/s2/slice.json")?.status).toBe(
+			"planning",
+		);
 	});
 
 	it("second slice succeeds after first abandoned", () => {
 		let s = initWithSlices();
-		s = reduce(s, { type: "ABANDON_SLICE", epic: "e1", slice: "s1", ts: TS2, reason: "Not needed" }) as ProjectState;
+		s = reduce(s, {
+			type: "ABANDON_SLICE",
+			epic: "e1",
+			slice: "s1",
+			ts: TS2,
+			reason: "Not needed",
+		}) as ProjectState;
 
 		const result = reduce(s, { type: "BEGIN_PLAN", epic: "e1", slice: "s2", ts: TS3 });
 		expect(isStateError(result)).toBe(false);
-		expect(getJson<Slice>(result as ProjectState, "epics/e1/slices/s2/slice.json")!.status).toBe("planning");
+		expect(getJson<Slice>(result as ProjectState, "epics/e1/slices/s2/slice.json")?.status).toBe(
+			"planning",
+		);
 	});
 
 	it("rejects wrong status (not created)", () => {

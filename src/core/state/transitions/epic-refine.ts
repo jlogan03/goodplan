@@ -1,12 +1,12 @@
+import type { EpicStatus } from "../../../schemas/entities/epic.js";
 /**
  * COMPLETE_REFINE_ARCHITECTURE and COMPLETE_REFINE_SLICES handlers.
  * Uses shared refinement circuit breaker logic.
  * Pure functions, no I/O.
  */
 import type { ProjectState } from "../../tree.js";
-import type { StateEvent, StateError } from "../types.js";
+import type { StateError, StateEvent } from "../types.js";
 import { isStateError } from "../types.js";
-import type { EpicStatus } from "../../../schemas/entities/epic.js";
 import {
 	appendActivityLog,
 	evaluateRefinement,
@@ -42,15 +42,16 @@ export function handleCompleteRefineArchitecture(
 
 	if (outcome.action === "advance") {
 		// Record final scores in refinement history if we have refinement state
-		const finalRefinement = epic.refinement !== null
-			? {
-					...epic.refinement,
-					scoreHistory: [
-						...epic.refinement.scoreHistory,
-						{ round: epic.refinement.round, scores: event.scores },
-					],
-				}
-			: null;
+		const finalRefinement =
+			epic.refinement !== null
+				? {
+						...epic.refinement,
+						scoreHistory: [
+							...epic.refinement.scoreHistory,
+							{ round: epic.refinement.round, scores: event.scores },
+						],
+					}
+				: null;
 
 		let tree = setEpicJson(state, event.epic, {
 			...epic,
@@ -59,7 +60,13 @@ export function handleCompleteRefineArchitecture(
 			refinement: finalRefinement,
 		});
 		tree = updateOverviewStatus(tree, event.epic, "architecture-refined");
-		tree = appendActivityLog(tree, event.ts, "complete-refine-architecture", `epics/${event.epic}`, `Epic "${event.epic}" architecture refined`);
+		tree = appendActivityLog(
+			tree,
+			event.ts,
+			"complete-refine-architecture",
+			`epics/${event.epic}`,
+			`Epic "${event.epic}" architecture refined`,
+		);
 		return tree;
 	}
 
@@ -70,7 +77,13 @@ export function handleCompleteRefineArchitecture(
 		updated: event.ts,
 		refinement: outcome.newRefinement,
 	});
-	tree = appendActivityLog(tree, event.ts, "refine-architecture-round", `epics/${event.epic}`, `Epic "${event.epic}" architecture refinement round ${outcome.newRefinement.round - 1} completed`);
+	tree = appendActivityLog(
+		tree,
+		event.ts,
+		"refine-architecture-round",
+		`epics/${event.epic}`,
+		`Epic "${event.epic}" architecture refinement round ${outcome.newRefinement.round - 1} completed`,
+	);
 	return tree;
 }
 
@@ -96,15 +109,16 @@ export function handleCompleteRefineSlices(
 	if (outcome.action === "error") return outcome.error;
 
 	if (outcome.action === "advance") {
-		const finalRefinement = epic.refinement !== null
-			? {
-					...epic.refinement,
-					scoreHistory: [
-						...epic.refinement.scoreHistory,
-						{ round: epic.refinement.round, scores: event.scores },
-					],
-				}
-			: null;
+		const finalRefinement =
+			epic.refinement !== null
+				? {
+						...epic.refinement,
+						scoreHistory: [
+							...epic.refinement.scoreHistory,
+							{ round: epic.refinement.round, scores: event.scores },
+						],
+					}
+				: null;
 
 		let tree = setEpicJson(state, event.epic, {
 			...epic,
@@ -113,7 +127,13 @@ export function handleCompleteRefineSlices(
 			refinement: finalRefinement,
 		});
 		tree = updateOverviewStatus(tree, event.epic, "slices-refined");
-		tree = appendActivityLog(tree, event.ts, "complete-refine-slices", `epics/${event.epic}`, `Epic "${event.epic}" slices refined`);
+		tree = appendActivityLog(
+			tree,
+			event.ts,
+			"complete-refine-slices",
+			`epics/${event.epic}`,
+			`Epic "${event.epic}" slices refined`,
+		);
 		return tree;
 	}
 
@@ -124,7 +144,13 @@ export function handleCompleteRefineSlices(
 		updated: event.ts,
 		refinement: outcome.newRefinement,
 	});
-	tree = appendActivityLog(tree, event.ts, "refine-slices-round", `epics/${event.epic}`, `Epic "${event.epic}" slice refinement round ${outcome.newRefinement.round - 1} completed`);
+	tree = appendActivityLog(
+		tree,
+		event.ts,
+		"refine-slices-round",
+		`epics/${event.epic}`,
+		`Epic "${event.epic}" slice refinement round ${outcome.newRefinement.round - 1} completed`,
+	);
 	return tree;
 }
 
@@ -134,9 +160,21 @@ export const epicRefineTransitions: ReadonlyArray<{
 	event: StateEvent["type"];
 	to: EpicStatus | "(error)";
 }> = [
-	{ from: "architecture-defined", event: "COMPLETE_REFINE_ARCHITECTURE", to: "architecture-refined" },
-	{ from: "refining-architecture", event: "COMPLETE_REFINE_ARCHITECTURE", to: "refining-architecture" },
-	{ from: "refining-architecture", event: "COMPLETE_REFINE_ARCHITECTURE", to: "architecture-refined" },
+	{
+		from: "architecture-defined",
+		event: "COMPLETE_REFINE_ARCHITECTURE",
+		to: "architecture-refined",
+	},
+	{
+		from: "refining-architecture",
+		event: "COMPLETE_REFINE_ARCHITECTURE",
+		to: "refining-architecture",
+	},
+	{
+		from: "refining-architecture",
+		event: "COMPLETE_REFINE_ARCHITECTURE",
+		to: "architecture-refined",
+	},
 	{ from: "refining-architecture", event: "COMPLETE_REFINE_ARCHITECTURE", to: "(error)" },
 	{ from: "slices-defined", event: "COMPLETE_REFINE_SLICES", to: "slices-refined" },
 	{ from: "refining-slices", event: "COMPLETE_REFINE_SLICES", to: "refining-slices" },

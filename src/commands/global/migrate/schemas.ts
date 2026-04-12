@@ -81,7 +81,9 @@ export const epicDetailResponseSchema = z.object({
 	slices: z.array(sliceDetailItemSchema).describe("All slices belonging to this epic"),
 	sliceSequence: z
 		.array(z.string().min(1))
-		.describe("Ordered list of slice names defining execution order (used for ordering, not persisted in output)"),
+		.describe(
+			"Ordered list of slice names defining execution order (used for ordering, not persisted in output)",
+		),
 	hasArchitecture: z
 		.boolean()
 		.describe("Whether the old epic directory contains architecture artifacts"),

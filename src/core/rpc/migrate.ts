@@ -31,10 +31,10 @@ import {
 } from "../../commands/global/migrate/schemas.js";
 import { validateSourcePath } from "../../commands/global/migrate/validate-source-path.js";
 import type { Epic, EpicStatus } from "../../schemas/entities/epic.js";
-import type { ActivityEntry } from "../../schemas/records/activity-log.js";
-import type { LearningEventEntry } from "../../schemas/records/learning.js";
 import { unifiedOverviewSchema } from "../../schemas/entities/overview.js";
 import { projectSchema } from "../../schemas/entities/project.js";
+import type { ActivityEntry } from "../../schemas/records/activity-log.js";
+import type { LearningEventEntry } from "../../schemas/records/learning.js";
 import { GoodplanError } from "../../util/errors.js";
 import { deterministicStringify, deterministicStringifyCompact } from "../../util/json.js";
 import { deriveSlug } from "../../util/slug.js";
@@ -42,14 +42,9 @@ import { VERSION } from "../../version.js";
 import { assembleState } from "../data/assemble.js";
 import { atomicWrite, commitState } from "../data/commit.js";
 import { signStateTree } from "../data/hmac.js";
-import { writeMarkdownFiles, type MarkdownFile } from "../data/markdown-files.js";
+import { type MarkdownFile, writeMarkdownFiles } from "../data/markdown-files.js";
 import { PROJECT_DIR_NAME } from "../data/project.js";
-import type {
-	DirectoryEntry,
-	JsonEntry,
-	JsonlEntry,
-	ProjectState,
-} from "../tree.js";
+import type { DirectoryEntry, JsonEntry, JsonlEntry, ProjectState } from "../tree.js";
 import { ZERO_STATE } from "../tree.js";
 
 // ---------------------------------------------------------------------------
@@ -110,9 +105,7 @@ interface MigrationSlice {
  * Constructs state directly — no state machine event, no reduce() call.
  * Uses ZERO_STATE as oldState when calling commitState().
  */
-export function buildMigrationState(
-	validatedAnswers: Record<string, unknown>,
-): ProjectState {
+export function buildMigrationState(validatedAnswers: Record<string, unknown>): ProjectState {
 	const ts = new Date().toISOString();
 
 	const project = validatedAnswers[QUESTION_IDS.PROJECT_INFO] as
@@ -322,10 +315,7 @@ export function buildMigrationState(
 				updated: ts,
 			};
 
-			const sliceDirContents: Record<
-				string,
-				JsonEntry<unknown> | JsonlEntry<unknown>
-			> = {
+			const sliceDirContents: Record<string, JsonEntry<unknown> | JsonlEntry<unknown>> = {
 				"slice.json": { type: "json", content: sliceJsonContent },
 				"learnings.jsonl": { type: "jsonl", content: [] },
 				"architecture-deltas.jsonl": { type: "jsonl", content: [] },
@@ -340,10 +330,8 @@ export function buildMigrationState(
 
 	// ── Quests ──────────────────────────────────────────────────
 
-	const questsContents: Record<
-		string,
-		DirectoryEntry | JsonEntry<unknown> | JsonlEntry<unknown>
-	> = {};
+	const questsContents: Record<string, DirectoryEntry | JsonEntry<unknown> | JsonlEntry<unknown>> =
+		{};
 
 	const questOverviewItems: Array<{
 		name: string;
@@ -371,10 +359,7 @@ export function buildMigrationState(
 			updated: ts,
 		};
 
-		const questDirContents: Record<
-			string,
-			JsonEntry<unknown> | JsonlEntry<unknown>
-		> = {
+		const questDirContents: Record<string, JsonEntry<unknown> | JsonlEntry<unknown>> = {
 			"quest.json": { type: "json", content: questJsonContent },
 			"learnings.jsonl": { type: "jsonl", content: [] },
 			"architecture-deltas.jsonl": { type: "jsonl", content: [] },
@@ -411,15 +396,10 @@ export function buildMigrationState(
 }
 
 /** Count total slices across all epics */
-function countAllSlices(
-	answers: Record<string, unknown>,
-	epics: readonly MigrationEpic[],
-): number {
+function countAllSlices(answers: Record<string, unknown>, epics: readonly MigrationEpic[]): number {
 	let total = 0;
 	for (const epic of epics) {
-		const detail = answers[epicDetailQuestionId(epic.name)] as
-			| EpicDetailResponse
-			| undefined;
+		const detail = answers[epicDetailQuestionId(epic.name)] as EpicDetailResponse | undefined;
 		if (detail !== undefined) {
 			total += detail.slices.length;
 		}
@@ -483,11 +463,7 @@ const ARTIFACT_DIRS = new Set([
 ]);
 
 /** Allowlisted project-level markdown files */
-const PROJECT_MARKDOWN_FILES = [
-	"idea.md",
-	"conventions.md",
-	"project-health.md",
-];
+const PROJECT_MARKDOWN_FILES = ["idea.md", "conventions.md", "project-health.md"];
 
 /**
  * Copy markdown artifacts from the old project directory to the new .goodplan/ directory.
@@ -667,7 +643,7 @@ export function parseLearningsMd(content: string): ParsedLearning[] {
 		const headingMatch = line.match(/^## (.+)$/);
 		if (headingMatch !== null) {
 			flushEntry();
-			currentSummary = headingMatch[1]!.trim();
+			currentSummary = headingMatch[1]?.trim();
 			continue;
 		}
 
@@ -675,7 +651,7 @@ export function parseLearningsMd(content: string): ParsedLearning[] {
 		if (currentSummary !== null && currentSource === null) {
 			const sourceMatch = line.match(/^_Source:\s*(.+?)_\s*$/);
 			if (sourceMatch !== null) {
-				currentSource = sourceMatch[1]!.trim();
+				currentSource = sourceMatch[1]?.trim();
 				continue;
 			}
 		}
@@ -753,12 +729,7 @@ function convertInlineDetailEntries(
 	const files: MarkdownFile[] = [];
 
 	for (const entry of jsonlEntries) {
-		if (
-			typeof entry !== "object" ||
-			entry === null ||
-			!("detail" in entry) ||
-			"file" in entry
-		) {
+		if (typeof entry !== "object" || entry === null || !("detail" in entry) || "file" in entry) {
 			// Already new-format or unrecognized — preserve as-is
 			converted.push(entry);
 			continue;
@@ -911,16 +882,19 @@ function migrateLearnings(
 			if (fs.existsSync(jsonlSource)) {
 				const jsonlContent = fs.readFileSync(jsonlSource, "utf-8").trim();
 				if (jsonlContent.length > 0) {
-					const existingJsonl = jsonlContent
-						.split("\n")
-						.map((line) => JSON.parse(line) as unknown);
+					const existingJsonl = jsonlContent.split("\n").map((line) => JSON.parse(line) as unknown);
 
-					const { entries: convertedEntries, files: convertedFiles } =
-						convertInlineDetailEntries(existingJsonl, scope.prefix, existingSlugs);
+					const { entries: convertedEntries, files: convertedFiles } = convertInlineDetailEntries(
+						existingJsonl,
+						scope.prefix,
+						existingSlugs,
+					);
 
 					// Only rewrite if there were changes
 					if (convertedFiles.length > 0) {
-						const jsonlLines = convertedEntries.map((e) => deterministicStringifyCompact(e)).join("\n");
+						const jsonlLines = convertedEntries
+							.map((e) => deterministicStringifyCompact(e))
+							.join("\n");
 						fs.mkdirSync(path.dirname(jsonlPath), { recursive: true });
 						fs.writeFileSync(jsonlPath, `${jsonlLines}\n`, "utf-8");
 						allFiles.push(...convertedFiles);
@@ -1141,9 +1115,7 @@ function executeMigration(
 		// Error message instructs manual recovery
 		throw new GoodplanError(
 			"DATA_WRITE_ERROR",
-			`Migration state construction failed after renaming ${projectDir} to ${projectOldDir}. ` +
-				`To recover: rename ${projectOldDir} back to ${projectDir} and retry. ` +
-				`The .migration-in-progress.json file has been preserved for retry.`,
+			`Migration state construction failed after renaming ${projectDir} to ${projectOldDir}. To recover: rename ${projectOldDir} back to ${projectDir} and retry. The .migration-in-progress.json file has been preserved for retry.`,
 			{ projectDir, projectOldDir },
 			err,
 		);
@@ -1165,9 +1137,7 @@ function executeMigration(
 		migrateLearnings(outputDir, projectOldDir, validatedAnswers);
 	} catch (err) {
 		// Non-fatal — migration state is committed, learnings just won't be per-file yet
-		process.stderr.write(
-			`[gp] Warning: learnings migration may be incomplete: ${String(err)}\n`,
-		);
+		process.stderr.write(`[gp] Warning: learnings migration may be incomplete: ${String(err)}\n`);
 	}
 
 	// Step 6: Clean up migration state file
@@ -1175,9 +1145,7 @@ function executeMigration(
 	try {
 		fs.unlinkSync(migrationFile);
 	} catch (err) {
-		process.stderr.write(
-			`[gp] Warning: could not remove ${migrationFile}: ${String(err)}\n`,
-		);
+		process.stderr.write(`[gp] Warning: could not remove ${migrationFile}: ${String(err)}\n`);
 	}
 
 	// Step 7: Build summary

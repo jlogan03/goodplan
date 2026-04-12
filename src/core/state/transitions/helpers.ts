@@ -124,7 +124,9 @@ export function guardSliceStatus(
 	eventType: string,
 	epicName?: string,
 ): Slice | StateError {
-	const context = epicName ? `Slice "${sliceName}" not found in epic "${epicName}"` : `Slice "${sliceName}" not found`;
+	const context = epicName
+		? `Slice "${sliceName}" not found in epic "${epicName}"`
+		: `Slice "${sliceName}" not found`;
 	if (slice === undefined) {
 		return {
 			code: "STATE_INVALID_TRANSITION",
@@ -138,14 +140,24 @@ export function guardSliceStatus(
 		return {
 			code: "STATE_INVALID_TRANSITION",
 			message: `Cannot ${eventType} on slice "${sliceName}"${epicCtx} in status "${slice.status}" (expected ${allowed.join(" or ")})`,
-			detail: { slice: sliceName, ...(epicName ? { epic: epicName } : {}), event: eventType, currentStatus: slice.status },
+			detail: {
+				slice: sliceName,
+				...(epicName ? { epic: epicName } : {}),
+				event: eventType,
+				currentStatus: slice.status,
+			},
 		};
 	}
 	return slice;
 }
 
 /** Set slice JSON by epic and name (nested path). */
-export function setSliceJson(state: ProjectState, epic: string, name: string, content: Slice): ProjectState {
+export function setSliceJson(
+	state: ProjectState,
+	epic: string,
+	name: string,
+	content: Slice,
+): ProjectState {
 	return setEntry(state, `epics/${epic}/slices/${name}/slice.json`, {
 		type: "json",
 		content,
@@ -191,7 +203,9 @@ export function updateSliceOverviewStatus(
 					? {
 							...item,
 							slices: item.slices.map((s) =>
-								s.name === sliceName ? { ...s, status: newStatus, ...(completed ? { completed } : {}) } : s,
+								s.name === sliceName
+									? { ...s, status: newStatus, ...(completed ? { completed } : {}) }
+									: s,
 							),
 						}
 					: item,
@@ -431,7 +445,10 @@ export function addEpicToOverview(
 		type: "json",
 		content: {
 			...overview,
-			epics: [...overview.epics, { name: epicName, status, created: ts, completed: null, slices: [] }],
+			epics: [
+				...overview.epics,
+				{ name: epicName, status, created: ts, completed: null, slices: [] },
+			],
 		},
 	});
 }
@@ -454,9 +471,7 @@ export function addSliceToOverview(
 		content: {
 			...overview,
 			epics: overview.epics.map((item) =>
-				item.name === epicName
-					? { ...item, slices: [...item.slices, sliceItem] }
-					: item,
+				item.name === epicName ? { ...item, slices: [...item.slices, sliceItem] } : item,
 			),
 		},
 	});
@@ -575,8 +590,7 @@ export function processLearnings(
 	let state = tree;
 
 	// Write to source scope learnings.jsonl
-	const sourceLearnings =
-		getJsonl<LearningEntry>(state, `${source}/learnings.jsonl`) ?? [];
+	const sourceLearnings = getJsonl<LearningEntry>(state, `${source}/learnings.jsonl`) ?? [];
 	state = setEntry(state, `${source}/learnings.jsonl`, {
 		type: "jsonl",
 		content: [...sourceLearnings, ...learnings],
@@ -596,8 +610,7 @@ export function processLearnings(
 	}
 
 	if (epicRollups.length > 0 && epicName !== undefined) {
-		const epicLearnings =
-			getJsonl<LearningEntry>(state, `epics/${epicName}/learnings.jsonl`) ?? [];
+		const epicLearnings = getJsonl<LearningEntry>(state, `epics/${epicName}/learnings.jsonl`) ?? [];
 		state = setEntry(state, `epics/${epicName}/learnings.jsonl`, {
 			type: "jsonl",
 			content: [...epicLearnings, ...epicRollups],
@@ -605,8 +618,7 @@ export function processLearnings(
 	}
 
 	if (projectRollups.length > 0) {
-		const projectLearnings =
-			getJsonl<LearningEntry>(state, "learnings.jsonl") ?? [];
+		const projectLearnings = getJsonl<LearningEntry>(state, "learnings.jsonl") ?? [];
 		state = setEntry(state, "learnings.jsonl", {
 			type: "jsonl",
 			content: [...projectLearnings, ...projectRollups],

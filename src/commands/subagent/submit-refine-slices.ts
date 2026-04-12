@@ -1,7 +1,7 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { submit } from "../../core/rpc/submit.js";
 import { resolveProjectDir } from "../../core/data/project.js";
+import { submit } from "../../core/rpc/submit.js";
 import type { WorkflowOptions } from "../../core/rpc/types.js";
 import { submitRefineSlicesInputSchema } from "../../schemas/commands/submit.js";
 import { output } from "../../util/output.js";
@@ -19,7 +19,8 @@ import { globalArgs } from "../global-args.js";
 export const submitRefineSlicesCommand = defineCommand({
 	meta: {
 		name: "submit-refine-slices",
-		description: "Submit slices refinement scores. Stdin: {scores}. Requires --epic. --override bypasses threshold.",
+		description:
+			"Submit slices refinement scores. Stdin: {scores}. Requires --epic. --override bypasses threshold.",
 	},
 	args: {
 		...globalArgs,
@@ -52,7 +53,10 @@ export const submitRefineSlicesCommand = defineCommand({
 		if (args.json || args.query) {
 			output(result, args);
 		} else if (!args.quiet) {
-			output(`${pc.bold(result.entity)}: ${result.previousStatus} ${pc.dim("->")} ${pc.green(result.newStatus)} (advanced: ${result.advanced})`, args);
+			output(
+				`${pc.bold(result.entity)}: ${result.previousStatus} ${pc.dim("->")} ${pc.green(result.newStatus)} (advanced: ${result.advanced})`,
+				args,
+			);
 		}
 	},
 });

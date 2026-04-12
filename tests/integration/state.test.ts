@@ -27,9 +27,9 @@ describe("state command", () => {
 
 	it("state --json --query filters by project name", async () => {
 		await withFixture("slice-in-progress", ({ bin, env }) => {
-			const result = runCommand(bin, [
-				"state", "--json", "--query", '.["project.json"].name',
-			], { env });
+			const result = runCommand(bin, ["state", "--json", "--query", '.["project.json"].name'], {
+				env,
+			});
 			expect(result.exitCode).toBe(0);
 			expect(result.json).toBe("test-project");
 		});
@@ -37,11 +37,11 @@ describe("state command", () => {
 
 	it("state --json --query --limit returns limited entries", async () => {
 		await withFixture("slice-in-progress", ({ bin, env }) => {
-			const result = runCommand(bin, [
-				"state", "--json",
-				"--query", '.["activity-log.jsonl"]',
-				"--limit", "2",
-			], { env });
+			const result = runCommand(
+				bin,
+				["state", "--json", "--query", '.["activity-log.jsonl"]', "--limit", "2"],
+				{ env },
+			);
 			expect(result.exitCode).toBe(0);
 			const entries = result.json as unknown[];
 			expect(entries.length).toBe(2);
@@ -50,18 +50,17 @@ describe("state command", () => {
 
 	it("state --json --query --offset --limit returns different entries", async () => {
 		await withFixture("slice-in-progress", ({ bin, env }) => {
-			const first = runCommand(bin, [
-				"state", "--json",
-				"--query", '.["activity-log.jsonl"]',
-				"--limit", "2",
-			], { env });
+			const first = runCommand(
+				bin,
+				["state", "--json", "--query", '.["activity-log.jsonl"]', "--limit", "2"],
+				{ env },
+			);
 
-			const second = runCommand(bin, [
-				"state", "--json",
-				"--query", '.["activity-log.jsonl"]',
-				"--offset", "2",
-				"--limit", "2",
-			], { env });
+			const second = runCommand(
+				bin,
+				["state", "--json", "--query", '.["activity-log.jsonl"]', "--offset", "2", "--limit", "2"],
+				{ env },
+			);
 
 			expect(first.exitCode).toBe(0);
 			expect(second.exitCode).toBe(0);
@@ -78,9 +77,7 @@ describe("state command", () => {
 
 	it("state --json --query with bad syntax exits 2 with VALIDATION_INVALID_QUERY", async () => {
 		await withFixture("slice-in-progress", ({ bin, env }) => {
-			const result = runCommand(bin, [
-				"state", "--json", "--query", "bad syntax",
-			], { env });
+			const result = runCommand(bin, ["state", "--json", "--query", "bad syntax"], { env });
 			expect(result.exitCode).toBe(2);
 			const parsed = JSON.parse(result.stdout);
 			expect(parsed.error.code).toBe("VALIDATION_INVALID_QUERY");
@@ -89,14 +86,12 @@ describe("state command", () => {
 
 	it("state --json --inline includes markdown content as strings", async () => {
 		await withFixture("slice-in-progress", ({ bin, env }) => {
-			const result = runCommand(bin, [
-				"state", "--json", "--inline",
-			], { env });
+			const result = runCommand(bin, ["state", "--json", "--inline"], { env });
 			expect(result.exitCode).toBe(0);
 			const state = result.json as Record<string, unknown>;
 
 			// Check that a markdown file has string content (not true)
-			const epics = state["epics"] as Record<string, unknown>;
+			const epics = state.epics as Record<string, unknown>;
 			const epic = epics["test-epic"] as Record<string, unknown>;
 			const goalMd = epic["goal.md"];
 			expect(typeof goalMd).toBe("string");
@@ -105,13 +100,11 @@ describe("state command", () => {
 
 	it("state --json without --inline has markdown as true", async () => {
 		await withFixture("slice-in-progress", ({ bin, env }) => {
-			const result = runCommand(bin, [
-				"state", "--json",
-			], { env });
+			const result = runCommand(bin, ["state", "--json"], { env });
 			expect(result.exitCode).toBe(0);
 			const state = result.json as Record<string, unknown>;
 
-			const epics = state["epics"] as Record<string, unknown>;
+			const epics = state.epics as Record<string, unknown>;
 			const epic = epics["test-epic"] as Record<string, unknown>;
 			const goalMd = epic["goal.md"];
 			expect(goalMd).toBe(true);

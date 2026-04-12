@@ -1,7 +1,7 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { submit } from "../../core/rpc/submit.js";
 import { resolveProjectDir } from "../../core/data/project.js";
+import { submit } from "../../core/rpc/submit.js";
 import type { Target, WorkflowOptions } from "../../core/rpc/types.js";
 import { submitRefinementInputSchema } from "../../schemas/commands/submit.js";
 import { output } from "../../util/output.js";
@@ -20,7 +20,8 @@ import { requireActiveEpic } from "../slice/utils.js";
 export const submitRefinementCommand = defineCommand({
 	meta: {
 		name: "submit-refinement",
-		description: "Submit refinement scores. Stdin: {scores}. Requires --slice or --quest. --override bypasses threshold.",
+		description:
+			"Submit refinement scores. Stdin: {scores}. Requires --slice or --quest. --override bypasses threshold.",
 	},
 	args: {
 		...globalArgs,
@@ -44,17 +45,27 @@ export const submitRefinementCommand = defineCommand({
 		const input = validateInput(submitRefinementInputSchema, args, stdin);
 
 		const projectDir = resolveProjectDir();
-		const target: Target = input.slice !== undefined
-			? { type: "slice", name: input.slice, epic: requireActiveEpic(projectDir) }
-			: { type: "quest", name: input.quest! };
+		const target: Target =
+			input.slice !== undefined
+				? { type: "slice", name: input.slice, epic: requireActiveEpic(projectDir) }
+				: { type: "quest", name: input.quest! };
 
 		const options: WorkflowOptions = args.override ? { override: true } : {};
-		const result = submit(projectDir, "refinement", target, { phase: "refinement", scores: input.scores }, options);
+		const result = submit(
+			projectDir,
+			"refinement",
+			target,
+			{ phase: "refinement", scores: input.scores },
+			options,
+		);
 
 		if (args.json || args.query) {
 			output(result, args);
 		} else if (!args.quiet) {
-			output(`${pc.bold(result.entity)}: ${result.previousStatus} ${pc.dim("->")} ${pc.green(result.newStatus)} (advanced: ${result.advanced})`, args);
+			output(
+				`${pc.bold(result.entity)}: ${result.previousStatus} ${pc.dim("->")} ${pc.green(result.newStatus)} (advanced: ${result.advanced})`,
+				args,
+			);
 		}
 	},
 });

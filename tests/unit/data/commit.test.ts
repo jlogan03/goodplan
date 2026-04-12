@@ -622,7 +622,9 @@ describe("HMAC state signature", () => {
 				"overview.json": {
 					type: "json",
 					content: {
-						epics: [{ name: "New Epic", status: "active", created: ts, completed: null, slices: [] }],
+						epics: [
+							{ name: "New Epic", status: "active", created: ts, completed: null, slices: [] },
+						],
 						quests: [],
 						tasks: [],
 					},

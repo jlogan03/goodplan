@@ -147,7 +147,7 @@ describe("version compatibility checking", () => {
 			const result = runCommand(bin, ["--version", "--json"], { env });
 			expect(result.exitCode).toBe(0);
 			const data = JSON.parse(result.stdout);
-			expect(data.version).toBe("1.0.3");
+			expect(data.version).toBe("1.0.6");
 		} finally {
 			fs.rmSync(tmpDir, { recursive: true, force: true });
 		}

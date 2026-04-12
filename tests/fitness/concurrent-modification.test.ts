@@ -9,9 +9,9 @@ import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assembleState } from "../../src/core/data/assemble.js";
 import { commitState } from "../../src/core/data/commit.js";
-import { GoodplanError } from "../../src/util/errors.js";
 import { reduce } from "../../src/core/state/reduce.js";
 import type { StateEvent } from "../../src/schemas/state-events.js";
+import { GoodplanError } from "../../src/util/errors.js";
 
 const FIXTURE_DIR = path.resolve(import.meta.dirname, "../fixtures/fresh-init");
 
@@ -48,7 +48,7 @@ describe("Concurrent modification detection", () => {
 		const overviewPath = path.join(projectDir, "overview.json");
 		const original = fs.readFileSync(overviewPath, "utf-8");
 		const modified = JSON.parse(original) as Record<string, unknown>;
-		modified["tampered"] = true;
+		modified.tampered = true;
 		fs.writeFileSync(overviewPath, JSON.stringify(modified, null, 2));
 
 		// Without --force, should throw
@@ -96,7 +96,7 @@ describe("Concurrent modification detection", () => {
 		const overviewPath = path.join(projectDir, "overview.json");
 		const original = fs.readFileSync(overviewPath, "utf-8");
 		const modified = JSON.parse(original) as Record<string, unknown>;
-		modified["tampered"] = true;
+		modified.tampered = true;
 		fs.writeFileSync(overviewPath, JSON.stringify(modified, null, 2));
 
 		// Attempt to commit — should detect the concurrent modification

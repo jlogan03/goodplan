@@ -325,7 +325,13 @@ function buildAbandonEvent(
 		case "epic":
 			return { type: "ABANDON_EPIC", epic: target.name, ts, reason: payload.reason };
 		case "slice":
-			return { type: "ABANDON_SLICE", slice: target.name, epic: target.epic, ts, reason: payload.reason };
+			return {
+				type: "ABANDON_SLICE",
+				slice: target.name,
+				epic: target.epic,
+				ts,
+				reason: payload.reason,
+			};
 		case "quest":
 			return { type: "ABANDON_QUEST", quest: target.name, ts, reason: payload.reason };
 		default:

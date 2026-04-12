@@ -60,7 +60,7 @@ describe("slice:list pagination", () => {
 			);
 			expect(result.exitCode).toBe(0);
 			const data = result.json as {
-				items: Array<{ name: string }>;
+				items: Array<{ dir: string }>;
 				total: number;
 				offset: number;
 				limit: number;
@@ -72,7 +72,7 @@ describe("slice:list pagination", () => {
 			// Second slice (index 1) is slice-a2
 			const firstItem = data.items[0];
 			expect(firstItem).toBeDefined();
-			expect(firstItem?.name).toBe("slice-a2");
+			expect(firstItem?.dir).toBe("slice-a2");
 		});
 	});
 

@@ -7,8 +7,8 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { assembleState, SKIP_NAMES } from "../../src/core/data/assemble.js";
-import type { DirectoryEntry, StateEntry } from "../../src/core/tree.js";
+import { SKIP_NAMES, assembleState } from "../../src/core/data/assemble.js";
+import type { DirectoryEntry } from "../../src/core/tree.js";
 
 const FIXTURES_DIR = path.resolve(import.meta.dirname, "../fixtures");
 
@@ -37,11 +37,7 @@ function verifyTreeMatchesFs(
 			const full = path.join(absDir, name);
 			const stat = fs.statSync(full);
 			if (stat.isDirectory()) return true;
-			return (
-				name.endsWith(".json") ||
-				name.endsWith(".jsonl") ||
-				name.endsWith(".md")
-			);
+			return name.endsWith(".json") || name.endsWith(".jsonl") || name.endsWith(".md");
 		})
 		.sort();
 
@@ -90,9 +86,7 @@ describe("Tree accuracy — tree keys match filesystem listing", () => {
 			verifyTreeMatchesFs(state, projectDir, "", mismatches);
 
 			if (mismatches.length > 0) {
-				expect.fail(
-					`Tree/filesystem mismatches:\n${mismatches.join("\n")}`,
-				);
+				expect.fail(`Tree/filesystem mismatches:\n${mismatches.join("\n")}`);
 			}
 		});
 	}

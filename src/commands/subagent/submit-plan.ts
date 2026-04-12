@@ -1,7 +1,7 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { submit } from "../../core/rpc/submit.js";
 import { resolveProjectDir } from "../../core/data/project.js";
+import { submit } from "../../core/rpc/submit.js";
 import type { Target } from "../../core/rpc/types.js";
 import { submitPlanInputSchema } from "../../schemas/commands/submit.js";
 import { output } from "../../util/output.js";
@@ -20,7 +20,8 @@ import { requireActiveEpic } from "../slice/utils.js";
 export const submitPlanCommand = defineCommand({
 	meta: {
 		name: "submit-plan",
-		description: "Submit plan completion. Requires --slice or --quest. No stdin needed. Triggers COMPLETE_PLAN.",
+		description:
+			"Submit plan completion. Requires --slice or --quest. No stdin needed. Triggers COMPLETE_PLAN.",
 	},
 	args: {
 		...globalArgs,
@@ -39,16 +40,20 @@ export const submitPlanCommand = defineCommand({
 		const input = validateInput(submitPlanInputSchema, args, stdin);
 
 		const projectDir = resolveProjectDir();
-		const target: Target = input.slice !== undefined
-			? { type: "slice", name: input.slice, epic: requireActiveEpic(projectDir) }
-			: { type: "quest", name: input.quest! };
+		const target: Target =
+			input.slice !== undefined
+				? { type: "slice", name: input.slice, epic: requireActiveEpic(projectDir) }
+				: { type: "quest", name: input.quest! };
 
 		const result = submit(projectDir, "plan", target, { phase: "plan" });
 
 		if (args.json || args.query) {
 			output(result, args);
 		} else if (!args.quiet) {
-			output(`${pc.bold(result.entity)}: ${result.previousStatus} ${pc.dim("->")} ${pc.green(result.newStatus)}`, args);
+			output(
+				`${pc.bold(result.entity)}: ${result.previousStatus} ${pc.dim("->")} ${pc.green(result.newStatus)}`,
+				args,
+			);
 		}
 	},
 });

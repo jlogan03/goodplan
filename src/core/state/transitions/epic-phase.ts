@@ -1,12 +1,12 @@
+import type { EpicStatus } from "../../../schemas/entities/epic.js";
 /**
  * Epic phase transition handlers: BEGIN/COMPLETE for explore→architecture→slicing chain.
  * Pure functions, no I/O.
  */
 import type { ProjectState } from "../../tree.js";
 import { setEntry } from "../../tree.js";
-import type { StateEvent, StateError } from "../types.js";
+import type { StateError, StateEvent } from "../types.js";
 import { isStateError } from "../types.js";
-import type { EpicStatus } from "../../../schemas/entities/epic.js";
 import {
 	MAX_REFINEMENT_ROUNDS,
 	appendActivityLog,
@@ -31,12 +31,23 @@ export function handleBeginExplore(
 	state: ProjectState,
 	event: BeginExploreEvent,
 ): ProjectState | StateError {
-	const result = guardEpicStatus(getEpic(state, event.epic), event.epic, "created", "BEGIN_EXPLORE");
+	const result = guardEpicStatus(
+		getEpic(state, event.epic),
+		event.epic,
+		"created",
+		"BEGIN_EXPLORE",
+	);
 	if (isStateError(result)) return result;
 
 	let tree = setEpicStatus(state, event.epic, result, "exploring", event.ts);
 	tree = updateOverviewStatus(tree, event.epic, "exploring");
-	tree = appendActivityLog(tree, event.ts, "begin-explore", `epics/${event.epic}`, `Epic "${event.epic}" exploration started`);
+	tree = appendActivityLog(
+		tree,
+		event.ts,
+		"begin-explore",
+		`epics/${event.epic}`,
+		`Epic "${event.epic}" exploration started`,
+	);
 	return tree;
 }
 
@@ -45,12 +56,23 @@ export function handleCompleteExplore(
 	event: CompleteExploreEvent,
 ): ProjectState | StateError {
 	// Two valid from-statuses: created (skip path) and exploring (normal path)
-	const result = guardEpicStatus(getEpic(state, event.epic), event.epic, ["created", "exploring"], "COMPLETE_EXPLORE");
+	const result = guardEpicStatus(
+		getEpic(state, event.epic),
+		event.epic,
+		["created", "exploring"],
+		"COMPLETE_EXPLORE",
+	);
 	if (isStateError(result)) return result;
 
 	let tree = setEpicStatus(state, event.epic, result, "explored", event.ts);
 	tree = updateOverviewStatus(tree, event.epic, "explored");
-	tree = appendActivityLog(tree, event.ts, "complete-explore", `epics/${event.epic}`, `Epic "${event.epic}" exploration completed`);
+	tree = appendActivityLog(
+		tree,
+		event.ts,
+		"complete-explore",
+		`epics/${event.epic}`,
+		`Epic "${event.epic}" exploration completed`,
+	);
 	return tree;
 }
 
@@ -58,12 +80,23 @@ export function handleBeginArchitecture(
 	state: ProjectState,
 	event: BeginArchitectureEvent,
 ): ProjectState | StateError {
-	const result = guardEpicStatus(getEpic(state, event.epic), event.epic, "explored", "BEGIN_ARCHITECTURE");
+	const result = guardEpicStatus(
+		getEpic(state, event.epic),
+		event.epic,
+		"explored",
+		"BEGIN_ARCHITECTURE",
+	);
 	if (isStateError(result)) return result;
 
 	let tree = setEpicStatus(state, event.epic, result, "defining-architecture", event.ts);
 	tree = updateOverviewStatus(tree, event.epic, "defining-architecture");
-	tree = appendActivityLog(tree, event.ts, "begin-architecture", `epics/${event.epic}`, `Epic "${event.epic}" architecture definition started`);
+	tree = appendActivityLog(
+		tree,
+		event.ts,
+		"begin-architecture",
+		`epics/${event.epic}`,
+		`Epic "${event.epic}" architecture definition started`,
+	);
 	return tree;
 }
 
@@ -72,12 +105,23 @@ export function handleCompleteArchitecture(
 	event: CompleteArchitectureEvent,
 ): ProjectState | StateError {
 	// Two valid from-statuses: explored (skip path) and defining-architecture (normal path)
-	const result = guardEpicStatus(getEpic(state, event.epic), event.epic, ["explored", "defining-architecture"], "COMPLETE_ARCHITECTURE");
+	const result = guardEpicStatus(
+		getEpic(state, event.epic),
+		event.epic,
+		["explored", "defining-architecture"],
+		"COMPLETE_ARCHITECTURE",
+	);
 	if (isStateError(result)) return result;
 
 	let tree = setEpicStatus(state, event.epic, result, "architecture-defined", event.ts);
 	tree = updateOverviewStatus(tree, event.epic, "architecture-defined");
-	tree = appendActivityLog(tree, event.ts, "complete-architecture", `epics/${event.epic}`, `Epic "${event.epic}" architecture defined`);
+	tree = appendActivityLog(
+		tree,
+		event.ts,
+		"complete-architecture",
+		`epics/${event.epic}`,
+		`Epic "${event.epic}" architecture defined`,
+	);
 	return tree;
 }
 
@@ -85,7 +129,12 @@ export function handleBeginRefineArchitecture(
 	state: ProjectState,
 	event: BeginRefineArchitectureEvent,
 ): ProjectState | StateError {
-	const result = guardEpicStatus(getEpic(state, event.epic), event.epic, "architecture-defined", "BEGIN_REFINE_ARCHITECTURE");
+	const result = guardEpicStatus(
+		getEpic(state, event.epic),
+		event.epic,
+		"architecture-defined",
+		"BEGIN_REFINE_ARCHITECTURE",
+	);
 	if (isStateError(result)) return result;
 
 	// Initialize refinement state
@@ -99,7 +148,13 @@ export function handleBeginRefineArchitecture(
 		},
 	});
 	tree = updateOverviewStatus(tree, event.epic, "refining-architecture");
-	tree = appendActivityLog(tree, event.ts, "begin-refine-architecture", `epics/${event.epic}`, `Epic "${event.epic}" architecture refinement started`);
+	tree = appendActivityLog(
+		tree,
+		event.ts,
+		"begin-refine-architecture",
+		`epics/${event.epic}`,
+		`Epic "${event.epic}" architecture refinement started`,
+	);
 	return tree;
 }
 
@@ -107,12 +162,23 @@ export function handleBeginSlicing(
 	state: ProjectState,
 	event: BeginSlicingEvent,
 ): ProjectState | StateError {
-	const result = guardEpicStatus(getEpic(state, event.epic), event.epic, "architecture-refined", "BEGIN_SLICING");
+	const result = guardEpicStatus(
+		getEpic(state, event.epic),
+		event.epic,
+		"architecture-refined",
+		"BEGIN_SLICING",
+	);
 	if (isStateError(result)) return result;
 
 	let tree = setEpicStatus(state, event.epic, result, "defining-slices", event.ts);
 	tree = updateOverviewStatus(tree, event.epic, "defining-slices");
-	tree = appendActivityLog(tree, event.ts, "begin-slicing", `epics/${event.epic}`, `Epic "${event.epic}" slice definition started`);
+	tree = appendActivityLog(
+		tree,
+		event.ts,
+		"begin-slicing",
+		`epics/${event.epic}`,
+		`Epic "${event.epic}" slice definition started`,
+	);
 	return tree;
 }
 
@@ -120,12 +186,23 @@ export function handleCompleteSlicing(
 	state: ProjectState,
 	event: CompleteSlicingEvent,
 ): ProjectState | StateError {
-	const result = guardEpicStatus(getEpic(state, event.epic), event.epic, "defining-slices", "COMPLETE_SLICING");
+	const result = guardEpicStatus(
+		getEpic(state, event.epic),
+		event.epic,
+		"defining-slices",
+		"COMPLETE_SLICING",
+	);
 	if (isStateError(result)) return result;
 
 	let tree = setEpicStatus(state, event.epic, result, "slices-defined", event.ts);
 	tree = updateOverviewStatus(tree, event.epic, "slices-defined");
-	tree = appendActivityLog(tree, event.ts, "complete-slicing", `epics/${event.epic}`, `Epic "${event.epic}" slices defined`);
+	tree = appendActivityLog(
+		tree,
+		event.ts,
+		"complete-slicing",
+		`epics/${event.epic}`,
+		`Epic "${event.epic}" slices defined`,
+	);
 	return tree;
 }
 
@@ -133,7 +210,12 @@ export function handleBeginRefineSlices(
 	state: ProjectState,
 	event: BeginRefineSlicesEvent,
 ): ProjectState | StateError {
-	const result = guardEpicStatus(getEpic(state, event.epic), event.epic, "slices-defined", "BEGIN_REFINE_SLICES");
+	const result = guardEpicStatus(
+		getEpic(state, event.epic),
+		event.epic,
+		"slices-defined",
+		"BEGIN_REFINE_SLICES",
+	);
 	if (isStateError(result)) return result;
 
 	// Initialize refinement state
@@ -147,7 +229,13 @@ export function handleBeginRefineSlices(
 		},
 	});
 	tree = updateOverviewStatus(tree, event.epic, "refining-slices");
-	tree = appendActivityLog(tree, event.ts, "begin-refine-slices", `epics/${event.epic}`, `Epic "${event.epic}" slice refinement started`);
+	tree = appendActivityLog(
+		tree,
+		event.ts,
+		"begin-refine-slices",
+		`epics/${event.epic}`,
+		`Epic "${event.epic}" slice refinement started`,
+	);
 	return tree;
 }
 

@@ -2,11 +2,11 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { rpcInit } from "../../../../src/core/rpc/init.js";
+import { parseInlineBudget } from "../../../../src/commands/global-args.js";
 import { begin } from "../../../../src/core/rpc/begin.js";
+import { rpcInit } from "../../../../src/core/rpc/init.js";
 import { submit } from "../../../../src/core/rpc/submit.js";
 import type { Verification } from "../../../../src/schemas/entities/epic.js";
-import { parseInlineBudget } from "../../../../src/commands/global-args.js";
 
 let tmpDir: string;
 let projectDir: string;
@@ -38,7 +38,20 @@ function captureStdout(): { chunks: string[]; restore: () => void } {
 	return { chunks, restore: () => spy.mockRestore() };
 }
 
-function advanceEpicTo(target: "exploring" | "explored" | "defining-architecture" | "architecture-defined" | "refining-architecture" | "architecture-refined" | "defining-slices" | "slices-defined" | "refining-slices" | "slices-refined" | "activated") {
+function advanceEpicTo(
+	target:
+		| "exploring"
+		| "explored"
+		| "defining-architecture"
+		| "architecture-defined"
+		| "refining-architecture"
+		| "architecture-refined"
+		| "defining-slices"
+		| "slices-defined"
+		| "refining-slices"
+		| "slices-refined"
+		| "activated",
+) {
 	const epicTarget = { type: "epic" as const, name: "e1" };
 
 	begin(projectDir, "create", epicTarget, { name: "e1", goal: "G" });
@@ -60,7 +73,10 @@ function advanceEpicTo(target: "exploring" | "explored" | "defining-architecture
 	begin(projectDir, "refine-architecture", epicTarget, {});
 	if (target === "refining-architecture") return;
 
-	submit(projectDir, "refine-architecture", epicTarget, { phase: "refine-architecture", scores: { q: 10 } });
+	submit(projectDir, "refine-architecture", epicTarget, {
+		phase: "refine-architecture",
+		scores: { q: 10 },
+	});
 	if (target === "architecture-refined") return;
 
 	begin(projectDir, "define-slices", epicTarget, {});
@@ -75,7 +91,12 @@ function advanceEpicTo(target: "exploring" | "explored" | "defining-architecture
 	submit(projectDir, "refine-slices", epicTarget, { phase: "refine-slices", scores: { q: 10 } });
 	if (target === "slices-refined") return;
 
-	const v: Verification = { description: "Works", status: "pending", addedDuring: "defining-slices", modifiedDuring: null };
+	const v: Verification = {
+		description: "Works",
+		status: "pending",
+		addedDuring: "defining-slices",
+		modifiedDuring: null,
+	};
 	begin(projectDir, "add-verification", epicTarget, { verification: v });
 	begin(projectDir, "activate", epicTarget, {});
 }
@@ -86,23 +107,39 @@ async function runStartPlan(args: Record<string, unknown>) {
 	const { startPlanCommand } = await import("../../../../src/commands/subagent/start-plan.js");
 	const def = await startPlanCommand;
 	if (def.run) {
-		await def.run({ args: { json: false, quiet: false, verbose: false, ...args }, rawArgs: [], cmd: def });
+		await def.run({
+			args: { json: false, quiet: false, verbose: false, ...args },
+			rawArgs: [],
+			cmd: def,
+		});
 	}
 }
 
 async function runStartExplore(args: Record<string, unknown>) {
-	const { startExploreCommand } = await import("../../../../src/commands/subagent/start-explore.js");
+	const { startExploreCommand } = await import(
+		"../../../../src/commands/subagent/start-explore.js"
+	);
 	const def = await startExploreCommand;
 	if (def.run) {
-		await def.run({ args: { json: false, quiet: false, verbose: false, ...args }, rawArgs: [], cmd: def });
+		await def.run({
+			args: { json: false, quiet: false, verbose: false, ...args },
+			rawArgs: [],
+			cmd: def,
+		});
 	}
 }
 
 async function runStartArchitecture(args: Record<string, unknown>) {
-	const { startArchitectureCommand } = await import("../../../../src/commands/subagent/start-architecture.js");
+	const { startArchitectureCommand } = await import(
+		"../../../../src/commands/subagent/start-architecture.js"
+	);
 	const def = await startArchitectureCommand;
 	if (def.run) {
-		await def.run({ args: { json: false, quiet: false, verbose: false, ...args }, rawArgs: [], cmd: def });
+		await def.run({
+			args: { json: false, quiet: false, verbose: false, ...args },
+			rawArgs: [],
+			cmd: def,
+		});
 	}
 }
 
@@ -110,7 +147,11 @@ async function runStartSlices(args: Record<string, unknown>) {
 	const { startSlicesCommand } = await import("../../../../src/commands/subagent/start-slices.js");
 	const def = await startSlicesCommand;
 	if (def.run) {
-		await def.run({ args: { json: false, quiet: false, verbose: false, ...args }, rawArgs: [], cmd: def });
+		await def.run({
+			args: { json: false, quiet: false, verbose: false, ...args },
+			rawArgs: [],
+			cmd: def,
+		});
 	}
 }
 
@@ -149,7 +190,12 @@ describe("start-plan", () => {
 		initProject();
 		advanceEpicTo("activated");
 		// Create a slice
-		begin(projectDir, "create", { type: "slice", name: "s1", epic: "e1" }, { name: "s1", goal: "Slice goal", epic: "e1" });
+		begin(
+			projectDir,
+			"create",
+			{ type: "slice", name: "s1", epic: "e1" },
+			{ name: "s1", goal: "Slice goal", epic: "e1" },
+		);
 
 		const { chunks, restore } = captureStdout();
 		await runStartPlan({ slice: "s1" });
@@ -167,7 +213,12 @@ describe("start-plan", () => {
 	it("returns ContextBundle with inlined content when --inline is set", async () => {
 		initProject();
 		advanceEpicTo("activated");
-		begin(projectDir, "create", { type: "slice", name: "s1", epic: "e1" }, { name: "s1", goal: "Slice goal", epic: "e1" });
+		begin(
+			projectDir,
+			"create",
+			{ type: "slice", name: "s1", epic: "e1" },
+			{ name: "s1", goal: "Slice goal", epic: "e1" },
+		);
 
 		const { chunks, restore } = captureStdout();
 		await runStartPlan({ slice: "s1", inline: "true" });
@@ -183,7 +234,12 @@ describe("start-plan", () => {
 	it("respects custom budget with --inline=500", async () => {
 		initProject();
 		advanceEpicTo("activated");
-		begin(projectDir, "create", { type: "slice", name: "s1", epic: "e1" }, { name: "s1", goal: "Slice goal", epic: "e1" });
+		begin(
+			projectDir,
+			"create",
+			{ type: "slice", name: "s1", epic: "e1" },
+			{ name: "s1", goal: "Slice goal", epic: "e1" },
+		);
 
 		const { chunks, restore } = captureStdout();
 		await runStartPlan({ slice: "s1", inline: "500" });
@@ -208,7 +264,12 @@ describe("start-plan", () => {
 	it("always outputs JSON even without --json flag", async () => {
 		initProject();
 		advanceEpicTo("activated");
-		begin(projectDir, "create", { type: "slice", name: "s1", epic: "e1" }, { name: "s1", goal: "Slice goal", epic: "e1" });
+		begin(
+			projectDir,
+			"create",
+			{ type: "slice", name: "s1", epic: "e1" },
+			{ name: "s1", goal: "Slice goal", epic: "e1" },
+		);
 
 		const { chunks, restore } = captureStdout();
 		// Note: json: false — but output should still be JSON

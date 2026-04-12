@@ -21,7 +21,10 @@ describe("workflow: quest lifecycle", () => {
 			expect(fs.existsSync(path.join(questDir, "quest.json"))).toBe(true);
 
 			// Begin quest planning
-			const planResult = runCommand(bin, ["quest:plan", "--quest", "test-quest", "--json"], { env, stdin: "" });
+			const planResult = runCommand(bin, ["quest:plan", "--quest", "test-quest", "--json"], {
+				env,
+				stdin: "",
+			});
 			expect(planResult.exitCode).toBe(0);
 			expect(planResult.json).toBeDefined();
 			expect((planResult.json as Record<string, unknown>).newStatus).toBe("planning");
@@ -30,11 +33,10 @@ describe("workflow: quest lifecycle", () => {
 			fs.writeFileSync(path.join(questDir, "plan.md"), "# Quest Plan\n\nQuest plan content.");
 
 			// Submit plan
-			const submitPlanResult = runCommand(
-				bin,
-				["submit-plan", "--quest", "test-quest", "--json"],
-				{ env, stdin: "" },
-			);
+			const submitPlanResult = runCommand(bin, ["submit-plan", "--quest", "test-quest", "--json"], {
+				env,
+				stdin: "",
+			});
 			expect(submitPlanResult.exitCode).toBe(0);
 			expect(submitPlanResult.json).toBeDefined();
 			expect((submitPlanResult.json as Record<string, unknown>).newStatus).toBe("plan-created");
@@ -50,7 +52,10 @@ describe("workflow: quest lifecycle", () => {
 			expect((refineResult.json as Record<string, unknown>).newStatus).toBe("refining");
 
 			// Write plan-refined.md
-			fs.writeFileSync(path.join(questDir, "plan-refined.md"), "# Refined Quest Plan\n\nRefined content.");
+			fs.writeFileSync(
+				path.join(questDir, "plan-refined.md"),
+				"# Refined Quest Plan\n\nRefined content.",
+			);
 
 			// Submit refinement with passing scores
 			const submitRefineResult = runCommand(
@@ -66,11 +71,10 @@ describe("workflow: quest lifecycle", () => {
 			expect((submitRefineResult.json as Record<string, unknown>).newStatus).toBe("plan-refined");
 
 			// Begin implementation
-			const implResult = runCommand(
-				bin,
-				["quest:implement", "--quest", "test-quest", "--json"],
-				{ env, stdin: "" },
-			);
+			const implResult = runCommand(bin, ["quest:implement", "--quest", "test-quest", "--json"], {
+				env,
+				stdin: "",
+			});
 			expect(implResult.exitCode).toBe(0);
 			expect(implResult.json).toBeDefined();
 			expect((implResult.json as Record<string, unknown>).newStatus).toBe("implementing");
@@ -83,7 +87,9 @@ describe("workflow: quest lifecycle", () => {
 			);
 			expect(submitImplResult.exitCode).toBe(0);
 			expect(submitImplResult.json).toBeDefined();
-			expect((submitImplResult.json as Record<string, unknown>).newStatus).toBe("implementation-complete");
+			expect((submitImplResult.json as Record<string, unknown>).newStatus).toBe(
+				"implementation-complete",
+			);
 
 			// Complete quest
 			const completeResult = runCommand(

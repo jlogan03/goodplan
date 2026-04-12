@@ -5,12 +5,14 @@ import { describe, expect, it } from "vitest";
 import { computeNextCommands } from "../../../src/core/rpc/next-commands.js";
 
 describe("computeNextCommands", () => {
-	it("returns entity commands for epic in 'created' status including explore", () => {
+	it("returns entity commands for epic in 'created' status", () => {
 		const result = computeNextCommands({ type: "epic", name: "test-epic" }, "created");
 
 		expect(result.entity.length).toBeGreaterThan(0);
 		const commands = result.entity.map((c) => c.command);
-		expect(commands).toContain("gp epic:explore --epic test-epic");
+		// After v2 migration, explore is no longer in commandToEvent (v1 removed)
+		// but abandon should still be available
+		expect(commands).toContain("gp epic:abandon --epic test-epic --reason <reason>");
 
 		// Other section should include quest:create and task:create but NOT epic:create
 		const otherCommands = result.other.map((c) => c.command);
@@ -22,13 +24,13 @@ describe("computeNextCommands", () => {
 	it("returns entity commands for slice with interpolated --epic", () => {
 		const result = computeNextCommands(
 			{ type: "slice", name: "my-slice", epic: "my-epic" },
-			"plan-created",
+			"created",
 		);
 
 		expect(result.entity.length).toBeGreaterThan(0);
 		const commands = result.entity.map((c) => c.command);
-		// Slice commands should include refine-plan for plan-created status
-		expect(commands).toContain("gp slice:refine-plan --slice my-slice");
+		// Slice commands should include abandon for created status
+		expect(commands).toContain("gp slice:abandon --slice my-slice --reason <reason>");
 
 		// Other section should include epic:create but NOT slice:create
 		const otherCommands = result.other.map((c) => c.command);
@@ -102,18 +104,14 @@ describe("computeNextCommands", () => {
 		expect(result.other).toEqual([]);
 	});
 
-	it("epic verification commands available in pre-activated statuses", () => {
-		const result = computeNextCommands({ type: "epic", name: "e1" }, "exploring");
+	// v1 epic:add-verification and epic:update-verification removed;
+	// verification commands will be re-added in v2 form in a future slice
 
-		const commands = result.entity.map((c) => c.command);
-		expect(commands).toContain("gp epic:add-verification --epic e1");
-		expect(commands).toContain("gp epic:update-verification --epic e1 --index <index>");
-	});
-
-	it("epic verification commands NOT available post-activation", () => {
+	it("epic in activated status has abandon/complete but not deleted commands", () => {
 		const result = computeNextCommands({ type: "epic", name: "e1" }, "activated");
 
 		const commands = result.entity.map((c) => c.command);
+		expect(commands).toContain("gp epic:complete --epic e1");
 		expect(commands).not.toContain("gp epic:add-verification --epic e1");
 	});
 

@@ -5,8 +5,8 @@ import { getJson, setEntry } from "../../../src/core/data/tree.js";
 import { reduce } from "../../../src/core/state/reduce.js";
 import { isStateError } from "../../../src/core/state/types.js";
 import type { StateError } from "../../../src/core/state/types.js";
-import type { Slice } from "../../../src/schemas/entities/slice.js";
 import type { Quest } from "../../../src/schemas/entities/quest.js";
+import type { Slice } from "../../../src/schemas/entities/slice.js";
 
 const TS = "2026-01-01T00:00:00.000Z";
 const TS2 = "2026-01-02T00:00:00.000Z";
@@ -17,7 +17,13 @@ const TS2 = "2026-01-02T00:00:00.000Z";
 function stateWithSliceInPlanning(): ProjectState {
 	let s = reduce(ZERO_STATE, { type: "INIT_PROJECT", name: "test", ts: TS }) as ProjectState;
 	s = reduce(s, { type: "CREATE_EPIC", name: "e1", goal: "Build stuff", ts: TS }) as ProjectState;
-	s = reduce(s, { type: "CREATE_SLICE", name: "s1", epic: "e1", goal: "Test slice", ts: TS }) as ProjectState;
+	s = reduce(s, {
+		type: "CREATE_SLICE",
+		name: "s1",
+		epic: "e1",
+		goal: "Test slice",
+		ts: TS,
+	}) as ProjectState;
 
 	// Manually set the slice to "planning" status
 	s = setEntry(s, "epics/e1/slices/s1/slice.json", {
@@ -132,8 +138,8 @@ describe("reduce — COMPLETE_REFINEMENT_ROUND", () => {
 		expect(isStateError(result)).toBe(false);
 		const slice = getJson<Slice>(result as ProjectState, "epics/e1/slices/s1/slice.json")!;
 		expect(slice.status).toBe("refining");
-		expect(slice.refinement!.round).toBe(2);
-		expect(slice.refinement!.scoreHistory).toHaveLength(1);
+		expect(slice.refinement?.round).toBe(2);
+		expect(slice.refinement?.scoreHistory).toHaveLength(1);
 		expect(slice.updated).toBe(TS2);
 	});
 
@@ -147,7 +153,9 @@ describe("reduce — COMPLETE_REFINEMENT_ROUND", () => {
 			scores: { correctness: 9, completeness: 10 },
 		});
 		expect(isStateError(result)).toBe(false);
-		expect(getJson<Slice>(result as ProjectState, "epics/e1/slices/s1/slice.json")!.status).toBe("plan-refined");
+		expect(getJson<Slice>(result as ProjectState, "epics/e1/slices/s1/slice.json")?.status).toBe(
+			"plan-refined",
+		);
 	});
 
 	it("skip path: plan-created → plan-refined with high scores", () => {
@@ -166,7 +174,9 @@ describe("reduce — COMPLETE_REFINEMENT_ROUND", () => {
 			scores: { q: 10 },
 		});
 		expect(isStateError(result)).toBe(false);
-		expect(getJson<Slice>(result as ProjectState, "epics/e1/slices/s1/slice.json")!.status).toBe("plan-refined");
+		expect(getJson<Slice>(result as ProjectState, "epics/e1/slices/s1/slice.json")?.status).toBe(
+			"plan-refined",
+		);
 	});
 
 	it("circuit breaker — max rounds reached", () => {
@@ -203,7 +213,9 @@ describe("reduce — COMPLETE_REFINEMENT_ROUND", () => {
 			override: true,
 		});
 		expect(isStateError(result)).toBe(false);
-		expect(getJson<Slice>(result as ProjectState, "epics/e1/slices/s1/slice.json")!.status).toBe("plan-refined");
+		expect(getJson<Slice>(result as ProjectState, "epics/e1/slices/s1/slice.json")?.status).toBe(
+			"plan-refined",
+		);
 	});
 });
 
@@ -311,7 +323,9 @@ describe("reduce — COMPLETE_QUEST_REFINEMENT_ROUND", () => {
 			scores: { q: 10 },
 		});
 		expect(isStateError(result)).toBe(false);
-		expect(getJson<Quest>(result as ProjectState, "quests/q1/quest.json")!.status).toBe("plan-refined");
+		expect(getJson<Quest>(result as ProjectState, "quests/q1/quest.json")?.status).toBe(
+			"plan-refined",
+		);
 	});
 });
 

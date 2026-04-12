@@ -2,13 +2,11 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { loadState } from "../../../src/core/data/load.js";
 import { begin } from "../../../src/core/rpc/begin.js";
 import { rpcInit } from "../../../src/core/rpc/init.js";
-import { submit } from "../../../src/core/rpc/submit.js";
-import { complete } from "../../../src/core/rpc/complete.js";
 import { bumpDataVersionIfNeeded } from "../../../src/core/rpc/version-stamp.js";
-import { loadState } from "../../../src/core/data/load.js";
-import { getJson, setEntry } from "../../../src/core/tree.js";
+import { getJson } from "../../../src/core/tree.js";
 import type { ProjectState } from "../../../src/core/tree.js";
 import type { Project } from "../../../src/schemas/entities/project.js";
 
@@ -121,7 +119,7 @@ describe("version stamping in RPC mutations", () => {
 		const project1 = getJson<Project>(state1, "project.json");
 		expect(project1).toBeDefined();
 		// After init, version should match CLI version
-		expect(project1!.version).toBeDefined();
+		expect(project1?.version).toBeDefined();
 
 		// Create an epic (a mutation)
 		begin(
@@ -135,6 +133,6 @@ describe("version stamping in RPC mutations", () => {
 		const project2 = getJson<Project>(state2, "project.json");
 		expect(project2).toBeDefined();
 		// Version should still be valid after mutation
-		expect(project2!.version).toMatch(/^\d+\.\d+\.\d+$/);
+		expect(project2?.version).toMatch(/^\d+\.\d+\.\d+$/);
 	});
 });

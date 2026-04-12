@@ -5,8 +5,8 @@ import { getJson, getJsonl } from "../../../src/core/data/tree.js";
 import { reduce } from "../../../src/core/state/reduce.js";
 import { isStateError } from "../../../src/core/state/types.js";
 import type { StateError } from "../../../src/core/state/types.js";
-import type { Quest } from "../../../src/schemas/entities/quest.js";
 import type { UnifiedOverview } from "../../../src/schemas/entities/overview.js";
+import type { Quest } from "../../../src/schemas/entities/quest.js";
 
 const TS = "2026-01-01T00:00:00.000Z";
 const TS2 = "2026-01-02T00:00:00.000Z";
@@ -30,12 +30,12 @@ describe("reduce — CREATE_QUEST", () => {
 
 		const quest = getJson<Quest>(newState, "quests/fix-logging/quest.json");
 		expect(quest).toBeDefined();
-		expect(quest!.name).toBe("fix-logging");
-		expect(quest!.status).toBe("created");
-		expect(quest!.goal).toBe("Fix structured logging");
-		expect(quest!.refinement).toBeNull();
-		expect(quest!.created).toBe(TS2);
-		expect(quest!.updated).toBe(TS2);
+		expect(quest?.name).toBe("fix-logging");
+		expect(quest?.status).toBe("created");
+		expect(quest?.goal).toBe("Fix structured logging");
+		expect(quest?.refinement).toBeNull();
+		expect(quest?.created).toBe(TS2);
+		expect(quest?.updated).toBe(TS2);
 	});
 
 	it("updates overview.json quests with created and completed fields, no epic field", () => {
@@ -49,13 +49,13 @@ describe("reduce — CREATE_QUEST", () => {
 
 		const overview = getJson<UnifiedOverview>(result, "overview.json");
 		expect(overview).toBeDefined();
-		expect(overview!.quests).toHaveLength(1);
-		expect(overview!.quests[0]!.name).toBe("q1");
-		expect(overview!.quests[0]!.status).toBe("created");
-		expect(overview!.quests[0]!.created).toBe(TS2);
-		expect(overview!.quests[0]!.completed).toBeNull();
+		expect(overview?.quests).toHaveLength(1);
+		expect(overview?.quests[0]?.name).toBe("q1");
+		expect(overview?.quests[0]?.status).toBe("created");
+		expect(overview?.quests[0]?.created).toBe(TS2);
+		expect(overview?.quests[0]?.completed).toBeNull();
 		// No epic field — quests are project-scoped
-		expect(overview!.quests[0]!.epic).toBeUndefined();
+		expect(overview?.quests[0]?.epic).toBeUndefined();
 	});
 
 	it("appends activity log entry", () => {
@@ -69,7 +69,7 @@ describe("reduce — CREATE_QUEST", () => {
 
 		const log = getJsonl<Record<string, unknown>>(result, "activity-log.jsonl");
 		expect(log).toBeDefined();
-		const entry = log![log!.length - 1]!;
+		const entry = log?.[log?.length - 1]!;
 		expect(entry.phase).toBe("create-quest");
 		expect(entry.scope).toBe("quests/q1");
 	});
@@ -113,6 +113,6 @@ describe("reduce — CREATE_QUEST", () => {
 		s = reduce(s, { type: "CREATE_QUEST", name: "q2", goal: "Second", ts: TS2 }) as ProjectState;
 
 		const overview = getJson<UnifiedOverview>(s, "overview.json");
-		expect(overview!.quests).toHaveLength(2);
+		expect(overview?.quests).toHaveLength(2);
 	});
 });

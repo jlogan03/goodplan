@@ -1,5 +1,5 @@
 import { defineCommand } from "citty";
-import { startContext, DEFAULT_INLINE_BUDGET } from "../../core/context/index.js";
+import { DEFAULT_INLINE_BUDGET, startContext } from "../../core/context/index.js";
 import { loadState } from "../../core/data/load.js";
 import { resolveProjectDir } from "../../core/data/project.js";
 import { output } from "../../util/output.js";
@@ -34,11 +34,17 @@ export const startRefineArchitectureCommand = defineCommand({
 		const state = loadState(projectDir);
 
 		const inlineBudget = parseInlineBudget(args.inline as string | undefined);
-		const options = inlineBudget !== undefined
-			? { inlineBudget: typeof inlineBudget === "number" ? inlineBudget : DEFAULT_INLINE_BUDGET }
-			: undefined;
+		const options =
+			inlineBudget !== undefined
+				? { inlineBudget: typeof inlineBudget === "number" ? inlineBudget : DEFAULT_INLINE_BUDGET }
+				: undefined;
 
-		const bundle = startContext(state, "refine-architecture", { type: "epic", name: args.epic as string }, options);
+		const bundle = startContext(
+			state,
+			"refine-architecture",
+			{ type: "epic", name: args.epic as string },
+			options,
+		);
 		output(bundle, { ...args, json: true });
 	},
 });

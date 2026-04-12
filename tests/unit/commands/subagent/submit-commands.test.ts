@@ -2,8 +2,8 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { rpcInit } from "../../../../src/core/rpc/init.js";
 import { begin } from "../../../../src/core/rpc/begin.js";
+import { rpcInit } from "../../../../src/core/rpc/init.js";
 import { submit } from "../../../../src/core/rpc/submit.js";
 import type { Verification } from "../../../../src/schemas/entities/epic.js";
 
@@ -41,7 +41,20 @@ function captureStdout(): { chunks: string[]; restore: () => void } {
  * Advance epic through the full phase chain to a given target status.
  * Returns the projectDir for chaining.
  */
-function advanceEpicTo(target: "exploring" | "explored" | "defining-architecture" | "architecture-defined" | "refining-architecture" | "architecture-refined" | "defining-slices" | "slices-defined" | "refining-slices" | "slices-refined" | "activated") {
+function advanceEpicTo(
+	target:
+		| "exploring"
+		| "explored"
+		| "defining-architecture"
+		| "architecture-defined"
+		| "refining-architecture"
+		| "architecture-refined"
+		| "defining-slices"
+		| "slices-defined"
+		| "refining-slices"
+		| "slices-refined"
+		| "activated",
+) {
 	const epicTarget = { type: "epic" as const, name: "e1" };
 
 	begin(projectDir, "create", epicTarget, { name: "e1", goal: "G" });
@@ -63,7 +76,10 @@ function advanceEpicTo(target: "exploring" | "explored" | "defining-architecture
 	begin(projectDir, "refine-architecture", epicTarget, {});
 	if (target === "refining-architecture") return;
 
-	submit(projectDir, "refine-architecture", epicTarget, { phase: "refine-architecture", scores: { q: 10 } });
+	submit(projectDir, "refine-architecture", epicTarget, {
+		phase: "refine-architecture",
+		scores: { q: 10 },
+	});
 	if (target === "architecture-refined") return;
 
 	begin(projectDir, "define-slices", epicTarget, {});
@@ -79,60 +95,107 @@ function advanceEpicTo(target: "exploring" | "explored" | "defining-architecture
 	if (target === "slices-refined") return;
 
 	// activated
-	const v: Verification = { description: "Works", status: "pending", addedDuring: "defining-slices", modifiedDuring: null };
+	const v: Verification = {
+		description: "Works",
+		status: "pending",
+		addedDuring: "defining-slices",
+		modifiedDuring: null,
+	};
 	begin(projectDir, "add-verification", epicTarget, { verification: v });
 	begin(projectDir, "activate", epicTarget, {});
 }
 
 // ── Command runners ──────────────────────────────────────────
 
-async function runSubmitExplore(args: Record<string, unknown>, stdin: Record<string, unknown> = {}) {
+async function runSubmitExplore(
+	args: Record<string, unknown>,
+	stdin: Record<string, unknown> = {},
+) {
 	const stdinModule = await import("../../../../src/util/stdin.js");
 	vi.spyOn(stdinModule, "readStdin").mockResolvedValue(stdin);
-	const { submitExploreCommand } = await import("../../../../src/commands/subagent/submit-explore.js");
+	const { submitExploreCommand } = await import(
+		"../../../../src/commands/subagent/submit-explore.js"
+	);
 	const def = await submitExploreCommand;
 	if (def.run) {
-		await def.run({ args: { json: false, quiet: false, verbose: false, ...args }, rawArgs: [], cmd: def });
+		await def.run({
+			args: { json: false, quiet: false, verbose: false, ...args },
+			rawArgs: [],
+			cmd: def,
+		});
 	}
 }
 
-async function runSubmitArchitecture(args: Record<string, unknown>, stdin: Record<string, unknown> = {}) {
+async function runSubmitArchitecture(
+	args: Record<string, unknown>,
+	stdin: Record<string, unknown> = {},
+) {
 	const stdinModule = await import("../../../../src/util/stdin.js");
 	vi.spyOn(stdinModule, "readStdin").mockResolvedValue(stdin);
-	const { submitArchitectureCommand } = await import("../../../../src/commands/subagent/submit-architecture.js");
+	const { submitArchitectureCommand } = await import(
+		"../../../../src/commands/subagent/submit-architecture.js"
+	);
 	const def = await submitArchitectureCommand;
 	if (def.run) {
-		await def.run({ args: { json: false, quiet: false, verbose: false, ...args }, rawArgs: [], cmd: def });
+		await def.run({
+			args: { json: false, quiet: false, verbose: false, ...args },
+			rawArgs: [],
+			cmd: def,
+		});
 	}
 }
 
-async function runSubmitRefineArchitecture(args: Record<string, unknown>, stdin: Record<string, unknown> = {}) {
+async function runSubmitRefineArchitecture(
+	args: Record<string, unknown>,
+	stdin: Record<string, unknown> = {},
+) {
 	const stdinModule = await import("../../../../src/util/stdin.js");
 	vi.spyOn(stdinModule, "readStdin").mockResolvedValue(stdin);
-	const { submitRefineArchitectureCommand } = await import("../../../../src/commands/subagent/submit-refine-architecture.js");
+	const { submitRefineArchitectureCommand } = await import(
+		"../../../../src/commands/subagent/submit-refine-architecture.js"
+	);
 	const def = await submitRefineArchitectureCommand;
 	if (def.run) {
-		await def.run({ args: { json: false, quiet: false, verbose: false, ...args }, rawArgs: [], cmd: def });
+		await def.run({
+			args: { json: false, quiet: false, verbose: false, ...args },
+			rawArgs: [],
+			cmd: def,
+		});
 	}
 }
 
 async function runSubmitSlices(args: Record<string, unknown>, stdin: Record<string, unknown> = {}) {
 	const stdinModule = await import("../../../../src/util/stdin.js");
 	vi.spyOn(stdinModule, "readStdin").mockResolvedValue(stdin);
-	const { submitSlicesCommand } = await import("../../../../src/commands/subagent/submit-slices.js");
+	const { submitSlicesCommand } = await import(
+		"../../../../src/commands/subagent/submit-slices.js"
+	);
 	const def = await submitSlicesCommand;
 	if (def.run) {
-		await def.run({ args: { json: false, quiet: false, verbose: false, ...args }, rawArgs: [], cmd: def });
+		await def.run({
+			args: { json: false, quiet: false, verbose: false, ...args },
+			rawArgs: [],
+			cmd: def,
+		});
 	}
 }
 
-async function runSubmitRefineSlices(args: Record<string, unknown>, stdin: Record<string, unknown> = {}) {
+async function runSubmitRefineSlices(
+	args: Record<string, unknown>,
+	stdin: Record<string, unknown> = {},
+) {
 	const stdinModule = await import("../../../../src/util/stdin.js");
 	vi.spyOn(stdinModule, "readStdin").mockResolvedValue(stdin);
-	const { submitRefineSlicesCommand } = await import("../../../../src/commands/subagent/submit-refine-slices.js");
+	const { submitRefineSlicesCommand } = await import(
+		"../../../../src/commands/subagent/submit-refine-slices.js"
+	);
 	const def = await submitRefineSlicesCommand;
 	if (def.run) {
-		await def.run({ args: { json: false, quiet: false, verbose: false, ...args }, rawArgs: [], cmd: def });
+		await def.run({
+			args: { json: false, quiet: false, verbose: false, ...args },
+			rawArgs: [],
+			cmd: def,
+		});
 	}
 }
 
@@ -142,27 +205,49 @@ async function runSubmitPlan(args: Record<string, unknown>, stdin: Record<string
 	const { submitPlanCommand } = await import("../../../../src/commands/subagent/submit-plan.js");
 	const def = await submitPlanCommand;
 	if (def.run) {
-		await def.run({ args: { json: false, quiet: false, verbose: false, ...args }, rawArgs: [], cmd: def });
+		await def.run({
+			args: { json: false, quiet: false, verbose: false, ...args },
+			rawArgs: [],
+			cmd: def,
+		});
 	}
 }
 
-async function runSubmitRefinement(args: Record<string, unknown>, stdin: Record<string, unknown> = {}) {
+async function runSubmitRefinement(
+	args: Record<string, unknown>,
+	stdin: Record<string, unknown> = {},
+) {
 	const stdinModule = await import("../../../../src/util/stdin.js");
 	vi.spyOn(stdinModule, "readStdin").mockResolvedValue(stdin);
-	const { submitRefinementCommand } = await import("../../../../src/commands/subagent/submit-refinement.js");
+	const { submitRefinementCommand } = await import(
+		"../../../../src/commands/subagent/submit-refinement.js"
+	);
 	const def = await submitRefinementCommand;
 	if (def.run) {
-		await def.run({ args: { json: false, quiet: false, verbose: false, ...args }, rawArgs: [], cmd: def });
+		await def.run({
+			args: { json: false, quiet: false, verbose: false, ...args },
+			rawArgs: [],
+			cmd: def,
+		});
 	}
 }
 
-async function runSubmitImplementation(args: Record<string, unknown>, stdin: Record<string, unknown> = {}) {
+async function runSubmitImplementation(
+	args: Record<string, unknown>,
+	stdin: Record<string, unknown> = {},
+) {
 	const stdinModule = await import("../../../../src/util/stdin.js");
 	vi.spyOn(stdinModule, "readStdin").mockResolvedValue(stdin);
-	const { submitImplementationCommand } = await import("../../../../src/commands/subagent/submit-implementation.js");
+	const { submitImplementationCommand } = await import(
+		"../../../../src/commands/subagent/submit-implementation.js"
+	);
 	const def = await submitImplementationCommand;
 	if (def.run) {
-		await def.run({ args: { json: false, quiet: false, verbose: false, ...args }, rawArgs: [], cmd: def });
+		await def.run({
+			args: { json: false, quiet: false, verbose: false, ...args },
+			rawArgs: [],
+			cmd: def,
+		});
 	}
 }
 
@@ -285,9 +370,7 @@ describe("submit-refine-architecture", () => {
 		initProject();
 		advanceEpicTo("refining-architecture");
 
-		await expect(
-			runSubmitRefineArchitecture({ epic: "e1", json: true }),
-		).rejects.toThrow();
+		await expect(runSubmitRefineArchitecture({ epic: "e1", json: true })).rejects.toThrow();
 	});
 });
 
@@ -380,18 +463,14 @@ describe("submit-plan", () => {
 	it("rejects when both --slice and --quest provided", async () => {
 		initProject();
 
-		await expect(
-			runSubmitPlan({ slice: "s1", quest: "q1", json: true }),
-		).rejects.toThrow();
+		await expect(runSubmitPlan({ slice: "s1", quest: "q1", json: true })).rejects.toThrow();
 	});
 
 	it("propagates state machine error for nonexistent slice", async () => {
 		initProject();
 
 		// The state machine will reject because no such slice exists
-		await expect(
-			runSubmitPlan({ slice: "nonexistent", json: true }),
-		).rejects.toThrow();
+		await expect(runSubmitPlan({ slice: "nonexistent", json: true })).rejects.toThrow();
 	});
 });
 
@@ -401,17 +480,13 @@ describe("submit-refinement", () => {
 	it("rejects when neither --slice nor --quest provided", async () => {
 		initProject();
 
-		await expect(
-			runSubmitRefinement({ json: true }, { scores: { q: 9 } }),
-		).rejects.toThrow();
+		await expect(runSubmitRefinement({ json: true }, { scores: { q: 9 } })).rejects.toThrow();
 	});
 
 	it("rejects when scores are missing", async () => {
 		initProject();
 
-		await expect(
-			runSubmitRefinement({ slice: "s1", json: true }),
-		).rejects.toThrow();
+		await expect(runSubmitRefinement({ slice: "s1", json: true })).rejects.toThrow();
 	});
 });
 
@@ -421,9 +496,7 @@ describe("submit-implementation", () => {
 	it("rejects when neither --slice nor --quest provided", async () => {
 		initProject();
 
-		await expect(
-			runSubmitImplementation({ json: true }),
-		).rejects.toThrow();
+		await expect(runSubmitImplementation({ json: true })).rejects.toThrow();
 	});
 });
 

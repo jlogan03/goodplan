@@ -7,7 +7,12 @@ import type { EpicStatus } from "../../../schemas/entities/epic.js";
 import type { ProjectState } from "../../tree.js";
 import { getJson, hasChild, setEntry } from "../../tree.js";
 import type { StateError, StateEvent } from "../types.js";
-import { addEpicToOverview, appendActivityLog, buildInitialEpicJson, createEpicSubdirectories } from "./helpers.js";
+import {
+	addEpicToOverview,
+	appendActivityLog,
+	buildInitialEpicJson,
+	createEpicSubdirectories,
+} from "./helpers.js";
 
 type CreateEpicEvent = Extract<StateEvent, { type: "CREATE_EPIC" }>;
 

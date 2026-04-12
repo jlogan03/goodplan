@@ -49,12 +49,7 @@ export function handleCompleteQuest(
 	//    Quests are project-scoped — only roll up to "project" (skip "epic").
 	const learningEntries: LearningEventEntry[] = event.learnings;
 	const source = `quests/${event.quest}`;
-	tree = processLearnings(
-		tree,
-		learningEntries,
-		source,
-		new Set(["project"]),
-	);
+	tree = processLearnings(tree, learningEntries, source, new Set(["project"]));
 
 	// 2. Architecture deltas: write to per-quest architecture-deltas.jsonl
 	if (event.architectureDelta.length > 0) {

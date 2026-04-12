@@ -111,7 +111,12 @@ describe("reduce — full phase chain via skip paths", () => {
 		s = reduce(s, { type: "COMPLETE_ARCHITECTURE", epic: "e1", ts: TS }) as ProjectState;
 		expect(epicStatus(s, "e1")).toBe("architecture-defined");
 		// Skip architecture refinement
-		s = reduce(s, { type: "COMPLETE_REFINE_ARCHITECTURE", epic: "e1", ts: TS, scores: { q: 10 } }) as ProjectState;
+		s = reduce(s, {
+			type: "COMPLETE_REFINE_ARCHITECTURE",
+			epic: "e1",
+			ts: TS,
+			scores: { q: 10 },
+		}) as ProjectState;
 		expect(epicStatus(s, "e1")).toBe("architecture-refined");
 		// Begin slicing
 		s = reduce(s, { type: "BEGIN_SLICING", epic: "e1", ts: TS }) as ProjectState;
@@ -120,7 +125,12 @@ describe("reduce — full phase chain via skip paths", () => {
 		s = reduce(s, { type: "COMPLETE_SLICING", epic: "e1", ts: TS }) as ProjectState;
 		expect(epicStatus(s, "e1")).toBe("slices-defined");
 		// Skip slice refinement
-		s = reduce(s, { type: "COMPLETE_REFINE_SLICES", epic: "e1", ts: TS, scores: { q: 10 } }) as ProjectState;
+		s = reduce(s, {
+			type: "COMPLETE_REFINE_SLICES",
+			epic: "e1",
+			ts: TS,
+			scores: { q: 10 },
+		}) as ProjectState;
 		expect(epicStatus(s, "e1")).toBe("slices-refined");
 	});
 
@@ -131,7 +141,12 @@ describe("reduce — full phase chain via skip paths", () => {
 		expect(overviewStatus(s, "e1")).toBe("explored");
 		s = reduce(s, { type: "COMPLETE_ARCHITECTURE", epic: "e1", ts: TS }) as ProjectState;
 		expect(overviewStatus(s, "e1")).toBe("architecture-defined");
-		s = reduce(s, { type: "COMPLETE_REFINE_ARCHITECTURE", epic: "e1", ts: TS, scores: { q: 10 } }) as ProjectState;
+		s = reduce(s, {
+			type: "COMPLETE_REFINE_ARCHITECTURE",
+			epic: "e1",
+			ts: TS,
+			scores: { q: 10 },
+		}) as ProjectState;
 		expect(overviewStatus(s, "e1")).toBe("architecture-refined");
 	});
 });
@@ -149,10 +164,20 @@ describe("reduce — BEGIN/COMPLETE via normal path with refinement", () => {
 		s = reduce(s, { type: "BEGIN_REFINE_ARCHITECTURE", epic: "e1", ts: TS }) as ProjectState;
 		expect(epicStatus(s, "e1")).toBe("refining-architecture");
 		// Low scores — stay
-		s = reduce(s, { type: "COMPLETE_REFINE_ARCHITECTURE", epic: "e1", ts: TS, scores: { q: 5 } }) as ProjectState;
+		s = reduce(s, {
+			type: "COMPLETE_REFINE_ARCHITECTURE",
+			epic: "e1",
+			ts: TS,
+			scores: { q: 5 },
+		}) as ProjectState;
 		expect(epicStatus(s, "e1")).toBe("refining-architecture");
 		// High scores — advance
-		s = reduce(s, { type: "COMPLETE_REFINE_ARCHITECTURE", epic: "e1", ts: TS, scores: { q: 9 } }) as ProjectState;
+		s = reduce(s, {
+			type: "COMPLETE_REFINE_ARCHITECTURE",
+			epic: "e1",
+			ts: TS,
+			scores: { q: 9 },
+		}) as ProjectState;
 		expect(epicStatus(s, "e1")).toBe("architecture-refined");
 		// Slicing
 		s = reduce(s, { type: "BEGIN_SLICING", epic: "e1", ts: TS }) as ProjectState;
@@ -160,7 +185,12 @@ describe("reduce — BEGIN/COMPLETE via normal path with refinement", () => {
 		// Refine slices
 		s = reduce(s, { type: "BEGIN_REFINE_SLICES", epic: "e1", ts: TS }) as ProjectState;
 		expect(epicStatus(s, "e1")).toBe("refining-slices");
-		s = reduce(s, { type: "COMPLETE_REFINE_SLICES", epic: "e1", ts: TS, scores: { q: 9 } }) as ProjectState;
+		s = reduce(s, {
+			type: "COMPLETE_REFINE_SLICES",
+			epic: "e1",
+			ts: TS,
+			scores: { q: 9 },
+		}) as ProjectState;
 		expect(epicStatus(s, "e1")).toBe("slices-refined");
 	});
 });

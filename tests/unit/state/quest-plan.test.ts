@@ -5,8 +5,8 @@ import { getJson, getJsonl } from "../../../src/core/data/tree.js";
 import { reduce } from "../../../src/core/state/reduce.js";
 import { isStateError } from "../../../src/core/state/types.js";
 import type { StateError } from "../../../src/core/state/types.js";
-import type { Quest } from "../../../src/schemas/entities/quest.js";
 import type { Project } from "../../../src/schemas/entities/project.js";
+import type { Quest } from "../../../src/schemas/entities/quest.js";
 
 const TS = "2026-01-01T00:00:00.000Z";
 const TS2 = "2026-01-02T00:00:00.000Z";
@@ -26,21 +26,30 @@ describe("reduce — BEGIN_QUEST_PLAN", () => {
 		const newState = result as ProjectState;
 
 		const quest = getJson<Quest>(newState, "quests/q1/quest.json");
-		expect(quest!.status).toBe("planning");
-		expect(quest!.updated).toBe(TS2);
+		expect(quest?.status).toBe("planning");
+		expect(quest?.updated).toBe(TS2);
 	});
 
 	it("sets activeQuest in project.json", () => {
 		const state = initWithQuest();
-		const result = reduce(state, { type: "BEGIN_QUEST_PLAN", quest: "q1", ts: TS2 }) as ProjectState;
+		const result = reduce(state, {
+			type: "BEGIN_QUEST_PLAN",
+			quest: "q1",
+			ts: TS2,
+		}) as ProjectState;
 
 		const project = getJson<Project>(result, "project.json");
-		expect(project!.activeQuest).toBe("q1");
+		expect(project?.activeQuest).toBe("q1");
 	});
 
 	it("rejects with STATE_QUEST_ALREADY_ACTIVE when another quest is active", () => {
 		let s = initWithQuest();
-		s = reduce(s, { type: "CREATE_QUEST", name: "q2", goal: "Second quest", ts: TS }) as ProjectState;
+		s = reduce(s, {
+			type: "CREATE_QUEST",
+			name: "q2",
+			goal: "Second quest",
+			ts: TS,
+		}) as ProjectState;
 		// Make q1 active
 		s = reduce(s, { type: "BEGIN_QUEST_PLAN", quest: "q1", ts: TS }) as ProjectState;
 
@@ -72,10 +81,14 @@ describe("reduce — BEGIN_QUEST_PLAN", () => {
 
 	it("appends activity log entry", () => {
 		const state = initWithQuest();
-		const result = reduce(state, { type: "BEGIN_QUEST_PLAN", quest: "q1", ts: TS2 }) as ProjectState;
+		const result = reduce(state, {
+			type: "BEGIN_QUEST_PLAN",
+			quest: "q1",
+			ts: TS2,
+		}) as ProjectState;
 
 		const log = getJsonl<Record<string, unknown>>(result, "activity-log.jsonl");
-		const entry = log![log!.length - 1]!;
+		const entry = log?.[log?.length - 1]!;
 		expect(entry.phase).toBe("begin-quest-plan");
 		expect(entry.scope).toBe("quests/q1");
 	});

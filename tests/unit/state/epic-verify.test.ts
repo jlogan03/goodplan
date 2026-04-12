@@ -41,17 +41,27 @@ describe("reduce — ADD_VERIFICATION", () => {
 		});
 		expect(isStateError(result)).toBe(false);
 		const epic = getJson<Epic>(result as ProjectState, "epics/e1/epic.json");
-		expect(epic!.verifications).toHaveLength(1);
-		expect(epic!.verifications[0]!.description).toBe("CLI can create epics");
-		expect(epic!.updated).toBe(TS2);
+		expect(epic?.verifications).toHaveLength(1);
+		expect(epic?.verifications[0]?.description).toBe("CLI can create epics");
+		expect(epic?.updated).toBe(TS2);
 	});
 
 	it("appends multiple verifications", () => {
 		let s = initWithEpic();
-		s = reduce(s, { type: "ADD_VERIFICATION", epic: "e1", ts: TS, verification: v1 }) as ProjectState;
-		s = reduce(s, { type: "ADD_VERIFICATION", epic: "e1", ts: TS, verification: v2 }) as ProjectState;
+		s = reduce(s, {
+			type: "ADD_VERIFICATION",
+			epic: "e1",
+			ts: TS,
+			verification: v1,
+		}) as ProjectState;
+		s = reduce(s, {
+			type: "ADD_VERIFICATION",
+			epic: "e1",
+			ts: TS,
+			verification: v2,
+		}) as ProjectState;
 		const epic = getJson<Epic>(s, "epics/e1/epic.json");
-		expect(epic!.verifications).toHaveLength(2);
+		expect(epic?.verifications).toHaveLength(2);
 	});
 
 	it("works in various pre-activated statuses", () => {
@@ -70,11 +80,26 @@ describe("reduce — ADD_VERIFICATION", () => {
 		let s = initWithEpic();
 		s = reduce(s, { type: "COMPLETE_EXPLORE", epic: "e1", ts: TS }) as ProjectState;
 		s = reduce(s, { type: "COMPLETE_ARCHITECTURE", epic: "e1", ts: TS }) as ProjectState;
-		s = reduce(s, { type: "COMPLETE_REFINE_ARCHITECTURE", epic: "e1", ts: TS, scores: { q: 10 } }) as ProjectState;
+		s = reduce(s, {
+			type: "COMPLETE_REFINE_ARCHITECTURE",
+			epic: "e1",
+			ts: TS,
+			scores: { q: 10 },
+		}) as ProjectState;
 		s = reduce(s, { type: "BEGIN_SLICING", epic: "e1", ts: TS }) as ProjectState;
 		s = reduce(s, { type: "COMPLETE_SLICING", epic: "e1", ts: TS }) as ProjectState;
-		s = reduce(s, { type: "COMPLETE_REFINE_SLICES", epic: "e1", ts: TS, scores: { q: 10 } }) as ProjectState;
-		s = reduce(s, { type: "ADD_VERIFICATION", epic: "e1", ts: TS, verification: v1 }) as ProjectState;
+		s = reduce(s, {
+			type: "COMPLETE_REFINE_SLICES",
+			epic: "e1",
+			ts: TS,
+			scores: { q: 10 },
+		}) as ProjectState;
+		s = reduce(s, {
+			type: "ADD_VERIFICATION",
+			epic: "e1",
+			ts: TS,
+			verification: v1,
+		}) as ProjectState;
 		s = reduce(s, { type: "ACTIVATE_EPIC", epic: "e1", ts: TS }) as ProjectState;
 
 		const result = reduce(s, { type: "ADD_VERIFICATION", epic: "e1", ts: TS, verification: v2 });
@@ -86,11 +111,26 @@ describe("reduce — ADD_VERIFICATION", () => {
 		let s = initWithEpic();
 		s = reduce(s, { type: "COMPLETE_EXPLORE", epic: "e1", ts: TS }) as ProjectState;
 		s = reduce(s, { type: "COMPLETE_ARCHITECTURE", epic: "e1", ts: TS }) as ProjectState;
-		s = reduce(s, { type: "COMPLETE_REFINE_ARCHITECTURE", epic: "e1", ts: TS, scores: { q: 10 } }) as ProjectState;
+		s = reduce(s, {
+			type: "COMPLETE_REFINE_ARCHITECTURE",
+			epic: "e1",
+			ts: TS,
+			scores: { q: 10 },
+		}) as ProjectState;
 		s = reduce(s, { type: "BEGIN_SLICING", epic: "e1", ts: TS }) as ProjectState;
 		s = reduce(s, { type: "COMPLETE_SLICING", epic: "e1", ts: TS }) as ProjectState;
-		s = reduce(s, { type: "COMPLETE_REFINE_SLICES", epic: "e1", ts: TS, scores: { q: 10 } }) as ProjectState;
-		s = reduce(s, { type: "ADD_VERIFICATION", epic: "e1", ts: TS, verification: v1 }) as ProjectState;
+		s = reduce(s, {
+			type: "COMPLETE_REFINE_SLICES",
+			epic: "e1",
+			ts: TS,
+			scores: { q: 10 },
+		}) as ProjectState;
+		s = reduce(s, {
+			type: "ADD_VERIFICATION",
+			epic: "e1",
+			ts: TS,
+			verification: v1,
+		}) as ProjectState;
 		s = reduce(s, { type: "ACTIVATE_EPIC", epic: "e1", ts: TS }) as ProjectState;
 		s = reduce(s, {
 			type: "COMPLETE_EPIC",
@@ -108,7 +148,12 @@ describe("reduce — ADD_VERIFICATION", () => {
 describe("reduce — UPDATE_VERIFICATION", () => {
 	it("updates verification at specified index", () => {
 		let s = initWithEpic();
-		s = reduce(s, { type: "ADD_VERIFICATION", epic: "e1", ts: TS, verification: v1 }) as ProjectState;
+		s = reduce(s, {
+			type: "ADD_VERIFICATION",
+			epic: "e1",
+			ts: TS,
+			verification: v1,
+		}) as ProjectState;
 
 		const updated: Verification = {
 			description: "CLI can create and delete epics",
@@ -126,15 +171,20 @@ describe("reduce — UPDATE_VERIFICATION", () => {
 		});
 		expect(isStateError(result)).toBe(false);
 		const epic = getJson<Epic>(result as ProjectState, "epics/e1/epic.json");
-		expect(epic!.verifications[0]!.description).toBe("CLI can create and delete epics");
-		expect(epic!.verifications[0]!.status).toBe("passed");
-		expect(epic!.verifications[0]!.modifiedDuring).toBe("slices-refined");
-		expect(epic!.updated).toBe(TS2);
+		expect(epic?.verifications[0]?.description).toBe("CLI can create and delete epics");
+		expect(epic?.verifications[0]?.status).toBe("passed");
+		expect(epic?.verifications[0]?.modifiedDuring).toBe("slices-refined");
+		expect(epic?.updated).toBe(TS2);
 	});
 
 	it("rejects invalid index (negative)", () => {
 		let s = initWithEpic();
-		s = reduce(s, { type: "ADD_VERIFICATION", epic: "e1", ts: TS, verification: v1 }) as ProjectState;
+		s = reduce(s, {
+			type: "ADD_VERIFICATION",
+			epic: "e1",
+			ts: TS,
+			verification: v1,
+		}) as ProjectState;
 
 		const result = reduce(s, {
 			type: "UPDATE_VERIFICATION",
@@ -149,7 +199,12 @@ describe("reduce — UPDATE_VERIFICATION", () => {
 
 	it("rejects invalid index (out of bounds)", () => {
 		let s = initWithEpic();
-		s = reduce(s, { type: "ADD_VERIFICATION", epic: "e1", ts: TS, verification: v1 }) as ProjectState;
+		s = reduce(s, {
+			type: "ADD_VERIFICATION",
+			epic: "e1",
+			ts: TS,
+			verification: v1,
+		}) as ProjectState;
 
 		const result = reduce(s, {
 			type: "UPDATE_VERIFICATION",

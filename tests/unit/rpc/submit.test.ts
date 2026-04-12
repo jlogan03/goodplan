@@ -146,7 +146,9 @@ describe("submit — complete phase error", () => {
 		).toThrow(GoodplanError);
 
 		try {
-			submit(projectDir, "complete", { type: "slice", name: "s1", epic: "e1" }, { phase: "complete" } as never);
+			submit(projectDir, "complete", { type: "slice", name: "s1", epic: "e1" }, {
+				phase: "complete",
+			} as never);
 		} catch (err) {
 			expect((err as GoodplanError).code).toBe("INTERNAL_ERROR");
 			expect((err as GoodplanError).message).toContain("submit('complete') is not valid");

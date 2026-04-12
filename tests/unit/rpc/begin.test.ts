@@ -335,7 +335,12 @@ describe("begin — paths field", () => {
 	it("includes paths in begin result for plan phase", () => {
 		initProject();
 		begin(projectDir, "create", { type: "epic", name: "e1" }, { name: "e1", goal: "G" });
-		begin(projectDir, "create", { type: "slice", name: "s1", epic: "e1" }, { name: "s1", goal: "G", epic: "e1" });
+		begin(
+			projectDir,
+			"create",
+			{ type: "slice", name: "s1", epic: "e1" },
+			{ name: "s1", goal: "G", epic: "e1" },
+		);
 
 		const result = begin(projectDir, "plan", { type: "slice", name: "s1", epic: "e1" }, {});
 
@@ -359,7 +364,12 @@ describe("begin — paths field", () => {
 
 	it("returns empty paths for create phase", () => {
 		initProject();
-		const result = begin(projectDir, "create", { type: "epic", name: "e1" }, { name: "e1", goal: "G" });
+		const result = begin(
+			projectDir,
+			"create",
+			{ type: "epic", name: "e1" },
+			{ name: "e1", goal: "G" },
+		);
 
 		expect(result.paths).toEqual({});
 	});
@@ -374,7 +384,12 @@ describe("begin — paths field", () => {
 describe("begin — create-decision with provenance fields", () => {
 	it("creates decision with entityPath and reconsiderWhen", () => {
 		initProject();
-		begin(projectDir, "create", { type: "epic", name: "my-epic" }, { name: "my-epic", goal: "Build things" });
+		begin(
+			projectDir,
+			"create",
+			{ type: "epic", name: "my-epic" },
+			{ name: "my-epic", goal: "Build things" },
+		);
 
 		const result = begin(
 			projectDir,
@@ -497,7 +512,12 @@ describe("begin — create-decision with provenance fields", () => {
 	it("accepts valid slice entityPath", () => {
 		initProject();
 		begin(projectDir, "create", { type: "epic", name: "e1" }, { name: "e1", goal: "G" });
-		begin(projectDir, "create", { type: "slice", name: "s1", epic: "e1" }, { name: "s1", goal: "S", epic: "e1" });
+		begin(
+			projectDir,
+			"create",
+			{ type: "slice", name: "s1", epic: "e1" },
+			{ name: "s1", goal: "S", epic: "e1" },
+		);
 
 		const result = begin(
 			projectDir,

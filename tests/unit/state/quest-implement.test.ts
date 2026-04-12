@@ -21,7 +21,12 @@ function questInPlanCreated(): ProjectState {
 
 function questInPlanRefined(): ProjectState {
 	let s = questInPlanCreated();
-	s = reduce(s, { type: "COMPLETE_QUEST_REFINEMENT_ROUND", quest: "q1", ts: TS, scores: { q: 10 } }) as ProjectState;
+	s = reduce(s, {
+		type: "COMPLETE_QUEST_REFINEMENT_ROUND",
+		quest: "q1",
+		ts: TS,
+		scores: { q: 10 },
+	}) as ProjectState;
 	return s;
 }
 
@@ -34,8 +39,8 @@ describe("reduce — BEGIN_QUEST_REFINEMENT", () => {
 		const newState = result as ProjectState;
 
 		const quest = getJson<Quest>(newState, "quests/q1/quest.json");
-		expect(quest!.status).toBe("refining");
-		expect(quest!.refinement).toEqual({
+		expect(quest?.status).toBe("refining");
+		expect(quest?.refinement).toEqual({
 			round: 1,
 			maxRounds: 10,
 			scoreHistory: [],
@@ -61,7 +66,7 @@ describe("reduce — BEGIN_QUEST_IMPLEMENTATION", () => {
 		expect(isStateError(result)).toBe(false);
 
 		const quest = getJson<Quest>(result as ProjectState, "quests/q1/quest.json");
-		expect(quest!.status).toBe("implementing");
+		expect(quest?.status).toBe("implementing");
 	});
 
 	it("rejects when plan-refined.md is missing", () => {

@@ -76,46 +76,8 @@ export const commandToEvent = [
 		description: "Create a new epic",
 		userFacing: true,
 	},
-	{
-		command: "epic:explore",
-		event: "BEGIN_EXPLORE",
-		entityType: "epic",
-		template: "gp epic:explore --epic {name}",
-		description: "Explore this epic",
-		userFacing: true,
-	},
-	{
-		command: "epic:define-architecture",
-		event: "BEGIN_ARCHITECTURE",
-		entityType: "epic",
-		template: "gp epic:define-architecture --epic {name}",
-		description: "Define architecture",
-		userFacing: true,
-	},
-	{
-		command: "epic:refine-architecture",
-		event: "BEGIN_REFINE_ARCHITECTURE",
-		entityType: "epic",
-		template: "gp epic:refine-architecture --epic {name}",
-		description: "Refine architecture",
-		userFacing: true,
-	},
-	{
-		command: "epic:define-slices",
-		event: "BEGIN_SLICING",
-		entityType: "epic",
-		template: "gp epic:define-slices --epic {name}",
-		description: "Define slices",
-		userFacing: true,
-	},
-	{
-		command: "epic:refine-slices",
-		event: "BEGIN_REFINE_SLICES",
-		entityType: "epic",
-		template: "gp epic:refine-slices --epic {name}",
-		description: "Refine slices",
-		userFacing: true,
-	},
+	// v1 epic:explore, define-architecture, refine-architecture, define-slices, refine-slices
+	// removed — superseded by v2 event commands
 	{
 		command: "epic:activate",
 		event: "ACTIVATE_EPIC",
@@ -140,22 +102,8 @@ export const commandToEvent = [
 		description: "Abandon this epic",
 		userFacing: true,
 	},
-	{
-		command: "epic:add-verification",
-		event: "ADD_VERIFICATION",
-		entityType: "epic",
-		template: "gp epic:add-verification --epic {name}",
-		description: "Add verification criterion",
-		userFacing: true,
-	},
-	{
-		command: "epic:update-verification",
-		event: "UPDATE_VERIFICATION",
-		entityType: "epic",
-		template: "gp epic:update-verification --epic {name} --index <index>",
-		description: "Update verification criterion",
-		userFacing: true,
-	},
+	// v1 epic:add-verification, epic:update-verification removed —
+	// superseded by v2 event commands
 	// Epic submit (subagent — not user-facing)
 	{
 		command: "submit-explore",
@@ -207,38 +155,8 @@ export const commandToEvent = [
 		description: "Create a new slice",
 		userFacing: true,
 	},
-	{
-		command: "slice:plan",
-		event: "BEGIN_PLAN",
-		entityType: "slice",
-		template: "gp slice:plan --slice {name}",
-		description: "Begin planning",
-		userFacing: true,
-	},
-	{
-		command: "slice:refine-plan",
-		event: "BEGIN_REFINEMENT",
-		entityType: "slice",
-		template: "gp slice:refine-plan --slice {name}",
-		description: "Refine the plan",
-		userFacing: true,
-	},
-	{
-		command: "slice:implement",
-		event: "BEGIN_IMPLEMENTATION",
-		entityType: "slice",
-		template: "gp slice:implement --slice {name}",
-		description: "Begin implementation",
-		userFacing: true,
-	},
-	{
-		command: "slice:complete",
-		event: "COMPLETE_SLICE",
-		entityType: "slice",
-		template: "gp slice:complete --slice {name}",
-		description: "Complete this slice",
-		userFacing: true,
-	},
+	// v1 slice:plan, slice:refine-plan, slice:implement, slice:complete removed —
+	// superseded by v2 event commands (plan-draft, plan-commit, implement-start, land)
 	{
 		command: "slice:abandon",
 		event: "ABANDON_SLICE",

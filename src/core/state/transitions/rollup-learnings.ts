@@ -18,10 +18,7 @@ type RollupLearningsEvent = Extract<StateEvent, { type: "ROLLUP_LEARNINGS" }>;
  * - "project" -> root "learnings.jsonl"
  * - "epic" -> "epics/<activeEpic>/learnings.jsonl"
  */
-function resolveTargetPath(
-	state: ProjectState,
-	to: string,
-): string | StateError {
+function resolveTargetPath(state: ProjectState, to: string): string | StateError {
 	if (to === "project") {
 		return "learnings.jsonl";
 	}
@@ -96,9 +93,7 @@ export function handleRollupLearnings(
 	const deduped = matching.filter(
 		(entry) =>
 			!targetLearnings.some(
-				(existing) =>
-					existing.summary === entry.summary &&
-					existing.source === entry.source,
+				(existing) => existing.summary === entry.summary && existing.source === entry.source,
 			),
 	);
 	tree = setEntry(tree, targetPath, {

@@ -110,28 +110,32 @@ function setupSliceWithLearnings() {
 	);
 
 	// Complete slice with learnings that roll up to project
-	complete(projectDir, { type: "slice", name: "s1", epic: "e1" }, {
-		type: "slice",
-		verificationPassed: true,
-		deferred: [],
-		learnings: [
-			{
-				category: "worked",
-				summary: "Approach X worked",
-				detail: "Details about approach X",
-				tags: ["testing"],
-				rollupTo: ["project"],
-			},
-			{
-				category: "domain",
-				summary: "Domain insight",
-				detail: "Domain detail",
-				tags: ["domain"],
-				rollupTo: [],
-			},
-		],
-		architectureDelta: [],
-	});
+	complete(
+		projectDir,
+		{ type: "slice", name: "s1", epic: "e1" },
+		{
+			type: "slice",
+			verificationPassed: true,
+			deferred: [],
+			learnings: [
+				{
+					category: "worked",
+					summary: "Approach X worked",
+					detail: "Details about approach X",
+					tags: ["testing"],
+					rollupTo: ["project"],
+				},
+				{
+					category: "domain",
+					summary: "Domain insight",
+					detail: "Domain detail",
+					tags: ["domain"],
+					rollupTo: [],
+				},
+			],
+			architectureDelta: [],
+		},
+	);
 }
 
 // ── Command runners ──────────────────────────────────────────
@@ -214,7 +218,9 @@ describe("learning:list", () => {
 		const out = JSON.parse(chunks.join(""));
 		// The learning with rollupTo: ["project"] should have been rolled up to project level
 		expect(out.items.length).toBeGreaterThanOrEqual(1);
-		expect(out.items.some((l: { summary: string }) => l.summary === "Approach X worked")).toBe(true);
+		expect(out.items.some((l: { summary: string }) => l.summary === "Approach X worked")).toBe(
+			true,
+		);
 	});
 
 	it("JSON output includes file field for new-format entries", async () => {

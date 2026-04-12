@@ -51,12 +51,12 @@ describe("reduce — ROLLUP_LEARNINGS", () => {
 		// Only the "project" tagged learning should appear in project learnings
 		const projectLearnings = getJsonl<LearningEntry>(newState, "learnings.jsonl");
 		expect(projectLearnings).toHaveLength(1);
-		expect(projectLearnings![0]!.summary).toBe("For project");
+		expect(projectLearnings?.[0]?.summary).toBe("For project");
 
 		// Source should no longer contain the rolled-up entry
 		const sourceLearnings = getJsonl<LearningEntry>(newState, "slices/s1/learnings.jsonl");
 		expect(sourceLearnings).toHaveLength(2);
-		expect(sourceLearnings!.map((l) => l.summary)).toEqual(["For epic", "No rollup"]);
+		expect(sourceLearnings?.map((l) => l.summary)).toEqual(["For epic", "No rollup"]);
 	});
 
 	it("missing source returns error", () => {
@@ -109,13 +109,19 @@ describe("reduce — ROLLUP_LEARNINGS", () => {
 
 		const remaining = getJsonl<LearningEntry>(result, "slices/s1/learnings.jsonl");
 		expect(remaining).toHaveLength(1); // "Epic only"
-		expect(remaining![0]!.summary).toBe("Epic only");
+		expect(remaining?.[0]?.summary).toBe("Epic only");
 	});
 
 	it("rollup to epic uses active epic from project.json", () => {
 		let s = initProject();
 		s = reduce(s, { type: "CREATE_EPIC", name: "e1", goal: "Build", ts: TS }) as ProjectState;
-		s = reduce(s, { type: "CREATE_SLICE", name: "s1", epic: "e1", goal: "Slice", ts: TS }) as ProjectState;
+		s = reduce(s, {
+			type: "CREATE_SLICE",
+			name: "s1",
+			epic: "e1",
+			goal: "Slice",
+			ts: TS,
+		}) as ProjectState;
 
 		// Activate the epic by going through the full lifecycle
 		s = reduce(s, { type: "BEGIN_EXPLORE", epic: "e1", ts: TS }) as ProjectState;
@@ -123,18 +129,29 @@ describe("reduce — ROLLUP_LEARNINGS", () => {
 		s = reduce(s, { type: "BEGIN_ARCHITECTURE", epic: "e1", ts: TS }) as ProjectState;
 		s = reduce(s, { type: "COMPLETE_ARCHITECTURE", epic: "e1", ts: TS }) as ProjectState;
 		s = reduce(s, {
-			type: "COMPLETE_REFINE_ARCHITECTURE", epic: "e1", ts: TS,
+			type: "COMPLETE_REFINE_ARCHITECTURE",
+			epic: "e1",
+			ts: TS,
 			scores: { q: 10 },
 		}) as ProjectState;
 		s = reduce(s, { type: "BEGIN_SLICING", epic: "e1", ts: TS }) as ProjectState;
 		s = reduce(s, { type: "COMPLETE_SLICING", epic: "e1", ts: TS }) as ProjectState;
 		s = reduce(s, {
-			type: "COMPLETE_REFINE_SLICES", epic: "e1", ts: TS,
+			type: "COMPLETE_REFINE_SLICES",
+			epic: "e1",
+			ts: TS,
 			scores: { q: 10 },
 		}) as ProjectState;
 		s = reduce(s, {
-			type: "ADD_VERIFICATION", epic: "e1", ts: TS,
-			verification: { description: "test", status: "pending", addedDuring: "defining-slices", modifiedDuring: null },
+			type: "ADD_VERIFICATION",
+			epic: "e1",
+			ts: TS,
+			verification: {
+				description: "test",
+				status: "pending",
+				addedDuring: "defining-slices",
+				modifiedDuring: null,
+			},
 		}) as ProjectState;
 		s = reduce(s, { type: "ACTIVATE_EPIC", epic: "e1", ts: TS }) as ProjectState;
 
@@ -153,7 +170,7 @@ describe("reduce — ROLLUP_LEARNINGS", () => {
 
 		const epicLearnings = getJsonl<LearningEntry>(result, "epics/e1/learnings.jsonl");
 		expect(epicLearnings).toHaveLength(1);
-		expect(epicLearnings![0]!.summary).toBe("Epic rollup");
+		expect(epicLearnings?.[0]?.summary).toBe("Epic rollup");
 	});
 
 	it("rollup to epic with no active epic returns error", () => {
@@ -192,7 +209,7 @@ describe("reduce — ROLLUP_LEARNINGS", () => {
 		}) as ProjectState;
 
 		const log = getJsonl<Record<string, unknown>>(result, "activity-log.jsonl");
-		const entry = log![log!.length - 1]!;
+		const entry = log?.[log?.length - 1]!;
 		expect(entry.phase).toBe("rollup-learnings");
 		expect(entry.summary).toContain("2");
 	});

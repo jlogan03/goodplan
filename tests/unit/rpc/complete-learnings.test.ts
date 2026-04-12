@@ -43,28 +43,53 @@ function setupActivatedEpic() {
 	begin(projectDir, "define-architecture", { type: "epic", name: "e1" }, {});
 	submit(projectDir, "architecture", { type: "epic", name: "e1" }, { phase: "architecture" });
 	begin(projectDir, "refine-architecture", { type: "epic", name: "e1" }, {});
-	submit(projectDir, "refine-architecture", { type: "epic", name: "e1" }, { phase: "refine-architecture", scores: { q: 10 } });
+	submit(
+		projectDir,
+		"refine-architecture",
+		{ type: "epic", name: "e1" },
+		{ phase: "refine-architecture", scores: { q: 10 } },
+	);
 	begin(projectDir, "define-slices", { type: "epic", name: "e1" }, {});
 	submit(projectDir, "slices", { type: "epic", name: "e1" }, { phase: "slices" });
 	begin(projectDir, "refine-slices", { type: "epic", name: "e1" }, {});
-	submit(projectDir, "refine-slices", { type: "epic", name: "e1" }, { phase: "refine-slices", scores: { q: 10 } });
+	submit(
+		projectDir,
+		"refine-slices",
+		{ type: "epic", name: "e1" },
+		{ phase: "refine-slices", scores: { q: 10 } },
+	);
 	begin(projectDir, "add-verification", { type: "epic", name: "e1" }, { verification });
 	begin(projectDir, "activate", { type: "epic", name: "e1" }, {});
 }
 
 function setupSliceInImplementationComplete(sliceName = "s1", epicName = "e1") {
 	setupActivatedEpic();
-	begin(projectDir, "create", { type: "slice", name: sliceName, epic: epicName }, { name: sliceName, goal: "First slice goal", epic: epicName });
+	begin(
+		projectDir,
+		"create",
+		{ type: "slice", name: sliceName, epic: epicName },
+		{ name: sliceName, goal: "First slice goal", epic: epicName },
+	);
 	begin(projectDir, "plan", { type: "slice", name: sliceName, epic: epicName }, {});
 	const sliceDir = path.join(projectDir, "epics", epicName, "slices", sliceName);
 	fs.writeFileSync(path.join(sliceDir, "plan.md"), "# Plan\nDo stuff");
 	invalidateCache();
 	submit(projectDir, "plan", { type: "slice", name: sliceName, epic: epicName }, { phase: "plan" });
-	submit(projectDir, "refinement", { type: "slice", name: sliceName, epic: epicName }, { phase: "refinement", scores: { q: 10 } });
+	submit(
+		projectDir,
+		"refinement",
+		{ type: "slice", name: sliceName, epic: epicName },
+		{ phase: "refinement", scores: { q: 10 } },
+	);
 	fs.writeFileSync(path.join(sliceDir, "plan-refined.md"), "# Refined Plan\nDo stuff better");
 	invalidateCache();
 	begin(projectDir, "implement", { type: "slice", name: sliceName, epic: epicName }, {});
-	submit(projectDir, "implementation", { type: "slice", name: sliceName, epic: epicName }, { phase: "implementation" });
+	submit(
+		projectDir,
+		"implementation",
+		{ type: "slice", name: sliceName, epic: epicName },
+		{ phase: "implementation" },
+	);
 }
 
 describe("complete — learnings directory pattern", () => {
@@ -103,12 +128,17 @@ describe("complete — learnings directory pattern", () => {
 		);
 		expect(fs.existsSync(mdPath)).toBe(true);
 		const mdContent = fs.readFileSync(mdPath, "utf-8");
-		expect(mdContent).toBe("Disk I/O is too slow without caching and we need a proper caching strategy");
+		expect(mdContent).toBe(
+			"Disk I/O is too slow without caching and we need a proper caching strategy",
+		);
 
 		// Verify JSONL entry has file field
 		const jsonlPath = path.join(projectDir, "epics", "e1", "slices", "s1", "learnings.jsonl");
 		const jsonlContent = fs.readFileSync(jsonlPath, "utf-8");
-		const entries = jsonlContent.trim().split("\n").map((line) => JSON.parse(line));
+		const entries = jsonlContent
+			.trim()
+			.split("\n")
+			.map((line) => JSON.parse(line));
 		const lastEntry = entries[entries.length - 1];
 		expect(lastEntry.file).toBe("learnings/data-layer-needs-caching.md");
 		expect(lastEntry.source).toBe("epics/e1/slices/s1");
@@ -125,9 +155,27 @@ describe("complete — learnings directory pattern", () => {
 				type: "slice",
 				verificationPassed: true,
 				learnings: [
-					{ category: "domain", summary: "First learning", detail: "Detail 1", tags: [], rollupTo: [] },
-					{ category: "worked", summary: "Second learning", detail: "Detail 2", tags: [], rollupTo: [] },
-					{ category: "didnt-work", summary: "Third learning", detail: "Detail 3", tags: [], rollupTo: [] },
+					{
+						category: "domain",
+						summary: "First learning",
+						detail: "Detail 1",
+						tags: [],
+						rollupTo: [],
+					},
+					{
+						category: "worked",
+						summary: "Second learning",
+						detail: "Detail 2",
+						tags: [],
+						rollupTo: [],
+					},
+					{
+						category: "didnt-work",
+						summary: "Third learning",
+						detail: "Detail 3",
+						tags: [],
+						rollupTo: [],
+					},
 				],
 			},
 		);
@@ -183,7 +231,10 @@ describe("complete — learnings directory pattern", () => {
 		// Check the JSONL entries at slice, epic (not rolled to epic here), and project level
 		const projectJsonl = path.join(projectDir, "learnings.jsonl");
 		const content = fs.readFileSync(projectJsonl, "utf-8");
-		const entries = content.trim().split("\n").map((line) => JSON.parse(line));
+		const entries = content
+			.trim()
+			.split("\n")
+			.map((line) => JSON.parse(line));
 		const lastEntry = entries[entries.length - 1];
 		expect(lastEntry.file).toBe("learnings/test.md");
 		expect(lastEntry.detail).toBeUndefined();
@@ -235,13 +286,19 @@ describe("complete — learnings directory pattern", () => {
 		// Verify epic-level JSONL has file field
 		const epicJsonl = path.join(projectDir, "epics", "e1", "learnings.jsonl");
 		const epicContent = fs.readFileSync(epicJsonl, "utf-8");
-		const epicEntries = epicContent.trim().split("\n").map((line) => JSON.parse(line));
+		const epicEntries = epicContent
+			.trim()
+			.split("\n")
+			.map((line) => JSON.parse(line));
 		expect(epicEntries[epicEntries.length - 1].file).toBe("learnings/rolled-up-learning.md");
 
 		// Verify project-level JSONL has file field
 		const projectJsonl = path.join(projectDir, "learnings.jsonl");
 		const projectContent = fs.readFileSync(projectJsonl, "utf-8");
-		const projectEntries = projectContent.trim().split("\n").map((line) => JSON.parse(line));
+		const projectEntries = projectContent
+			.trim()
+			.split("\n")
+			.map((line) => JSON.parse(line));
 		expect(projectEntries[projectEntries.length - 1].file).toBe("learnings/rolled-up-learning.md");
 	});
 });
@@ -272,20 +329,35 @@ describe("complete — validUntil field", () => {
 		// Verify slice-level JSONL has validUntil
 		const sliceJsonl = path.join(projectDir, "epics", "e1", "slices", "s1", "learnings.jsonl");
 		const sliceContent = fs.readFileSync(sliceJsonl, "utf-8");
-		const sliceEntries = sliceContent.trim().split("\n").map((line) => JSON.parse(line));
-		expect(sliceEntries[sliceEntries.length - 1].validUntil).toEqual(["Build pipeline migrates to TypeScript"]);
+		const sliceEntries = sliceContent
+			.trim()
+			.split("\n")
+			.map((line) => JSON.parse(line));
+		expect(sliceEntries[sliceEntries.length - 1].validUntil).toEqual([
+			"Build pipeline migrates to TypeScript",
+		]);
 
 		// Verify epic-level rollup also has validUntil
 		const epicJsonl = path.join(projectDir, "epics", "e1", "learnings.jsonl");
 		const epicContent = fs.readFileSync(epicJsonl, "utf-8");
-		const epicEntries = epicContent.trim().split("\n").map((line) => JSON.parse(line));
-		expect(epicEntries[epicEntries.length - 1].validUntil).toEqual(["Build pipeline migrates to TypeScript"]);
+		const epicEntries = epicContent
+			.trim()
+			.split("\n")
+			.map((line) => JSON.parse(line));
+		expect(epicEntries[epicEntries.length - 1].validUntil).toEqual([
+			"Build pipeline migrates to TypeScript",
+		]);
 
 		// Verify project-level rollup also has validUntil
 		const projectJsonl = path.join(projectDir, "learnings.jsonl");
 		const projectContent = fs.readFileSync(projectJsonl, "utf-8");
-		const projectEntries = projectContent.trim().split("\n").map((line) => JSON.parse(line));
-		expect(projectEntries[projectEntries.length - 1].validUntil).toEqual(["Build pipeline migrates to TypeScript"]);
+		const projectEntries = projectContent
+			.trim()
+			.split("\n")
+			.map((line) => JSON.parse(line));
+		expect(projectEntries[projectEntries.length - 1].validUntil).toEqual([
+			"Build pipeline migrates to TypeScript",
+		]);
 	});
 
 	it("omits validUntil when not provided (backward compat)", () => {
@@ -311,7 +383,10 @@ describe("complete — validUntil field", () => {
 
 		const sliceJsonl = path.join(projectDir, "epics", "e1", "slices", "s1", "learnings.jsonl");
 		const sliceContent = fs.readFileSync(sliceJsonl, "utf-8");
-		const sliceEntries = sliceContent.trim().split("\n").map((line) => JSON.parse(line));
+		const sliceEntries = sliceContent
+			.trim()
+			.split("\n")
+			.map((line) => JSON.parse(line));
 		const lastEntry = sliceEntries[sliceEntries.length - 1];
 		expect(lastEntry).not.toHaveProperty("validUntil");
 	});
@@ -326,11 +401,21 @@ describe("complete — quest learnings directory pattern", () => {
 		fs.writeFileSync(path.join(questDir, "plan.md"), "# Plan\nFix stuff");
 		invalidateCache();
 		submit(projectDir, "plan", { type: "quest", name: "q1" }, { phase: "plan" });
-		submit(projectDir, "refinement", { type: "quest", name: "q1" }, { phase: "refinement", scores: { q: 10 } });
+		submit(
+			projectDir,
+			"refinement",
+			{ type: "quest", name: "q1" },
+			{ phase: "refinement", scores: { q: 10 } },
+		);
 		fs.writeFileSync(path.join(questDir, "plan-refined.md"), "# Refined\nFix stuff better");
 		invalidateCache();
 		begin(projectDir, "implement", { type: "quest", name: "q1" }, {});
-		submit(projectDir, "implementation", { type: "quest", name: "q1" }, { phase: "implementation" });
+		submit(
+			projectDir,
+			"implementation",
+			{ type: "quest", name: "q1" },
+			{ phase: "implementation" },
+		);
 	}
 
 	it("creates .md files for quest completion", () => {
@@ -364,7 +449,10 @@ describe("complete — quest learnings directory pattern", () => {
 		// Verify JSONL has file field
 		const jsonlPath = path.join(projectDir, "quests", "q1", "learnings.jsonl");
 		const content = fs.readFileSync(jsonlPath, "utf-8");
-		const entries = content.trim().split("\n").map((line) => JSON.parse(line));
+		const entries = content
+			.trim()
+			.split("\n")
+			.map((line) => JSON.parse(line));
 		expect(entries[entries.length - 1].file).toBe("learnings/quest-learning.md");
 	});
 });

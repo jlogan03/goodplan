@@ -21,7 +21,12 @@ function stateAtRefiningArch(): ProjectState {
 
 function stateAtRefiningSlices(): ProjectState {
 	let s = stateAtRefiningArch();
-	s = reduce(s, { type: "COMPLETE_REFINE_ARCHITECTURE", epic: "e1", ts: TS, scores: { q: 10 } }) as ProjectState;
+	s = reduce(s, {
+		type: "COMPLETE_REFINE_ARCHITECTURE",
+		epic: "e1",
+		ts: TS,
+		scores: { q: 10 },
+	}) as ProjectState;
 	s = reduce(s, { type: "BEGIN_SLICING", epic: "e1", ts: TS }) as ProjectState;
 	s = reduce(s, { type: "COMPLETE_SLICING", epic: "e1", ts: TS }) as ProjectState;
 	s = reduce(s, { type: "BEGIN_REFINE_SLICES", epic: "e1", ts: TS }) as ProjectState;
@@ -45,8 +50,8 @@ describe("reduce — COMPLETE_REFINE_ARCHITECTURE", () => {
 		const epic = getEpicData(result as ProjectState);
 		expect(epic.status).toBe("refining-architecture");
 		expect(epic.refinement).not.toBeNull();
-		expect(epic.refinement!.round).toBe(2);
-		expect(epic.refinement!.scoreHistory).toHaveLength(1);
+		expect(epic.refinement?.round).toBe(2);
+		expect(epic.refinement?.scoreHistory).toHaveLength(1);
 		expect(epic.updated).toBe(TS2);
 	});
 
@@ -114,11 +119,11 @@ describe("reduce — COMPLETE_REFINE_ARCHITECTURE", () => {
 			scores: { a: 7 },
 		}) as ProjectState;
 		const epic = getEpicData(s);
-		expect(epic.refinement!.scoreHistory).toHaveLength(2);
-		expect(epic.refinement!.scoreHistory[0]!.round).toBe(1);
-		expect(epic.refinement!.scoreHistory[0]!.scores).toEqual({ a: 5 });
-		expect(epic.refinement!.scoreHistory[1]!.round).toBe(2);
-		expect(epic.refinement!.scoreHistory[1]!.scores).toEqual({ a: 7 });
+		expect(epic.refinement?.scoreHistory).toHaveLength(2);
+		expect(epic.refinement?.scoreHistory[0]?.round).toBe(1);
+		expect(epic.refinement?.scoreHistory[0]?.scores).toEqual({ a: 5 });
+		expect(epic.refinement?.scoreHistory[1]?.round).toBe(2);
+		expect(epic.refinement?.scoreHistory[1]?.scores).toEqual({ a: 7 });
 	});
 
 	it("skip path: architecture-defined → architecture-refined with high scores", () => {

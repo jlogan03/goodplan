@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ZERO_STATE } from "../../../src/core/data/tree.js";
 import type { ProjectState } from "../../../src/core/data/tree.js";
-import { getJson, getJsonl, getDir } from "../../../src/core/data/tree.js";
+import { getDir, getJson, getJsonl } from "../../../src/core/data/tree.js";
 import { reduce } from "../../../src/core/state/reduce.js";
 import { isStateError } from "../../../src/core/state/types.js";
 import type { StateError } from "../../../src/core/state/types.js";
@@ -12,7 +12,8 @@ const TS = "2026-01-01T00:00:00.000Z";
 
 function initProject(): ProjectState {
 	const result = reduce(ZERO_STATE, { type: "INIT_PROJECT", name: "test", ts: TS });
-	if (isStateError(result)) throw new Error(`INIT_PROJECT failed: ${(result as StateError).message}`);
+	if (isStateError(result))
+		throw new Error(`INIT_PROJECT failed: ${(result as StateError).message}`);
 	return result as ProjectState;
 }
 
@@ -31,14 +32,14 @@ describe("reduce — CREATE_EPIC", () => {
 
 		const epic = getJson<Epic>(newState, "epics/my-epic/epic.json");
 		expect(epic).toBeDefined();
-		expect(epic!.name).toBe("my-epic");
-		expect(epic!.status).toBe("created");
-		expect(epic!.goal).toBe("Build something great");
-		expect(epic!.verifications).toEqual([]);
-		expect(epic!.refinement).toBeNull();
-		expect(epic!.created).toBe("2026-01-02T00:00:00.000Z");
-		expect(epic!.activated).toBeNull();
-		expect(epic!.updated).toBe("2026-01-02T00:00:00.000Z");
+		expect(epic?.name).toBe("my-epic");
+		expect(epic?.status).toBe("created");
+		expect(epic?.goal).toBe("Build something great");
+		expect(epic?.verifications).toEqual([]);
+		expect(epic?.refinement).toBeNull();
+		expect(epic?.created).toBe("2026-01-02T00:00:00.000Z");
+		expect(epic?.activated).toBeNull();
+		expect(epic?.updated).toBe("2026-01-02T00:00:00.000Z");
 	});
 
 	it("creates all subdirectories", () => {
@@ -67,10 +68,10 @@ describe("reduce — CREATE_EPIC", () => {
 
 		const overview = getJson<UnifiedOverview>(result, "overview.json");
 		expect(overview).toBeDefined();
-		expect(overview!.epics).toHaveLength(1);
-		expect(overview!.epics[0]!.name).toBe("my-epic");
-		expect(overview!.epics[0]!.status).toBe("created");
-		expect(overview!.epics[0]!.slices).toEqual([]);
+		expect(overview?.epics).toHaveLength(1);
+		expect(overview?.epics[0]?.name).toBe("my-epic");
+		expect(overview?.epics[0]?.status).toBe("created");
+		expect(overview?.epics[0]?.slices).toEqual([]);
 	});
 
 	it("appends activity log entry", () => {
@@ -85,8 +86,8 @@ describe("reduce — CREATE_EPIC", () => {
 		const log = getJsonl<Record<string, unknown>>(result, "activity-log.jsonl");
 		expect(log).toBeDefined();
 		// 1 from init + 1 from create
-		expect(log!.length).toBe(2);
-		const entry = log![1]!;
+		expect(log?.length).toBe(2);
+		const entry = log?.[1]!;
 		expect(entry.phase).toBe("create-epic");
 		expect(entry.scope).toBe("epics/my-epic");
 	});

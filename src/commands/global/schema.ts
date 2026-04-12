@@ -323,44 +323,32 @@ registerCommand("epic:abandon", "Abandon an epic.", {
 // (core/rpc dependency; will be migrated to v2 events in a future slice)
 
 // Slice commands
-registerCommand("slice:create", "Create a new slice. Stdin: {name, goal}.", {
-	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
-});
-registerCommand("slice:list", "List all slices.", {
+registerCommand(
+	"slice:create",
+	"Create a new slice. Accepts --name flag or stdin JSON { name, goal }.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name (required)", required: true },
+		name: { type: "string", description: "Slice name (used as directory slug)", required: false },
+	},
+);
+registerCommand("slice:list", "List slices from event-sourced state.", {
 	...globalArgDefs,
 	...listArgDefs,
 	epic: { type: "string", description: "Filter by epic name" },
 	all: { type: "boolean", description: "Show slices from all epics" },
 });
-registerCommand("slice:show", "Show details for a specific slice.", {
+registerCommand("slice:show", "Show full slice entity details from event-sourced state.", {
 	...globalArgDefs,
 	slice: { type: "string", description: "Slice name", required: true },
-	epic: { type: "string", description: "Epic name (defaults to active epic)" },
+	epic: { type: "string", description: "Epic name", required: true },
 });
-registerCommand("slice:plan", "Begin planning for a slice.", {
+// v1 slice:plan, slice:refine-plan, slice:implement, slice:complete removed —
+// superseded by v2 event commands (plan-draft, plan-commit, implement-start, land)
+registerCommand("slice:abandon", "Abandon a slice with a reason.", {
 	...globalArgDefs,
 	slice: { type: "string", description: "Slice name", required: true },
-});
-registerCommand("slice:refine-plan", "Begin plan refinement for a slice.", {
-	...globalArgDefs,
-	slice: { type: "string", description: "Slice name", required: true },
-});
-registerCommand("slice:implement", "Begin implementation for a slice.", {
-	...globalArgDefs,
-	slice: { type: "string", description: "Slice name", required: true },
-});
-registerCommand(
-	"slice:complete",
-	"Complete a slice. Stdin: {verificationPassed, deferred?, learnings?, architectureDelta?}.",
-	{
-		...globalArgDefs,
-		slice: { type: "string", description: "Slice name", required: true },
-	},
-);
-registerCommand("slice:abandon", "Abandon a slice.", {
-	...globalArgDefs,
-	slice: { type: "string", description: "Slice name", required: true },
+	epic: { type: "string", description: "Epic name", required: true },
 	reason: { type: "string", description: "Reason for abandoning", required: true },
 });
 

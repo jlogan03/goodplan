@@ -1,5 +1,5 @@
 import { defineCommand } from "citty";
-import { startContext, DEFAULT_INLINE_BUDGET } from "../../core/context/index.js";
+import { DEFAULT_INLINE_BUDGET, startContext } from "../../core/context/index.js";
 import { loadState } from "../../core/data/load.js";
 import { resolveProjectDir } from "../../core/data/project.js";
 import type { Target } from "../../core/rpc/types.js";
@@ -48,16 +48,18 @@ export const startRefinementCommand = defineCommand({
 
 		const projectDir = resolveProjectDir();
 
-		const target: Target = sliceVal !== undefined
-			? { type: "slice", name: sliceVal, epic: requireActiveEpic(projectDir) }
-			: { type: "quest", name: questVal! };
+		const target: Target =
+			sliceVal !== undefined
+				? { type: "slice", name: sliceVal, epic: requireActiveEpic(projectDir) }
+				: { type: "quest", name: questVal! };
 
 		const state = loadState(projectDir);
 
 		const inlineBudget = parseInlineBudget(args.inline as string | undefined);
-		const options = inlineBudget !== undefined
-			? { inlineBudget: typeof inlineBudget === "number" ? inlineBudget : DEFAULT_INLINE_BUDGET }
-			: undefined;
+		const options =
+			inlineBudget !== undefined
+				? { inlineBudget: typeof inlineBudget === "number" ? inlineBudget : DEFAULT_INLINE_BUDGET }
+				: undefined;
 
 		const bundle = startContext(state, "refinement", target, options);
 		output(bundle, { ...args, json: true });

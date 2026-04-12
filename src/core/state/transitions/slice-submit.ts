@@ -149,7 +149,14 @@ export function handleCompleteImplementation(
 	);
 	if (isStateError(sliceOrErr)) return sliceOrErr;
 
-	let tree = setSliceStatus(state, event.epic, event.slice, sliceOrErr, "implementation-complete", event.ts);
+	let tree = setSliceStatus(
+		state,
+		event.epic,
+		event.slice,
+		sliceOrErr,
+		"implementation-complete",
+		event.ts,
+	);
 	tree = appendActivityLog(
 		tree,
 		event.ts,
@@ -263,7 +270,12 @@ export function handleCompleteQuestImplementation(
 	event: CompleteQuestImplementationEvent,
 ): ProjectState | StateError {
 	const quest = getQuest(state, event.quest);
-	const questOrErr = guardQuestStatus(quest, event.quest, "implementing", "COMPLETE_QUEST_IMPLEMENTATION");
+	const questOrErr = guardQuestStatus(
+		quest,
+		event.quest,
+		"implementing",
+		"COMPLETE_QUEST_IMPLEMENTATION",
+	);
 	if (isStateError(questOrErr)) return questOrErr;
 
 	let tree = setQuestStatus(state, event.quest, questOrErr, "implementation-complete", event.ts);

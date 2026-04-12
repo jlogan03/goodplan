@@ -5,9 +5,6 @@ import { decisionShowCommand } from "./decision/show.js";
 import { decisionUpdateCommand } from "./decision/update.js";
 import { epicAbandonCommand } from "./epic/abandon.js";
 import { epicActivateCommand } from "./epic/activate.js";
-// v1 verification commands removed from registration (core/rpc dependency);
-// will be migrated to v2 events in a future slice.
-// import { epicAddVerificationCommand } from "./epic/add-verification.js";
 import { epicArchitectureCommitCommand } from "./epic/architecture-commit.js";
 import { epicArchitectureDraftCommand } from "./epic/architecture-draft.js";
 import { epicArchitectureShapeApproveCommand } from "./epic/architecture-shape-approve.js";
@@ -16,8 +13,6 @@ import { epicArchitectureShapeStartCommand } from "./epic/architecture-shape-sta
 import { epicBrainstormCaptureCommand } from "./epic/brainstorm-capture.js";
 import { epicCompleteCommand } from "./epic/complete.js";
 import { epicCreateCommand } from "./epic/create.js";
-// v1 define-slices removed (superseded by epic:slices-draft + epic:slices-commit)
-// import { epicDefineSlicesCommand } from "./epic/define-slices.js";
 import { epicExploreConcludeCommand } from "./epic/explore-conclude.js";
 import { epicExploreStartCommand } from "./epic/explore-start.js";
 import { epicGoalCommitCommand } from "./epic/goal-commit.js";
@@ -27,10 +22,6 @@ import { epicPauseCommand } from "./epic/pause.js";
 import { epicPressureTestCommitCommand } from "./epic/pressure-test-commit.js";
 import { epicPressureTestDraftCommand } from "./epic/pressure-test-draft.js";
 import { epicPressureTestFindingDispositionCommand } from "./epic/pressure-test-finding-disposition.js";
-// v1 refine-architecture deferred to slice 07 (refine:* generic namespace)
-// import { epicRefineArchitectureCommand } from "./epic/refine-architecture.js";
-// v1 refine-slices deferred to slice 07 (refine:* generic namespace)
-// import { epicRefineSlicesCommand } from "./epic/refine-slices.js";
 import { epicResearchCaptureCommand } from "./epic/research-capture.js";
 import { epicResumeCommand } from "./epic/resume.js";
 import { epicSetSteeringCommand } from "./epic/set-steering.js";
@@ -40,8 +31,6 @@ import { epicSliceSetShapeAutoCommand } from "./epic/slice-set-shape-auto.js";
 import { epicSliceSetShapeStartCommand } from "./epic/slice-set-shape-start.js";
 import { epicSlicesCommitCommand } from "./epic/slices-commit.js";
 import { epicSlicesDraftCommand } from "./epic/slices-draft.js";
-// v1 update-verification removed from registration (core/rpc dependency)
-// import { epicUpdateVerificationCommand } from "./epic/update-verification.js";
 import { globalArgs } from "./global-args.js";
 import { initCommand } from "./global/init.js";
 import { migrateCommand } from "./global/migrate.js";
@@ -61,12 +50,8 @@ import { questPlanCommand } from "./quest/plan.js";
 import { questRefinePlanCommand } from "./quest/refine-plan.js";
 import { questShowCommand } from "./quest/show.js";
 import { sliceAbandonCommand } from "./slice/abandon.js";
-import { sliceCompleteCommand } from "./slice/complete.js";
 import { sliceCreateCommand } from "./slice/create.js";
-import { sliceImplementCommand } from "./slice/implement.js";
 import { sliceListCommand } from "./slice/list.js";
-import { slicePlanCommand } from "./slice/plan.js";
-import { sliceRefinePlanCommand } from "./slice/refine-plan.js";
 import { sliceShowCommand } from "./slice/show.js";
 import { startImplementationCommand } from "./subagent/start-implementation.js";
 import { startPlanCommand } from "./subagent/start-plan.js";
@@ -128,11 +113,9 @@ export const mainCommand = defineCommand({
 		"epic:set-steering": epicSetSteeringCommand,
 		"epic:pause": epicPauseCommand,
 		"epic:resume": epicResumeCommand,
-		// v1 refine-architecture, define-slices, refine-slices removed (deferred to slice 07 / superseded by v2)
 		"epic:activate": epicActivateCommand,
 		"epic:complete": epicCompleteCommand,
 		"epic:abandon": epicAbandonCommand,
-		// v1 verification commands removed (core/rpc dependency; future v2 migration)
 		"learning:list": learningListCommand,
 		"learning:rollup": learningRollupCommand,
 		"quest:create": questCreateCommand,
@@ -152,10 +135,6 @@ export const mainCommand = defineCommand({
 		"slice:create": sliceCreateCommand,
 		"slice:list": sliceListCommand,
 		"slice:show": sliceShowCommand,
-		"slice:plan": slicePlanCommand,
-		"slice:refine-plan": sliceRefinePlanCommand,
-		"slice:implement": sliceImplementCommand,
-		"slice:complete": sliceCompleteCommand,
 		"slice:abandon": sliceAbandonCommand,
 		"start-plan": startPlanCommand,
 		"start-refinement": startRefinementCommand,

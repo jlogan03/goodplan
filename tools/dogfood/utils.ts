@@ -32,13 +32,8 @@ function resolveDefaultGpBin(): string {
 	if (process.env.GP_CLI_PATH) return process.env.GP_CLI_PATH;
 
 	// Use the local dist plugin binary — fully isolated from user's installed cache.
-	const distBin = join(
-		import.meta.dir,
-		"../..",
-		"dist/gp-plugin/binaries",
-		platformBinaryDir(),
-		"gp",
-	);
+	const baseDir = import.meta.dirname ?? import.meta.dir;
+	const distBin = join(baseDir, "../..", "dist/gp-plugin/binaries", platformBinaryDir(), "gp");
 	try {
 		if (statSync(distBin, { throwIfNoEntry: false })) {
 			return distBin;
@@ -325,7 +320,11 @@ export function extractCliErrors(message: SDKMessage, cliErrors: CliError[]): vo
 			resultText = resultContent;
 		} else if (Array.isArray(resultContent)) {
 			for (const rc of resultContent) {
-				if (typeof rc === "object" && rc !== null && (rc as Record<string, unknown>).type === "text") {
+				if (
+					typeof rc === "object" &&
+					rc !== null &&
+					(rc as Record<string, unknown>).type === "text"
+				) {
 					resultText += (rc as Record<string, unknown>).text ?? "";
 				}
 			}
@@ -335,8 +334,8 @@ export function extractCliErrors(message: SDKMessage, cliErrors: CliError[]): vo
 
 		// Check for non-zero exit code patterns in Bash tool results
 		// The Bash tool typically includes exit code info in the output
-		const exitCodeMatch = resultText.match(/exit code[:\s]+(\d+)/i)
-			?? resultText.match(/exited with (\d+)/i);
+		const exitCodeMatch =
+			resultText.match(/exit code[:\s]+(\d+)/i) ?? resultText.match(/exited with (\d+)/i);
 		const exitCode = exitCodeMatch ? Number.parseInt(exitCodeMatch[1], 10) : undefined;
 
 		// Also check for JSON error responses from gp
@@ -960,11 +959,7 @@ export async function runSkillSession(opts: {
 		}
 
 		// Check if we should continue: text-only success + simulated user available
-		if (
-			resultMessage.subtype === "success" &&
-			sessionId &&
-			opts.simulatedUser
-		) {
+		if (resultMessage.subtype === "success" && sessionId && opts.simulatedUser) {
 			const resultText = resultMessage.result;
 			// Classify whether the LLM is asking a question or is done.
 			// If classification itself fails, treat as done to avoid crashing the session.
@@ -1012,7 +1007,9 @@ export async function runSkillSession(opts: {
 	if (cliErrors.length > 0) {
 		console.warn(`[runSkillSession] ${cliErrors.length} CLI error(s) detected:`);
 		for (const e of cliErrors) {
-			console.warn(`  - exit ${e.exitCode}${e.errorCode ? ` (${e.errorCode})` : ""}: ${e.command.slice(0, 100)}`);
+			console.warn(
+				`  - exit ${e.exitCode}${e.errorCode ? ` (${e.errorCode})` : ""}: ${e.command.slice(0, 100)}`,
+			);
 		}
 	}
 

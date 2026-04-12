@@ -165,10 +165,26 @@ describe("StateEvent", () => {
 				ts: "2026-03-22T00:00:00.000Z",
 				verificationPassed: true,
 				deferred: [{ description: "fix later", targetSlice: "s2" }],
-				learnings: [{ category: "worked", summary: "s", file: "learnings/s.md", tags: [], rollupTo: [], source: "test", rollup: false }],
+				learnings: [
+					{
+						category: "worked",
+						summary: "s",
+						file: "learnings/s.md",
+						tags: [],
+						rollupTo: [],
+						source: "test",
+						rollup: false,
+					},
+				],
 				architectureDelta: [{ subsystem: "core", type: "modify", description: "changed" }],
 			},
-			{ type: "ABANDON_SLICE", epic: "e", slice: "s", ts: "2026-03-22T00:00:00.000Z", reason: "Not needed" },
+			{
+				type: "ABANDON_SLICE",
+				epic: "e",
+				slice: "s",
+				ts: "2026-03-22T00:00:00.000Z",
+				reason: "Not needed",
+			},
 		];
 		expect(events).toHaveLength(10);
 	});
@@ -204,7 +220,12 @@ describe("StateEvent", () => {
 
 	it("quest lifecycle events are structurally valid", () => {
 		const events: StateEvent[] = [
-			{ type: "CREATE_QUEST", name: "q", goal: "Investigate something", ts: "2026-03-22T00:00:00.000Z" },
+			{
+				type: "CREATE_QUEST",
+				name: "q",
+				goal: "Investigate something",
+				ts: "2026-03-22T00:00:00.000Z",
+			},
 			{ type: "BEGIN_QUEST_PLAN", quest: "q", ts: "2026-03-22T00:00:00.000Z" },
 			{ type: "COMPLETE_QUEST_PLAN", quest: "q", ts: "2026-03-22T00:00:00.000Z" },
 			{ type: "BEGIN_QUEST_REFINEMENT", quest: "q", ts: "2026-03-22T00:00:00.000Z" },
@@ -228,7 +249,17 @@ describe("StateEvent", () => {
 				quest: "q",
 				ts: "2026-03-22T00:00:00.000Z",
 				verificationPassed: true,
-				learnings: [{ category: "worked", summary: "s", file: "learnings/s.md", tags: [], rollupTo: [], source: "test", rollup: false }],
+				learnings: [
+					{
+						category: "worked",
+						summary: "s",
+						file: "learnings/s.md",
+						tags: [],
+						rollupTo: [],
+						source: "test",
+						rollup: false,
+					},
+				],
 				architectureDelta: [{ subsystem: "core", type: "modify", description: "changed" }],
 			},
 			{ type: "ABANDON_QUEST", quest: "q", ts: "2026-03-22T00:00:00.000Z", reason: "Not needed" },
