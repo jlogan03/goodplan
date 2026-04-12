@@ -17,8 +17,18 @@
 	"refinement": {
 		"maxRounds": 10,
 		"round": 1,
-		"scoreHistory": []
+		"scoreHistory": [
+			{
+				"round": 1,
+				"scores": {
+					"data-layer": 10,
+					"holistic": 9,
+					"software-architecture": 9,
+					"typescript": 9
+				}
+			}
+		]
 	},
-	"status": "refining",
-	"updated": "2026-04-10T19:23:53.740Z"
+	"status": "plan-refined",
+	"updated": "2026-04-12T15:28:41.952Z"
 }
