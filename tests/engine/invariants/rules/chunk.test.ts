@@ -11,7 +11,7 @@ describe("chunk.evidence-non-empty", () => {
 		const event = makeEnvelope({
 			type: "chunk-verified",
 			domain: "spine",
-			payload: { evidence: "Tests pass with 100% coverage" },
+			payload: { sliceRef: "s1", chunkId: "c1", evidence: "Tests pass with 100% coverage" },
 		});
 		const ctx = buildCheckContext([]);
 		expect(chunkEvidenceNonEmpty.check(event, ctx)).toBeNull();
@@ -21,7 +21,11 @@ describe("chunk.evidence-non-empty", () => {
 		const event = makeEnvelope({
 			type: "chunk-verified",
 			domain: "spine",
-			payload: { observation: "Manually confirmed working" },
+			payload: {
+				sliceRef: "s1",
+				chunkId: "c1",
+				observation: "Manually confirmed working",
+			},
 		});
 		const ctx = buildCheckContext([]);
 		expect(chunkEvidenceNonEmpty.check(event, ctx)).toBeNull();
@@ -31,7 +35,7 @@ describe("chunk.evidence-non-empty", () => {
 		const event = makeEnvelope({
 			type: "chunk-verified",
 			domain: "spine",
-			payload: { evidence: "", observation: "" },
+			payload: { sliceRef: "s1", chunkId: "c1", evidence: "", observation: "" },
 		});
 		const ctx = buildCheckContext([]);
 		const result = chunkEvidenceNonEmpty.check(event, ctx);
@@ -43,7 +47,7 @@ describe("chunk.evidence-non-empty", () => {
 		const event = makeEnvelope({
 			type: "chunk-verified",
 			domain: "spine",
-			payload: { evidence: "   ", observation: "  " },
+			payload: { sliceRef: "s1", chunkId: "c1", evidence: "   ", observation: "  " },
 		});
 		const ctx = buildCheckContext([]);
 		expect(chunkEvidenceNonEmpty.check(event, ctx)).not.toBeNull();
@@ -53,7 +57,7 @@ describe("chunk.evidence-non-empty", () => {
 		const event = makeEnvelope({
 			type: "chunk-verified",
 			domain: "spine",
-			payload: {},
+			payload: { sliceRef: "s1", chunkId: "c1" },
 		});
 		const ctx = buildCheckContext([]);
 		expect(chunkEvidenceNonEmpty.check(event, ctx)).not.toBeNull();
@@ -73,16 +77,16 @@ describe("chunk.evidence-non-empty", () => {
 });
 
 describe("chunk.red-test-failed-before-green", () => {
-	it("passes when red test exists for the same chunk", () => {
+	it("passes when red test exists for the same (sliceRef, chunkId)", () => {
 		const red = makeEnvelope({
 			type: "chunk-red-test-failed",
-			domain: "spine",
-			payload: { chunkId: "chunk-1" },
+			domain: "entity-lifecycle",
+			payload: { sliceRef: "s1", chunkId: "chunk-1" },
 		});
 		const green = makeEnvelope({
-			type: "chunk-green-test-passed",
-			domain: "spine",
-			payload: { chunkId: "chunk-1" },
+			type: "chunk-green-achieved",
+			domain: "entity-lifecycle",
+			payload: { sliceRef: "s1", chunkId: "chunk-1" },
 		});
 		const ctx = buildCheckContext([red]);
 		expect(chunkRedTestFailedBeforeGreen.check(green, ctx)).toBeNull();
@@ -90,9 +94,9 @@ describe("chunk.red-test-failed-before-green", () => {
 
 	it("fails when no red test exists for the chunk", () => {
 		const green = makeEnvelope({
-			type: "chunk-green-test-passed",
-			domain: "spine",
-			payload: { chunkId: "chunk-1" },
+			type: "chunk-green-achieved",
+			domain: "entity-lifecycle",
+			payload: { sliceRef: "s1", chunkId: "chunk-1" },
 		});
 		const ctx = buildCheckContext([]);
 		const result = chunkRedTestFailedBeforeGreen.check(green, ctx);
@@ -103,21 +107,37 @@ describe("chunk.red-test-failed-before-green", () => {
 	it("fails when red test exists for a different chunk", () => {
 		const red = makeEnvelope({
 			type: "chunk-red-test-failed",
-			domain: "spine",
-			payload: { chunkId: "chunk-2" },
+			domain: "entity-lifecycle",
+			payload: { sliceRef: "s1", chunkId: "chunk-2" },
 		});
 		const green = makeEnvelope({
-			type: "chunk-green-test-passed",
-			domain: "spine",
-			payload: { chunkId: "chunk-1" },
+			type: "chunk-green-achieved",
+			domain: "entity-lifecycle",
+			payload: { sliceRef: "s1", chunkId: "chunk-1" },
 		});
 		const ctx = buildCheckContext([red]);
 		const result = chunkRedTestFailedBeforeGreen.check(green, ctx);
 		expect(result).not.toBeNull();
 	});
 
-	it("ignores non-green-test events", () => {
-		const event = makeEnvelope({ type: "chunk-verified", domain: "spine" });
+	it("fails when red test exists for same chunkId but different sliceRef", () => {
+		const red = makeEnvelope({
+			type: "chunk-red-test-failed",
+			domain: "entity-lifecycle",
+			payload: { sliceRef: "slice-A", chunkId: "chunk-1" },
+		});
+		const green = makeEnvelope({
+			type: "chunk-green-achieved",
+			domain: "entity-lifecycle",
+			payload: { sliceRef: "slice-B", chunkId: "chunk-1" },
+		});
+		const ctx = buildCheckContext([red]);
+		const result = chunkRedTestFailedBeforeGreen.check(green, ctx);
+		expect(result).not.toBeNull();
+	});
+
+	it("ignores non-green-achieved events", () => {
+		const event = makeEnvelope({ type: "chunk-verified", domain: "entity-lifecycle" });
 		const ctx = buildCheckContext([]);
 		expect(chunkRedTestFailedBeforeGreen.check(event, ctx)).toBeNull();
 	});
@@ -125,6 +145,6 @@ describe("chunk.red-test-failed-before-green", () => {
 	it("has correct metadata", () => {
 		expect(chunkRedTestFailedBeforeGreen.id).toBe("chunk.red-test-failed-before-green");
 		expect(chunkRedTestFailedBeforeGreen.ruleType).toBe("precondition");
-		expect(chunkRedTestFailedBeforeGreen.appliesTo).toContain("spine");
+		expect(chunkRedTestFailedBeforeGreen.appliesTo).toContain("entity-lifecycle");
 	});
 });

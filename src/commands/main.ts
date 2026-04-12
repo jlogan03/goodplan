@@ -50,7 +50,15 @@ import { questPlanCommand } from "./quest/plan.js";
 import { questRefinePlanCommand } from "./quest/refine-plan.js";
 import { questShowCommand } from "./quest/show.js";
 import { sliceAbandonCommand } from "./slice/abandon.js";
+import { sliceChunkDecideCommand } from "./slice/chunk-decide.js";
+import { sliceChunkGreenCommand } from "./slice/chunk-green.js";
+import { sliceChunkRedFailedCommand } from "./slice/chunk-red-failed.js";
+import { sliceChunkRedWrittenCommand } from "./slice/chunk-red-written.js";
+import { sliceChunkStartCommand } from "./slice/chunk-start.js";
+import { sliceChunkUnverifiableCommand } from "./slice/chunk-unverifiable.js";
+import { sliceChunkVerifyCommand } from "./slice/chunk-verify.js";
 import { sliceCreateCommand } from "./slice/create.js";
+import { sliceImplementStartCommand } from "./slice/implement-start.js";
 import { sliceListCommand } from "./slice/list.js";
 import { slicePlanCommitCommand } from "./slice/plan-commit.js";
 import { slicePlanDraftCommand } from "./slice/plan-draft.js";
@@ -148,6 +156,14 @@ export const mainCommand = defineCommand({
 		"slice:plan-shape-revise": slicePlanShapeReviseCommand,
 		"slice:plan-shape-approve": slicePlanShapeApproveCommand,
 		"slice:plan-shape-auto": slicePlanShapeAutoCommand,
+		"slice:implement-start": sliceImplementStartCommand,
+		"slice:chunk-start": sliceChunkStartCommand,
+		"slice:chunk-red-written": sliceChunkRedWrittenCommand,
+		"slice:chunk-red-failed": sliceChunkRedFailedCommand,
+		"slice:chunk-green": sliceChunkGreenCommand,
+		"slice:chunk-verify": sliceChunkVerifyCommand,
+		"slice:chunk-unverifiable": sliceChunkUnverifiableCommand,
+		"slice:chunk-decide": sliceChunkDecideCommand,
 		"start-plan": startPlanCommand,
 		"start-refinement": startRefinementCommand,
 		"start-implementation": startImplementationCommand,

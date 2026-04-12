@@ -2,8 +2,16 @@ import { z } from "zod";
 import type { InvariantRule } from "../types.js";
 import { narrowPayload } from "./_helpers.js";
 
+// Shared payload schema for chunk events with sliceRef + chunkId scoping
+const ChunkRefPayload = z.object({
+	sliceRef: z.string().min(1),
+	chunkId: z.string().min(1),
+});
+
 // Payload schema for chunk-verified events
 const ChunkVerifiedPayload = z.object({
+	sliceRef: z.string().min(1),
+	chunkId: z.string().min(1),
 	evidence: z.string().optional(),
 	observation: z.string().optional(),
 });
@@ -36,39 +44,41 @@ export const chunkEvidenceNonEmpty: InvariantRule = {
 	},
 };
 
-// Payload schema for chunk-green-test-passed events
-const ChunkGreenPayload = z.object({
-	chunkId: z.string().min(1),
-});
-
 /**
- * chunk.red-test-failed-before-green: A green test pass requires a prior
- * red test failure for the same chunk (RED/GREEN cycle).
+ * chunk.red-test-failed-before-green: A green achievement requires a prior
+ * red test failure for the same (sliceRef, chunkId) pair (RED/GREEN cycle).
+ *
+ * Scoping: filters event history by both sliceRef AND chunkId — a red-fail
+ * on chunk-A must NOT satisfy the invariant for chunk-B's green.
  */
 export const chunkRedTestFailedBeforeGreen: InvariantRule = {
 	id: "chunk.red-test-failed-before-green",
 	ruleType: "precondition",
-	description: "Red test must fail before green test can pass for a chunk",
-	appliesTo: ["spine"],
+	description: "Red test must fail before green can be achieved for a chunk",
+	appliesTo: ["entity-lifecycle"],
 	check(event, ctx) {
-		if (event.type !== "chunk-green-test-passed") return null;
+		if (event.type !== "chunk-green-achieved") return null;
 
-		const payload = narrowPayload(event.payload, ChunkGreenPayload);
+		const payload = narrowPayload(event.payload, ChunkRefPayload);
 		if (payload === null) return null;
 
 		const redEvents = ctx.eventsByType.get("chunk-red-test-failed");
 		if (redEvents) {
 			for (const e of redEvents) {
-				const redPayload = narrowPayload(e.payload, ChunkGreenPayload);
-				if (redPayload !== null && redPayload.chunkId === payload.chunkId) {
+				const redPayload = narrowPayload(e.payload, ChunkRefPayload);
+				if (
+					redPayload !== null &&
+					redPayload.sliceRef === payload.sliceRef &&
+					redPayload.chunkId === payload.chunkId
+				) {
 					return null;
 				}
 			}
 		}
 
 		return {
-			message: `Cannot mark green test passed for chunk "${payload.chunkId}" without a prior red test failure.`,
-			context: { chunkId: payload.chunkId },
+			message: `Cannot mark green achieved for chunk "${payload.chunkId}" in slice "${payload.sliceRef}" without a prior red test failure.`,
+			context: { sliceRef: payload.sliceRef, chunkId: payload.chunkId },
 		};
 	},
 };

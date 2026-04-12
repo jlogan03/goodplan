@@ -27,6 +27,7 @@ import {
 	sliceCodeRefinementConvergedBeforeLand,
 	sliceCreatedBeforePlan,
 	sliceDepsLandedBeforeStart,
+	sliceImplementationStartedBeforeChunk,
 	slicePlanChunksDecidable,
 	slicePlanConvergedBeforeImplement,
 	slicePlanDraftedBeforeCommit,
@@ -76,6 +77,7 @@ export function createCoreRegistry(): InvariantRegistry {
 	registry.register(sliceChunksAllDecidedBeforeCodeRefine);
 	registry.register(sliceCodeRefinementConvergedBeforeLand);
 	registry.register(sliceDepsLandedBeforeStart);
+	registry.register(sliceImplementationStartedBeforeChunk);
 
 	// Side-quest rules (1)
 	registry.register(sideQuestSingleActivePerBranch);

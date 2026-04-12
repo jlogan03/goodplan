@@ -393,6 +393,65 @@ registerCommand("slice:plan-shape-auto", "Auto-shape the plan checkpoint for a s
 	epic: { type: "string", description: "Epic name", required: true },
 	slice: { type: "string", description: "Slice name", required: true },
 });
+registerCommand("slice:implement-start", "Start implementation of a slice.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+	slice: { type: "string", description: "Slice name", required: true },
+});
+registerCommand("slice:chunk-start", "Start a TDD chunk within a slice implementation.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+	slice: { type: "string", description: "Slice name", required: true },
+	chunk: { type: "string", description: "Chunk ID", required: true },
+});
+registerCommand("slice:chunk-red-written", "Record that a red test has been written for a chunk.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+	slice: { type: "string", description: "Slice name", required: true },
+	chunk: { type: "string", description: "Chunk ID", required: true },
+});
+registerCommand(
+	"slice:chunk-red-failed",
+	"Record that a red test has failed (expected) for a chunk.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+		slice: { type: "string", description: "Slice name", required: true },
+		chunk: { type: "string", description: "Chunk ID", required: true },
+	},
+);
+registerCommand("slice:chunk-green", "Record that green has been achieved for a chunk.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+	slice: { type: "string", description: "Slice name", required: true },
+	chunk: { type: "string", description: "Chunk ID", required: true },
+});
+registerCommand("slice:chunk-verify", "Verify a chunk with evidence.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+	slice: { type: "string", description: "Slice name", required: true },
+	chunk: { type: "string", description: "Chunk ID", required: true },
+});
+registerCommand(
+	"slice:chunk-unverifiable",
+	"Mark a chunk as unverifiable (alternative to verify).",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+		slice: { type: "string", description: "Slice name", required: true },
+		chunk: { type: "string", description: "Chunk ID", required: true },
+	},
+);
+registerCommand(
+	"slice:chunk-decide",
+	"Decide on an unverifiable chunk (accept, revert, or defer).",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+		slice: { type: "string", description: "Slice name", required: true },
+		chunk: { type: "string", description: "Chunk ID", required: true },
+	},
+);
 
 // Quest commands
 registerCommand("quest:create", "Create a new quest. Stdin: {name, goal}.", {

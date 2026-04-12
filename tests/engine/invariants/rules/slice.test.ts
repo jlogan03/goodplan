@@ -166,62 +166,95 @@ describe("slice.plan-chunks-decidable", () => {
 });
 
 describe("slice.chunks-all-decided-before-code-refine", () => {
-	it("passes when all chunks decided", () => {
-		const plan = makeEnvelope({
-			type: "slice-plan-committed",
-			payload: { chunks: [{ id: "c1", verificationType: "test" }] },
+	it("passes when all chunks verified", () => {
+		const started = makeEnvelope({
+			type: "slice-implementation-chunk-started",
+			payload: { sliceRef: "s1", chunkId: "c1", description: "test" },
 		});
 		const decided = makeEnvelope({
 			type: "chunk-verified",
-			payload: { chunkId: "c1" },
+			payload: { sliceRef: "s1", chunkId: "c1", evidence: "pass" },
 		});
-		const event = makeEnvelope({ type: "slice-code-refinement-started" });
-		const ctx = buildCheckContext([plan, decided]);
+		const event = makeEnvelope({
+			type: "slice-code-refinement-started",
+			payload: { sliceRef: "s1" },
+		});
+		const ctx = buildCheckContext([started, decided]);
 		expect(sliceChunksAllDecidedBeforeCodeRefine.check(event, ctx)).toBeNull();
 	});
 
 	it("fails when a chunk is undecided", () => {
-		const plan = makeEnvelope({
-			type: "slice-plan-committed",
-			payload: {
-				chunks: [
-					{ id: "c1", verificationType: "test" },
-					{ id: "c2", verificationType: "manual" },
-				],
-			},
+		const s1 = makeEnvelope({
+			type: "slice-implementation-chunk-started",
+			payload: { sliceRef: "s1", chunkId: "c1", description: "test" },
+		});
+		const s2 = makeEnvelope({
+			type: "slice-implementation-chunk-started",
+			payload: { sliceRef: "s1", chunkId: "c2", description: "test" },
 		});
 		const decided = makeEnvelope({
 			type: "chunk-verified",
-			payload: { chunkId: "c1" },
+			payload: { sliceRef: "s1", chunkId: "c1", evidence: "pass" },
 		});
-		const event = makeEnvelope({ type: "slice-code-refinement-started" });
-		const ctx = buildCheckContext([plan, decided]);
+		const event = makeEnvelope({
+			type: "slice-code-refinement-started",
+			payload: { sliceRef: "s1" },
+		});
+		const ctx = buildCheckContext([s1, s2, decided]);
 		const result = sliceChunksAllDecidedBeforeCodeRefine.check(event, ctx);
 		expect(result).not.toBeNull();
 		expect(result?.message).toContain("c2");
 	});
 
-	it("counts chunk-started and chunk-skipped as decided", () => {
-		const plan = makeEnvelope({
-			type: "slice-plan-committed",
-			payload: {
-				chunks: [
-					{ id: "c1", verificationType: "test" },
-					{ id: "c2", verificationType: "manual" },
-					{ id: "c3", verificationType: "test" },
-				],
-			},
+	it("counts chunk-verified and chunk-unverifiable-decided as decided", () => {
+		const s1 = makeEnvelope({
+			type: "slice-implementation-chunk-started",
+			payload: { sliceRef: "s1", chunkId: "c1", description: "test" },
 		});
-		const d1 = makeEnvelope({ type: "chunk-started", payload: { chunkId: "c1" } });
-		const d2 = makeEnvelope({ type: "chunk-skipped", payload: { chunkId: "c2" } });
-		const d3 = makeEnvelope({ type: "chunk-verified", payload: { chunkId: "c3" } });
-		const event = makeEnvelope({ type: "slice-code-refinement-started" });
-		const ctx = buildCheckContext([plan, d1, d2, d3]);
+		const s2 = makeEnvelope({
+			type: "slice-implementation-chunk-started",
+			payload: { sliceRef: "s1", chunkId: "c2", description: "test" },
+		});
+		const d1 = makeEnvelope({
+			type: "chunk-verified",
+			payload: { sliceRef: "s1", chunkId: "c1", evidence: "pass" },
+		});
+		const d2 = makeEnvelope({
+			type: "chunk-unverifiable-decided",
+			payload: { sliceRef: "s1", chunkId: "c2", decision: "accept", reason: "ok" },
+		});
+		const event = makeEnvelope({
+			type: "slice-code-refinement-started",
+			payload: { sliceRef: "s1" },
+		});
+		const ctx = buildCheckContext([s1, s2, d1, d2]);
 		expect(sliceChunksAllDecidedBeforeCodeRefine.check(event, ctx)).toBeNull();
 	});
 
-	it("passes when no plan committed (no chunks to check)", () => {
-		const event = makeEnvelope({ type: "slice-code-refinement-started" });
+	it("chunk-unverifiable alone does NOT count as decided", () => {
+		const s1 = makeEnvelope({
+			type: "slice-implementation-chunk-started",
+			payload: { sliceRef: "s1", chunkId: "c1", description: "test" },
+		});
+		const unverifiable = makeEnvelope({
+			type: "chunk-unverifiable",
+			payload: { sliceRef: "s1", chunkId: "c1", reason: "external service" },
+		});
+		const event = makeEnvelope({
+			type: "slice-code-refinement-started",
+			payload: { sliceRef: "s1" },
+		});
+		const ctx = buildCheckContext([s1, unverifiable]);
+		const result = sliceChunksAllDecidedBeforeCodeRefine.check(event, ctx);
+		expect(result).not.toBeNull();
+		expect(result?.message).toContain("c1");
+	});
+
+	it("passes when no chunks started (nothing to decide)", () => {
+		const event = makeEnvelope({
+			type: "slice-code-refinement-started",
+			payload: { sliceRef: "s1" },
+		});
 		const ctx = buildCheckContext([]);
 		expect(sliceChunksAllDecidedBeforeCodeRefine.check(event, ctx)).toBeNull();
 	});

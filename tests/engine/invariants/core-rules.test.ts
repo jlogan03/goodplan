@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { createCoreRegistry } from "../../../src/engine/invariants/core-rules.js";
 
 describe("createCoreRegistry", () => {
-	it("registers exactly 35 core rules", () => {
+	it("registers exactly 36 core rules", () => {
 		const registry = createCoreRegistry();
-		expect(registry.getAll()).toHaveLength(35);
+		expect(registry.getAll()).toHaveLength(36);
 	});
 
 	it("has no duplicate IDs", () => {
@@ -46,6 +46,7 @@ describe("createCoreRegistry", () => {
 			"slice.chunks-all-decided-before-code-refine",
 			"slice.code-refinement-converged-before-land",
 			"slice.deps-landed-before-start",
+			"slice.implementation-started-before-chunk",
 			"side-quest.single-active-per-branch",
 			// Domain invariants (7)
 			"chunk.evidence-non-empty",
@@ -73,7 +74,7 @@ describe("createCoreRegistry", () => {
 		const a = createCoreRegistry();
 		const b = createCoreRegistry();
 		expect(a).not.toBe(b);
-		expect(a.getAll()).toHaveLength(35);
-		expect(b.getAll()).toHaveLength(35);
+		expect(a.getAll()).toHaveLength(36);
+		expect(b.getAll()).toHaveLength(36);
 	});
 });

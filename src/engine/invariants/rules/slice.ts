@@ -284,7 +284,17 @@ export const slicePlanChunksDecidable: InvariantRule = {
 
 /**
  * slice.chunks-all-decided-before-code-refine: All chunks must be decided
- * (started/verified/skipped) before code refinement can begin.
+ * before code refinement can begin.
+ *
+ * A chunk counts as "decided" if it has EITHER:
+ * - a `chunk-verified` event, OR
+ * - a `chunk-unverifiable-decided` event
+ * for that (sliceRef, chunkId).
+ *
+ * `chunk-unverifiable` alone does NOT count — the follow-up
+ * `chunk-unverifiable-decided` is required.
+ *
+ * Scoped by sliceRef to avoid cross-slice contamination.
  */
 export const sliceChunksAllDecidedBeforeCodeRefine: InvariantRule = {
 	id: "slice.chunks-all-decided-before-code-refine",
@@ -294,28 +304,35 @@ export const sliceChunksAllDecidedBeforeCodeRefine: InvariantRule = {
 	check(event, ctx) {
 		if (event.type !== "slice-code-refinement-started") return null;
 
-		// Find the plan commit to get chunk IDs
-		const planEvents = ctx.eventsByType.get("slice-plan-committed") ?? [];
-		const planEvent = planEvents[planEvents.length - 1];
-		if (!planEvent) return null;
+		const sliceRef = narrowPayload(event.payload, SliceRefPayload);
+		if (sliceRef === null) return null;
 
-		const payload = narrowPayload(planEvent.payload, SlicePlanCommittedPayload);
-		if (payload === null) return null;
+		// Collect all started chunk IDs for this slice
+		const startedChunks = new Set<string>();
+		const chunkEvents = ctx.eventsByType.get("slice-implementation-chunk-started") ?? [];
+		for (const e of chunkEvents) {
+			const p = narrowPayload(e.payload, z.object({ sliceRef: z.string(), chunkId: z.string() }));
+			if (p !== null && p.sliceRef === sliceRef.sliceRef) {
+				startedChunks.add(p.chunkId);
+			}
+		}
 
+		// Collect decided chunk IDs (verified or unverifiable-decided) for this slice
 		const decidedChunks = new Set<string>();
-		for (const e of ctx.allEvents) {
-			if (e.type === "chunk-started" || e.type === "chunk-verified" || e.type === "chunk-skipped") {
-				const chunkPayload = narrowPayload(e.payload, z.object({ chunkId: z.string() }));
-				if (chunkPayload !== null) {
-					decidedChunks.add(chunkPayload.chunkId);
+		for (const type of ["chunk-verified", "chunk-unverifiable-decided"] as const) {
+			const events = ctx.eventsByType.get(type) ?? [];
+			for (const e of events) {
+				const p = narrowPayload(e.payload, z.object({ sliceRef: z.string(), chunkId: z.string() }));
+				if (p !== null && p.sliceRef === sliceRef.sliceRef) {
+					decidedChunks.add(p.chunkId);
 				}
 			}
 		}
 
 		const undecided: string[] = [];
-		for (const chunk of payload.chunks) {
-			if (!decidedChunks.has(chunk.id)) {
-				undecided.push(chunk.id);
+		for (const chunkId of startedChunks) {
+			if (!decidedChunks.has(chunkId)) {
+				undecided.push(chunkId);
 			}
 		}
 
@@ -384,5 +401,33 @@ export const sliceDepsLandedBeforeStart: InvariantRule = {
 			};
 		}
 		return null;
+	},
+};
+
+/**
+ * slice.implementation-started-before-chunk: Implementation must be started
+ * for a slice before any chunk can be started on it.
+ */
+export const sliceImplementationStartedBeforeChunk: InvariantRule = {
+	id: "slice.implementation-started-before-chunk",
+	ruleType: "precondition",
+	description: "Implementation must be started before chunks can begin",
+	appliesTo: ["entity-lifecycle"],
+	check(event, ctx) {
+		if (event.type !== "slice-implementation-chunk-started") return null;
+		const payload = narrowPayload(event.payload, SliceRefPayload);
+		if (payload === null) return null;
+
+		const implEvents = ctx.eventsByType.get("slice-implementation-started");
+		if (implEvents) {
+			for (const e of implEvents) {
+				const p = narrowPayload(e.payload, SliceRefPayload);
+				if (p !== null && p.sliceRef === payload.sliceRef) return null;
+			}
+		}
+		return {
+			message: `Cannot start chunk for slice "${payload.sliceRef}" — implementation not started.`,
+			context: { sliceRef: payload.sliceRef },
+		};
 	},
 };

@@ -94,12 +94,91 @@ export type PlanShapeCheckpointAutoShapedPayload = z.infer<
 	typeof planShapeCheckpointAutoShapedPayloadSchema
 >;
 
-// --- Phase 3 placeholder payload schemas (implementation commands) ---
-// These will be fully defined in Phase 3 of this slice.
+// --- Phase 3 payload schemas (implementation & chunk commands) ---
 
-// sliceImplementationStartedPayloadSchema — placeholder
-// sliceImplementationChunkStartedPayloadSchema — placeholder
-// etc.
+/**
+ * Shared ref schema for all chunk event payloads.
+ * Prevents drift across 8 chunk-related schemas.
+ */
+export const SliceChunkRefSchema = z.object({
+	sliceRef: z.string().min(1),
+	chunkId: z.string().min(1),
+});
+export type SliceChunkRef = z.infer<typeof SliceChunkRefSchema>;
+
+/**
+ * Payload for `slice-implementation-started` events.
+ */
+export const sliceImplementationStartedPayloadSchema = z.object({
+	sliceRef: z.string().min(1),
+});
+export type SliceImplementationStartedPayload = z.infer<
+	typeof sliceImplementationStartedPayloadSchema
+>;
+
+/**
+ * Payload for `slice-implementation-chunk-started` events.
+ */
+export const chunkStartedPayloadSchema = z.object({
+	...SliceChunkRefSchema.shape,
+	description: z.string().min(1),
+});
+export type ChunkStartedPayload = z.infer<typeof chunkStartedPayloadSchema>;
+
+/**
+ * Payload for `chunk-red-test-written` events.
+ */
+export const chunkRedTestWrittenPayloadSchema = z.object({
+	...SliceChunkRefSchema.shape,
+	testRef: ContentRefSchema,
+});
+export type ChunkRedTestWrittenPayload = z.infer<typeof chunkRedTestWrittenPayloadSchema>;
+
+/**
+ * Payload for `chunk-red-test-failed` events.
+ */
+export const chunkRedTestFailedPayloadSchema = z.object({
+	...SliceChunkRefSchema.shape,
+	evidence: z.string().min(1),
+});
+export type ChunkRedTestFailedPayload = z.infer<typeof chunkRedTestFailedPayloadSchema>;
+
+/**
+ * Payload for `chunk-green-achieved` events.
+ */
+export const chunkGreenAchievedPayloadSchema = z.object({
+	...SliceChunkRefSchema.shape,
+	evidence: z.string().min(1),
+});
+export type ChunkGreenAchievedPayload = z.infer<typeof chunkGreenAchievedPayloadSchema>;
+
+/**
+ * Payload for `chunk-verified` events.
+ */
+export const chunkVerifiedPayloadSchema = z.object({
+	...SliceChunkRefSchema.shape,
+	evidence: z.string().min(1),
+});
+export type ChunkVerifiedPayload = z.infer<typeof chunkVerifiedPayloadSchema>;
+
+/**
+ * Payload for `chunk-unverifiable` events.
+ */
+export const chunkUnverifiablePayloadSchema = z.object({
+	...SliceChunkRefSchema.shape,
+	reason: z.string().min(1),
+});
+export type ChunkUnverifiablePayload = z.infer<typeof chunkUnverifiablePayloadSchema>;
+
+/**
+ * Payload for `chunk-unverifiable-decided` events.
+ */
+export const chunkUnverifiableDecidedPayloadSchema = z.object({
+	...SliceChunkRefSchema.shape,
+	decision: z.enum(["accept", "revert", "defer"]),
+	reason: z.string().min(1),
+});
+export type ChunkUnverifiableDecidedPayload = z.infer<typeof chunkUnverifiableDecidedPayloadSchema>;
 
 // --- SliceEventMap: maps event type strings to payload schemas ---
 
@@ -119,6 +198,15 @@ export const SliceEventMap = {
 	"plan-shape-revision-proposed": planShapeRevisionProposedPayloadSchema,
 	"plan-shape-approved": planShapeApprovedPayloadSchema,
 	"plan-shape-checkpoint-auto-shaped": planShapeCheckpointAutoShapedPayloadSchema,
+	// Phase 3
+	"slice-implementation-started": sliceImplementationStartedPayloadSchema,
+	"slice-implementation-chunk-started": chunkStartedPayloadSchema,
+	"chunk-red-test-written": chunkRedTestWrittenPayloadSchema,
+	"chunk-red-test-failed": chunkRedTestFailedPayloadSchema,
+	"chunk-green-achieved": chunkGreenAchievedPayloadSchema,
+	"chunk-verified": chunkVerifiedPayloadSchema,
+	"chunk-unverifiable": chunkUnverifiablePayloadSchema,
+	"chunk-unverifiable-decided": chunkUnverifiableDecidedPayloadSchema,
 } as const;
 
 /** Union of all slice event type strings. */
