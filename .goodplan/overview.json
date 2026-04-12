@@ -48,40 +48,82 @@
 					"status": "created"
 				},
 				{
-					"completed": null,
+					"completed": "2026-04-12T18:09:47.061Z",
 					"created": "2026-04-09T22:27:17.531Z",
 					"name": "08-core-skills",
-					"status": "created"
+					"status": "abandoned"
 				},
 				{
-					"completed": null,
+					"completed": "2026-04-12T18:09:47.123Z",
 					"created": "2026-04-09T22:27:17.599Z",
 					"name": "09-epic-creation-skills",
-					"status": "created"
+					"status": "abandoned"
 				},
 				{
-					"completed": null,
+					"completed": "2026-04-12T18:09:47.185Z",
 					"created": "2026-04-09T22:27:17.663Z",
 					"name": "10-slice-execution-skills",
-					"status": "created"
+					"status": "abandoned"
 				},
 				{
-					"completed": null,
+					"completed": "2026-04-12T18:09:47.249Z",
 					"created": "2026-04-09T22:27:17.730Z",
 					"name": "11-supporting-skills",
-					"status": "created"
+					"status": "abandoned"
 				},
 				{
-					"completed": null,
+					"completed": "2026-04-12T18:09:47.313Z",
 					"created": "2026-04-09T22:27:17.793Z",
 					"name": "12-migration-dogfood",
-					"status": "created"
+					"status": "abandoned"
+				},
+				{
+					"completed": "2026-04-12T18:07:28.171Z",
+					"created": "2026-04-12T18:03:06.411Z",
+					"name": "07a-reviewer-registry-rubrics",
+					"status": "planning"
+				},
+				{
+					"completed": "2026-04-12T18:09:47.000Z",
+					"created": "2026-04-12T18:08:24.872Z",
+					"name": "07b-supporting-entity-commands",
+					"status": "abandoned"
+				},
+				{
+					"completed": "2026-04-12T18:09:47.061Z",
+					"created": "2026-04-12T18:08:24.936Z",
+					"name": "08-core-skills",
+					"status": "abandoned"
+				},
+				{
+					"completed": "2026-04-12T18:09:47.123Z",
+					"created": "2026-04-12T18:08:25.001Z",
+					"name": "09-epic-creation-skills",
+					"status": "abandoned"
+				},
+				{
+					"completed": "2026-04-12T18:09:47.185Z",
+					"created": "2026-04-12T18:08:25.069Z",
+					"name": "10-slice-execution-skills",
+					"status": "abandoned"
+				},
+				{
+					"completed": "2026-04-12T18:09:47.249Z",
+					"created": "2026-04-12T18:08:25.143Z",
+					"name": "11-supporting-skills",
+					"status": "abandoned"
+				},
+				{
+					"completed": "2026-04-12T18:09:47.313Z",
+					"created": "2026-04-12T18:08:25.219Z",
+					"name": "12-migration-dogfood",
+					"status": "abandoned"
 				},
 				{
 					"completed": null,
-					"created": "2026-04-12T18:03:06.411Z",
+					"created": "2026-04-12T18:08:32.560Z",
 					"name": "07a-reviewer-registry-rubrics",
-					"status": "created"
+					"status": "planning"
 				}
 			],
 			"status": "activated"

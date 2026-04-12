@@ -1,0 +1,11 @@
+{
+	"created": "2026-04-12T18:08:25.143Z",
+	"deferred": [],
+	"epic": "workflow-bug-fixes",
+	"goal": "Implement supporting skills: audit (architecture, docs, tests), task management, init/upgrade, and notification integration.",
+	"implementationPhase": null,
+	"name": "11-supporting-skills",
+	"refinement": null,
+	"status": "abandoned",
+	"updated": "2026-04-12T18:09:47.249Z"
+}

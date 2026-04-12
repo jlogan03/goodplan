@@ -1,0 +1,11 @@
+{
+	"created": "2026-04-12T18:08:24.936Z",
+	"deferred": [],
+	"epic": "workflow-bug-fixes",
+	"goal": "Implement core workflow skills: status, explore, plan-slice, implement, complete-epic, and the workflow-guide orientation skill.",
+	"implementationPhase": null,
+	"name": "08-core-skills",
+	"refinement": null,
+	"status": "abandoned",
+	"updated": "2026-04-12T18:09:47.061Z"
+}
