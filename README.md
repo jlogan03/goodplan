@@ -44,6 +44,8 @@ bash scripts/install-codex-plugin-home.sh --build
 
 That installs the plugin into `~/plugins/goodplan` and adds or updates `~/.agents/plugins/marketplace.json`.
 
+Local builds compile the `gp` binary for the current host platform by default. To pin a specific output during development, set `GOODPLAN_BINARY_PLATFORM` to one of `macos-arm64`, `macos-x64`, `linux-arm64`, or `linux-x64`.
+
 In Codex, the command wrappers use `/gp-...` names instead of Claude's `/gp:...` names. For example:
 
 - `/gp-init`
@@ -52,7 +54,7 @@ In Codex, the command wrappers use `/gp-...` names instead of Claude's `/gp:...`
 - `/gp-implement`
 - `/gp-audit`
 
-The underlying workflow content is the same in both hosts. The current Codex build, like the Claude build, compiles a macOS arm64 binary.
+The underlying workflow content is the same in both hosts. Release builds stay pinned to `macos-arm64`, while repo-local builds follow the native platform unless overridden.
 
 ## Features
 

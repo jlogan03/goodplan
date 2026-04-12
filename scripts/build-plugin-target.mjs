@@ -30,6 +30,24 @@ const version = pkg.version;
 const repositoryUrl =
 	typeof pkg.repository === "string" ? pkg.repository : pkg.repository?.url ?? pkg.homepage;
 const pluginRoot = target === "claude" ? join(repoRoot, "dist", "gp-plugin") : join(repoRoot, "plugins", "goodplan");
+const supportedBuildPlatforms = {
+	"macos-arm64": {
+		host: "darwin-arm64",
+		bunTarget: "bun-darwin-arm64",
+	},
+	"macos-x64": {
+		host: "darwin-x64",
+		bunTarget: "bun-darwin-x64",
+	},
+	"linux-arm64": {
+		host: "linux-arm64",
+		bunTarget: "bun-linux-arm64",
+	},
+	"linux-x64": {
+		host: "linux-x64",
+		bunTarget: "bun-linux-x64",
+	},
+};
 const deletedSkills = [
 	"create-architecture",
 	"refine-architecture",
@@ -62,6 +80,13 @@ const expectedCodexCommands = [
 	"gp-task.md",
 	"gp-upgrade.md",
 ];
+let buildPlatform;
+try {
+	buildPlatform = resolveBuildPlatform();
+} catch (error) {
+	console.error(error instanceof Error ? error.message : String(error));
+	process.exit(1);
+}
 
 function run(command, args, options = {}) {
 	const result = spawnSync(command, args, {
@@ -136,8 +161,52 @@ function saveText(path, text) {
 	writeFileSync(path, text);
 }
 
+function supportedPlatformList() {
+	return Object.keys(supportedBuildPlatforms).join(", ");
+}
+
+function hostPlatformKey() {
+	return `${process.platform}-${process.arch}`;
+}
+
+function resolveBuildPlatform() {
+	const requestedPlatform = process.env.GOODPLAN_BINARY_PLATFORM?.trim();
+	if (requestedPlatform) {
+		const requestedConfig = supportedBuildPlatforms[requestedPlatform];
+		if (!requestedConfig) {
+			throw new Error(
+				`FAIL: unsupported GOODPLAN_BINARY_PLATFORM=${requestedPlatform}. Expected one of: ${supportedPlatformList()}`,
+			);
+		}
+		return {
+			binaryDir: requestedPlatform,
+			...requestedConfig,
+			source: `GOODPLAN_BINARY_PLATFORM=${requestedPlatform}`,
+		};
+	}
+
+	const nativeHost = hostPlatformKey();
+	for (const [binaryDir, config] of Object.entries(supportedBuildPlatforms)) {
+		if (config.host === nativeHost) {
+			return {
+				binaryDir,
+				...config,
+				source: `native host ${nativeHost}`,
+			};
+		}
+	}
+
+	throw new Error(
+		`FAIL: unsupported native platform ${nativeHost}. Set GOODPLAN_BINARY_PLATFORM to one of: ${supportedPlatformList()}`,
+	);
+}
+
+function compiledBinaryPath() {
+	return join(pluginRoot, "binaries", buildPlatform.binaryDir, "gp");
+}
+
 function writePlaceholderBinary() {
-	const placeholder = join(pluginRoot, "binaries", "macos-arm64", "gp");
+	const placeholder = compiledBinaryPath();
 	saveText(
 		placeholder,
 		[
@@ -148,12 +217,13 @@ function writePlaceholderBinary() {
 		].join("\n"),
 	);
 	chmodSync(placeholder, 0o755);
-	console.log("  GOODPLAN_SKIP_COMPILE=1 set: wrote placeholder gp binary");
+	console.log(`  GOODPLAN_SKIP_COMPILE=1 set: wrote placeholder gp binary for ${buildPlatform.binaryDir}`);
 }
 
 function compileBinary() {
 	console.log(`Building ${target} plugin v${version}...`);
-	ensureDir(join(pluginRoot, "binaries", "macos-arm64"));
+	console.log(`  binary target: ${buildPlatform.binaryDir} (${buildPlatform.bunTarget}; ${buildPlatform.source})`);
+	ensureDir(join(pluginRoot, "binaries", buildPlatform.binaryDir));
 	if (process.env.GOODPLAN_SKIP_COMPILE === "1") {
 		writePlaceholderBinary();
 		return;
@@ -163,8 +233,8 @@ function compileBinary() {
 		"--compile",
 		"src/index.ts",
 		"--outfile",
-		join(pluginRoot, "binaries", "macos-arm64", "gp"),
-		"--target=bun-darwin-arm64",
+		compiledBinaryPath(),
+		`--target=${buildPlatform.bunTarget}`,
 		"--define",
 		`__GOODPLAN_VERSION__="${version}"`,
 		"--define",
@@ -474,12 +544,12 @@ function validateClaudeArtifacts() {
 	JSON.parse(loadText(join(pluginRoot, "hooks", "hooks.json")));
 	statSync(join(pluginRoot, "hooks", "protect-state.sh"));
 	statSync(join(pluginRoot, "hooks", "warn-bash-state.sh"));
-	statSync(join(pluginRoot, "binaries", "macos-arm64", "gp"));
+	statSync(compiledBinaryPath());
 	statSync(join(pluginRoot, "bin", "gp"));
 	console.log("  plugin.json: valid JSON");
 	console.log("  hooks.json: valid JSON");
 	console.log("  hook scripts: present");
-	console.log("  binary: present");
+	console.log(`  binary: present (${buildPlatform.binaryDir})`);
 	console.log("  bin/gp launcher: present");
 }
 
@@ -487,6 +557,7 @@ function validateCodexArtifacts() {
 	console.log("\nValidating Codex plugin artifacts...");
 	JSON.parse(loadText(join(pluginRoot, ".codex-plugin", "plugin.json")));
 	JSON.parse(loadText(join(pluginRoot, "hooks.json")));
+	statSync(compiledBinaryPath());
 	const marketplace = JSON.parse(loadText(join(repoRoot, ".agents", "plugins", "marketplace.json")));
 	const goodplanEntry = marketplace.plugins.find((entry) => entry.name === "goodplan");
 	if (!goodplanEntry || goodplanEntry.source?.path !== "./plugins/goodplan") {
@@ -507,6 +578,7 @@ function validateCodexArtifacts() {
 	}
 	console.log("  plugin.json: valid JSON");
 	console.log("  hooks.json: valid JSON");
+	console.log(`  binary: present (${buildPlatform.binaryDir})`);
 	console.log("  marketplace.json: points to ./plugins/goodplan");
 	console.log("  Claude-only placeholders: clean");
 }

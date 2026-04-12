@@ -28,6 +28,7 @@ jobs:
         run: bun run build:codex
         env:
           GP_HMAC_KEY: ${{ secrets.GP_HMAC_KEY }}
+          GOODPLAN_BINARY_PLATFORM: macos-arm64
 
       - name: Post-build version assertion
         run: |
