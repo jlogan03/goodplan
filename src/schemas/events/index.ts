@@ -99,3 +99,17 @@ export type {
 	FindingCapturedPayload,
 	FindingTriagedPayload,
 } from "./finding.js";
+
+export {
+	InvariantEventMap,
+	invariantProposedPayloadSchema,
+	invariantActivatedPayloadSchema,
+	invariantDeactivatedPayloadSchema,
+} from "./invariant.js";
+export type {
+	InvariantEventType,
+	InvariantEventPayload,
+	InvariantProposedPayload,
+	InvariantActivatedPayload,
+	InvariantDeactivatedPayload,
+} from "./invariant.js";

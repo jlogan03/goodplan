@@ -29,6 +29,11 @@ import {
 } from "../../schemas/events/epic.js";
 import { findingTriagedPayloadSchema } from "../../schemas/events/finding.js";
 import {
+	invariantActivatedPayloadSchema,
+	invariantDeactivatedPayloadSchema,
+	invariantProposedPayloadSchema,
+} from "../../schemas/events/invariant.js";
+import {
 	subsystemMaturityUpdatedPayloadSchema,
 	subsystemRegisteredPayloadSchema,
 	subsystemRetiredPayloadSchema,
@@ -523,6 +528,40 @@ export function reduceSpine(state: DerivedStateData, event: AnyEventEnvelope): v
 				const existing = state.subsystems.get(parsed.data.name);
 				if (existing !== undefined) {
 					existing.retired = true;
+				}
+			}
+			break;
+		}
+
+		case "invariant-proposed": {
+			const parsed = invariantProposedPayloadSchema.safeParse(payload);
+			if (parsed.success) {
+				state.customInvariants.set(parsed.data.invariantId, {
+					id: parsed.data.invariantId,
+					description: parsed.data.description,
+					status: "proposed",
+				});
+			}
+			break;
+		}
+
+		case "invariant-activated": {
+			const parsed = invariantActivatedPayloadSchema.safeParse(payload);
+			if (parsed.success) {
+				const existing = state.customInvariants.get(parsed.data.invariantId);
+				if (existing !== undefined) {
+					existing.status = "active";
+				}
+			}
+			break;
+		}
+
+		case "invariant-deactivated": {
+			const parsed = invariantDeactivatedPayloadSchema.safeParse(payload);
+			if (parsed.success) {
+				const existing = state.customInvariants.get(parsed.data.invariantId);
+				if (existing !== undefined) {
+					existing.status = "inactive";
 				}
 			}
 			break;

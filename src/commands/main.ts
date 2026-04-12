@@ -43,6 +43,11 @@ import { schemaCommand } from "./global/schema.js";
 import { stateCommand } from "./global/state.js";
 import { statusCommand } from "./global/status.js";
 import { verifyCommand } from "./global/verify.js";
+import { invariantActivateCommand } from "./invariant/activate.js";
+import { invariantCheckCommand } from "./invariant/check.js";
+import { invariantDeactivateCommand } from "./invariant/deactivate.js";
+import { invariantListCommand } from "./invariant/list.js";
+import { invariantProposeCommand } from "./invariant/propose.js";
 import { learningListCommand } from "./learning/list.js";
 import { learningRollupCommand } from "./learning/rollup.js";
 import { projectSetSteeringCommand } from "./project/set-steering.js";
@@ -195,6 +200,11 @@ export const mainCommand = defineCommand({
 		"finding:capture": findingCaptureCommand,
 		"finding:list": findingListCommand,
 		"finding:triage": findingTriageCommand,
+		"invariant:list": invariantListCommand,
+		"invariant:check": invariantCheckCommand,
+		"invariant:propose": invariantProposeCommand,
+		"invariant:activate": invariantActivateCommand,
+		"invariant:deactivate": invariantDeactivateCommand,
 		"briefing:write": briefingWriteCommand,
 		"briefing:latest": briefingLatestCommand,
 		"project:show": projectShowCommand,
