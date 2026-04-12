@@ -24,14 +24,17 @@ This runs the build and smoke tests but skips release creation and release branc
 
 ## Codex target
 
-Codex support is currently repo-local only.
+Codex has a separate publish workflow:
 
-- Build it with `bash scripts/build-codex-plugin.sh`
+- Workflow: `.github/workflows/publish-codex-plugin.yml`
+- Build locally with `bash scripts/build-codex-plugin.sh`
 - The generated plugin lives at `plugins/goodplan/`
-- The repo-local marketplace entry lives at `.agents/plugins/marketplace.json`
-- The current release workflow does **not** publish the Codex target
+- The marketplace entry lives at `.agents/plugins/marketplace.json`
+- Tagged releases publish a dedicated `codex-release` branch containing only:
+  - `.agents/plugins/marketplace.json`
+  - `plugins/goodplan/`
 
-This keeps the existing Claude release path unchanged while still making the repo usable as a Codex plugin.
+This keeps the existing Claude release path unchanged while giving Codex a marketplace-ready release branch.
 
 ## Version contract
 
@@ -62,7 +65,7 @@ plugins/
 
 Users install via: `/plugin marketplace add ian97531/goodplan`
 
-The release branch does not currently include the repo-local Codex marketplace file or `plugins/goodplan/`. Codex installation is still done from the working tree after running the local build.
+The separate `codex-release` branch contains the Codex marketplace payload (`.agents/plugins/marketplace.json` plus `plugins/goodplan/`). The `release` branch remains Claude-only.
 
 ## Rollback
 

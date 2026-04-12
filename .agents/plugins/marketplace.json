@@ -1,7 +1,7 @@
 {
-  "name": "goodplan-local",
+  "name": "goodplan-marketplace",
   "interface": {
-    "displayName": "goodplan Local"
+    "displayName": "goodplan"
   },
   "plugins": [
     {
