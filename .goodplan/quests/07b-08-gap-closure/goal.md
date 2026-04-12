@@ -1,8 +1,32 @@
-# Quest: 07b-08 Gap Closure
+# Quest: Slice Gap Closure (04, 07b, 08)
 
 ## Goal
 
-Close implementation gaps between what slices 07b and 08 actually built vs what their original goal.md files specified.
+Close implementation gaps between what slices 04, 07b, and 08 actually built vs what their original goal.md files specified.
+
+## 04 Gaps — Refinement Loop CLI Surface
+
+The trust layer logic (convergence evaluator, circuit breaker, extractors) was built, but the CLI command surface was not. The original slice 04 goal explicitly lists these commands as in-scope:
+
+### Refinement Commands (8 commands)
+- `refine:start` — start a refinement round (emits `refinement-round-started`)
+- `refine:score` — record reviewer score (emits `reviewer-scored`)
+- `refine:synthesize` — merge reviewer feedback (emits `refinement-synthesized`)
+- `refine:revise` — record artifact revision (emits `artifact-revised`)
+- `refine:evaluate` — evaluate convergence (emits `refinement-converged` or continues)
+- `refine:converge` — mark refinement as converged
+- `refine:stuck` — trigger circuit breaker (emits `refinement-circuit-breaker-tripped`)
+- `refine:override` — override convergence threshold (emits `convergence-overridden`)
+
+### Missing Refinement Event Types (7 events)
+- `refinement-round-started`, `reviewer-scored`, `refinement-synthesized`, `artifact-revised`, `refinement-converged`, `refinement-circuit-breaker-tripped`, `convergence-overridden`
+
+### Missing Tests
+- Refinement loop integration tests (start → score → synthesize → revise → evaluate → converge)
+- Circuit breaker trigger test
+- Override test
+
+**Note:** Current skills use `start-refinement`/`submit-refinement` subagent commands which work for the current workflow. The `refine:*` commands add granular event-sourcing for the refinement process itself, enabling audit trails and derived state for refinement history.
 
 ## 07b Gaps — Missing CLI Commands
 
