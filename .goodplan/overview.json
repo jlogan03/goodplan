@@ -124,6 +124,42 @@
 					"created": "2026-04-12T18:08:32.560Z",
 					"name": "07a-reviewer-registry-rubrics",
 					"status": "completed"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-12T19:34:24.827Z",
+					"name": "07b-entity-commands",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-12T19:34:33.162Z",
+					"name": "08-core-skills-v2",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-12T19:34:33.228Z",
+					"name": "09-epic-creation-skills-v2",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-12T19:34:33.296Z",
+					"name": "10-slice-execution-skills-v2",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-12T19:34:33.369Z",
+					"name": "11-supporting-skills-v2",
+					"status": "created"
+				},
+				{
+					"completed": null,
+					"created": "2026-04-12T19:34:33.443Z",
+					"name": "12-migration-dogfood-v2",
+					"status": "created"
 				}
 			],
 			"status": "activated"
@@ -137,5 +173,13 @@
 			"status": "completed"
 		}
 	],
-	"tasks": []
+	"tasks": [
+		{
+			"completed": null,
+			"created": "2026-04-12T19:31:55.773Z",
+			"name": "maxmaturity-routing-param",
+			"status": "open",
+			"title": "Remove or implement maxMaturity param in routeReviewers"
+		}
+	]
 }

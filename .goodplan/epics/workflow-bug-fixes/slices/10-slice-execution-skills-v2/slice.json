@@ -1,0 +1,11 @@
+{
+	"created": "2026-04-12T19:34:33.296Z",
+	"deferred": [],
+	"epic": "workflow-bug-fixes",
+	"goal": "Build slice execution skills for v2: plan-slice (plan-shape checkpoint and refinement), implement-slice (chunk events and code refinement), and land-slice (spine promotion, findings triage, epic completion on final slice). Includes reconciling convergence evaluator Rubric types with YAML-loaded RubricYaml from 07a.",
+	"implementationPhase": null,
+	"name": "10-slice-execution-skills-v2",
+	"refinement": null,
+	"status": "created",
+	"updated": "2026-04-12T19:34:33.296Z"
+}
