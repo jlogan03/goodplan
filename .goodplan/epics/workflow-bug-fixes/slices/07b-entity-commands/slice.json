@@ -5,7 +5,21 @@
 	"goal": "Implement all remaining CLI commands for supporting entities: side-quests, findings, briefings, decisions, learnings, events, subsystems, invariants, and project-level commands.",
 	"implementationPhase": null,
 	"name": "07b-entity-commands",
-	"refinement": null,
-	"status": "created",
-	"updated": "2026-04-12T19:34:24.827Z"
+	"refinement": {
+		"maxRounds": 10,
+		"round": 1,
+		"scoreHistory": [
+			{
+				"round": 1,
+				"scores": {
+					"holistic": 9,
+					"repo-tooling": 9,
+					"software-architecture": 9,
+					"typescript": 9
+				}
+			}
+		]
+	},
+	"status": "plan-refined",
+	"updated": "2026-04-12T20:20:05.074Z"
 }
