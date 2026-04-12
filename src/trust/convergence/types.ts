@@ -15,6 +15,7 @@ export type RelevanceWeight = "high" | "medium" | "low";
 export const DEFAULT_PLAN_CONFIG: ConvergenceConfig = {
 	maxRounds: 3,
 	stagnationWindow: 2,
+	disagreementThreshold: 3,
 	reductionThreshold: 0.1,
 };
 
@@ -24,5 +25,6 @@ export const DEFAULT_PLAN_CONFIG: ConvergenceConfig = {
 export const DEFAULT_ARCHITECTURE_CONFIG: ConvergenceConfig = {
 	maxRounds: 5,
 	stagnationWindow: 2,
+	disagreementThreshold: 3,
 	reductionThreshold: 0.1,
 };

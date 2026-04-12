@@ -113,3 +113,25 @@ export type {
 	InvariantActivatedPayload,
 	InvariantDeactivatedPayload,
 } from "./invariant.js";
+
+export {
+	RefinementEventMap,
+	refinementRoundStartedPayloadSchema,
+	reviewerScoredPayloadSchema,
+	refinementSynthesizedPayloadSchema,
+	artifactRevisedPayloadSchema,
+	refinementConvergedPayloadSchema,
+	refinementCircuitBreakerTrippedPayloadSchema,
+	convergenceOverriddenPayloadSchema,
+} from "./refinement.js";
+export type {
+	RefinementEventType,
+	RefinementEventPayload,
+	RefinementRoundStartedPayload,
+	ReviewerScoredPayload,
+	RefinementSynthesizedPayload,
+	ArtifactRevisedPayload,
+	RefinementConvergedPayload,
+	RefinementCircuitBreakerTrippedPayload,
+	ConvergenceOverriddenPayload,
+} from "./refinement.js";

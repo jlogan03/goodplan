@@ -1,5 +1,6 @@
 import type {
 	ChunkState,
+	ConvergenceSnapshot,
 	DerivedStateData,
 	EpicState,
 	SideQuestState,
@@ -33,6 +34,15 @@ import {
 	invariantDeactivatedPayloadSchema,
 	invariantProposedPayloadSchema,
 } from "../../schemas/events/invariant.js";
+import {
+	artifactRevisedPayloadSchema,
+	convergenceOverriddenPayloadSchema,
+	refinementCircuitBreakerTrippedPayloadSchema,
+	refinementConvergedPayloadSchema,
+	refinementRoundStartedPayloadSchema,
+	refinementSynthesizedPayloadSchema,
+	reviewerScoredPayloadSchema,
+} from "../../schemas/events/refinement.js";
 import {
 	subsystemMaturityUpdatedPayloadSchema,
 	subsystemRegisteredPayloadSchema,
@@ -575,9 +585,101 @@ export function reduceSpine(state: DerivedStateData, event: AnyEventEnvelope): v
 
 // --- Stub reducers for other domains ---
 
-export function reduceRefinement(state: DerivedStateData, _event: AnyEventEnvelope): void {
-	// Stub: refinement events will be handled in trust layer (slice 04+)
-	void state;
+export function reduceRefinement(state: DerivedStateData, event: AnyEventEnvelope): void {
+	const payload = event.payload as Record<string, unknown>;
+
+	switch (event.type) {
+		case "refinement-round-started": {
+			const parsed = refinementRoundStartedPayloadSchema.safeParse(payload);
+			if (parsed.success) {
+				const key = `${parsed.data.scopeRef}:${parsed.data.artifactType}`;
+				const snapshot: ConvergenceSnapshot = {
+					scopeRef: parsed.data.scopeRef,
+					artifactType: parsed.data.artifactType,
+					state: "CONTINUE",
+					round: parsed.data.round,
+				};
+				state.convergenceSnapshots.set(key, snapshot);
+			}
+			break;
+		}
+
+		case "reviewer-scored": {
+			const parsed = reviewerScoredPayloadSchema.safeParse(payload);
+			if (parsed.success) {
+				const key = `${parsed.data.scopeRef}:${parsed.data.artifactType}`;
+				// Update latest dimension scores for this reviewer
+				const scoreKey = `${key}:${parsed.data.reviewerId}`;
+				state.latestDimensionScores.set(scoreKey, parsed.data.dimensions);
+			}
+			break;
+		}
+
+		case "refinement-synthesized": {
+			const parsed = refinementSynthesizedPayloadSchema.safeParse(payload);
+			if (parsed.success) {
+				const key = `${parsed.data.scopeRef}:${parsed.data.artifactType}`;
+				const snapshot = state.convergenceSnapshots.get(key);
+				if (snapshot !== undefined) {
+					snapshot.synthesisRef = parsed.data.synthesis;
+				}
+			}
+			break;
+		}
+
+		case "artifact-revised": {
+			const parsed = artifactRevisedPayloadSchema.safeParse(payload);
+			if (parsed.success) {
+				const key = `${parsed.data.scopeRef}:${parsed.data.artifactType}`;
+				const snapshot = state.convergenceSnapshots.get(key);
+				if (snapshot !== undefined) {
+					snapshot.revisedArtifactRef = parsed.data.artifact;
+				}
+			}
+			break;
+		}
+
+		case "refinement-converged": {
+			const parsed = refinementConvergedPayloadSchema.safeParse(payload);
+			if (parsed.success) {
+				const key = `${parsed.data.scopeRef}:${parsed.data.artifactType}`;
+				const snapshot = state.convergenceSnapshots.get(key);
+				if (snapshot !== undefined) {
+					snapshot.state = "CONVERGED";
+				}
+			}
+			break;
+		}
+
+		case "refinement-circuit-breaker-tripped": {
+			const parsed = refinementCircuitBreakerTrippedPayloadSchema.safeParse(payload);
+			if (parsed.success) {
+				const key = `${parsed.data.scopeRef}:${parsed.data.artifactType}`;
+				const snapshot = state.convergenceSnapshots.get(key);
+				if (snapshot !== undefined) {
+					snapshot.state = "CIRCUIT-BROKEN";
+				}
+			}
+			break;
+		}
+
+		case "convergence-overridden": {
+			const parsed = convergenceOverriddenPayloadSchema.safeParse(payload);
+			if (parsed.success) {
+				const key = `${parsed.data.scopeRef}:${parsed.data.artifactType}`;
+				const snapshot = state.convergenceSnapshots.get(key);
+				if (snapshot !== undefined) {
+					snapshot.state = "CONVERGED";
+					snapshot.overridden = true;
+				}
+			}
+			break;
+		}
+
+		default:
+			// Silently skip unknown refinement event types (forward compat)
+			break;
+	}
 }
 
 export function reduceExploration(state: DerivedStateData, event: AnyEventEnvelope): void {

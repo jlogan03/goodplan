@@ -54,6 +54,9 @@ export interface ConvergenceSnapshot {
 	artifactType: string;
 	state: ConvergenceState;
 	round: number;
+	synthesisRef?: ContentRef;
+	revisedArtifactRef?: ContentRef;
+	overridden?: boolean;
 }
 
 /**
