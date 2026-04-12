@@ -1,0 +1,7 @@
+id: test-invalid-dimensions
+version: 1
+dimensions: []
+convergence:
+  max_rounds: 3
+  zero_blocking_required: true
+  zero_critical_required: false

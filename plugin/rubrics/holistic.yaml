@@ -1,0 +1,19 @@
+id: holistic
+version: 1
+dimensions:
+  - name: alignment
+    description: Does the artifact align with the stated goals, constraints, and architectural direction?
+    scoring: "1-10: 1=contradicts goals, 5=partially aligned, 10=perfectly aligned with clear traceability"
+    threshold: 7
+  - name: completeness
+    description: Are all required aspects addressed without significant gaps?
+    scoring: "1-10: 1=major gaps, 5=key areas covered with minor omissions, 10=comprehensive coverage"
+    threshold: 7
+  - name: coherence
+    description: Is the artifact internally consistent and logically structured?
+    scoring: "1-10: 1=contradictory/disorganized, 5=mostly coherent with minor issues, 10=fully consistent and well-structured"
+    threshold: 7
+convergence:
+  max_rounds: 3
+  zero_blocking_required: true
+  zero_critical_required: true

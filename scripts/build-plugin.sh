@@ -44,6 +44,7 @@ MANIFEST
 # Copy plugin source files — all plugin components live under plugin/
 rsync -a --exclude '.DS_Store' "$REPO_ROOT/plugin/skills/" "$PLUGIN_DIR/skills/"
 rsync -a --exclude '.DS_Store' "$REPO_ROOT/plugin/agents/" "$PLUGIN_DIR/agents/"
+rsync -a --exclude '.DS_Store' "$REPO_ROOT/plugin/rubrics/" "$PLUGIN_DIR/rubrics/"
 
 # Copy hook scripts and configuration
 cp "$REPO_ROOT/plugin/hooks/"*.sh "$REPO_ROOT/plugin/hooks/"*.json "$PLUGIN_DIR/hooks/"
@@ -193,6 +194,21 @@ if [[ "$AGENT_COUNT" -gt 0 ]]; then
   echo "  frontmatter validation: all agents pass"
 fi
 echo "  Packaged $AGENT_COUNT agents"
+
+# Verify rubric packaging
+echo ""
+echo "Verifying rubrics..."
+
+RUBRIC_COUNT=0
+if [ -d "$PLUGIN_DIR/rubrics/" ]; then
+  for rubric_file in "$PLUGIN_DIR/rubrics/"*.yaml; do
+    [ -f "$rubric_file" ] || continue
+    RUBRIC_COUNT=$((RUBRIC_COUNT + 1))
+  done
+fi
+
+test "$RUBRIC_COUNT" -ge 5 || { echo "FAIL: expected at least 5 rubric YAML files, got $RUBRIC_COUNT"; exit 1; }
+echo "  Packaged $RUBRIC_COUNT rubrics"
 
 # Unified @ reference validation across all skills and agents
 # Covers: agents/*.md, skills/*/SKILL.md, skills/*/references/*.md, agents/_references/*.md
