@@ -1,10 +1,10 @@
 {
 	"activeEpic": "workflow-bug-fixes",
 	"activeQuest": null,
-	"activeSlice": null,
+	"activeSlice": "08-core-skills-v2",
 	"created": "2026-04-07T14:32:56.693Z",
 	"name": "goodplan",
-	"stateSignature": "cd1e2821633420fb44dd6b828febe2207d84e36c258f56a0b3066e5fad6342ba",
-	"updated": "2026-04-12T22:00:20.225Z",
+	"stateSignature": "20f282ea320c2aca72b694500499d7863aa3a538aed0c476a3e810843987d907",
+	"updated": "2026-04-12T22:03:17.292Z",
 	"version": "1.0.6"
 }

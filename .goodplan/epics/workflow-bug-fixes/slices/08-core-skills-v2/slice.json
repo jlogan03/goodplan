@@ -5,7 +5,20 @@
 	"goal": "Rewrite core Claude Code skills for v2: workflow-guide (always-on orientation), status (project state query), init (project bootstrap), upgrade (migration from pre-CLI state), and task (lightweight task capture). Establish patterns for all subsequent skills.",
 	"implementationPhase": null,
 	"name": "08-core-skills-v2",
-	"refinement": null,
-	"status": "created",
-	"updated": "2026-04-12T19:34:33.162Z"
+	"refinement": {
+		"maxRounds": 10,
+		"round": 1,
+		"scoreHistory": [
+			{
+				"round": 1,
+				"scores": {
+					"agent-skill": 9,
+					"holistic": 9,
+					"repo-tooling": 9
+				}
+			}
+		]
+	},
+	"status": "plan-refined",
+	"updated": "2026-04-12T22:17:21.885Z"
 }
