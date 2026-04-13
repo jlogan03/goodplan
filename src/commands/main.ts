@@ -1,12 +1,10 @@
 import { defineCommand } from "citty";
 import { briefingLatestCommand } from "./briefing/latest.js";
 import { briefingWriteCommand } from "./briefing/write.js";
-import { decisionCreateCommand } from "./decision/create.js";
 import { decisionListCommand } from "./decision/list.js";
 import { decisionRecordCommand } from "./decision/record.js";
 import { decisionShowCommand } from "./decision/show.js";
 import { decisionSupersedeCommand } from "./decision/supersede.js";
-import { decisionUpdateCommand } from "./decision/update.js";
 import { epicAbandonCommand } from "./epic/abandon.js";
 import { epicActivateCommand } from "./epic/activate.js";
 import { epicArchitectureCommitCommand } from "./epic/architecture-commit.js";
@@ -55,18 +53,8 @@ import { invariantProposeCommand } from "./invariant/propose.js";
 import { learningCaptureCommand } from "./learning/capture.js";
 import { learningListCommand } from "./learning/list.js";
 import { learningPromoteCommand } from "./learning/promote.js";
-import { learningRollupCommand } from "./learning/rollup.js";
 import { projectSetSteeringCommand } from "./project/set-steering.js";
 import { projectShowCommand } from "./project/show.js";
-import { questAbandonCommand } from "./quest/abandon.js";
-import { questCompleteCommand } from "./quest/complete.js";
-import { questCreateCommand } from "./quest/create.js";
-import { questExploreCommand } from "./quest/explore.js";
-import { questImplementCommand } from "./quest/implement.js";
-import { questListCommand } from "./quest/list.js";
-import { questPlanCommand } from "./quest/plan.js";
-import { questRefinePlanCommand } from "./quest/refine-plan.js";
-import { questShowCommand } from "./quest/show.js";
 import { refineConvergeCommand } from "./refine/converge.js";
 import { refineEvaluateCommand } from "./refine/evaluate.js";
 import { refineOverrideCommand } from "./refine/override.js";
@@ -113,20 +101,11 @@ import { slicePlanShapeAutoCommand } from "./slice/plan-shape-auto.js";
 import { slicePlanShapeReviseCommand } from "./slice/plan-shape-revise.js";
 import { slicePlanShapeStartCommand } from "./slice/plan-shape-start.js";
 import { sliceShowCommand } from "./slice/show.js";
-import { startImplementationCommand } from "./subagent/start-implementation.js";
-import { startPlanCommand } from "./subagent/start-plan.js";
-import { startRefinementCommand } from "./subagent/start-refinement.js";
-import { submitImplementationCommand } from "./subagent/submit-implementation.js";
-import { submitPlanCommand } from "./subagent/submit-plan.js";
-import { submitRefinementCommand } from "./subagent/submit-refinement.js";
 import { subsystemListCommand } from "./subsystem/list.js";
 import { subsystemRegisterCommand } from "./subsystem/register.js";
 import { subsystemRetireCommand } from "./subsystem/retire.js";
 import { subsystemShowCommand } from "./subsystem/show.js";
 import { subsystemUpdateMaturityCommand } from "./subsystem/update-maturity.js";
-import { taskConvertCommand } from "./task/convert.js";
-import { taskCreateCommand } from "./task/create.js";
-import { taskDropCommand } from "./task/drop.js";
 import { taskListCommand } from "./task/list.js";
 import { taskShowCommand } from "./task/show.js";
 
@@ -149,12 +128,10 @@ export const mainCommand = defineCommand({
 		state: stateCommand,
 		status: statusCommand,
 		verify: verifyCommand,
-		"decision:create": decisionCreateCommand,
 		"decision:list": decisionListCommand,
 		"decision:show": decisionShowCommand,
 		"decision:record": decisionRecordCommand,
 		"decision:supersede": decisionSupersedeCommand,
-		"decision:update": decisionUpdateCommand,
 		"events:tail": eventsTailCommand,
 		"events:query": eventsQueryCommand,
 		"epic:create": epicCreateCommand,
@@ -188,7 +165,6 @@ export const mainCommand = defineCommand({
 		"learning:capture": learningCaptureCommand,
 		"learning:list": learningListCommand,
 		"learning:promote": learningPromoteCommand,
-		"learning:rollup": learningRollupCommand,
 		"reviewer:list": reviewerListCommand,
 		"reviewer:show": reviewerShowCommand,
 		"rubric:list": rubricListCommand,
@@ -202,20 +178,8 @@ export const mainCommand = defineCommand({
 		"refine:converge": refineConvergeCommand,
 		"refine:stuck": refineStuckCommand,
 		"refine:override": refineOverrideCommand,
-		"quest:create": questCreateCommand,
-		"quest:list": questListCommand,
-		"quest:show": questShowCommand,
-		"quest:explore": questExploreCommand,
-		"quest:plan": questPlanCommand,
-		"quest:refine-plan": questRefinePlanCommand,
-		"quest:implement": questImplementCommand,
-		"quest:complete": questCompleteCommand,
-		"quest:abandon": questAbandonCommand,
-		"task:create": taskCreateCommand,
 		"task:list": taskListCommand,
 		"task:show": taskShowCommand,
-		"task:drop": taskDropCommand,
-		"task:convert": taskConvertCommand,
 		"side-quest:create": sideQuestCreateCommand,
 		"side-quest:list": sideQuestListCommand,
 		"side-quest:show": sideQuestShowCommand,
@@ -266,11 +230,5 @@ export const mainCommand = defineCommand({
 		"subsystem:show": subsystemShowCommand,
 		"subsystem:update-maturity": subsystemUpdateMaturityCommand,
 		"subsystem:retire": subsystemRetireCommand,
-		"start-plan": startPlanCommand,
-		"start-refinement": startRefinementCommand,
-		"start-implementation": startImplementationCommand,
-		"submit-plan": submitPlanCommand,
-		"submit-refinement": submitRefinementCommand,
-		"submit-implementation": submitImplementationCommand,
 	},
 });

@@ -36,12 +36,11 @@ function extractErrorCodesFromSource(filePath: string, typeName: string): Set<st
 /** Derive the full set of expected error codes from source type definitions. */
 function deriveExpectedErrorCodes(): Set<string> {
 	const errorsFile = resolve(__dirname, "../../src/util/errors.ts");
-	const stateEventsFile = resolve(__dirname, "../../src/schemas/state-events.ts");
 
 	const dataCodes = extractErrorCodesFromSource(errorsFile, "DataErrorCode");
 	const validationCodes = extractErrorCodesFromSource(errorsFile, "ValidationErrorCode");
 	const internalCodes = extractErrorCodesFromSource(errorsFile, "InternalErrorCode");
-	const stateCodes = extractErrorCodesFromSource(stateEventsFile, "StateErrorCode");
+	const stateCodes = extractErrorCodesFromSource(errorsFile, "StateErrorCode");
 
 	return new Set([...dataCodes, ...validationCodes, ...internalCodes, ...stateCodes]);
 }

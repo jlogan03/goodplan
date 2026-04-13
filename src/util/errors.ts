@@ -10,8 +10,18 @@ type DataErrorCode =
 	| "DATA_VALIDATION_ERROR"
 	| "DATA_WRITE_ERROR";
 
-/** Error codes for the STATE namespace — imported from state-events.ts (single source of truth). */
-import type { StateErrorCode } from "../schemas/state-events.js";
+/** Error codes for the STATE namespace (v1 state machine transitions — kept for GoodplanErrorCode). */
+type StateErrorCode =
+	| "STATE_ALREADY_INITIALIZED"
+	| "STATE_INVALID_TRANSITION"
+	| "STATE_EPIC_ALREADY_ACTIVE"
+	| "STATE_MISSING_VERIFICATIONS"
+	| "STATE_VERIFICATION_FAILED"
+	| "STATE_SLICE_NOT_READY"
+	| "STATE_CONTENT_MISSING"
+	| "STATE_MAX_ROUNDS_REACHED"
+	| "STATE_QUEST_ALREADY_ACTIVE"
+	| "STATE_DUPLICATE_DECISION";
 
 /** Error codes for the VALIDATION namespace (input validation). Expand as needed. */
 type ValidationErrorCode =

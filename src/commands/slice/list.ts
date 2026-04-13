@@ -23,58 +23,6 @@ interface SliceListItem {
 }
 
 /**
- * Read v1 overview.json and extract slices for a specific epic.
- * TODO: Remove after slice 12 completes v1-to-v2 migration.
- */
-function readV1Slices(goodplanDir: string, epicName: string): SliceListItem[] {
-	const overviewPath = path.join(goodplanDir, "overview.json");
-	if (!fs.existsSync(overviewPath)) return [];
-	try {
-		const raw = JSON.parse(fs.readFileSync(overviewPath, "utf-8")) as {
-			epics?: Array<{ name: string; slices?: Array<{ name: string; status: string }> }>;
-		};
-		const epicEntry = raw.epics?.find((e) => e.name === epicName);
-		if (epicEntry?.slices === undefined) return [];
-		return epicEntry.slices.map((s) => ({
-			dir: s.name,
-			phase: s.status,
-			abandoned: s.status === "abandoned",
-			epic: epicName,
-		}));
-	} catch {
-		return [];
-	}
-}
-
-/**
- * Read v1 overview.json and extract slices across all epics.
- * TODO: Remove after slice 12 completes v1-to-v2 migration.
- */
-function readV1AllSlices(goodplanDir: string): SliceListItem[] {
-	const overviewPath = path.join(goodplanDir, "overview.json");
-	if (!fs.existsSync(overviewPath)) return [];
-	try {
-		const raw = JSON.parse(fs.readFileSync(overviewPath, "utf-8")) as {
-			epics?: Array<{ name: string; slices?: Array<{ name: string; status: string }> }>;
-		};
-		const items: SliceListItem[] = [];
-		for (const epicEntry of raw.epics ?? []) {
-			for (const s of epicEntry.slices ?? []) {
-				items.push({
-					dir: s.name,
-					phase: s.status,
-					abandoned: s.status === "abandoned",
-					epic: epicEntry.name,
-				});
-			}
-		}
-		return items;
-	} catch {
-		return [];
-	}
-}
-
-/**
  * Convert DerivedState slice entries to list items.
  */
 function sliceStateToListItems(
@@ -94,26 +42,15 @@ function sliceStateToListItems(
 }
 
 /**
- * Check if any slice-created events exist for this epic.
- */
-function hasSliceCreatedEvents(slices: ReadonlyMap<string, SliceState>): boolean {
-	return slices.size > 0;
-}
-
-/**
- * `gp slice:list [--epic <name>] [--all]` (v2) — list slices from event-sourced state.
+ * `gp slice:list [--epic <name>] [--all]` — list slices from event-sourced state.
  *
  * Default: slices for --epic (required unless --all is set).
  * --all: slices across all epics via replayAllScopes.
- *
- * v1 fallback: when no slice-created events exist, falls back to overview.json.
- * TODO: Remove v1 fallback after slice 12 completes migration.
  */
 export const sliceListCommand = defineCommand({
 	meta: {
 		name: "slice:list",
-		description:
-			"List slices. --epic filters by epic. --all shows all epics. Falls back to v1 overview.json when no v2 events exist.",
+		description: "List slices. --epic filters by epic. --all shows all epics.",
 	},
 	args: {
 		...globalArgs,
@@ -136,16 +73,8 @@ export const sliceListCommand = defineCommand({
 		if (args.all) {
 			// Replay all scopes and collect slices from every epic
 			const state = await replayAllScopes(goodplanDir);
-			let hasAnyV2Slices = false;
 			for (const [epicName, epicState] of state.epics) {
-				if (hasSliceCreatedEvents(epicState.slices)) {
-					hasAnyV2Slices = true;
-					allItems.push(...sliceStateToListItems(epicState.slices, epicName));
-				}
-			}
-			// v1 fallback: if no v2 slice events found across any epic
-			if (!hasAnyV2Slices) {
-				allItems = readV1AllSlices(goodplanDir);
+				allItems.push(...sliceStateToListItems(epicState.slices, epicName));
 			}
 		} else {
 			const epicName = args.epic as string | undefined;
@@ -168,15 +97,9 @@ export const sliceListCommand = defineCommand({
 				const { events } = await replayEvents({ eventsPath: epicEventsPath });
 				const state = computeDerivedState(events);
 				const epicState = state.epics.get(epicName);
-				if (epicState !== undefined && hasSliceCreatedEvents(epicState.slices)) {
+				if (epicState !== undefined) {
 					allItems = sliceStateToListItems(epicState.slices, epicName);
-				} else {
-					// v1 fallback for this epic
-					allItems = readV1Slices(goodplanDir, epicName);
 				}
-			} else {
-				// Epic events file doesn't exist -- try v1 fallback
-				allItems = readV1Slices(goodplanDir, epicName);
 			}
 		}
 

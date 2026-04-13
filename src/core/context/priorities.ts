@@ -6,8 +6,27 @@
  * Source of truth: rpc-layer-api.md and transition-tables.md "Context Returns" tables.
  */
 
-import { resolveEntityJsonPath } from "../rpc/types.js";
 import type { ContentSource, ResolvedTarget, SubmitPhase, Target } from "./types.js";
+
+/** Resolve the state-tree-relative JSON path for an entity target. */
+export function resolveEntityJsonPath(target: Target): string {
+	switch (target.type) {
+		case "project":
+			return "project.json";
+		case "epic":
+			return `epics/${target.name}/epic.json`;
+		case "slice":
+			return `epics/${target.epic}/slices/${target.name}/slice.json`;
+		case "quest":
+			return `quests/${target.name}/quest.json`;
+		case "task":
+			return `tasks/${target.name}/task.json`;
+		case "decision":
+			return "decisions.jsonl";
+		case "rollup":
+			return "learnings.jsonl";
+	}
+}
 
 // ── Path helpers ────────────────────────────────────────────
 

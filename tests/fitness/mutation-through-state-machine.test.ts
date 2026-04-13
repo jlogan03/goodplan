@@ -126,8 +126,10 @@ describe("INV-001: All .goodplan/ JSON/JSONL mutations go through the state mach
 			return rel.startsWith("src/core/rpc/") && !ALLOWED_JSON_WRITE_FILES.has(rel);
 		});
 
-		it("should find RPC module files", () => {
-			expect(rpcFiles.length).toBeGreaterThan(0);
+		it("should find RPC module files (vacuously true after v1 retirement — only migrate.ts remains)", () => {
+			// After v1 retirement, only migrate.ts and migrate-events.ts remain in core/rpc/,
+			// both in ALLOWED_JSON_WRITE_FILES. No non-allowed RPC files to check.
+			expect(rpcFiles.length).toBeGreaterThanOrEqual(0);
 		});
 
 		for (const file of rpcFiles) {

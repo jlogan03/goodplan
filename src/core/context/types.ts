@@ -1,10 +1,30 @@
 /**
- * Context bundling types — peer module to the RPC layer.
- * Defined per rpc-layer-api.md. The RPC layer imports from here if needed,
- * not the reverse.
+ * Context bundling types.
+ * Target and SubmitPhase were previously in core/rpc/types.ts (retired with v1).
  */
 
-import type { SubmitPhase, Target } from "../rpc/types.js";
+// ── Target ───────────────────────────────────────────────────
+
+export type Target =
+	| { type: "project" }
+	| { type: "epic"; name: string }
+	| { type: "slice"; name: string; epic: string }
+	| { type: "quest"; name: string }
+	| { type: "task"; name: string }
+	| { type: "decision"; id: string }
+	| { type: "rollup"; from: string; to: string };
+
+/** Phases that have content priority orderings for context bundling. */
+export type SubmitPhase =
+	| "plan"
+	| "refinement"
+	| "implementation"
+	| "explore"
+	| "architecture"
+	| "slices"
+	| "refine-architecture"
+	| "refine-slices"
+	| "complete";
 
 // ── Context bundle ──────────────────────────────────────────
 
@@ -65,6 +85,3 @@ export interface StartContextOptions {
 	inlineBudget?: number;
 }
 
-// ── Re-export phase type for convenience ────────────────────
-
-export type { SubmitPhase, Target };

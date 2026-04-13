@@ -2,23 +2,12 @@ import { defineCommand } from "citty";
 import { z } from "zod";
 import { PROJECT_DIR_NAME } from "../../core/data/project.js";
 import { writeBriefingInputSchema } from "../../schemas/commands/briefing.js";
-import {
-	createDecisionInputSchema,
-	updateDecisionInputSchema,
-} from "../../schemas/commands/decision.js";
 import { completeEpicInputSchema, createEpicInputSchema } from "../../schemas/commands/epic.js";
-import { completeQuestInputSchema, createQuestInputSchema } from "../../schemas/commands/quest.js";
-import { completeSliceInputSchema, createSliceInputSchema } from "../../schemas/commands/slice.js";
-import {
-	submitImplementationInputSchema,
-	submitPlanInputSchema,
-	submitRefinementInputSchema,
-} from "../../schemas/commands/submit.js";
+import { createSliceInputSchema } from "../../schemas/commands/slice.js";
 import {
 	registerSubsystemInputSchema,
 	updateMaturityInputSchema,
 } from "../../schemas/commands/subsystem.js";
-import { taskCreateInputSchema } from "../../schemas/commands/task.js";
 import { briefingWrittenPayloadSchema } from "../../schemas/events/briefing.js";
 import { projectInitializedPayloadSchema } from "../../schemas/events/index.js";
 import {
@@ -55,18 +44,9 @@ export const stdinSchemaRegistry: Record<string, z.ZodType> = {
 	"epic:create": createEpicInputSchema,
 	"epic:complete": completeEpicInputSchema,
 	"slice:create": createSliceInputSchema,
-	"slice:complete": completeSliceInputSchema,
-	"quest:create": createQuestInputSchema,
-	"quest:complete": completeQuestInputSchema,
-	"task:create": taskCreateInputSchema,
-	"decision:create": createDecisionInputSchema,
-	"decision:update": updateDecisionInputSchema,
 	"briefing:write": writeBriefingInputSchema,
 	"subsystem:register": registerSubsystemInputSchema,
 	"subsystem:update-maturity": updateMaturityInputSchema,
-	"submit-plan": submitPlanInputSchema,
-	"submit-refinement": submitRefinementInputSchema,
-	"submit-implementation": submitImplementationInputSchema,
 };
 
 // ── Command Registry ─────────────────────────────────────────
@@ -486,60 +466,7 @@ registerCommand(
 	},
 );
 
-// Quest commands
-registerCommand("quest:create", "Create a new quest. Stdin: {name, goal}.", {
-	...globalArgDefs,
-});
-registerCommand("quest:list", "List all quests.", {
-	...globalArgDefs,
-	...listArgDefs,
-});
-registerCommand("quest:show", "Show details for a specific quest.", {
-	...globalArgDefs,
-	quest: { type: "string", description: "Quest name", required: true },
-});
-registerCommand("quest:explore", "Begin exploration phase for a quest.", {
-	...globalArgDefs,
-	quest: { type: "string", description: "Quest name", required: true },
-});
-registerCommand(
-	"quest:plan",
-	"Begin planning for a quest. Precondition: 'created' or 'explored' status.",
-	{
-		...globalArgDefs,
-		quest: { type: "string", description: "Quest name", required: true },
-	},
-);
-registerCommand("quest:refine-plan", "Begin plan refinement for a quest.", {
-	...globalArgDefs,
-	quest: { type: "string", description: "Quest name", required: true },
-});
-registerCommand("quest:implement", "Begin implementation for a quest.", {
-	...globalArgDefs,
-	quest: { type: "string", description: "Quest name", required: true },
-});
-registerCommand(
-	"quest:complete",
-	"Complete a quest. Stdin: {verificationPassed, learnings?, architectureDelta?}.",
-	{
-		...globalArgDefs,
-		quest: { type: "string", description: "Quest name", required: true },
-	},
-);
-registerCommand("quest:abandon", "Abandon a quest.", {
-	...globalArgDefs,
-	quest: { type: "string", description: "Quest name", required: true },
-	reason: { type: "string", description: "Reason for abandoning", required: true },
-});
-
-// Task commands
-registerCommand(
-	"task:create",
-	"Create a new task. Stdin: {name, title, description?, context?}. Transitions to 'open' status.",
-	{
-		...globalArgDefs,
-	},
-);
+// Task commands (task:list, task:show kept — task:create/drop/convert removed)
 registerCommand(
 	"task:list",
 	"List tasks. Defaults to open tasks only; use --all to include converted/dropped. JSON includes filter field.",
@@ -553,31 +480,8 @@ registerCommand("task:show", "Show full task entity details.", {
 	...globalArgDefs,
 	task: { type: "string", description: "Task name", required: true },
 });
-registerCommand(
-	"task:drop",
-	"Drop a task with a reason. Requires --task and --reason flags. Transition: open -> dropped.",
-	{
-		...globalArgDefs,
-		task: { type: "string", description: "Task name", required: true },
-		reason: { type: "string", description: "Reason for dropping", required: true },
-	},
-);
-registerCommand(
-	"task:convert",
-	"Convert a task to a quest or epic. Requires --task and --to flags. Optional --name and --goal overrides. Transition: open -> converted.",
-	{
-		...globalArgDefs,
-		task: { type: "string", description: "Task name", required: true },
-		to: { type: "string", description: 'Target entity type: "quest" or "epic"', required: true },
-		name: { type: "string", description: "Override name for created entity" },
-		goal: { type: "string", description: "Override goal for created entity" },
-	},
-);
 
 // Decision commands
-registerCommand("decision:create", "Create a new decision. Stdin: {id, domain, title, summary}.", {
-	...globalArgDefs,
-});
 registerCommand("decision:list", "List all decisions.", {
 	...globalArgDefs,
 	...listArgDefs,
@@ -586,14 +490,6 @@ registerCommand("decision:show", "Show details for a specific decision.", {
 	...globalArgDefs,
 	id: { type: "string", description: "Decision ID", required: true },
 });
-registerCommand(
-	"decision:update",
-	"Update a decision. Stdin: {changes: {status?, domain?, title?, summary?, supersededBy?}}.",
-	{
-		...globalArgDefs,
-		id: { type: "string", description: "Decision ID", required: true },
-	},
-);
 
 // Decision v2 event commands
 registerCommand(
@@ -631,60 +527,11 @@ registerCommand(
 		...globalArgDefs,
 	},
 );
-registerCommand("learning:rollup", "Roll up learnings from one scope to another.", {
-	...globalArgDefs,
-	from: { type: "string", description: "Source scope", required: true },
-	to: { type: "string", description: "Target scope", required: true },
-});
 
 // Activity commands
 // Check if activity:list exists
 // (It's referenced in commands-api.md but may not be implemented yet — skipping if absent)
 
-// Sub-agent commands
-registerCommand("start-plan", "Get context for planning a slice or quest.", {
-	...globalArgDefs,
-	slice: { type: "string", description: "Slice name" },
-	quest: { type: "string", description: "Quest name" },
-	inline: { type: "string", description: "Include inlined content (boolean or byte budget)" },
-});
-registerCommand("start-refinement", "Get context for refining a slice or quest plan.", {
-	...globalArgDefs,
-	slice: { type: "string", description: "Slice name" },
-	quest: { type: "string", description: "Quest name" },
-	inline: { type: "string", description: "Include inlined content (boolean or byte budget)" },
-});
-registerCommand("start-implementation", "Get context for implementing a slice or quest.", {
-	...globalArgDefs,
-	slice: { type: "string", description: "Slice name" },
-	quest: { type: "string", description: "Quest name" },
-	inline: { type: "string", description: "Include inlined content (boolean or byte budget)" },
-});
-// v1 epic subagent commands removed (start-explore, start-architecture, start-slices,
-// start-refine-architecture, start-refine-slices) — superseded by v2 context bundler integration
-registerCommand("submit-plan", "Submit a completed plan.", {
-	...globalArgDefs,
-	slice: { type: "string", description: "Slice name" },
-	quest: { type: "string", description: "Quest name" },
-});
-registerCommand("submit-refinement", "Submit refinement scores.", {
-	...globalArgDefs,
-	slice: { type: "string", description: "Slice name" },
-	quest: { type: "string", description: "Quest name" },
-	override: {
-		type: "boolean",
-		description: "Bypass score threshold circuit breaker",
-		default: false,
-	},
-});
-registerCommand("submit-implementation", "Submit implementation results.", {
-	...globalArgDefs,
-	phase: { type: "string", description: "Implementation phase number" },
-	slice: { type: "string", description: "Slice name" },
-	quest: { type: "string", description: "Quest name" },
-});
-// v1 epic submit commands removed (submit-explore, submit-architecture, submit-slices,
-// submit-refine-architecture, submit-refine-slices) — superseded by v2 event commands
 
 // ── Subsystem commands ──────────────────────────────────────
 

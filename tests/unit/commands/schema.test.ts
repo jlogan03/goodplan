@@ -56,7 +56,7 @@ describe("schema command", () => {
 		expect(names).toContain("epic:create");
 		expect(names).toContain("slice:create");
 		expect(names).toContain("slice:abandon");
-		expect(names).toContain("decision:create");
+		expect(names).toContain("decision:record");
 
 		vi.restoreAllMocks();
 	});
@@ -68,18 +68,18 @@ describe("schema command", () => {
 			return true;
 		});
 
-		await runSchema({ json: true, command: "quest:complete" });
+		await runSchema({ json: true, command: "epic:complete" });
 
 		const outputStr = chunks.join("");
 		const parsed = JSON.parse(outputStr);
-		expect(parsed.name).toBe("quest:complete");
+		expect(parsed.name).toBe("epic:complete");
 		expect(parsed.description).toBeTruthy();
 		expect(parsed.args).toBeTruthy();
 		expect(parsed.stdinSchema).toBeTruthy();
 
 		// Verify stdin schema has expected properties
 		expect(parsed.stdinSchema.type).toBe("object");
-		expect(parsed.stdinSchema.properties).toHaveProperty("verificationPassed");
+		expect(parsed.stdinSchema.properties).toHaveProperty("verificationResults");
 
 		vi.restoreAllMocks();
 	});
@@ -265,22 +265,10 @@ describe("stdinSchemaRegistry drift detection", () => {
 		const stdinCommands = [
 			"epic:create",
 			"epic:complete",
-			// v1 epic:add-verification, epic:update-verification removed (core/rpc dependency)
 			"slice:create",
-			"slice:complete",
-			"quest:create",
-			"quest:complete",
-			"task:create",
-			"decision:create",
-			"decision:update",
-			"submit-plan",
-			"submit-refinement",
-			"submit-implementation",
 			"subsystem:register",
 			"subsystem:update-maturity",
 			"briefing:write",
-			// v1 epic subagent commands removed (submit-explore, submit-architecture,
-			// submit-slices, submit-refine-architecture, submit-refine-slices)
 		];
 
 		const registryKeys = Object.keys(stdinSchemaRegistry);

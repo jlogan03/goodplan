@@ -86,12 +86,11 @@ describe("INV-006: Schema output accuracy", () => {
 	it("per-command detail includes stdin schema for stdin-accepting commands", () => {
 		const stdinCommands = [
 			"epic:create",
+			"epic:complete",
 			"slice:create",
-			"quest:create",
-			"decision:create",
-			"submit-plan",
-			"submit-refinement",
-			"submit-implementation",
+			"subsystem:register",
+			"subsystem:update-maturity",
+			"briefing:write",
 		];
 
 		for (const cmdName of stdinCommands) {
