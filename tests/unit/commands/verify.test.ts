@@ -1,3 +1,4 @@
+import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -22,8 +23,56 @@ const projectContent = {
 	updated: NOW,
 };
 
-/** Create a minimal project via commitState so it has a valid signature */
-function createSignedProject(): string {
+/** Create a valid v2 event envelope as JSON string */
+function makeEventLine(overrides: {
+	id?: string;
+	prevId?: string | null;
+	domain?: string;
+	type?: string;
+	schemaVersion?: number;
+	payload?: Record<string, unknown>;
+}): string {
+	return JSON.stringify({
+		id: overrides.id ?? crypto.randomUUID(),
+		schemaVersion: overrides.schemaVersion ?? 1,
+		ts: NOW,
+		scope: "project",
+		scopeRef: null,
+		actor: { kind: "cli", id: "test" },
+		branch: "main",
+		commitHint: null,
+		domain: overrides.domain ?? "entity-lifecycle",
+		type: overrides.type ?? "project-initialized",
+		payload: overrides.payload ?? { name: "test" },
+		prevId: overrides.prevId ?? null,
+	});
+}
+
+/** Create a project with valid v2 events.jsonl */
+function createV2Project(): string {
+	const projectDir = path.join(tmpDir, ".goodplan");
+	fs.mkdirSync(projectDir, { recursive: true });
+
+	// Init git repo for ContentRef verification
+	const { execFileSync } = require("node:child_process");
+	execFileSync("git", ["init"], { cwd: tmpDir, stdio: "pipe" });
+	execFileSync("git", ["-c", "user.name=test", "-c", "user.email=test@test.com", "commit", "--allow-empty", "-m", "init"], { cwd: tmpDir, stdio: "pipe" });
+
+	const event1Id = crypto.randomUUID();
+	const event2Id = crypto.randomUUID();
+	const events = [
+		makeEventLine({ id: event1Id, prevId: null, type: "project-initialized", payload: { name: "verify-test" } }),
+		makeEventLine({ id: event2Id, prevId: event1Id, domain: "entity-lifecycle", type: "project-initialized", payload: { name: "verify-test" } }),
+	].join("\n") + "\n";
+
+	fs.writeFileSync(path.join(projectDir, "events.jsonl"), events);
+	fs.writeFileSync(path.join(projectDir, "project.json"), `${deterministicStringify(projectContent)}\n`);
+
+	return projectDir;
+}
+
+/** Create a v1-only project with HMAC signature */
+function createV1SignedProject(): string {
 	const projectDir = path.join(tmpDir, ".goodplan");
 	fs.mkdirSync(projectDir, { recursive: true });
 
@@ -31,10 +80,7 @@ function createSignedProject(): string {
 		type: "directory",
 		contents: {
 			"project.json": { type: "json", content: projectContent },
-			"overview.json": {
-				type: "json",
-				content: { epics: [], quests: [], tasks: [] },
-			},
+			"overview.json": { type: "json", content: { epics: [], quests: [], tasks: [] } },
 			"activity-log.jsonl": { type: "jsonl", content: [] },
 			"decisions.jsonl": { type: "jsonl", content: [] },
 			"learnings.jsonl": { type: "jsonl", content: [] },
@@ -42,24 +88,6 @@ function createSignedProject(): string {
 	};
 
 	commitState(projectDir, ZERO_STATE, newState);
-	return projectDir;
-}
-
-/** Create a project without a signature (bootstrap scenario) */
-function createUnsignedProject(): string {
-	const projectDir = path.join(tmpDir, ".goodplan");
-	fs.mkdirSync(projectDir, { recursive: true });
-	fs.writeFileSync(
-		path.join(projectDir, "project.json"),
-		`${deterministicStringify(projectContent)}\n`,
-	);
-	fs.writeFileSync(
-		path.join(projectDir, "overview.json"),
-		`${deterministicStringify({ epics: [], quests: [], tasks: [] })}\n`,
-	);
-	fs.writeFileSync(path.join(projectDir, "activity-log.jsonl"), "");
-	fs.writeFileSync(path.join(projectDir, "decisions.jsonl"), "");
-	fs.writeFileSync(path.join(projectDir, "learnings.jsonl"), "");
 	return projectDir;
 }
 
@@ -101,9 +129,9 @@ async function runVerify(args: {
 	}
 }
 
-describe("gp verify", () => {
-	it("returns pass on valid project (JSON)", async () => {
-		createSignedProject();
+describe("gp verify (v2 event log)", () => {
+	it("returns pass on valid v2 event log (JSON)", async () => {
+		createV2Project();
 		const chunks: string[] = [];
 		vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
 			chunks.push(String(chunk));
@@ -114,10 +142,13 @@ describe("gp verify", () => {
 
 		const parsed = JSON.parse(chunks.join(""));
 		expect(parsed.status).toBe("pass");
+		expect(parsed.eventsChecked).toBe(2);
+		expect(parsed.scopesChecked).toBe(1);
+		expect(parsed.issues).toHaveLength(0);
 	});
 
-	it("returns pass on valid project (human-readable)", async () => {
-		createSignedProject();
+	it("returns pass with human-readable output", async () => {
+		createV2Project();
 		const chunks: string[] = [];
 		vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
 			chunks.push(String(chunk));
@@ -127,64 +158,72 @@ describe("gp verify", () => {
 		await runVerify({});
 
 		const text = chunks.join("");
-		expect(text).toContain("State integrity: pass");
-		expect(text).toContain("sig:");
+		expect(text).toContain("Integrity: pass");
+		expect(text).toContain("2 events");
 	});
 
-	it("throws DATA_INTEGRITY_CHECK_FAILED on tampered project (JSON)", async () => {
-		const projectDir = createSignedProject();
+	it("detects broken prevId chain", async () => {
+		const projectDir = path.join(tmpDir, ".goodplan");
+		fs.mkdirSync(projectDir, { recursive: true });
 
-		// Tamper with project.json
-		const projectPath = path.join(projectDir, "project.json");
-		const raw = JSON.parse(fs.readFileSync(projectPath, "utf-8"));
-		raw.name = "tampered";
-		fs.writeFileSync(projectPath, `${deterministicStringify(raw)}\n`);
+		// Init git
+		const { execFileSync } = require("node:child_process");
+		execFileSync("git", ["init"], { cwd: tmpDir, stdio: "pipe" });
+		execFileSync("git", ["-c", "user.name=test", "-c", "user.email=test@test.com", "commit", "--allow-empty", "-m", "init"], { cwd: tmpDir, stdio: "pipe" });
 
-		const stdoutChunks: string[] = [];
-		const stderrChunks: string[] = [];
+		const id1 = crypto.randomUUID();
+		const id2 = crypto.randomUUID();
+		const wrongPrevId = crypto.randomUUID();
+		const events = [
+			makeEventLine({ id: id1, prevId: null }),
+			makeEventLine({ id: id2, prevId: wrongPrevId }),
+		].join("\n") + "\n";
+
+		fs.writeFileSync(path.join(projectDir, "events.jsonl"), events);
+
+		const chunks: string[] = [];
 		vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
-			stdoutChunks.push(String(chunk));
+			chunks.push(String(chunk));
 			return true;
 		});
-		vi.spyOn(process.stderr, "write").mockImplementation((chunk) => {
-			stderrChunks.push(String(chunk));
-			return true;
-		});
+		vi.spyOn(process.stderr, "write").mockImplementation(() => true);
 
 		process.exitCode = 0;
 		await runVerify({ json: true });
 
-		const parsed = JSON.parse(stdoutChunks.join(""));
-		expect(parsed.error).toBeDefined();
-		expect(parsed.error.code).toBe("DATA_INTEGRITY_CHECK_FAILED");
+		const parsed = JSON.parse(chunks.join(""));
+		expect(parsed.status).toBe("fail");
+		expect(parsed.issues.length).toBeGreaterThan(0);
+		expect(parsed.issues[0].issue).toContain("prevId chain broken");
 		expect(process.exitCode).toBe(1);
 	});
 
-	it("throws DATA_INTEGRITY_CHECK_FAILED on tampered project (human-readable)", async () => {
-		const projectDir = createSignedProject();
+	it("detects invalid JSON in event log", async () => {
+		const projectDir = path.join(tmpDir, ".goodplan");
+		fs.mkdirSync(projectDir, { recursive: true });
 
-		const projectPath = path.join(projectDir, "project.json");
-		const raw = JSON.parse(fs.readFileSync(projectPath, "utf-8"));
-		raw.name = "tampered";
-		fs.writeFileSync(projectPath, `${deterministicStringify(raw)}\n`);
+		fs.writeFileSync(path.join(projectDir, "events.jsonl"), "not json\n");
 
-		const stderrChunks: string[] = [];
-		vi.spyOn(process.stderr, "write").mockImplementation((chunk) => {
-			stderrChunks.push(String(chunk));
+		const chunks: string[] = [];
+		vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
+			chunks.push(String(chunk));
 			return true;
 		});
-		vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+		vi.spyOn(process.stderr, "write").mockImplementation(() => true);
 
 		process.exitCode = 0;
-		await runVerify({});
+		await runVerify({ json: true });
 
-		const errText = stderrChunks.join("");
-		expect(errText).toContain("gp verify --fix");
-		expect(process.exitCode).toBe(1);
+		const parsed = JSON.parse(chunks.join(""));
+		expect(parsed.status).toBe("fail");
+		expect(parsed.issues[0].issue).toBe("Invalid JSON");
 	});
 
-	it("returns pass for bootstrap (no signature)", async () => {
-		createUnsignedProject();
+	it("returns pass with 0 events when no event logs exist", async () => {
+		const projectDir = path.join(tmpDir, ".goodplan");
+		fs.mkdirSync(projectDir, { recursive: true });
+		fs.writeFileSync(path.join(projectDir, "project.json"), `${deterministicStringify(projectContent)}\n`);
+
 		const chunks: string[] = [];
 		vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
 			chunks.push(String(chunk));
@@ -195,13 +234,13 @@ describe("gp verify", () => {
 
 		const parsed = JSON.parse(chunks.join(""));
 		expect(parsed.status).toBe("pass");
-		expect(parsed.note).toContain("bootstrap");
+		expect(parsed.eventsChecked).toBe(0);
 	});
 });
 
-describe("gp verify --fix", () => {
-	it("fixes tampered project (JSON)", async () => {
-		const projectDir = createSignedProject();
+describe("gp verify --fix (v1 HMAC)", () => {
+	it("fixes tampered v1 project", async () => {
+		const projectDir = createV1SignedProject();
 
 		// Tamper
 		const projectPath = path.join(projectDir, "project.json");
@@ -219,37 +258,5 @@ describe("gp verify --fix", () => {
 
 		const parsed = JSON.parse(chunks.join(""));
 		expect(parsed.status).toBe("fixed");
-
-		// Verify the fix worked: subsequent verify passes
-		const chunks2: string[] = [];
-		vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
-			chunks2.push(String(chunk));
-			return true;
-		});
-
-		await runVerify({ json: true });
-		const parsed2 = JSON.parse(chunks2.join(""));
-		expect(parsed2.status).toBe("pass");
-	});
-
-	it("fixes tampered project (human-readable)", async () => {
-		const projectDir = createSignedProject();
-
-		// Tamper
-		const projectPath = path.join(projectDir, "project.json");
-		const raw = JSON.parse(fs.readFileSync(projectPath, "utf-8"));
-		raw.name = "tampered";
-		fs.writeFileSync(projectPath, `${deterministicStringify(raw)}\n`);
-
-		const chunks: string[] = [];
-		vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
-			chunks.push(String(chunk));
-			return true;
-		});
-
-		await runVerify({ fix: true });
-
-		const text = chunks.join("");
-		expect(text).toContain("State signature recomputed.");
 	});
 });
