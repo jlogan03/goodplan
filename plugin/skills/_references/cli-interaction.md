@@ -148,7 +148,7 @@ stdin: "" | gp submit-plan --slice my-slice --json
 
 ### `start-*` always return JSON
 
-The `start-*` sub-agent commands (including but not limited to `start-plan`, `start-refinement`, `start-implementation`, `start-explore`, `start-architecture`, `start-slices`, `start-refine-architecture`, `start-refine-slices`) always return JSON output. The `--json` flag is accepted but has no effect. Use `gp schema --json` for the authoritative list.
+The `start-*` sub-agent commands (`start-plan`, `start-refinement`, `start-implementation`) always return JSON output. The `--json` flag is accepted but has no effect. Use `gp schema --json` for the authoritative list.
 
 **Important:** `start-complete` does not exist as a command. Completion is handled by `slice:complete` and `quest:complete` which accept stdin payloads (see section 9).
 
@@ -237,19 +237,16 @@ Skills that do interactive user work between state transitions: `/gp:create-epic
 4. Call `submit-*` or entity mutation commands to persist results
 
 ```bash
-# 1. Begin the phase
-gp epic:explore --epic my-epic --json
-# Returns: { entity, phase, previousStatus, newStatus }
+# 1. Start exploration
+gp epic:explore-start --epic my-epic --json
 
-# 2. Get deep context
-gp start-explore --epic my-epic --inline --json
-# Returns flat ContextBundle: { inline: {...}, references: [...], decisions: [...], learnings: [...] }
+# 2. Interactive work happens here (user research, brainstorming, etc.)
+# Capture artifacts as you go:
+echo '{"title":"...","content":"..."}' | gp epic:research-capture --epic my-epic --json
+echo '{"title":"...","content":"..."}' | gp epic:brainstorm-capture --epic my-epic --json
 
-# 3. Interactive work happens here (user research, brainstorming, etc.)
-# LLM writes content to paths from the begin command (step 1), not from start-explore
-
-# 4. Submit to advance state
-stdin: "" | gp submit-explore --epic my-epic --json
+# 3. Conclude exploration to advance state
+gp epic:explore-conclude --epic my-epic --json
 ```
 
 ### Read-Only Skills
