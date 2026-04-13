@@ -1,0 +1,1 @@
+The create-epic skill had ~400 lines. Instead of rewriting from scratch, we edited section by section: re-entry table, goal capture, explore, architecture, shape checkpoints, pressure-test, slices. This preserved working structure while adding v2 features.

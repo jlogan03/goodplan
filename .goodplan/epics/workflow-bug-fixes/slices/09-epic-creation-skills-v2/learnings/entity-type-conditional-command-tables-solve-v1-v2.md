@@ -1,0 +1,1 @@
+explore-phase-pattern.md serves both epic (v2 commands) and quest (v1 commands). Using conditional tables with explicit epic/quest blocks avoids breaking either consumer.
