@@ -8,7 +8,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: codex-release-pipeline
+  group: release-pipeline
   cancel-in-progress: false
 
 jobs:
@@ -77,36 +77,3 @@ jobs:
         uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
         with:
           files: goodplan-codex-plugin-${{ github.ref_name }}.tar.gz
-
-      - name: Prepare release branch content
-        run: |
-          mkdir -p tmp-release/.agents/plugins tmp-release/plugins
-          cp .agents/plugins/marketplace.json tmp-release/.agents/plugins/
-          cp -R plugins/goodplan tmp-release/plugins/goodplan
-
-      - name: Tag release branch for rollback
-        if: github.ref_type == 'tag'
-        run: |
-          if git ls-remote --heads origin codex-release | grep -q codex-release; then
-            git fetch origin codex-release
-            git tag "codex-release-before-${{ github.ref_name }}" origin/codex-release
-            git push origin "codex-release-before-${{ github.ref_name }}"
-            echo "Tagged codex-release branch HEAD as codex-release-before-${{ github.ref_name }}"
-          else
-            echo "No existing codex-release branch — skipping rollback tag"
-          fi
-
-      - name: Publish to codex-release branch
-        if: github.ref_type == 'tag'
-        run: |
-          cd tmp-release
-          git init
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b codex-release
-          git add -A
-          git commit -m "Codex release ${{ github.ref_name }}"
-          git push --force "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" HEAD:refs/heads/codex-release
-          echo "Published to codex-release branch"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

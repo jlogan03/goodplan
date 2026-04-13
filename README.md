@@ -22,7 +22,7 @@ Then start Claude Code in your project directory and run `/gp:create-epic` to ge
 
 ### Codex
 
-Codex supports both a repo-local build and a release-published marketplace branch. The Claude marketplace flow remains unchanged.
+Codex supports both a repo-local build and a release-published tarball asset on the same version tag used by the Claude release flow. The Claude marketplace flow remains unchanged.
 
 ```bash
 # Build the repo-local Codex plugin.
