@@ -28,6 +28,12 @@ const READ_ONLY_COMMANDS = new Set([
 	"briefing:latest",
 	"project:show",
 	"subsystem:list",
+	"side-quest:list",
+	"side-quest:show",
+	"invariant:list",
+	"reviewer:list",
+	"rubric:list",
+	"refine:evaluate",
 ]);
 
 /**
@@ -44,6 +50,8 @@ const ENTITY_ARGS = new Set([
 	"to",
 	"name",
 	"scope",
+	"side-quest",
+	"artifact-type",
 ]);
 
 /**
@@ -60,6 +68,15 @@ const STDIN_ENTITY_COMMANDS = new Set([
 	"task:create", // stdin has required 'name'
 	"decision:create", // stdin has required 'id'
 	"subsystem:register", // stdin has required 'name'
+	"decision:record", // stdin has required 'id', 'domain', 'title', 'summary'
+	"decision:supersede", // stdin has required 'decisionId', 'reason'
+	"learning:capture", // stdin has required 'summary'
+	"learning:promote", // stdin has required 'learningId', 'from', 'to'
+	"invariant:check", // project-scoped, checks all invariants
+	"invariant:propose", // stdin has required invariant definition
+	"invariant:activate", // stdin has required invariant id
+	"invariant:deactivate", // stdin has required invariant id
+	"rubric:validate", // stdin has required rubric definition
 ]);
 
 describe("INV-004: Stateless commands — entity-identifying flags required", () => {

@@ -99,6 +99,9 @@ export const refineConvergeCommand = defineCommand({
 			scopeRef: ctx.scopeRef,
 			round: currentRound,
 			convergenceResult,
+			// Required by refinement.bar-matches-rubric invariant
+			rubricRef: `${ctx.scopeRef}:${ctx.artifactType}`,
+			dimensions: convergenceResult.dimensions,
 		};
 
 		try {
