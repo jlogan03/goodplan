@@ -5,7 +5,20 @@
 	"goal": "Rewrite epic creation and exploration skills for v2: create-epic (design-tree interviewing, pressure-test, shape checkpoints), start-epic (activation with user approval), and explore (collaborative mode awareness).",
 	"implementationPhase": null,
 	"name": "09-epic-creation-skills-v2",
-	"refinement": null,
-	"status": "planning",
-	"updated": "2026-04-12T22:55:58.282Z"
+	"refinement": {
+		"maxRounds": 10,
+		"round": 1,
+		"scoreHistory": [
+			{
+				"round": 1,
+				"scores": {
+					"agent-skill": 9,
+					"holistic": 9,
+					"repo-tooling": 9
+				}
+			}
+		]
+	},
+	"status": "plan-refined",
+	"updated": "2026-04-13T01:07:31.383Z"
 }
