@@ -161,6 +161,67 @@ function saveText(path, text) {
 	writeFileSync(path, text);
 }
 
+function stripYamlQuotes(value) {
+	if (
+		(value.startsWith('"') && value.endsWith('"')) ||
+		(value.startsWith("'") && value.endsWith("'"))
+	) {
+		return value.slice(1, -1);
+	}
+	return value;
+}
+
+function normalizeFrontmatterScalar({ key, value }) {
+	const trimmed = value.trim();
+	if (
+		trimmed === "" ||
+		trimmed === ">" ||
+		trimmed === "|"
+	) {
+		return trimmed;
+	}
+	if (["true", "false"].includes(trimmed) && key === "user-invocable") {
+		return trimmed;
+	}
+	if (
+		(trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+		(trimmed.startsWith("'") && trimmed.endsWith("'"))
+	) {
+		return trimmed;
+	}
+	if (
+		(trimmed.startsWith("[") && trimmed.endsWith("]")) ||
+		(trimmed.startsWith("{") && trimmed.endsWith("}"))
+	) {
+		return trimmed;
+	}
+	return JSON.stringify(trimmed);
+}
+
+function normalizeMarkdownFrontmatter(path) {
+	const text = loadText(path);
+	const match = text.match(/^---\n([\s\S]*?)\n---(\n?)/);
+	if (!match) return;
+	const [, frontmatter, trailingNewline] = match;
+	const normalizedFrontmatter = frontmatter
+		.split("\n")
+		.map((line) => {
+			const fieldMatch = line.match(/^([A-Za-z0-9_-]+):\s*(.*)$/);
+			if (!fieldMatch) return line;
+			const [, key, value] = fieldMatch;
+			return `${key}: ${normalizeFrontmatterScalar({ key, value })}`;
+		})
+		.join("\n");
+	const body = text.slice(match[0].length);
+	saveText(path, `---\n${normalizedFrontmatter}\n---${trailingNewline}${body}`);
+}
+
+function normalizePackagedFrontmatter(...roots) {
+	for (const file of markdownFiles(...roots)) {
+		normalizeMarkdownFrontmatter(file);
+	}
+}
+
 function supportedPlatformList() {
 	return Object.keys(supportedBuildPlatforms).join(", ");
 }
@@ -485,8 +546,12 @@ function validateSkillPackaging({ prefixedNames }) {
 		if (!frontmatter) {
 			throw new Error(`FAIL: ${normalizePath(relative(pluginRoot, skillFile))} has no valid YAML frontmatter`);
 		}
-		const expectedPrefix = prefixedNames ? "name: gp:" : "name: ";
-		if (!frontmatter.includes(expectedPrefix)) {
+		const nameMatch = frontmatter.match(/^name:\s*(.+)$/m);
+		const nameValue = stripYamlQuotes(nameMatch?.[1]?.trim() ?? "");
+		if (!nameValue) {
+			throw new Error(`FAIL: ${normalizePath(relative(pluginRoot, skillFile))} missing name field`);
+		}
+		if (prefixedNames && !nameValue.startsWith("gp:")) {
 			throw new Error(`FAIL: ${normalizePath(relative(pluginRoot, skillFile))} has incorrect name field`);
 		}
 		if (!frontmatter.includes("description:")) {
@@ -649,6 +714,7 @@ compileBinaries();
 if (target === "claude") {
 	writeClaudeManifest();
 	prefixClaudeSkillNames();
+	normalizePackagedFrontmatter(join(pluginRoot, "skills"), join(pluginRoot, "agents"));
 	validateSkillPackaging({ prefixedNames: true });
 	validateAgents();
 	validateMarkdownReferences();
@@ -660,6 +726,7 @@ if (target === "claude") {
 	writeCodexCommands();
 	rewriteCodexSpecificFiles();
 	rewriteCodexMarkdown();
+	normalizePackagedFrontmatter(join(pluginRoot, "skills"), join(pluginRoot, "agents"), join(pluginRoot, "commands"));
 	validateSkillPackaging({ prefixedNames: false });
 	validateAgents();
 	validateCodexCommands();
