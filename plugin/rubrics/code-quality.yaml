@@ -4,20 +4,20 @@ dimensions:
   - name: type-safety
     description: Are types precise, avoiding any/unknown casts, and leveraging generics appropriately?
     scoring: "1-10: 1=pervasive any/unsafe casts, 5=mostly typed with occasional shortcuts, 10=strict types throughout with no escape hatches"
-    threshold: 8
+    threshold: 9
   - name: module-design
     description: Are module boundaries clear with minimal coupling and appropriate encapsulation?
     scoring: "1-10: 1=spaghetti dependencies, 5=reasonable boundaries with some leakage, 10=clean interfaces with well-defined public APIs"
-    threshold: 7
+    threshold: 9
   - name: runtime-correctness
     description: Does the code handle edge cases, errors, and invalid inputs without crashing?
     scoring: "1-10: 1=crashes on common inputs, 5=handles happy path and common errors, 10=robust handling of all edge cases"
-    threshold: 7
+    threshold: 9
   - name: test-quality
     description: Are tests meaningful, covering behavior rather than implementation details?
     scoring: "1-10: 1=no tests or trivial assertions, 5=covers main paths, 10=thorough behavioral coverage including edge cases"
-    threshold: 7
+    threshold: 9
 convergence:
-  max_rounds: 5
+  max_rounds: 8
   zero_blocking_required: true
   zero_critical_required: true

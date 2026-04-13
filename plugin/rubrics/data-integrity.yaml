@@ -4,16 +4,16 @@ dimensions:
   - name: schema-correctness
     description: Are data schemas complete, validated, and consistent with the domain model?
     scoring: "1-10: 1=missing/incorrect schemas, 5=schemas exist but incomplete, 10=comprehensive validated schemas matching domain"
-    threshold: 8
+    threshold: 9
   - name: migration-safety
     description: Are data migrations reversible, tested, and safe against data loss?
     scoring: "1-10: 1=destructive/untested migrations, 5=migrations work but risky, 10=fully reversible and tested migrations"
-    threshold: 8
+    threshold: 9
   - name: query-efficiency
     description: Are data access patterns efficient with appropriate indexing and batching?
     scoring: "1-10: 1=N+1 queries/full table scans, 5=reasonable but unoptimized, 10=efficient queries with proper indexing"
-    threshold: 6
+    threshold: 9
 convergence:
-  max_rounds: 3
+  max_rounds: 8
   zero_blocking_required: true
   zero_critical_required: true
