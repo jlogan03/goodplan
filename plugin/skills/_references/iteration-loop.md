@@ -4,19 +4,40 @@
 
 Shared orchestration skeleton for iterative review-and-edit skills (plan-slice refinement, create-epic architecture/slice refinement, etc.). Each skill's SKILL.md defines a **Loop Parameters** section that fills in the skill-specific parameter slots defined in the Loop Parameters Schema below.
 
+## Refinement Event Protocol (`refine:*` Commands)
+
+When the consuming skill provides an `artifact` parameter (e.g., `architecture`, `slices`, `plan`) and the scope is an epic, the iteration loop calls `refine:*` CLI commands at each stage to create an auditable event trail. These commands are **conditional on epic scope** — for non-epic refinement (e.g., plan-slice for standalone slices), the iteration loop works without them.
+
+| Loop Stage | CLI Command | When to Call |
+|---|---|---|
+| Start of refinement loop | `$GP refine:start --epic $EPIC_NAME --artifact $ARTIFACT --json` | Once at loop entry (before round 1) |
+| After each reviewer returns | `$GP refine:score --epic $EPIC_NAME --artifact $ARTIFACT --json` (stdin: `{"reviewer":"<name>","dimensions":[...],"score":<n>}`) | Per reviewer per round |
+| After synthesis completes | `$GP refine:synthesize --epic $EPIC_NAME --artifact $ARTIFACT --json` (stdin: synthesis payload) | Once per round |
+| After editor applies fixes | `$GP refine:revise --epic $EPIC_NAME --artifact $ARTIFACT --json` | Once per round |
+| Exit evaluation (read-only) | `$GP refine:evaluate --epic $EPIC_NAME --artifact $ARTIFACT --json` | Once per round (checks convergence) |
+| Pass (all scores >= 9, no critical/important) | `$GP refine:converge --epic $EPIC_NAME --artifact $ARTIFACT --json` | On successful exit |
+| Circuit breaker (stagnation/reduction/cap) | `$GP refine:stuck --epic $EPIC_NAME --artifact $ARTIFACT --json` | On non-pass exit |
+| Force advance | `$GP refine:override --epic $EPIC_NAME --artifact $ARTIFACT --json --override="reason"` | On user-forced exit |
+
+The `--artifact` value is skill-specific and must be defined in the consuming skill's Loop Parameters (e.g., `architecture`, `slices`, `plan`).
+
 ## Round Flow
 
 Each round follows this sequence:
 
-1. **Reviewer spawn** → parallel review
-2. **Write reviewer output** to round directory
-3. **Synthesis** → merged.md + structured return
-4. **Display** iteration summary to user
-5. **USER_INPUT handling** (if `hasUserInput`)
-6. **RESEARCH_NEEDED handling** (if `hasResearchNeeded`)
-7. **Exit evaluation** — check pass/stagnation/reduction/cap
-   - **If continuing**: increment iteration, update scores → spawn full editor → next round
-   - **If exiting**: final cleanup pass (DIRECTLY_ACTIONABLE only) → submit
+1. **Reviewer spawn** -> parallel review
+2. **Record reviewer scores** via `refine:score` (if epic scope with `artifact` parameter)
+3. **Write reviewer output** to round directory
+4. **Synthesis** -> merged.md + structured return
+5. **Record synthesis** via `refine:synthesize` (if epic scope with `artifact` parameter)
+6. **Display** iteration summary to user
+7. **USER_INPUT handling** (if `hasUserInput`)
+8. **RESEARCH_NEEDED handling** (if `hasResearchNeeded`)
+9. **Exit evaluation** — check pass/stagnation/reduction/cap; call `refine:evaluate` (if epic scope)
+   - **If continuing**: increment iteration, update scores -> spawn full editor -> call `refine:revise` (if epic scope) -> next round
+   - **If exiting (pass)**: final cleanup pass (DIRECTLY_ACTIONABLE only) -> call `refine:converge` (if epic scope) -> submit
+   - **If exiting (stagnation/reduction/cap)**: final cleanup pass -> call `refine:stuck` (if epic scope) -> submit with override
+   - **If exiting (user override)**: call `refine:override` (if epic scope) -> submit with override
 
 ## Run Directory Structure
 
@@ -57,9 +78,14 @@ All review artifacts live in a run directory, separate from the files being refi
 
 5. **Write reviewer output to files**: Create the round directory if needed (`mkdir -p <run-dir>/round-{iteration}/reviews/`), then write each reviewer's `review` field to `<run-dir>/round-{iteration}/reviews/{reviewer-name}.md`. The synthesis agent reads these files — it does not receive review content inline.
 
-6. **Handle reviewer failures**: If a reviewer returns FAILED or an unparseable response, log the failure and exclude it from this round. Continue with remaining reviewers. If the holistic reviewer fails, stop the skill — synthesis cannot produce a meaningful assessment without holistic review.
+6. **Record reviewer scores**: After writing reviewer output, if epic scope with `artifact` parameter, call `refine:score` for each reviewer:
+   ```bash
+   echo '{"reviewer":"<reviewer-name>","dimensions":[{"name":"<dim>","score":<n>}],"score":<overall>}' | $GP refine:score --epic $EPIC_NAME --artifact $ARTIFACT --json
+   ```
 
-7. **Model downgrade**: For subsequent iterations where all previous scores were 8+ and only MINOR issues remain, consider `model: "sonnet"` to reduce cost.
+7. **Handle reviewer failures**: If a reviewer returns FAILED or an unparseable response, log the failure and exclude it from this round. Continue with remaining reviewers. If the holistic reviewer fails, stop the skill — synthesis cannot produce a meaningful assessment without holistic review.
+
+8. **Model downgrade**: For subsequent iterations where all previous scores were 8+ and only MINOR issues remain, consider `model: "sonnet"` to reduce cost.
 
 ## Synthesis Prompt Skeleton
 
@@ -82,6 +108,11 @@ After all foreground reviewer agents return (they were launched in a single mess
    - `### Unresolved (USER_INPUT required)`
 
 4. **Use the structured return, not the file**: The synthesis agent returns structured fields (`criticalCount`, `importantCount`, `hasUserInput`, `hasResearchNeeded`, `hasDirectlyActionable`, `userInputQuestions`, `researchTopics`). Use these for loop decisions and downstream handling. Do NOT read `merged.md` for decision-making — pass its path to the editor sub-agent. The one exception: you MAY read merged.md to populate the Iteration Summary Template's per-issue table (the synthesis return provides counts but not per-issue detail).
+
+5. **Record synthesis**: After synthesis completes, if epic scope with `artifact` parameter:
+   ```bash
+   echo '{"criticalCount":<n>,"importantCount":<n>,"minorCount":<n>}' | $GP refine:synthesize --epic $EPIC_NAME --artifact $ARTIFACT --json
+   ```
 
 ### Display Iteration Summary
 
@@ -121,11 +152,22 @@ After feedback is synthesized (and USER_INPUT resolved, research complete):
 
 3. **Editor reports**: Changes applied, skipped items, and whether files were modified (YES/NO).
 
-4. **Model downgrade**: For iterations with only MINOR DIRECTLY_ACTIONABLE items, consider `model: "sonnet"`.
+4. **Record revision**: After editor completes, if epic scope with `artifact` parameter:
+   ```bash
+   $GP refine:revise --epic $EPIC_NAME --artifact $ARTIFACT --json
+   ```
+
+5. **Model downgrade**: For iterations with only MINOR DIRECTLY_ACTIONABLE items, consider `model: "sonnet"`.
 
 ## Exit Criteria Evaluation
 
 The orchestrator (not reviewers, not the synthesis agent) decides when to exit. Each consuming skill defines a **Loop Parameters** section in its SKILL.md that fills the parameter slots below.
+
+**Evaluate convergence**: If epic scope with `artifact` parameter, call `refine:evaluate` to check convergence state:
+```bash
+$GP refine:evaluate --epic $EPIC_NAME --artifact $ARTIFACT --json
+```
+This is read-only and returns the current convergence state. Use it alongside the local exit evaluation below.
 
 ### Loop Parameters Schema
 
@@ -135,7 +177,8 @@ The orchestrator (not reviewers, not the synthesis agent) decides when to exit. 
 | `early_exit_threshold` | Optional score threshold for early exit before max_iterations | Optional (implement only: iteration >= 5 AND all scores >= 8) |
 | `override_flag` | Optional `--override` CLI flag appended to submit on stagnation/reduction/cap exits | Optional (create-epic and create-side-quest only) |
 | `run_dir_mode` | `temp` (ephemeral working directory) or `persistent` (git-committed run directory) | `temp` |
-| `submit_command` | Skill-specific CLI command to submit refinement results. `{REVIEWER_SCORES_JSON}` is a `Record<string, number>` mapping reviewer names to their integer scores from this round (e.g., `{"holistic":8,"software-architecture":9}`) | Skill-specific |
+| `submit_command` | Skill-specific CLI command to submit refinement results. `{REVIEWER_SCORES_JSON}` is a `Record<string, number>` mapping reviewer names to their integer scores from this round (e.g., `{"holistic":8,"software-architecture":9}`). Used by non-epic scopes (plan-slice, implement, create-side-quest). | Skill-specific |
+| `artifact` | Artifact type for `refine:*` commands (e.g., `architecture`, `slices`, `plan`). Required for epic-scope refinement where `refine:*` commands replace `submit_command`. Omit for non-epic scopes. | Optional |
 | `resume_detection` | Whether to check for incomplete run directories and offer resume. Enable when the run directory persists across sessions (deterministic temp paths, persistent mode). | Optional |
 | `stagnation_window` | Consecutive rounds with unchanged net score that triggers exit. With default value 2: exits after 2 consecutive unchanged rounds (i.e., 3 total rounds with the same score — original + 2 unchanged). | 2 |
 | `reduction_exit_threshold` | Total rounds (any position, not necessarily consecutive) with net score decrease before exiting — counter never resets on improvement | 2 |
@@ -150,18 +193,23 @@ Initialize at the start of each refinement loop:
 - `stagnationCount = 0` — consecutive rounds with no score change (resets on any score change)
 - `reductionCount = 0` — total rounds with net score decrease (never resets)
 
+If epic scope with `artifact` parameter, also call `refine:start` once at loop entry:
+```bash
+$GP refine:start --epic $EPIC_NAME --artifact $ARTIFACT --json
+```
+
 ### Exit Condition Evaluation Order
 
 After each round, compute `netScore` as the minimum of all individual reviewer `score` fields from their return JSON for this round (NOT the synthesis agent's aggregate score — that is for documentation only). Then evaluate in order:
 
-1. **Pass**: `netScore >= 9` AND `criticalCount == 0 && importantCount == 0` (from synthesis return) → exit loop, submit results.
-2. **Early exit** (if `early_exit_threshold` is defined): `iteration >= early_exit_threshold.min_iterations` AND all scores >= `early_exit_threshold.score` AND `criticalCount == 0 && importantCount == 0` → exit with warning listing reviewers below full-pass threshold.
-3. **Stagnation**: if not the first round and `netScore === previous netScore` (exactly equal) → increment `stagnationCount`. If `stagnationCount >= stagnation_window` → exit loop. If `stagnationCount < stagnation_window`, log warning, continue.
-4. **Reduction**: if not the first round and `netScore < previous netScore` → reset `stagnationCount` to 0, increment `reductionCount`. If `reductionCount >= reduction_exit_threshold` → exit loop.
-5. **Improvement**: if `netScore > previous netScore` → reset `stagnationCount` to 0. Continue.
-6. **Hard cap**: if `iteration >= max_iterations - 1` → exit loop, present remaining issues.
+1. **Pass**: `netScore >= 9` AND `criticalCount == 0 && importantCount == 0` (from synthesis return) -> exit loop. If epic scope, call `refine:converge`. Submit results.
+2. **Early exit** (if `early_exit_threshold` is defined): `iteration >= early_exit_threshold.min_iterations` AND all scores >= `early_exit_threshold.score` AND `criticalCount == 0 && importantCount == 0` -> exit with warning listing reviewers below full-pass threshold.
+3. **Stagnation**: if not the first round and `netScore === previous netScore` (exactly equal) -> increment `stagnationCount`. If `stagnationCount >= stagnation_window` -> exit loop. If epic scope, call `refine:stuck`. If `stagnationCount < stagnation_window`, log warning, continue.
+4. **Reduction**: if not the first round and `netScore < previous netScore` -> reset `stagnationCount` to 0, increment `reductionCount`. If `reductionCount >= reduction_exit_threshold` -> exit loop. If epic scope, call `refine:stuck`.
+5. **Improvement**: if `netScore > previous netScore` -> reset `stagnationCount` to 0. Continue.
+6. **Hard cap**: if `iteration >= max_iterations - 1` -> exit loop. If epic scope, call `refine:stuck`. Present remaining issues.
 
-On exit via stagnation, reduction, or hard cap: if `override_flag` is defined, append it to the `submit_command`. Present remaining issues to the user.
+On exit via stagnation, reduction, or hard cap: if `override_flag` is defined, append it to the submit command. Present remaining issues to the user.
 
 **If continuing**: after exit evaluation, increment `iteration`, append each reviewer's score to `reviewerScores[reviewerName]`, then proceed to the editor (full editing pass) and start the next round.
 

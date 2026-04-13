@@ -3,7 +3,7 @@
 	"deferred": [],
 	"epic": "workflow-bug-fixes",
 	"goal": "Rewrite epic creation and exploration skills for v2: create-epic (design-tree interviewing, pressure-test, shape checkpoints), start-epic (activation with user approval), and explore (collaborative mode awareness).",
-	"implementationPhase": null,
+	"implementationPhase": 0,
 	"name": "09-epic-creation-skills-v2",
 	"refinement": {
 		"maxRounds": 10,
@@ -19,6 +19,6 @@
 			}
 		]
 	},
-	"status": "plan-refined",
-	"updated": "2026-04-13T01:07:31.383Z"
+	"status": "implementing",
+	"updated": "2026-04-13T01:15:59.959Z"
 }
