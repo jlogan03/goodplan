@@ -442,6 +442,32 @@ function writeCodexHooks() {
 }
 
 function rewriteCodexSpecificFiles() {
+	const codexCliResolutionBlock = [
+		"Resolve the bundled CLI and store it as `$GP`.",
+		"",
+		"In Codex, do not assume `gp` is on PATH. Use this detection snippet:",
+		"",
+		"```bash",
+		'GP="$(command -v gp || true)"',
+		'if [ -z "$GP" ] && [ -d "$HOME/.codex/plugins/cache" ]; then',
+		'  GP="$(find "$HOME/.codex/plugins/cache" -path \'*/goodplan/*/bin/gp\' -type f -perm -111 2>/dev/null | sort -V | tail -n 1)"',
+		"fi",
+		'if [ -z "$GP" ] && [ -x "$HOME/plugins/goodplan/bin/gp" ]; then',
+		'  GP="$HOME/plugins/goodplan/bin/gp"',
+		"fi",
+		'if [ -z "$GP" ] && [ -x "./plugins/goodplan/bin/gp" ]; then',
+		'  GP="./plugins/goodplan/bin/gp"',
+		"fi",
+		'if [ -z "$GP" ]; then',
+		'  echo "gp: command not found" >&2',
+		"  exit 127",
+		"fi",
+		'"$GP" --version --json',
+		"```",
+		"",
+		"If the binary is not found or version < 1.0.0, stop with the appropriate message per cli-interaction.md.",
+	].join("\n");
+
 	const expertisePath = join(pluginRoot, "skills", "_references", "expertise-tracking.md");
 	saveText(
 		expertisePath,
@@ -494,6 +520,87 @@ function rewriteCodexSpecificFiles() {
 	);
 	saveText(explorePath, explore);
 
+	const cliInteractionPath = join(pluginRoot, "skills", "_references", "cli-interaction.md");
+	let cliInteraction = loadText(cliInteractionPath);
+	cliInteraction = cliInteraction.replace(
+		/The `gp` binary is bundled with the goodplan plugin\.[\s\S]*?Skills conventionally store the binary name as `\$GP` in their Step 0 — shared references use bare `gp` since they don't define the variable\./,
+		[
+			"The `gp` binary is bundled with the goodplan plugin, but Codex does not currently add the plugin's `bin/` directory to PATH.",
+			"",
+			"At the start of any skill that uses the CLI, resolve the executable and store it as `$GP`, then verify it is available and compatible:",
+			"",
+			"```bash",
+			'GP="$(command -v gp || true)"',
+			'if [ -z "$GP" ] && [ -d "$HOME/.codex/plugins/cache" ]; then',
+			'  GP="$(find "$HOME/.codex/plugins/cache" -path \'*/goodplan/*/bin/gp\' -type f -perm -111 2>/dev/null | sort -V | tail -n 1)"',
+			"fi",
+			'if [ -z "$GP" ] && [ -x "$HOME/plugins/goodplan/bin/gp" ]; then',
+			'  GP="$HOME/plugins/goodplan/bin/gp"',
+			"fi",
+			'if [ -z "$GP" ] && [ -x "./plugins/goodplan/bin/gp" ]; then',
+			'  GP="./plugins/goodplan/bin/gp"',
+			"fi",
+			'if [ -z "$GP" ]; then',
+			'  echo "gp: command not found" >&2',
+			"  exit 127",
+			"fi",
+			'"$GP" --version --json',
+			"# Returns: { \"version\": \"1.0.0\" }",
+			"```",
+			"",
+			"Use `$GP` for all subsequent invocations within that skill.",
+		].join("\n"),
+	);
+	cliInteraction = cliInteraction.replace(
+		"> The `gp` CLI binary was not found at the expected plugin location. Ensure the goodplan plugin is installed and enabled. Run `/plugin` to check plugin status.",
+		"> The `gp` CLI binary was not found in PATH or the Codex plugin cache. Rebuild or reinstall the goodplan plugin, restart Codex, and try again.",
+	);
+	saveText(cliInteractionPath, cliInteraction);
+
+	const workflowGuidePath = join(pluginRoot, "skills", "workflow-guide", "SKILL.md");
+	let workflowGuide = loadText(workflowGuidePath);
+	workflowGuide = workflowGuide.replace(
+		"The `gp` binary is on PATH (added by the plugin's `bin/` directory). All skill invocations use `gp` directly.",
+		"In Codex, do not assume `gp` is on PATH. Resolve the bundled CLI first, store it as `$GP`, and use `$GP` for skill invocations.",
+	);
+	workflowGuide = workflowGuide.replace(
+		[
+			"```bash",
+			"gp status --json              # project state, active entities",
+			"gp --help                     # discover available commands",
+			"gp schema --json              # full command tree with schemas",
+			"```",
+		].join("\n"),
+		[
+			"```bash",
+			'GP="$(command -v gp || true)"',
+			'if [ -z "$GP" ] && [ -d "$HOME/.codex/plugins/cache" ]; then',
+			'  GP="$(find "$HOME/.codex/plugins/cache" -path \'*/goodplan/*/bin/gp\' -type f -perm -111 2>/dev/null | sort -V | tail -n 1)"',
+			"fi",
+			'"$GP" status --json           # project state, active entities',
+			'"$GP" --help                  # discover available commands',
+			'"$GP" schema --json           # full command tree with schemas',
+			"```",
+		].join("\n"),
+	);
+	saveText(workflowGuidePath, workflowGuide);
+
+	for (const skillDir of readdirSync(join(pluginRoot, "skills"), { withFileTypes: true })) {
+		if (!skillDir.isDirectory() || skillDir.name.startsWith("_")) continue;
+		const skillPath = join(pluginRoot, "skills", skillDir.name, "SKILL.md");
+		if (!existsSync(skillPath)) continue;
+		let skill = loadText(skillPath);
+		skill = skill.replace(
+			"Verify CLI availability: run `gp --version --json`. If not found or version < 1.0.0, stop with the appropriate message per cli-interaction.md. Store as `$GP`.",
+			codexCliResolutionBlock,
+		);
+		skill = skill.replace(
+			"Verify CLI availability: run `gp --version --json`. If not found or version < 1.0.0, stop with the appropriate message per cli-interaction.md.",
+			codexCliResolutionBlock,
+		);
+		saveText(skillPath, skill);
+	}
+
 	const reviewerPath = join(pluginRoot, "agents", "_references", "review-agent-skill.md");
 	let reviewer = loadText(reviewerPath);
 	reviewer = reviewer.replace(
@@ -511,7 +618,7 @@ function rewriteCodexMarkdown() {
 	);
 	for (const file of files) {
 		let text = loadText(file);
-		text = text.replaceAll("/gp:", "/gp-");
+		text = text.replaceAll("/gp:", "$goodplan:");
 		text = text.replace(/@\$\{CLAUDE_PLUGIN_ROOT\}\/([^ )`>\n]+)/g, (_, pluginRelativePath) => {
 			const targetFile = join(pluginRoot, pluginRelativePath);
 			return `@${ensureRelativeMarkdownPath(file, targetFile)}`;
