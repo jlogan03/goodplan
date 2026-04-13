@@ -1,30 +1,30 @@
-# Plan Pipeline — Shared Reference
+# Plan Pipeline -- Shared Reference
 
-Shared pattern for interactive plan Q&A followed by autonomous draft and refinement. Used by plan-slice and create-side-quest. Each consuming skill defines `{ENTITY_TYPE}` (slice or quest), `{ENTITY_NAME}`, `{ENTITY_CLI_FLAG}` (`--slice` or `--quest`), and for slices `{EPIC_NAME}`.
+Shared pattern for interactive plan Q&A followed by autonomous draft and refinement. Used by plan-slice, create-side-quest, and other planning skills. Each consuming skill defines `{ENTITY_TYPE}` (slice, quest, or side-quest), `{ENTITY_NAME}`, `{ENTITY_CLI_FLAG}` (`--slice`, `--quest`, or `--side-quest`), and for slices `{EPIC_NAME}`.
 
 ## Entity-Type Command Reference
 
-Slices use v2 commands (epic-scoped with `refine:*`). Quests use v1 commands (direct entity commands). The phases below indicate which commands to use based on entity type.
+Slices use v2 commands (epic-scoped with `refine:*`). Side-Quests use v2 commands (side-quest-scoped with `refine:*`). Quests use v1 commands (direct entity commands). The phases below indicate which commands to use based on entity type.
 
-| Stage | Slice (v2) | Quest (v1) |
-|---|---|---|
-| Context assembly | Returned in `slice:plan-draft` response | `$GP start-plan {ENTITY_CLI_FLAG} {ENTITY_NAME} --json` |
-| Submit draft | `cat <plan> \| jq -Rs '{content: .}' \| $GP slice:plan-draft --epic $EPIC_NAME --slice $SLICE_NAME --json` | `stdin: "" \| $GP submit-plan {ENTITY_CLI_FLAG} {ENTITY_NAME} --json` |
-| Shape checkpoint | `slice:plan-shape-start` → `slice:plan-shape-approve`/`slice:plan-shape-auto` | *(skip — quests have no shape checkpoint)* |
-| Begin refinement | `$GP refine:start --epic $EPIC_NAME --artifact-type implementation-plan --json` | `stdin: "" \| $GP {ENTITY_TYPE}:refine-plan {ENTITY_CLI_FLAG} {ENTITY_NAME} --json` |
-| Refinement context | `$GP refine:evaluate --epic $EPIC_NAME --artifact-type implementation-plan --json` (read-only) | `$GP start-refinement {ENTITY_CLI_FLAG} {ENTITY_NAME} --json` |
-| Record score | `echo '{"dimensions":[...],"findings":[...]}' \| $GP refine:score --epic $EPIC_NAME --artifact-type implementation-plan --reviewer $REVIEWER_ID --json` | *(scores embedded in submit command)* |
-| Record synthesis | `echo '<payload>' \| $GP refine:synthesize --epic $EPIC_NAME --artifact-type implementation-plan --json` | *(not recorded for quests)* |
-| Record revision | `$GP refine:revise --epic $EPIC_NAME --artifact-type implementation-plan --json` | *(not recorded for quests)* |
-| Submit refinement (pass) | `$GP refine:converge --epic $EPIC_NAME --artifact-type implementation-plan --json` + `$GP slice:plan-commit --epic $EPIC_NAME --slice $SLICE_NAME --json` | `echo '{"scores":{REVIEWER_SCORES_JSON}}' \| $GP submit-refinement {ENTITY_CLI_FLAG} {ENTITY_NAME} --json` |
-| Submit refinement (stuck) | `$GP refine:stuck --epic $EPIC_NAME --artifact-type implementation-plan --json` + `$GP slice:plan-commit --epic $EPIC_NAME --slice $SLICE_NAME --json` | `echo '{"scores":{REVIEWER_SCORES_JSON}}' \| $GP submit-refinement {ENTITY_CLI_FLAG} {ENTITY_NAME} --override --json` |
-| Submit refinement (override) | `$GP refine:override --epic $EPIC_NAME --artifact-type implementation-plan --reason="<reason>" --json` + `$GP slice:plan-commit --epic $EPIC_NAME --slice $SLICE_NAME --json` | `echo '{"scores":{REVIEWER_SCORES_JSON}}' \| $GP submit-refinement {ENTITY_CLI_FLAG} {ENTITY_NAME} --override --json` |
+| Stage | Slice (v2) | Quest (v1) | Side-Quest (v2) |
+|---|---|---|---|
+| Context assembly | Returned in `slice:plan-draft` response | `$GP start-plan {ENTITY_CLI_FLAG} {ENTITY_NAME} --json` | *(no separate step -- context assembled during plan-draft)* |
+| Submit draft | `cat <plan> \| jq -Rs '{content: .}' \| $GP slice:plan-draft --epic $EPIC_NAME --slice $SLICE_NAME --json` | `stdin: "" \| $GP submit-plan {ENTITY_CLI_FLAG} {ENTITY_NAME} --json` | `echo '{"plan":{"sha":"$SHA","size":$SIZE,"path":"$PATH","mediaType":"text/markdown"}}' \| $GP side-quest:plan-draft --side-quest $SQ_NAME --json` -- requires `git hash-object -w` first |
+| Shape checkpoint | `slice:plan-shape-start` -> `slice:plan-shape-approve`/`slice:plan-shape-auto` | *(skip -- quests have no shape checkpoint)* | *(skip -- side-quests have no plan-shape-start)* |
+| Begin refinement | `$GP refine:start --epic $EPIC_NAME --artifact-type implementation-plan --json` | `stdin: "" \| $GP {ENTITY_TYPE}:refine-plan {ENTITY_CLI_FLAG} {ENTITY_NAME} --json` | `$GP refine:start --side-quest $SQ_NAME --artifact-type implementation-plan --json` |
+| Refinement context | `$GP refine:evaluate --epic $EPIC_NAME --artifact-type implementation-plan --json` (read-only) | `$GP start-refinement {ENTITY_CLI_FLAG} {ENTITY_NAME} --json` | `$GP refine:evaluate --side-quest $SQ_NAME --artifact-type implementation-plan --json` (read-only) |
+| Record score | `echo '{"dimensions":[...],"findings":[...]}' \| $GP refine:score --epic $EPIC_NAME --artifact-type implementation-plan --reviewer $REVIEWER_ID --json` | *(scores embedded in submit command)* | `echo '{"dimensions":[...],"findings":[...]}' \| $GP refine:score --side-quest $SQ_NAME --artifact-type implementation-plan --reviewer $REVIEWER_ID --json` |
+| Record synthesis | `echo '<payload>' \| $GP refine:synthesize --epic $EPIC_NAME --artifact-type implementation-plan --json` | *(not recorded for quests)* | `echo '<payload>' \| $GP refine:synthesize --side-quest $SQ_NAME --artifact-type implementation-plan --json` |
+| Record revision | `$GP refine:revise --epic $EPIC_NAME --artifact-type implementation-plan --json` | *(not recorded for quests)* | `$GP refine:revise --side-quest $SQ_NAME --artifact-type implementation-plan --json` |
+| Submit refinement (pass) | `$GP refine:converge --epic $EPIC_NAME --artifact-type implementation-plan --json` + `$GP slice:plan-commit --epic $EPIC_NAME --slice $SLICE_NAME --json` | `echo '{"scores":{REVIEWER_SCORES_JSON}}' \| $GP submit-refinement {ENTITY_CLI_FLAG} {ENTITY_NAME} --json` | `$GP refine:converge --side-quest $SQ_NAME --artifact-type implementation-plan --json` + `echo '{"plan":{"sha":"$SHA","size":$SIZE,"path":"$PATH","mediaType":"text/markdown"}}' \| $GP side-quest:plan-commit --side-quest $SQ_NAME --json` |
+| Submit refinement (stuck) | `$GP refine:stuck --epic $EPIC_NAME --artifact-type implementation-plan --json` + `$GP slice:plan-commit --epic $EPIC_NAME --slice $SLICE_NAME --json` | `echo '{"scores":{REVIEWER_SCORES_JSON}}' \| $GP submit-refinement {ENTITY_CLI_FLAG} {ENTITY_NAME} --override --json` | `$GP refine:stuck --side-quest $SQ_NAME --artifact-type implementation-plan --json` + `echo '{"plan":{"sha":"$SHA","size":$SIZE,"path":"$PATH","mediaType":"text/markdown"}}' \| $GP side-quest:plan-commit --side-quest $SQ_NAME --json` |
+| Submit refinement (override) | `$GP refine:override --epic $EPIC_NAME --artifact-type implementation-plan --reason="<reason>" --json` + `$GP slice:plan-commit --epic $EPIC_NAME --slice $SLICE_NAME --json` | `echo '{"scores":{REVIEWER_SCORES_JSON}}' \| $GP submit-refinement {ENTITY_CLI_FLAG} {ENTITY_NAME} --override --json` | `$GP refine:override --side-quest $SQ_NAME --artifact-type implementation-plan --reason="<reason>" --json` + `echo '{"plan":{"sha":"$SHA","size":$SIZE,"path":"$PATH","mediaType":"text/markdown"}}' \| $GP side-quest:plan-commit --side-quest $SQ_NAME --json` |
 
 ## Phase A: Interactive Plan Q&A
 
 ### A1. Status Transition
 
-**Slice (v2):** No explicit status transition needed — `slice:plan-draft` (in Phase B) handles the transition.
+**Slice (v2):** No explicit status transition needed -- `slice:plan-draft` (in Phase B) handles the transition.
 
 **Quest (v1):** If {ENTITY_TYPE} status requires transition to `planning`:
 
@@ -33,6 +33,8 @@ stdin: "" | $GP {ENTITY_TYPE}:plan {ENTITY_CLI_FLAG} {ENTITY_NAME} --json
 ```
 
 Verify successful transition. If it fails, stop with the error message.
+
+**Side-Quest (v2):** No explicit status transition needed -- v2 side-quests have no planning status transition.
 
 ### A2. Load Goal
 
@@ -60,7 +62,7 @@ Use AskUserQuestion for each round. Follow up on answers that raise new question
 Write the structured Q&A to the temp directory. Use the Write tool to create `$TMPDIR/qa/plan-qa.md`:
 
 ```markdown
-# Plan Q&A — {ENTITY_NAME}
+# Plan Q&A -- {ENTITY_NAME}
 
 ## Goal
 {goal text from CLI}
@@ -95,6 +97,8 @@ $GP start-plan {ENTITY_CLI_FLAG} {ENTITY_NAME} --json
 
 This returns a `ContextBundle` with `inline`, `references`, `decisions`, and `learnings`.
 
+**Side-Quest (v2):** No separate context assembly step -- context is assembled during `side-quest:plan-draft`.
+
 ### B2. Load Active Conditions
 
 Load active conditions per cli-interaction.md Conditions Loading section, filtering by the current entity's scope prefix.
@@ -104,13 +108,13 @@ Load active conditions per cli-interaction.md Conditions Loading section, filter
 Spawn `plan-phase` with: {ENTITY_TYPE} name, Q&A output path (`$TMPDIR/qa/plan-qa.md`), temp directory (`$TMPDIR/draft`), goal, ContextBundle (inline, references, decisions, learnings), active conditions to evaluate. Instruct the agent to use single-file format (`$TMPDIR/draft/plan.md`).
 
 Parse return. If `triggeredConditions` is non-empty, surface them to the user via AskUserQuestion BEFORE proceeding. Then check `status`:
-- **SUCCESS** → proceed to submit draft (entity-type-specific).
-- **PARTIAL** → log questions, stop.
-- **FAILED** → stop with error.
+- **SUCCESS** -> proceed to submit draft (entity-type-specific).
+- **PARTIAL** -> log questions, stop.
+- **FAILED** -> stop with error.
 
-**Slice (v2) — Submit draft:**
+**Slice (v2) -- Submit draft:**
 
-**Orchestrator-discipline exception:** The orchestrator reads the agent's output file to pipe its content to `slice:plan-draft`. This is necessary because `slice:plan-draft` accepts stdin `{content}` — there is no file-path-based alternative. The orchestrator does not interpret the plan content; it passes it through opaquely.
+**Orchestrator-discipline exception:** The orchestrator reads the agent's output file to pipe its content to `slice:plan-draft`. This is necessary because `slice:plan-draft` accepts stdin `{content}` -- there is no file-path-based alternative. The orchestrator does not interpret the plan content; it passes it through opaquely.
 
 ```bash
 cat $TMPDIR/draft/plan.md | jq -Rs '{content: .}' | $GP slice:plan-draft --epic $EPIC_NAME --slice $SLICE_NAME --json
@@ -118,9 +122,9 @@ cat $TMPDIR/draft/plan.md | jq -Rs '{content: .}' | $GP slice:plan-draft --epic 
 
 Extract `contextBundle` from the response for downstream use.
 
-**Quest (v1) — Submit draft:**
+**Quest (v1) -- Submit draft:**
 
-Resolve `planPath` from the agent's `filesWritten[0]` (do not hardcode). Resolve the CLI-managed plan path: on fresh run use `paths.plan` from A1 response; on re-entry where A1 was skipped (STATE_INVALID_TRANSITION), derive from `{ENTITY_TYPE}:show` response entity directory + `plan.md`. Copy the plan: `cp <planPath> <CLI-managed-plan-path>`. The CLI checks for `plan.md` at the managed path during submit — it will reject with `STATE_CONTENT_MISSING` if the file is not there.
+Resolve `planPath` from the agent's `filesWritten[0]` (do not hardcode). Resolve the CLI-managed plan path: on fresh run use `paths.plan` from A1 response; on re-entry where A1 was skipped (STATE_INVALID_TRANSITION), derive from `{ENTITY_TYPE}:show` response entity directory + `plan.md`. Copy the plan: `cp <planPath> <CLI-managed-plan-path>`. The CLI checks for `plan.md` at the managed path during submit -- it will reject with `STATE_CONTENT_MISSING` if the file is not there.
 
 ```bash
 stdin: "" | $GP submit-plan {ENTITY_CLI_FLAG} {ENTITY_NAME} --json
@@ -128,11 +132,25 @@ stdin: "" | $GP submit-plan {ENTITY_CLI_FLAG} {ENTITY_NAME} --json
 
 This transitions `planning` -> `plan-created`. Precondition: `plan.md` must exist at the CLI-managed path (copied above).
 
+**Side-Quest (v2) -- Submit draft:**
+
+**Orchestrator-discipline exception:** The orchestrator reads the agent's output file to construct a ContentRef. This is necessary because `side-quest:plan-draft` accepts stdin `{plan: ContentRef}` -- the skill must hash the content first.
+
+```bash
+PLAN_SHA=$(git hash-object -w $TMPDIR/draft/plan.md)
+PLAN_SIZE=$(wc -c < $TMPDIR/draft/plan.md | tr -d ' ')
+echo "{\"plan\":{\"sha\":\"$PLAN_SHA\",\"size\":$PLAN_SIZE,\"path\":\"$TMPDIR/draft/plan.md\",\"mediaType\":\"text/markdown\"}}" | $GP side-quest:plan-draft --side-quest $SQ_NAME --json
+```
+
+This emits `side-quest-plan-drafted`.
+
 ### B4. Plan-Shape Checkpoint (Slice v2 only)
 
-**Slice (v2):** After `slice:plan-draft` succeeds (P7), run the shape checkpoint. See the consuming skill (plan-slice SKILL.md) for the full shape checkpoint flow (`slice:plan-shape-start` → steering check → approve/auto/revise).
+**Slice (v2):** After `slice:plan-draft` succeeds (P7), run the shape checkpoint. See the consuming skill (plan-slice SKILL.md) for the full shape checkpoint flow (`slice:plan-shape-start` -> steering check -> approve/auto/revise).
 
-**Quest (v1):** Skip this step — quests have no shape checkpoint.
+**Quest (v1):** Skip this step -- quests have no shape checkpoint.
+
+**Side-Quest (v2):** Skip this step -- side-quests have no plan-shape-start. Shape approval is optional and rarely used.
 
 ### B5. Begin Refinement
 
@@ -150,6 +168,12 @@ stdin: "" | $GP {ENTITY_TYPE}:refine-plan {ENTITY_CLI_FLAG} {ENTITY_NAME} --json
 
 This transitions `plan-created` -> `refining`.
 
+**Side-Quest (v2):**
+
+```bash
+$GP refine:start --side-quest $SQ_NAME --artifact-type implementation-plan --json
+```
+
 ### B6. Refinement Loop
 
 @${CLAUDE_PLUGIN_ROOT}/skills/_references/iteration-loop.md
@@ -160,9 +184,12 @@ Follow the shared iteration loop pattern defined in iteration-loop.md (auto-incl
 
 **Quest (v1):** The iteration loop works without `refine:*` commands (no `artifact_type` parameter). The consuming skill's `submit_command` handles refinement submission directly.
 
+**Side-Quest (v2):** The iteration loop uses `refine:*` commands with `--side-quest $SQ_NAME --artifact-type implementation-plan` (per the consuming skill's `scope_flag` parameter). Same pattern as Slice (v2) but with side-quest scoping.
+
 Resolve the plan path for the editor:
-- **Slice (v2):** Use the CLI-managed path from `slice:show --epic $EPIC_NAME --slice $SLICE_NAME --json` — the entity directory + `plan.md`.
-- **Quest (v1):** If entering from B3 in the same session, use the CLI-managed plan path resolved in B3. On re-entry (status already `refining` or `plan-created`), call `$GP start-refinement {ENTITY_CLI_FLAG} {ENTITY_NAME} --json` for the ContextBundle (context, not paths), then resolve the plan path from `{ENTITY_TYPE}:show {ENTITY_CLI_FLAG} {ENTITY_NAME} --json` — the entity directory + `plan.md`. The `start-refinement` command returns a ContextBundle (no `paths` field).
+- **Slice (v2):** Use the CLI-managed path from `slice:show --epic $EPIC_NAME --slice $SLICE_NAME --json` -- the entity directory + `plan.md`.
+- **Quest (v1):** If entering from B3 in the same session, use the CLI-managed plan path resolved in B3. On re-entry (status already `refining` or `plan-created`), call `$GP start-refinement {ENTITY_CLI_FLAG} {ENTITY_NAME} --json` for the ContextBundle (context, not paths), then resolve the plan path from `{ENTITY_TYPE}:show {ENTITY_CLI_FLAG} {ENTITY_NAME} --json` -- the entity directory + `plan.md`. The `start-refinement` command returns a ContextBundle (no `paths` field).
+- **Side-Quest (v2):** Use the CLI-managed path from `side-quest:show --side-quest $SQ_NAME --json` -- the entity directory + `plan.md`.
 
 The editor edits the CLI-managed copy, not the tmpdir draft.
 
@@ -180,9 +207,19 @@ $GP slice:plan-commit --epic $EPIC_NAME --slice $SLICE_NAME --json
 
 This transitions the slice to P9 (plan committed).
 
-**Quest (v1):** After exiting the loop, copy the refined plan to the CLI-managed path for downstream guards: `cp <planPath> <paths.planRefined from B5 response>`. On re-entry where B5 was skipped, derive the path from `{ENTITY_TYPE}:show` response entity directory + `plan-refined.md`. The CLI checks for `plan-refined.md` at the managed path when `{ENTITY_TYPE}:implement` is called — it will reject with `STATE_CONTENT_MISSING` if missing.
+**Quest (v1):** After exiting the loop, copy the refined plan to the CLI-managed path for downstream guards: `cp <planPath> <paths.planRefined from B5 response>`. On re-entry where B5 was skipped, derive the path from `{ENTITY_TYPE}:show` response entity directory + `plan-refined.md`. The CLI checks for `plan-refined.md` at the managed path when `{ENTITY_TYPE}:implement` is called -- it will reject with `STATE_CONTENT_MISSING` if missing.
 
 Then submit the refinement result per the consuming skill's Loop Parameters `submit_command`. If `override_flag` is defined and exiting via stagnation, reduction, or cap, append it.
+
+**Side-Quest (v2):** Refinement submission is handled by the `refine:*` exit commands called during the iteration loop's exit criteria evaluation. After the loop exits, store the refined plan as ContentRef and commit:
+
+```bash
+REFINED_SHA=$(git hash-object -w <plan-path>)
+REFINED_SIZE=$(wc -c < <plan-path> | tr -d ' ')
+echo "{\"plan\":{\"sha\":\"$REFINED_SHA\",\"size\":$REFINED_SIZE,\"path\":\"<plan-path>\",\"mediaType\":\"text/markdown\"}}" | $GP side-quest:plan-commit --side-quest $SQ_NAME --json
+```
+
+This emits `side-quest-plan-committed`.
 
 Log exit reason to stderr:
 ```

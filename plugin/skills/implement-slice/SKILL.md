@@ -412,6 +412,7 @@ Parameters for the iteration-loop.md shared reference (auto-included in Step 5.8
 | **run_dir_mode** | `persistent` -- git-committed `<slice-path>/implementation/chunk-{ID}/` (per-chunk subdirectories) |
 | **stagnation_window** | 2 |
 | **reduction_exit_threshold** | 2 |
+| **scope_flag** | `--epic $EPIC_NAME` |
 | **review_context** | `"code-implementation"` |
 | **rubric** | `code-quality` |
 | **resume_detection** | Yes -- check for incomplete run directories and offer resume (see Step 2b) |

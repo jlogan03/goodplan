@@ -180,8 +180,9 @@ Parameters for the iteration-loop.md shared reference (auto-included via plan-pi
 |---|---|
 | **max_iterations** | 10 (override via `$GP_PLAN_SLICE_MAX_ITERATIONS` env var for test harness cost control) |
 | **run_dir_mode** | `temp` |
-| **artifact_type** | `implementation-plan` — passed to all `refine:*` commands as `--artifact-type implementation-plan` |
-| **rubric_path** | `${CLAUDE_PLUGIN_ROOT}/rubrics/implementation-plan.yaml` — passed to `refine:converge`/`refine:evaluate` via `--rubric-path` |
+| **artifact_type** | `implementation-plan` -- passed to all `refine:*` commands as `--artifact-type implementation-plan` |
+| **scope_flag** | `--epic $EPIC_NAME` |
+| **rubric_path** | `${CLAUDE_PLUGIN_ROOT}/rubrics/implementation-plan.yaml` -- passed to `refine:converge`/`refine:evaluate` via `--rubric-path` |
 | **stagnation_window** | 2 |
 | **reduction_exit_threshold** | 2 |
 | **resume_detection** | yes — deterministic temp dir means prior rounds may exist on re-entry |

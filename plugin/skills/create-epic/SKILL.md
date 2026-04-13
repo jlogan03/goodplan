@@ -411,7 +411,8 @@ Parameters for the iteration-loop.md shared reference (auto-included in Step 5e 
 | **max_iterations** | 3 (override via `$GP_CREATE_EPIC_MAX_ITERATIONS` env var for test harness cost control) |
 | **override_flag** | `--override` — appended to submit command on stagnation/reduction/cap exits |
 | **run_dir_mode** | `temp` |
-| **artifact** | `architecture` — passed to all `refine:*` commands as `--artifact architecture` |
+| **artifact** | `architecture` -- passed to all `refine:*` commands as `--artifact architecture` |
+| **scope_flag** | `--epic $EPIC_NAME` |
 | **stagnation_window** | 2 |
 | **reduction_exit_threshold** | 2 |
 | **resume_detection** | yes — deterministic temp dir means prior rounds may exist on re-entry |
@@ -426,7 +427,8 @@ Parameters for the iteration-loop.md shared reference (used in Step 7f above):
 | **max_iterations** | 3 (override via `$GP_CREATE_EPIC_MAX_ITERATIONS` env var for test harness cost control) |
 | **override_flag** | `--override` — appended to submit command on stagnation/reduction/cap exits |
 | **run_dir_mode** | `temp` |
-| **artifact** | `slices` — passed to all `refine:*` commands as `--artifact slices` |
+| **artifact** | `slices` -- passed to all `refine:*` commands as `--artifact slices` |
+| **scope_flag** | `--epic $EPIC_NAME` |
 | **stagnation_window** | 2 |
 | **reduction_exit_threshold** | 2 |
 | **resume_detection** | yes — deterministic temp dir means prior rounds may exist on re-entry |

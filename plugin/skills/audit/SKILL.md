@@ -170,10 +170,10 @@ If the agent proposed side quests AND there are CRITICAL or IMPORTANT findings, 
 For each approved side quest, create via CLI:
 
 ```bash
-echo '{"name":"<title>","goal":"<description>"}' | $GP quest:create --json
+$GP side-quest:create --name "<title>" --goal "<description>" --json
 ```
 
-Capture the output to confirm creation. If quest creation fails, log the error and continue with remaining proposals.
+Capture the output to confirm creation. If side-quest creation fails, log the error and continue with remaining proposals.
 
 If no side quests are proposed or all findings are MINOR/INFO, skip this step.
 
@@ -203,6 +203,6 @@ Present a summary:
 
 Additional cases:
 - **Agent invalid return shape**: Surface raw response, stop gracefully.
-- **Quest creation failure**: Log error, continue with remaining proposals.
+- **Side-quest creation failure**: Log error, continue with remaining proposals.
 
 All error paths stop gracefully -- no partial state is left behind.

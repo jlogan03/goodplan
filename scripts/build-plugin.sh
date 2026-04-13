@@ -146,8 +146,8 @@ fi
 echo "  .DS_Store check: clean"
 
 # Assert exact skill count
-# Expected skills: audit, complete-epic, create-epic, create-side-quest, explore, implement, implement-slice, init, land-slice, plan-slice, start-epic, status, task, upgrade, workflow-guide
-test "$SKILL_COUNT" -eq 15 || { echo "FAIL: expected 15 skills, got $SKILL_COUNT"; exit 1; }
+# Expected skills: audit, complete-epic, create-epic, create-side-quest, explore, implement, implement-side-quest, implement-slice, init, land-side-quest, land-slice, plan-slice, start-epic, status, task, upgrade, workflow-guide
+test "$SKILL_COUNT" -eq 17 || { echo "FAIL: expected 17 skills, got $SKILL_COUNT"; exit 1; }
 
 # Assert none of the 15 deleted skill names exist
 DELETED_SKILLS="create-architecture refine-architecture create-plan refine-plan create-slices refine-slices implement-plan complete audit-architecture audit-docs audit-tests capture onboard-repo migrate project-status"
