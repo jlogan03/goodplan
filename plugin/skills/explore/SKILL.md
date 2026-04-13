@@ -106,13 +106,13 @@ If the user explicitly requests to skip exploration (e.g., replies "skip", "I al
 
 1. Ask for the reason why exploration is being skipped.
 2. Write `explore-skipped.md` at the scope path using the template from the **Explore Logic Reference** section below. Use the Write tool.
-3. **For epic scope**: Complete the exploration phase via CLI. The `submit-explore` command handles both skip (from `created` state — without ever calling `epic:explore`) and normal completion (from `exploring`). The state machine guard accepts both statuses: `["created", "exploring"]`.
+3. **For epic scope**: Complete the exploration phase via CLI. The `epic:explore-conclude` command handles both skip (from `created` state -- without ever calling `epic:explore-start`) and normal completion (from `exploring`).
 
    ```bash
-   stdin: "" | $GP submit-explore --epic <name> --json
+   $GP epic:explore-conclude --epic <name> --json
    ```
 
-   This transitions the epic to `explored` status and records the activity.
+   This concludes the exploration and transitions the epic to explored (P2).
 
 4. **For quest scope**: Same as epic — complete the exploration phase via CLI:
 
@@ -158,10 +158,10 @@ During any mode (Research, Brainstorm, Prototype), if a durable decision emerges
 Create decisions via CLI — construct the payload from user responses and pipe to:
 
 ```bash
-echo '{"id":"<kebab-case-id>","domain":"<topic-area>","title":"<decision-title>","summary":"<brief-summary>","reconsiderWhen":["<condition>"]}' | $GP decision:create --json
+echo '{"id":"<kebab-case-id>","domain":"<topic-area>","title":"<decision-title>","summary":"<brief-summary>","reconsiderWhen":["<condition>"],"subsystems":["<subsystem-name>"]}' | $GP decision:record --json
 ```
 
-The `id` is derived from kebab-casing the title, `domain` from the topic area. Include `reconsiderWhen` if the decision has known conditions that would invalidate it (per decisions-format.md). The CLI creates the metadata entry.
+The `id` is derived from kebab-casing the title, `domain` from the topic area. Include `reconsiderWhen` if the decision has known conditions that would invalidate it (per decisions-format.md). Include `subsystems` when the decision clearly maps to one or more subsystems -- query `$GP subsystem:list --json` for available names when the scope is an epic. The CLI creates the metadata entry.
 
 Then write the full decision markdown file to the path from the CLI response, following the format in decisions-format.md (including Rationale and Consequences sections — these are the most valuable parts for downstream skills).
 
@@ -205,21 +205,21 @@ Reflect on the conversation: did it reveal new information about the user's expe
 
 ### For epic scope
 
-If the exploration was not already begun via `epic:explore` in this session, begin it now (this may already have been done if the user started exploration explicitly):
+If the exploration was not already begun via `epic:explore-start` in this session, begin it now (this may already have been done if the user started exploration explicitly):
 
 ```bash
-stdin: "" | $GP epic:explore --epic <name> --json
+$GP epic:explore-start --epic <name> --json
 ```
 
-If this returns `STATE_INVALID_TRANSITION` (exit 3), the epic is already past the `created` state — check `gp epic:show --epic <name> --json` for current status and proceed.
+If this returns `STATE_INVALID_TRANSITION` (exit 3), the epic is already past the `created` state -- check `gp epic:show --epic <name> --json` for current status and proceed.
 
-**CRITICAL — Do this BEFORE the Done Summary.** Complete the exploration phase:
+**CRITICAL -- Do this BEFORE the Done Summary.** Conclude the exploration phase:
 
 ```bash
-stdin: "" | $GP submit-explore --epic <name> --json
+$GP epic:explore-conclude --epic <name> --json
 ```
 
-This transitions the epic to `explored` and records the activity. If this step is skipped, the epic will be stuck in `exploring` and downstream skills cannot proceed. The skill writes `explore-complete.md` (Step 5); this command transitions state only.
+This concludes the exploration and transitions the epic to explored (P2). If this step is skipped, the epic will be stuck in exploring and downstream skills cannot proceed. The skill writes `explore-complete.md` (Step 5); this command transitions state only.
 
 ### For quest scope
 
@@ -315,16 +315,20 @@ Display using the Done Summary Template (Variant B — Loose Checklist) from out
   - Write to `<research-path>/<topic-slug>.md` (slug: 2-4 words, kebab-case). If file exists, append numeric suffix (e.g., `api-design-2.md`)
   - **Sub-agent must NOT modify any files other than its designated output file**
 - On failure, write a stub file noting the failure.
+- If the scope is an epic, tag any decisions or learnings emerging from research with relevant subsystems (query `$GP subsystem:list --json` for available names).
 
 ### Brainstorm Mode
 
+**This mode is fully collaborative.** Every exchange requires explicit user input before continuing. Do not auto-generate follow-up questions and answer them -- present them and wait for the user's response via AskUserQuestion.
+
 1. Ask: "What do you want to explore or think through?"
-2. Open conversation — ask follow-ups, surface trade-offs, explore options.
-3. At a natural stopping point (repetition, convergence, user satisfied), offer to capture or keep going. If capturing: show outline, wait for approval.
-4. Backstop: after 8-10 exchanges, nudge: "We've been at this a while — want me to capture what we have?"
+2. Open conversation — ask follow-ups, surface trade-offs, explore options. **After each exchange, wait for user response via AskUserQuestion before continuing.** Do not auto-advance the conversation.
+3. At a natural stopping point (repetition, convergence, user satisfied), offer to capture or keep going via AskUserQuestion. If capturing: show outline, wait for approval.
+4. Backstop: after 8-10 exchanges, use AskUserQuestion to nudge: "We've been at this a while — want me to capture what we have?" This is a question, not an automatic action.
 5. `mkdir -p <brainstorm-path>` before writing.
 6. Derive slug (2-4 words, kebab-case). Show to user and confirm (e.g., "I'll save as `brainstorm/auth-approach.md` — OK?").
 7. Write structured summary: options considered, trade-offs, decision (if any), open questions. If file exists, append numeric suffix.
+8. If the scope is an epic, tag any decisions or learnings with relevant subsystems (query `$GP subsystem:list --json` for available names).
 
 ### Prototype Mode (Project or Epic Scope)
 
