@@ -442,12 +442,7 @@ function writeCodexHooks() {
 }
 
 function rewriteCodexSpecificFiles() {
-	const codexCliResolutionBlock = [
-		"Resolve the bundled CLI and store it as `$GP`.",
-		"",
-		"In Codex, do not assume `gp` is on PATH. Use this detection snippet:",
-		"",
-		"```bash",
+	const codexCliSearchSnippet = [
 		'GP="$(command -v gp || true)"',
 		'if [ -z "$GP" ] && [ -d "$HOME/.codex/plugins/cache" ]; then',
 		'  GP="$(find "$HOME/.codex/plugins/cache" -path \'*/goodplan/*/bin/gp\' -type f -perm -111 2>/dev/null | sort -V | tail -n 1)"',
@@ -458,6 +453,14 @@ function rewriteCodexSpecificFiles() {
 		'if [ -z "$GP" ] && [ -x "./plugins/goodplan/bin/gp" ]; then',
 		'  GP="./plugins/goodplan/bin/gp"',
 		"fi",
+	].join("\n");
+	const codexCliResolutionBlock = [
+		"Resolve the bundled CLI and store it as `$GP`.",
+		"",
+		"In Codex, do not assume `gp` is on PATH. Use this detection snippet:",
+		"",
+		"```bash",
+		codexCliSearchSnippet,
 		'if [ -z "$GP" ]; then',
 		'  echo "gp: command not found" >&2',
 		"  exit 127",
@@ -530,16 +533,7 @@ function rewriteCodexSpecificFiles() {
 			"At the start of any skill that uses the CLI, resolve the executable and store it as `$GP`, then verify it is available and compatible:",
 			"",
 			"```bash",
-			'GP="$(command -v gp || true)"',
-			'if [ -z "$GP" ] && [ -d "$HOME/.codex/plugins/cache" ]; then',
-			'  GP="$(find "$HOME/.codex/plugins/cache" -path \'*/goodplan/*/bin/gp\' -type f -perm -111 2>/dev/null | sort -V | tail -n 1)"',
-			"fi",
-			'if [ -z "$GP" ] && [ -x "$HOME/plugins/goodplan/bin/gp" ]; then',
-			'  GP="$HOME/plugins/goodplan/bin/gp"',
-			"fi",
-			'if [ -z "$GP" ] && [ -x "./plugins/goodplan/bin/gp" ]; then',
-			'  GP="./plugins/goodplan/bin/gp"',
-			"fi",
+			codexCliSearchSnippet,
 			'if [ -z "$GP" ]; then',
 			'  echo "gp: command not found" >&2',
 			"  exit 127",
@@ -573,9 +567,10 @@ function rewriteCodexSpecificFiles() {
 		].join("\n"),
 		[
 			"```bash",
-			'GP="$(command -v gp || true)"',
-			'if [ -z "$GP" ] && [ -d "$HOME/.codex/plugins/cache" ]; then',
-			'  GP="$(find "$HOME/.codex/plugins/cache" -path \'*/goodplan/*/bin/gp\' -type f -perm -111 2>/dev/null | sort -V | tail -n 1)"',
+			codexCliSearchSnippet,
+			'if [ -z "$GP" ]; then',
+			'  echo "gp: command not found" >&2',
+			"  exit 127",
 			"fi",
 			'"$GP" status --json           # project state, active entities',
 			'"$GP" --help                  # discover available commands',

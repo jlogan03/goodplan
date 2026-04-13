@@ -96,21 +96,44 @@ case "$MODE" in
 		;;
 esac
 
-MARKETPLACE_PATH="$MARKETPLACE_PATH" node <<'NODE'
+MARKETPLACE_PATH="$MARKETPLACE_PATH" TARGET_PLUGIN_DIR="$TARGET_PLUGIN_DIR" node <<'NODE'
 const fs = require("node:fs");
 const path = require("node:path");
 
 const marketplacePath = process.env.MARKETPLACE_PATH;
+const targetPluginDir = process.env.TARGET_PLUGIN_DIR;
 if (!marketplacePath) {
 	console.error("MARKETPLACE_PATH is not set");
 	process.exit(1);
+}
+if (!targetPluginDir) {
+	console.error("TARGET_PLUGIN_DIR is not set");
+	process.exit(1);
+}
+
+function inferMarketplaceRoot(marketplaceFile) {
+	const marketplaceDir = path.dirname(marketplaceFile);
+	const maybeAgentsDir = path.dirname(marketplaceDir);
+	if (path.basename(marketplaceDir) === "plugins" && path.basename(maybeAgentsDir) === ".agents") {
+		return path.dirname(maybeAgentsDir);
+	}
+	return marketplaceDir;
+}
+
+const marketplaceRoot = inferMarketplaceRoot(path.resolve(marketplacePath));
+let sourcePath = path.relative(marketplaceRoot, path.resolve(targetPluginDir)).split(path.sep).join("/");
+if (!sourcePath) {
+	sourcePath = ".";
+}
+if (!sourcePath.startsWith(".")) {
+	sourcePath = `./${sourcePath}`;
 }
 
 const pluginEntry = {
 	name: "goodplan",
 	source: {
 		source: "local",
-		path: "./plugins/goodplan",
+		path: sourcePath,
 	},
 	policy: {
 		installation: "AVAILABLE",
@@ -171,7 +194,7 @@ if [ -n "$EXPECTED_BINARY_DIR" ] && [ ! -x "$SOURCE_PLUGIN_DIR/binaries/$EXPECTE
 	echo ""
 	echo "WARNING: The plugin is installed, but the current build does not include a runnable binary for this platform:"
 	echo "  expected: $SOURCE_PLUGIN_DIR/binaries/$EXPECTED_BINARY_DIR/gp"
-	echo "The Codex command wrappers may fail until the build produces that binary."
+	echo "The Codex goodplan skills may fail until the build produces that binary."
 fi
 
 echo ""
