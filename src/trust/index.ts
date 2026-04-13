@@ -28,8 +28,7 @@ export {
 	DEFAULT_ARCHITECTURE_CONFIG,
 } from "./convergence/index.js";
 export type {
-	Rubric,
-	RubricDimension,
+	ConvergenceRubric,
 	ScoredEvent,
 	CircuitBreakerResult,
 	RelevanceWeight,

@@ -869,12 +869,14 @@ registerCommand("refine:evaluate", "Evaluate convergence for the current round (
 	epic: { type: "string", description: "Epic name" },
 	"side-quest": { type: "string", description: "Side-quest name" },
 	"artifact-type": { type: "string", description: "Artifact type", required: true },
+	"rubric-path": { type: "string", description: "Path to rubric YAML file" },
 });
 registerCommand("refine:converge", "Record convergence for the current round.", {
 	...globalArgDefs,
 	epic: { type: "string", description: "Epic name" },
 	"side-quest": { type: "string", description: "Side-quest name" },
 	"artifact-type": { type: "string", description: "Artifact type", required: true },
+	"rubric-path": { type: "string", description: "Path to rubric YAML file" },
 });
 registerCommand("refine:stuck", "Record a circuit breaker trip for the current round.", {
 	...globalArgDefs,

@@ -1,6 +1,6 @@
 ---
 name: implement
-description: This skill should be used when the user wants to implement a refined plan. Executes plan phases autonomously with code review loops, then completes the slice. Common triggers: 'implement', 'execute plan', 'build slice', 'complete slice', 'implement plan', 'run implementation', 'start implementing'.
+description: "**v1 only — for v2 slices, use `/gp:implement-slice` and `/gp:land-slice` instead.** Implements a refined plan using v1 commands. Executes plan phases autonomously with code review loops, then completes the slice. Common triggers: 'implement', 'execute plan', 'build slice', 'complete slice', 'implement plan', 'run implementation', 'start implementing'."
 user-invocable: true
 requires: gp >= 1.0.0
 ---

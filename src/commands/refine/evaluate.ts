@@ -4,9 +4,10 @@ import { replayEvents } from "../../engine/events/replay.js";
 import type { ReviewerPayload } from "../../schemas/trust/reviewer-payload.js";
 import { checkCircuitBreaker } from "../../trust/convergence/circuit-breaker.js";
 import { evaluateConvergence } from "../../trust/convergence/evaluator.js";
-import type { ScoredEvent } from "../../trust/convergence/evaluator.js";
+import type { ConvergenceRubric, ScoredEvent } from "../../trust/convergence/evaluator.js";
 import { DEFAULT_PLAN_CONFIG } from "../../trust/convergence/types.js";
 import type { RelevanceWeight } from "../../trust/convergence/types.js";
+import { loadRubric } from "../../trust/reviewers/rubric-loader.js";
 import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 import { createRefineCommandContext, detectCurrentRound, refineArgs } from "./_shared.js";
@@ -25,6 +26,11 @@ export const refineEvaluateCommand = defineCommand({
 	args: {
 		...globalArgs,
 		...refineArgs,
+		"rubric-path": {
+			type: "string" as const,
+			description: "Path to rubric YAML file for convergence evaluation",
+			required: false,
+		},
 	},
 	setup() {},
 	async run({ args }) {
@@ -72,16 +78,37 @@ export const refineEvaluateCommand = defineCommand({
 			}
 		}
 
-		// Default rubric: all dimensions with threshold 7
-		const uniqueDimensions = new Set<string>();
-		for (const se of scoredEvents) {
-			for (const dim of se.payload.dimensions) {
-				uniqueDimensions.add(dim.name);
+		// Build rubric: prefer loaded YAML, fall back to inline construction
+		const rubricPath = args["rubric-path"] as string | undefined;
+		let rubric: ConvergenceRubric;
+		if (rubricPath !== undefined) {
+			const loadResult = loadRubric(rubricPath);
+			if (!loadResult.success) {
+				const errorOutput = {
+					ok: false,
+					error: `Failed to load rubric: ${loadResult.errors.join("; ")}`,
+					code: "RUBRIC_NOT_FOUND",
+				};
+				if (args.json || args.query) {
+					output(errorOutput, args);
+				} else {
+					process.stderr.write(`${pc.red("Error")}: ${errorOutput.error}\n`);
+				}
+				process.exit(1);
 			}
+			rubric = loadResult.rubric;
+		} else {
+			// Fallback: inline construction with default threshold (backward compat)
+			const uniqueDimensions = new Set<string>();
+			for (const se of scoredEvents) {
+				for (const dim of se.payload.dimensions) {
+					uniqueDimensions.add(dim.name);
+				}
+			}
+			rubric = {
+				dimensions: [...uniqueDimensions].map((name) => ({ name, threshold: 7 })),
+			};
 		}
-		const rubric = {
-			dimensions: [...uniqueDimensions].map((name) => ({ name, threshold: 7 })),
-		};
 
 		// Default relevance weights: all medium
 		const relevanceWeights = new Map<string, RelevanceWeight>();

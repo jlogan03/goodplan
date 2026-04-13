@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ConvergenceConfig } from "../../../src/schemas/trust/convergence.js";
 import type { ReviewerPayload } from "../../../src/schemas/trust/reviewer-payload.js";
 import { evaluateConvergence } from "../../../src/trust/convergence/evaluator.js";
-import type { Rubric, ScoredEvent } from "../../../src/trust/convergence/evaluator.js";
+import type { ConvergenceRubric, ScoredEvent } from "../../../src/trust/convergence/evaluator.js";
 import type { RelevanceWeight } from "../../../src/trust/convergence/types.js";
 
 const defaultConfig: ConvergenceConfig = {
@@ -12,7 +12,7 @@ const defaultConfig: ConvergenceConfig = {
 	reductionThreshold: 0.1,
 };
 
-const defaultRubric: Rubric = {
+const defaultRubric: ConvergenceRubric = {
 	dimensions: [
 		{ name: "alignment", threshold: 4 },
 		{ name: "completeness", threshold: 4 },

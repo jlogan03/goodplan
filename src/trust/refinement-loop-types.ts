@@ -1,7 +1,7 @@
 import type { ConvergenceConfig, ConvergenceResult } from "../schemas/trust/convergence.js";
 import type { DimensionResult, ReviewerFinding } from "../schemas/trust/reviewer-payload.js";
 import type { CircuitBreakerResult } from "./convergence/circuit-breaker.js";
-import type { Rubric, ScoredEvent } from "./convergence/evaluator.js";
+import type { ConvergenceRubric, ScoredEvent } from "./convergence/evaluator.js";
 import type { RelevanceWeight } from "./convergence/types.js";
 import type { ArtifactEditor } from "./interfaces/artifact-editor.js";
 import type { ReviewerDispatcher } from "./interfaces/reviewer-dispatcher.js";
@@ -46,7 +46,7 @@ export interface RefinementLoopOptions {
 	artifactContent: string;
 	reviewerIds: string[];
 	convergenceConfig: ConvergenceConfig;
-	rubric: Rubric;
+	rubric: ConvergenceRubric;
 	relevanceWeights: Map<string, RelevanceWeight>;
 	dispatcher: ReviewerDispatcher;
 	editor: ArtifactEditor;

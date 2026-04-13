@@ -11,18 +11,13 @@ import type {
 import type { RelevanceWeight } from "./types.js";
 
 /**
- * A rubric dimension definition: name + passing threshold.
+ * Minimal rubric interface for convergence evaluation.
+ * Only requires the fields the evaluator actually uses (name + threshold).
+ * `RubricYaml` (from `src/schemas/trust/rubric.ts`) structurally satisfies
+ * this interface, so callers can pass loaded YAML rubrics directly.
  */
-export interface RubricDimension {
-	name: string;
-	threshold: number;
-}
-
-/**
- * A rubric defines the dimensions and their thresholds for convergence.
- */
-export interface Rubric {
-	dimensions: RubricDimension[];
+export interface ConvergenceRubric {
+	readonly dimensions: ReadonlyArray<{ readonly name: string; readonly threshold: number }>;
 }
 
 /**
@@ -46,7 +41,7 @@ export interface ScoredEvent {
  */
 export function evaluateConvergence(
 	scoredEvents: ScoredEvent[],
-	_rubric: Rubric,
+	_rubric: ConvergenceRubric,
 	relevanceWeights: Map<string, RelevanceWeight>,
 	_config: ConvergenceConfig,
 ): ConvergenceResult {

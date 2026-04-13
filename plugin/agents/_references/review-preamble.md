@@ -73,7 +73,7 @@ You will receive a `review_context` value in your task prompt. Adapt your evalua
 | `architecture-proposal` | Structural soundness, subsystem boundaries, API surfaces |
 | `slice-definitions` | Scope clarity, ordering, dependencies, verifiability |
 | `implementation-plan` | Implementability, phasing, risk, completeness |
-| `code-implementation` | Code quality, test coverage, architecture alignment |
+| `code-implementation` | Code quality, test coverage, architecture alignment. For chunk-level reviews, also assess TDD adherence: RED test written before implementation, RED fails for intended reason, GREEN passes after implementation. |
 | `audit-findings` | Accuracy of findings, false positives, completeness |
 
 ## Return Format
