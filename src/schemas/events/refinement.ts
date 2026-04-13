@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { ContentRefSchema } from "../envelope.js";
 import { circuitBreakerReasonSchema, convergenceResultSchema } from "../trust/convergence.js";
-import { dimensionResultSchema, reviewerFindingSchema } from "../trust/reviewer-payload.js";
+import { dimensionScoreSchema, reviewerFindingSchema } from "../trust/reviewer-payload.js";
 
 // --- Refinement event payload schemas ---
 
@@ -25,7 +25,7 @@ export const reviewerScoredPayloadSchema = z.object({
 	scopeRef: z.string().min(1),
 	round: z.number().int().positive(),
 	reviewerId: z.string().min(1),
-	dimensions: z.array(dimensionResultSchema),
+	dimensions: z.array(dimensionScoreSchema),
 	findings: z.array(reviewerFindingSchema),
 });
 export type ReviewerScoredPayload = z.infer<typeof reviewerScoredPayloadSchema>;

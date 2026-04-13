@@ -8,6 +8,7 @@ import type {
 	ReviewerFinding,
 	ReviewerPayload,
 } from "../../schemas/trust/reviewer-payload.js";
+import { checkCircuitBreaker } from "./circuit-breaker.js";
 import type { RelevanceWeight } from "./types.js";
 
 /**
@@ -31,21 +32,30 @@ export interface ScoredEvent {
 /**
  * Evaluate convergence across all scored events for the current round.
  *
- * Convergence requires:
- * 1. All dimensions at or above threshold (from non-low-relevance reviewers)
+ * Convergence requires ALL of:
+ * 1. All dimensions at or above threshold (from rubric, for non-low-relevance reviewers)
  * 2. Zero BLOCKING/CRITICAL findings (from non-low-relevance reviewers)
  *
- * Low-relevance reviewers produce advisory warnings only and never block convergence.
+ * The evaluator compares reviewer scores against rubric thresholds mechanically —
+ * reviewers do NOT know the thresholds and cannot game convergence decisions.
+ *
+ * Also checks circuit breaker conditions. Returns CIRCUIT-BROKEN if any trigger fires.
  *
  * Pure function — no I/O, no event emission.
  */
 export function evaluateConvergence(
 	scoredEvents: ScoredEvent[],
-	_rubric: ConvergenceRubric,
+	rubric: ConvergenceRubric,
 	relevanceWeights: Map<string, RelevanceWeight>,
-	_config: ConvergenceConfig,
+	config: ConvergenceConfig,
 ): ConvergenceResult {
-	// Collect dimension results from all reviewers
+	// Build a threshold lookup from the rubric
+	const thresholdMap = new Map<string, number>();
+	for (const dim of rubric.dimensions) {
+		thresholdMap.set(dim.name, dim.threshold);
+	}
+
+	// Collect dimension results from all reviewers, comparing against rubric thresholds
 	const allDimensions: DimensionResult[] = [];
 	const blockingFindings: ReviewerFinding[] = [];
 	let hasBlockingIssue = false;
@@ -55,12 +65,22 @@ export function evaluateConvergence(
 		const relevance = relevanceWeights.get(payload.reviewerId) ?? "medium";
 		const isAdvisory = relevance === "low";
 
-		// Collect dimension results
+		// Enrich dimension scores with rubric thresholds and pass/fail
 		for (const dim of payload.dimensions) {
-			allDimensions.push(dim);
+			const threshold = thresholdMap.get(dim.name) ?? 0;
+			const passed = dim.score >= threshold;
+
+			allDimensions.push({
+				name: dim.name,
+				score: dim.score,
+				threshold,
+				passed,
+				reviewerId: payload.reviewerId,
+				relevance,
+			});
 
 			// Only non-low-relevance reviewers can block on dimensions
-			if (!isAdvisory && !dim.passed) {
+			if (!isAdvisory && !passed) {
 				hasBlockingIssue = true;
 			}
 		}
@@ -75,6 +95,17 @@ export function evaluateConvergence(
 				// Low-relevance: advisory warning, not blocking
 			}
 		}
+	}
+
+	// Check circuit breaker conditions
+	const circuitBreakerResult = checkCircuitBreaker(scoredEvents, config, relevanceWeights);
+	if (circuitBreakerResult.triggered) {
+		return {
+			state: "CIRCUIT-BROKEN",
+			dimensions: allDimensions,
+			blockingFindings,
+			reason: circuitBreakerResult.reason,
+		};
 	}
 
 	const state: ConvergenceState = hasBlockingIssue ? "CONTINUE" : "CONVERGED";

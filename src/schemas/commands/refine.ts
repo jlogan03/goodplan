@@ -1,13 +1,13 @@
 import { z } from "zod";
 import { ContentRefSchema } from "../envelope.js";
-import { dimensionResultSchema, reviewerFindingSchema } from "../trust/reviewer-payload.js";
+import { dimensionScoreSchema, reviewerFindingSchema } from "../trust/reviewer-payload.js";
 
 /**
  * Input schema for `gp refine:score` (stdin JSON).
  * Dimensions and findings come from a reviewer's evaluation.
  */
 export const refineScoreInputSchema = z.object({
-	dimensions: z.array(dimensionResultSchema),
+	dimensions: z.array(dimensionScoreSchema),
 	findings: z.array(reviewerFindingSchema),
 });
 export type RefineScoreInput = z.infer<typeof refineScoreInputSchema>;

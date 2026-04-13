@@ -52,8 +52,8 @@ describe("refine:* lifecycle", () => {
 			// 2. refine:score
 			const scoreStdin = JSON.stringify({
 				dimensions: [
-					{ name: "correctness", score: 8, threshold: 7, passed: true },
-					{ name: "completeness", score: 7, threshold: 7, passed: true },
+					{ name: "correctness", score: 8 },
+					{ name: "completeness", score: 7 },
 				],
 				findings: [
 					{ severity: "MINOR", dimension: "correctness", description: "Small issue found" },
@@ -241,7 +241,7 @@ describe("refine:* lifecycle", () => {
 			setupEpic(bin, tmpDir);
 
 			const scoreStdin = JSON.stringify({
-				dimensions: [{ name: "correctness", score: 8, threshold: 7, passed: true }],
+				dimensions: [{ name: "correctness", score: 8 }],
 				findings: [],
 			});
 			const result = runCommand(

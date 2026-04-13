@@ -41,6 +41,7 @@ function findingKey(severity: string, dimension: string): string {
 export function checkCircuitBreaker(
 	scoredEvents: ScoredEvent[],
 	config: ConvergenceConfig,
+	relevanceWeights?: Map<string, "high" | "medium" | "low">,
 ): CircuitBreakerResult {
 	if (scoredEvents.length === 0) {
 		return { triggered: false };
@@ -71,8 +72,12 @@ export function checkCircuitBreaker(
 	}
 
 	// Check 3: reviewer-disagreement — score spread exceeds threshold on same dimension within same round
+	// Exclude low-relevance reviewers from disagreement checks (they are advisory only)
+	const nonAdvisoryEvents = relevanceWeights
+		? scoredEvents.filter((e) => (relevanceWeights.get(e.payload.reviewerId) ?? "medium") !== "low")
+		: scoredEvents;
 	const disagreementResult = checkReviewerDisagreement(
-		scoredEvents,
+		nonAdvisoryEvents,
 		config.disagreementThreshold,
 		currentRound,
 	);

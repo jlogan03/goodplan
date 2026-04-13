@@ -67,7 +67,7 @@ describe("reduceRefinement", () => {
 	});
 
 	it("handles reviewer-scored: updates latestDimensionScores", () => {
-		const dimensions = [{ name: "completeness", score: 7, threshold: 6, passed: true }];
+		const dimensions = [{ name: "completeness", score: 7 }];
 		const findings = [
 			{
 				severity: "MINOR" as const,
@@ -146,7 +146,7 @@ describe("reduceRefinement", () => {
 	it("handles refinement-converged: sets state to CONVERGED", () => {
 		const convergenceResult = {
 			state: "CONVERGED" as const,
-			dimensions: [{ name: "completeness", score: 8, threshold: 6, passed: true }],
+			dimensions: [{ name: "completeness", score: 8, threshold: 6, passed: true, reviewerId: "reviewer-holistic", relevance: "high" as const }],
 			blockingFindings: [],
 		};
 		const events = [
