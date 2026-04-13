@@ -63,6 +63,14 @@ import { questListCommand } from "./quest/list.js";
 import { questPlanCommand } from "./quest/plan.js";
 import { questRefinePlanCommand } from "./quest/refine-plan.js";
 import { questShowCommand } from "./quest/show.js";
+import { refineConvergeCommand } from "./refine/converge.js";
+import { refineEvaluateCommand } from "./refine/evaluate.js";
+import { refineOverrideCommand } from "./refine/override.js";
+import { refineReviseCommand } from "./refine/revise.js";
+import { refineScoreCommand } from "./refine/score.js";
+import { refineStartCommand } from "./refine/start.js";
+import { refineStuckCommand } from "./refine/stuck.js";
+import { refineSynthesizeCommand } from "./refine/synthesize.js";
 import { reviewerListCommand } from "./reviewer/list.js";
 import { reviewerShowCommand } from "./reviewer/show.js";
 import { rubricListCommand } from "./rubric/list.js";
@@ -166,6 +174,14 @@ export const mainCommand = defineCommand({
 		"rubric:list": rubricListCommand,
 		"rubric:show": rubricShowCommand,
 		"rubric:validate": rubricValidateCommand,
+		"refine:start": refineStartCommand,
+		"refine:score": refineScoreCommand,
+		"refine:synthesize": refineSynthesizeCommand,
+		"refine:revise": refineReviseCommand,
+		"refine:evaluate": refineEvaluateCommand,
+		"refine:converge": refineConvergeCommand,
+		"refine:stuck": refineStuckCommand,
+		"refine:override": refineOverrideCommand,
 		"quest:create": questCreateCommand,
 		"quest:list": questListCommand,
 		"quest:show": questShowCommand,
