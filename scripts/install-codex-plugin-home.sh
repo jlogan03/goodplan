@@ -180,4 +180,4 @@ echo "  $MARKETPLACE_PATH"
 echo ""
 echo "Next steps:"
 echo "  1. Start a fresh Codex session in any repo."
-echo "  2. Run one of: /gp-status, /gp-init, /gp-create-epic"
+echo '  2. Use a goodplan skill from the skills UI or in your prompt, e.g. "$goodplan:status" or "$goodplan:init".'
