@@ -46,6 +46,7 @@ import { type MarkdownFile, writeMarkdownFiles } from "../data/markdown-files.js
 import { PROJECT_DIR_NAME } from "../data/project.js";
 import type { DirectoryEntry, JsonEntry, JsonlEntry, ProjectState } from "../tree.js";
 import { ZERO_STATE } from "../tree.js";
+import { generateV2Events } from "./migrate-events.js";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -1091,11 +1092,11 @@ function resignState(projectDir: string): void {
 // Execute Migration (state construction + artifact copy)
 // ---------------------------------------------------------------------------
 
-function executeMigration(
+async function executeMigration(
 	projectDir: string,
 	cwd: string,
 	validatedAnswers: Record<string, unknown>,
-): MigrationResult {
+): Promise<MigrationResult> {
 	// Step 1: Rename project dir → <dir>-old-<timestamp>/
 	const projectOldDir = renameProjectDir(projectDir);
 
@@ -1138,6 +1139,16 @@ function executeMigration(
 	} catch (err) {
 		// Non-fatal — migration state is committed, learnings just won't be per-file yet
 		process.stderr.write(`[gp] Warning: learnings migration may be incomplete: ${String(err)}\n`);
+	}
+
+	// Step 5c: Generate v2 event logs from migrated state (additive — entity JSON is preserved)
+	try {
+		await generateV2Events(newState, outputDir);
+	} catch (err) {
+		// Non-fatal — v1 entity JSON from commitState is still valid as fallback
+		process.stderr.write(
+			`[gp] Warning: v2 event generation failed (v1 state is intact): ${String(err)}\n`,
+		);
 	}
 
 	// Step 6: Clean up migration state file
@@ -1550,7 +1561,7 @@ export async function rpcMigrate(
 	}
 
 	if (response.round >= 3) {
-		return handleConfirmationOrCorrection(response.answers, existingState, projectDir, cwd);
+		return await handleConfirmationOrCorrection(response.answers, existingState, projectDir, cwd);
 	}
 
 	throw new GoodplanError(
@@ -1685,12 +1696,12 @@ function handleRound2(
 // Confirmation / Correction Handler
 // ---------------------------------------------------------------------------
 
-function handleConfirmationOrCorrection(
+async function handleConfirmationOrCorrection(
 	answers: readonly MigrationAnswer[],
 	existingState: MigrationState,
 	projectDir: string,
 	cwd: string,
-): MigrationResult {
+): Promise<MigrationResult> {
 	// Determine if this is a confirmation answer or a correction re-answer
 	const confirmationAnswer = answers.find((a) => a.id === QUESTION_IDS.CONFIRMATION);
 
@@ -1703,12 +1714,12 @@ function handleConfirmationOrCorrection(
 	return handleCorrectionAnswers(answers, existingState, projectDir, cwd);
 }
 
-function handleConfirmation(
+async function handleConfirmation(
 	answer: MigrationAnswer,
 	existingState: MigrationState,
 	projectDir: string,
 	cwd: string,
-): MigrationResult {
+): Promise<MigrationResult> {
 	// Validate against confirmation schema
 	const result = validateAnswer(answer, confirmationResponseSchema);
 	const data = result.data as ConfirmationResponse;

@@ -17,6 +17,8 @@ const ALLOWED_JSON_WRITE_FILES = new Set([
 	"src/core/data/commit.ts",
 	// Formal INV-001 exception: migrate constructs ProjectState directly
 	"src/core/rpc/migrate.ts",
+	// Formal INV-001 exception: v2 event generation writes events.jsonl during migration
+	"src/core/rpc/migrate-events.ts",
 ]);
 
 /** Files that write .md files through the data layer (out of scope for INV-001). */

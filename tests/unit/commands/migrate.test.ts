@@ -44,26 +44,19 @@ async function runMigrate(args: {
 	}
 }
 
-describe("migrate command (v2 detection-only)", () => {
-	it("detects v1 project with state-cache.json", async () => {
+describe("migrate command", () => {
+	it("detects v1 project with state-cache.json via detectVersion", async () => {
 		const gpDir = path.join(tmpDir, ".goodplan");
 		fs.mkdirSync(gpDir);
 		fs.writeFileSync(path.join(gpDir, "state-cache.json"), "{}");
 		fs.writeFileSync(path.join(gpDir, "project.json"), "{}");
 
-		const chunks: string[] = [];
-		vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
-			chunks.push(String(chunk));
-			return true;
-		});
+		const { detectVersion } = await import("../../../src/commands/global/migrate.js");
+		const result = detectVersion(tmpDir);
 
-		await runMigrate({ json: true });
-
-		const output = JSON.parse(chunks.join(""));
-		expect(output.version).toBe("v1");
-		expect(output.indicators).toContain("state-cache.json");
-		expect(output.indicators).toContain("project.json");
-		expect(output.message).toContain("v1 project detected");
+		expect(result.version).toBe("v1");
+		expect(result.indicators).toContain("state-cache.json");
+		expect(result.indicators).toContain("project.json");
 	});
 
 	it("detects v2 project with events.jsonl", async () => {
@@ -85,25 +78,18 @@ describe("migrate command (v2 detection-only)", () => {
 		expect(output.message).toContain("Already a v2 project");
 	});
 
-	it("detects partial migration (both v1 and v2 indicators)", async () => {
+	it("detects partial migration via detectVersion", async () => {
 		const gpDir = path.join(tmpDir, ".goodplan");
 		fs.mkdirSync(gpDir);
 		fs.writeFileSync(path.join(gpDir, "state-cache.json"), "{}");
 		fs.writeFileSync(path.join(gpDir, "events.jsonl"), "");
 
-		const chunks: string[] = [];
-		vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
-			chunks.push(String(chunk));
-			return true;
-		});
+		const { detectVersion } = await import("../../../src/commands/global/migrate.js");
+		const result = detectVersion(tmpDir);
 
-		await runMigrate({ json: true });
-
-		const output = JSON.parse(chunks.join(""));
-		expect(output.version).toBe("partial");
-		expect(output.indicators).toContain("state-cache.json");
-		expect(output.indicators).toContain("events.jsonl");
-		expect(output.message).toContain("Partially migrated");
+		expect(result.version).toBe("partial");
+		expect(result.indicators).toContain("state-cache.json");
+		expect(result.indicators).toContain("events.jsonl");
 	});
 
 	it("reports no project when no .goodplan/ or .project/ exists", async () => {
@@ -121,41 +107,29 @@ describe("migrate command (v2 detection-only)", () => {
 		expect(output.message).toContain("No project found");
 	});
 
-	it("detects legacy .project/ directory as v1 indicator", async () => {
+	it("detects legacy .project/ directory via detectVersion", async () => {
 		const legacyDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(legacyDir);
 		fs.writeFileSync(path.join(legacyDir, "project.json"), "{}");
 
-		const chunks: string[] = [];
-		vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
-			chunks.push(String(chunk));
-			return true;
-		});
+		const { detectVersion } = await import("../../../src/commands/global/migrate.js");
+		const result = detectVersion(tmpDir);
 
-		await runMigrate({ json: true });
-
-		const output = JSON.parse(chunks.join(""));
-		expect(output.version).toBe("v1");
-		expect(output.indicators).toContain(".project");
-		expect(output.indicators).toContain("project.json");
+		expect(result.version).toBe("v1");
+		expect(result.indicators).toContain(".project");
+		expect(result.indicators).toContain("project.json");
 	});
 
-	it("detects v1 with state.json indicator", async () => {
+	it("detects v1 with state.json via detectVersion", async () => {
 		const gpDir = path.join(tmpDir, ".goodplan");
 		fs.mkdirSync(gpDir);
 		fs.writeFileSync(path.join(gpDir, "state.json"), "{}");
 
-		const chunks: string[] = [];
-		vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
-			chunks.push(String(chunk));
-			return true;
-		});
+		const { detectVersion } = await import("../../../src/commands/global/migrate.js");
+		const result = detectVersion(tmpDir);
 
-		await runMigrate({ json: true });
-
-		const output = JSON.parse(chunks.join(""));
-		expect(output.version).toBe("v1");
-		expect(output.indicators).toContain("state.json");
+		expect(result.version).toBe("v1");
+		expect(result.indicators).toContain("state.json");
 	});
 
 	it("outputs human-readable message when --json is not set", async () => {

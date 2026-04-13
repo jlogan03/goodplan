@@ -3,7 +3,9 @@ import * as path from "node:path";
 import { defineCommand } from "citty";
 import pc from "picocolors";
 import { LEGACY_DIR_NAME, PROJECT_DIR_NAME } from "../../core/data/project.js";
+import { GoodplanError } from "../../util/errors.js";
 import { output } from "../../util/output.js";
+import { readStdin } from "../../util/stdin.js";
 import { globalArgs } from "../global-args.js";
 
 // ---------------------------------------------------------------------------
@@ -28,7 +30,7 @@ export interface MigrateDetectionResult {
 // Detection logic
 // ---------------------------------------------------------------------------
 
-function detectVersion(cwd: string): MigrateDetectionResult {
+export function detectVersion(cwd: string): MigrateDetectionResult {
 	const goodplanDir = path.join(cwd, PROJECT_DIR_NAME);
 	const legacyDir = path.join(cwd, LEGACY_DIR_NAME);
 
@@ -107,17 +109,22 @@ function detectVersion(cwd: string): MigrateDetectionResult {
 // ---------------------------------------------------------------------------
 
 /**
- * `gp migrate` (v2) — detection-only skeleton.
+ * `gp migrate` (v2) — project migration command.
  *
- * Checks for v1 indicators (.state-cache.json, project.json, state.json, .project/)
- * and v2 indicators (events.jsonl). Reports the detected version.
+ * Detects project version (v1/v2/partial/none). For v1 projects,
+ * drives the multi-round RPC migration protocol via stdin/stdout JSON.
  *
- * Full migration logic is deferred to slice 12.
+ * Usage:
+ * - First call (no stdin): returns Round 1 questions or detection result
+ * - Subsequent calls (stdin with answers): advances migration rounds
+ * - On completion: returns summary with entity counts
+ *
+ * The `/gp:upgrade` skill drives this protocol interactively.
  */
 export const migrateCommand = defineCommand({
 	meta: {
 		name: "migrate",
-		description: "Detect project version (v1 vs v2). Full migration deferred to a future release.",
+		description: "Migrate project from v1 to v2 event-sourced format.",
 	},
 	args: {
 		...globalArgs,
@@ -125,22 +132,72 @@ export const migrateCommand = defineCommand({
 	setup() {},
 	async run({ args }) {
 		const cwd = process.cwd();
-		const result = detectVersion(cwd);
+		const detection = detectVersion(cwd);
 
-		if (args.json || args.query) {
-			output(result, args);
-		} else if (!args.quiet) {
-			const label =
-				result.version === "v2"
-					? pc.green(result.message)
-					: result.version === "v1" || result.version === "partial"
-						? pc.yellow(result.message)
-						: result.message;
-
-			process.stdout.write(`${label}\n`);
-			if (result.indicators.length > 0) {
-				process.stdout.write(`Indicators: ${result.indicators.join(", ")}\n`);
+		// For v2 and none: just report detection (no migration needed)
+		if (detection.version === "v2" || detection.version === "none") {
+			if (args.json || args.query) {
+				output(detection, args);
+			} else if (!args.quiet) {
+				const label =
+					detection.version === "v2"
+						? pc.green(detection.message)
+						: detection.message;
+				process.stdout.write(`${label}\n`);
 			}
+			return;
+		}
+
+		// For v1 or partial: run the RPC migration protocol
+		const { rpcMigrate } = await import("../../core/rpc/migrate.js");
+
+		const projectDir = fs.existsSync(path.join(cwd, PROJECT_DIR_NAME))
+			? path.join(cwd, PROJECT_DIR_NAME)
+			: path.join(cwd, LEGACY_DIR_NAME);
+
+		// Read stdin (may be null if no answers provided — triggers question emission)
+		const stdin = await readStdin();
+		const stdinData = Object.keys(stdin).length > 0 ? stdin : null;
+
+		try {
+			const result = await rpcMigrate(projectDir, stdinData, cwd);
+
+			if (args.json || args.query) {
+				output(result, args);
+			} else if (!args.quiet) {
+				if (result.status === "questions") {
+					process.stdout.write(`${pc.yellow("Migration round")} — answer the questions below:\n`);
+					for (const q of result.round.questions) {
+						process.stdout.write(`\n${pc.bold(q.id)}: ${q.question}\n`);
+						process.stdout.write(`  ${pc.dim(q.hint)}\n`);
+					}
+					if (result.warning) {
+						process.stdout.write(`\n${pc.yellow("Warning")}: ${result.warning}\n`);
+					}
+				} else {
+					process.stdout.write(
+						`${pc.green("Migration complete")} — ${result.summary.projectName}: ` +
+							`${String(result.summary.epicCount)} epic(s), ` +
+							`${String(result.summary.questCount)} quest(s), ` +
+							`${String(result.summary.sliceCount)} slice(s)\n`,
+					);
+				}
+			}
+		} catch (error) {
+			if (error instanceof GoodplanError) {
+				const errorOutput = {
+					ok: false,
+					error: error.message,
+					code: error.code,
+				};
+				if (args.json || args.query) {
+					output(errorOutput, args);
+				} else {
+					process.stderr.write(`${pc.red("Error")}: ${error.message}\n`);
+				}
+				process.exit(1);
+			}
+			throw error;
 		}
 	},
 });

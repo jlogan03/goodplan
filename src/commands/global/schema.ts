@@ -121,7 +121,7 @@ registerCommand("init", `Initialize a new ${PROJECT_DIR_NAME}/ directory`, {
 });
 registerCommand(
 	"migrate",
-	"Detect project version (v1 vs v2). Full migration deferred to a future release.",
+	"Migrate project from v1 to v2 event-sourced format.",
 	{
 		...globalArgDefs,
 	},
