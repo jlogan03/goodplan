@@ -9,9 +9,29 @@ dimensions:
     description: Is context properly propagated between phases without information loss?
     scoring: "1-10: 1=context dropped between phases, 5=key context preserved, 10=full context chain with traceability"
     threshold: 9
+  - name: context-completeness
+    description: Is the artifact self-contained for downstream consumption without external knowledge?
+    scoring: "1-10: 1=missing critical references, 5=mostly self-contained, 10=fully self-contained with all references resolved"
+    threshold: 9
   - name: verification-plausibility
     description: Are verification steps realistic, automatable, and likely to catch regressions?
     scoring: "1-10: 1=no verification or manual-only, 5=some automated checks, 10=comprehensive automated verification"
+    threshold: 9
+  - name: verification-quality
+    description: Are verification steps runnable, falsifiable, and regression-catching?
+    scoring: "1-10: 1=unrunnable checks, 5=runnable but weak coverage, 10=comprehensive falsifiable checks"
+    threshold: 9
+  - name: goal-quality
+    description: Is the goal well-defined, scoped, and actionable for downstream planning?
+    scoring: "1-10: 1=vague or unbounded, 5=clear intent with some gaps, 10=precise scope with clear success criteria"
+    threshold: 9
+  - name: slice-set-quality
+    description: Is the slice decomposition complete, well-ordered, and appropriately granular?
+    scoring: "1-10: 1=gaps or overlaps in coverage, 5=reasonable coverage with ordering issues, 10=complete coverage with clean dependencies"
+    threshold: 9
+  - name: plan-quality
+    description: Is the implementation plan structured, chunk-decomposed, and verifiable?
+    scoring: "1-10: 1=unstructured or missing chunks, 5=reasonable structure with verification gaps, 10=well-structured with concrete verification per chunk"
     threshold: 9
 convergence:
   max_rounds: 8

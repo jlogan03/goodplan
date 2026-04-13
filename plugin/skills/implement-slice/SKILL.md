@@ -229,7 +229,7 @@ echo '{"evidence":"<greenEvidence>"}' | $GP slice:chunk-green --epic $EPIC_NAME 
 
 ### 5.6. Verify Chunk
 
-Spawn `verifier` agent (model: opus, tools: Read, Grep, Glob, Bash) with: chunk ID, expected behavior (after-checks), slice path, implementation files from `filesWritten`.
+Spawn `verifier-phase` agent (model: opus, tools: Read, Grep, Glob, Bash) with: chunk ID, expected behavior (after-checks), slice path, implementation files from `filesWritten`.
 
 Expected return:
 ```json

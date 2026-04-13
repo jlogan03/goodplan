@@ -7,10 +7,10 @@ import type { ReviewerRegistryEntry } from "../../../src/trust/reviewers/types.j
 const PLUGIN_DIR = resolve(import.meta.dirname, "../../../plugin");
 
 describe("ReviewerRegistry", () => {
-	it("createReviewerRegistry loads all 20 reviewers from plugin/agents/", () => {
+	it("createReviewerRegistry loads all 26 reviewers from plugin/agents/", () => {
 		const registry = createReviewerRegistry(PLUGIN_DIR);
 		const all = registry.getAll();
-		expect(all.length).toBe(20);
+		expect(all.length).toBe(26);
 	});
 
 	it("getById('reviewer-holistic') returns entry with expected domains", () => {
@@ -52,7 +52,7 @@ describe("ReviewerRegistry", () => {
 
 	it("loadReviewerAgents returns entries with filePath and promptContent", () => {
 		const entries = loadReviewerAgents(PLUGIN_DIR);
-		expect(entries.length).toBe(20);
+		expect(entries.length).toBe(26);
 		for (const entry of entries) {
 			expect(entry.filePath).toBeTruthy();
 			expect(entry.promptContent).toBeTruthy();

@@ -1,5 +1,5 @@
 ---
-name: verifier
+name: verifier-phase
 model: opus
 description: Independently verifies chunk expected behavior by running before/after checks from the plan. Spawned by the implement-slice orchestrator after chunk implementation to provide verification evidence.
 ---

@@ -160,6 +160,36 @@ export type {
 } from "./learning.js";
 
 export {
+	PauseSteeringEventMap,
+	pauseEnteredPayloadSchema,
+} from "./pause-steering.js";
+export type {
+	PauseSteeringEventType,
+	PauseSteeringEventPayload,
+	PauseEnteredPayload,
+} from "./pause-steering.js";
+
+export {
+	ReshapeEventMap,
+	reshapeProposedPayloadSchema,
+} from "./reshape.js";
+export type {
+	ReshapeEventType,
+	ReshapeEventPayload,
+	ReshapeProposedPayload,
+} from "./reshape.js";
+
+export {
+	MilestoneEventMap,
+	milestoneCommittedPayloadSchema,
+} from "./milestone.js";
+export type {
+	MilestoneEventType,
+	MilestoneEventPayload,
+	MilestoneCommittedPayload,
+} from "./milestone.js";
+
+export {
 	SideQuestEventMap,
 	sideQuestCreatedPayloadSchema,
 	sideQuestGoalCommittedPayloadSchema,

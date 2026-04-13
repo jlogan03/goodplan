@@ -190,9 +190,9 @@ Note: `redWritten` and `redFailed` will always be `false` for side-quest chunks 
 
 ### 5.3. Verify Chunk
 
-Spawn `verifier` agent (model: opus, tools: Read, Grep, Glob, Bash) with: chunk ID, expected behavior (after-checks), side-quest path, implementation files from `filesWritten`.
+Spawn `verifier-phase` agent (model: opus, tools: Read, Grep, Glob, Bash) with: chunk ID, expected behavior (after-checks), side-quest path, implementation files from `filesWritten`.
 
-@${CLAUDE_PLUGIN_ROOT}/agents/verifier.md
+@${CLAUDE_PLUGIN_ROOT}/agents/verifier-phase.md
 
 Expected return:
 ```json

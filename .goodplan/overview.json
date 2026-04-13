@@ -177,6 +177,12 @@
 			"created": "2026-04-12T23:00:16.291Z",
 			"name": "07b-08-gap-closure",
 			"status": "completed"
+		},
+		{
+			"completed": null,
+			"created": "2026-04-13T15:23:48.246Z",
+			"name": "architecture-fidelity-gaps",
+			"status": "created"
 		}
 	],
 	"tasks": [

@@ -17,8 +17,8 @@ describe("reviewer CLI commands", () => {
 			expect(result.exitCode).toBe(0);
 			const json = result.json as { ok: boolean; total: number; items: unknown[] };
 			expect(json.ok).toBe(true);
-			expect(json.total).toBe(20);
-			expect(json.items).toHaveLength(20);
+			expect(json.total).toBe(26);
+			expect(json.items).toHaveLength(26);
 		});
 
 		it("each item has id, domains, applies_to, rubric_ref", () => {
