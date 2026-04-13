@@ -393,11 +393,13 @@ async function testV2GoalAndExplore(): Promise<boolean> {
 	}
 
 	// Test 1c: Events log contains v2 event types
-	const eventsPath = join(fixtureDir, ".goodplan", "events.jsonl");
+	// Epic events are in the epic-scoped event log, not the project-level one
+	const epicEventsPath = join(fixtureDir, ".goodplan", "epics", EPIC_NAME, "events.jsonl");
+	const eventsPath = existsSync(epicEventsPath) ? epicEventsPath : join(fixtureDir, ".goodplan", "events.jsonl");
 	if (existsSync(eventsPath)) {
 		const eventsContent = readFileSync(eventsPath, "utf-8");
 		const expectedEvents = ["epic-created", "epic-goal-drafted", "epic-goal-committed"];
-		const optionalEvents = ["epic-explore-started", "epic-explore-concluded"];
+		const optionalEvents = ["exploration-cycle-started", "exploration-concluded"];
 		const foundEvents: string[] = [];
 		const missingEvents: string[] = [];
 
