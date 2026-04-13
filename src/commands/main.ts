@@ -3,7 +3,9 @@ import { briefingLatestCommand } from "./briefing/latest.js";
 import { briefingWriteCommand } from "./briefing/write.js";
 import { decisionCreateCommand } from "./decision/create.js";
 import { decisionListCommand } from "./decision/list.js";
+import { decisionRecordCommand } from "./decision/record.js";
 import { decisionShowCommand } from "./decision/show.js";
+import { decisionSupersedeCommand } from "./decision/supersede.js";
 import { decisionUpdateCommand } from "./decision/update.js";
 import { epicAbandonCommand } from "./epic/abandon.js";
 import { epicActivateCommand } from "./epic/activate.js";
@@ -50,7 +52,9 @@ import { invariantCheckCommand } from "./invariant/check.js";
 import { invariantDeactivateCommand } from "./invariant/deactivate.js";
 import { invariantListCommand } from "./invariant/list.js";
 import { invariantProposeCommand } from "./invariant/propose.js";
+import { learningCaptureCommand } from "./learning/capture.js";
 import { learningListCommand } from "./learning/list.js";
+import { learningPromoteCommand } from "./learning/promote.js";
 import { learningRollupCommand } from "./learning/rollup.js";
 import { projectSetSteeringCommand } from "./project/set-steering.js";
 import { projectShowCommand } from "./project/show.js";
@@ -76,6 +80,18 @@ import { reviewerShowCommand } from "./reviewer/show.js";
 import { rubricListCommand } from "./rubric/list.js";
 import { rubricShowCommand } from "./rubric/show.js";
 import { rubricValidateCommand } from "./rubric/validate.js";
+import { sideQuestAbandonCommand } from "./side-quest/abandon.js";
+import { sideQuestChunkStartCommand } from "./side-quest/chunk-start.js";
+import { sideQuestChunkVerifyCommand } from "./side-quest/chunk-verify.js";
+import { sideQuestCreateCommand } from "./side-quest/create.js";
+import { sideQuestGoalCommitCommand } from "./side-quest/goal-commit.js";
+import { sideQuestImplementStartCommand } from "./side-quest/implement-start.js";
+import { sideQuestLandCommand } from "./side-quest/land.js";
+import { sideQuestListCommand } from "./side-quest/list.js";
+import { sideQuestPlanCommitCommand } from "./side-quest/plan-commit.js";
+import { sideQuestPlanDraftCommand } from "./side-quest/plan-draft.js";
+import { sideQuestPlanShapeApproveCommand } from "./side-quest/plan-shape-approve.js";
+import { sideQuestShowCommand } from "./side-quest/show.js";
 import { sliceAbandonCommand } from "./slice/abandon.js";
 import { sliceChunkDecideCommand } from "./slice/chunk-decide.js";
 import { sliceChunkGreenCommand } from "./slice/chunk-green.js";
@@ -136,6 +152,8 @@ export const mainCommand = defineCommand({
 		"decision:create": decisionCreateCommand,
 		"decision:list": decisionListCommand,
 		"decision:show": decisionShowCommand,
+		"decision:record": decisionRecordCommand,
+		"decision:supersede": decisionSupersedeCommand,
 		"decision:update": decisionUpdateCommand,
 		"events:tail": eventsTailCommand,
 		"events:query": eventsQueryCommand,
@@ -167,7 +185,9 @@ export const mainCommand = defineCommand({
 		"epic:activate": epicActivateCommand,
 		"epic:complete": epicCompleteCommand,
 		"epic:abandon": epicAbandonCommand,
+		"learning:capture": learningCaptureCommand,
 		"learning:list": learningListCommand,
+		"learning:promote": learningPromoteCommand,
 		"learning:rollup": learningRollupCommand,
 		"reviewer:list": reviewerListCommand,
 		"reviewer:show": reviewerShowCommand,
@@ -196,6 +216,18 @@ export const mainCommand = defineCommand({
 		"task:show": taskShowCommand,
 		"task:drop": taskDropCommand,
 		"task:convert": taskConvertCommand,
+		"side-quest:create": sideQuestCreateCommand,
+		"side-quest:list": sideQuestListCommand,
+		"side-quest:show": sideQuestShowCommand,
+		"side-quest:goal-commit": sideQuestGoalCommitCommand,
+		"side-quest:plan-draft": sideQuestPlanDraftCommand,
+		"side-quest:plan-shape-approve": sideQuestPlanShapeApproveCommand,
+		"side-quest:plan-commit": sideQuestPlanCommitCommand,
+		"side-quest:implement-start": sideQuestImplementStartCommand,
+		"side-quest:chunk-start": sideQuestChunkStartCommand,
+		"side-quest:chunk-verify": sideQuestChunkVerifyCommand,
+		"side-quest:land": sideQuestLandCommand,
+		"side-quest:abandon": sideQuestAbandonCommand,
 		"slice:create": sliceCreateCommand,
 		"slice:list": sliceListCommand,
 		"slice:show": sliceShowCommand,

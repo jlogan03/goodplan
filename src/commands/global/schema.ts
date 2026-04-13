@@ -595,12 +595,42 @@ registerCommand(
 	},
 );
 
+// Decision v2 event commands
+registerCommand(
+	"decision:record",
+	"Record a decision (v2 event). Stdin: {id, domain, title, summary, entityPath?, reconsiderWhen?}.",
+	{
+		...globalArgDefs,
+	},
+);
+registerCommand(
+	"decision:supersede",
+	"Supersede a decision (v2 event). Stdin: {decisionId, reason, supersededBy?}.",
+	{
+		...globalArgDefs,
+	},
+);
+
 // Learning commands
+registerCommand(
+	"learning:capture",
+	"Capture a learning (v2 event). Stdin: {summary, scope?, tags?}.",
+	{
+		...globalArgDefs,
+	},
+);
 registerCommand("learning:list", "List learnings.", {
 	...globalArgDefs,
 	...listArgDefs,
 	source: { type: "string", description: "Filter by source scope" },
 });
+registerCommand(
+	"learning:promote",
+	"Promote a learning to a wider scope (v2 event). Stdin: {learningId, from, to}.",
+	{
+		...globalArgDefs,
+	},
+);
 registerCommand("learning:rollup", "Roll up learnings from one scope to another.", {
 	...globalArgDefs,
 	from: { type: "string", description: "Source scope", required: true },
@@ -719,6 +749,207 @@ registerCommand(
 		...globalArgDefs,
 	},
 );
+
+// ── Events commands ──────────────────────────────────────
+
+registerCommand("events:tail", "Show recent events from a scope's event log.", {
+	...globalArgDefs,
+	scope: { type: "string", description: "Scope: project, epic, or side-quest" },
+	"scope-ref": { type: "string", description: "Scope reference (e.g., epic name)" },
+	n: { type: "string", description: "Number of events to show (default: 10)" },
+});
+registerCommand("events:query", "Query events from a scope's event log with optional filters.", {
+	...globalArgDefs,
+	scope: { type: "string", description: "Scope: project, epic, or side-quest" },
+	"scope-ref": { type: "string", description: "Scope reference (e.g., epic name)" },
+	domain: { type: "string", description: "Filter by event domain" },
+	type: { type: "string", description: "Filter by event type" },
+	after: { type: "string", description: "Only events at or after this ISO-8601 timestamp" },
+	before: { type: "string", description: "Only events at or before this ISO-8601 timestamp" },
+	limit: { type: "string", description: "Maximum number of events to return (default: 50)" },
+});
+
+// ── Finding commands ──────────────────────────────────────
+
+registerCommand("finding:capture", "Capture a finding for an epic. Accepts stdin JSON.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand("finding:list", "List findings for an epic.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+	status: { type: "string", description: "Filter by disposition status" },
+});
+registerCommand("finding:triage", "Triage a finding. Stdin: {findingId, disposition, reason}.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+
+// ── Invariant commands ──────────────────────────────────────
+
+registerCommand("invariant:list", "List all custom invariants.", {
+	...globalArgDefs,
+	...listArgDefs,
+});
+registerCommand("invariant:check", "Run invariant checks against a scope.", {
+	...globalArgDefs,
+});
+registerCommand(
+	"invariant:propose",
+	"Propose a new custom invariant. Stdin: {description, rule?}.",
+	{
+		...globalArgDefs,
+	},
+);
+registerCommand("invariant:activate", "Activate a proposed invariant. Stdin: {id}.", {
+	...globalArgDefs,
+});
+registerCommand("invariant:deactivate", "Deactivate an invariant. Stdin: {id}.", {
+	...globalArgDefs,
+});
+
+// ── Reviewer commands ──────────────────────────────────────
+
+registerCommand("reviewer:list", "List all registered reviewers.", {
+	...globalArgDefs,
+	...listArgDefs,
+});
+registerCommand("reviewer:show", "Show details for a specific reviewer.", {
+	...globalArgDefs,
+	id: {
+		type: "positional",
+		description: "Reviewer agent ID (e.g., reviewer-holistic)",
+		required: true,
+	},
+});
+
+// ── Rubric commands ──────────────────────────────────────
+
+registerCommand("rubric:list", "List all registered rubrics.", {
+	...globalArgDefs,
+	...listArgDefs,
+});
+registerCommand("rubric:show", "Show details for a specific rubric.", {
+	...globalArgDefs,
+	name: { type: "positional", description: "Rubric ID (e.g., holistic)", required: true },
+});
+registerCommand("rubric:validate", "Validate all rubrics.", {
+	...globalArgDefs,
+});
+
+// ── Refine commands ──────────────────────────────────────
+
+registerCommand("refine:start", "Start a new refinement round for an artifact.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name (mutually exclusive with --side-quest)" },
+	"side-quest": { type: "string", description: "Side-quest name (mutually exclusive with --epic)" },
+	"artifact-type": { type: "string", description: "Artifact type being refined", required: true },
+});
+registerCommand("refine:score", "Submit reviewer scores for the current refinement round.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name" },
+	"side-quest": { type: "string", description: "Side-quest name" },
+	"artifact-type": { type: "string", description: "Artifact type", required: true },
+	reviewer: { type: "string", description: "Reviewer ID", required: true },
+});
+registerCommand("refine:synthesize", "Record feedback synthesis for the current round.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name" },
+	"side-quest": { type: "string", description: "Side-quest name" },
+	"artifact-type": { type: "string", description: "Artifact type", required: true },
+});
+registerCommand("refine:revise", "Record an artifact revision for the current round.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name" },
+	"side-quest": { type: "string", description: "Side-quest name" },
+	"artifact-type": { type: "string", description: "Artifact type", required: true },
+});
+registerCommand("refine:evaluate", "Evaluate convergence for the current round (read-only).", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name" },
+	"side-quest": { type: "string", description: "Side-quest name" },
+	"artifact-type": { type: "string", description: "Artifact type", required: true },
+});
+registerCommand("refine:converge", "Record convergence for the current round.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name" },
+	"side-quest": { type: "string", description: "Side-quest name" },
+	"artifact-type": { type: "string", description: "Artifact type", required: true },
+});
+registerCommand("refine:stuck", "Record a circuit breaker trip for the current round.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name" },
+	"side-quest": { type: "string", description: "Side-quest name" },
+	"artifact-type": { type: "string", description: "Artifact type", required: true },
+	reason: { type: "string", description: "Explicit reason (if no auto-detected condition)" },
+});
+registerCommand("refine:override", "Override convergence evaluation with a manual decision.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name" },
+	"side-quest": { type: "string", description: "Side-quest name" },
+	"artifact-type": { type: "string", description: "Artifact type", required: true },
+	reason: { type: "string", description: "Reason for override", required: true },
+});
+
+// ── Side-quest commands ──────────────────────────────────
+
+registerCommand("side-quest:create", "Create a new side-quest. Requires --name and --goal.", {
+	...globalArgDefs,
+	name: { type: "string", description: "Side-quest name (used as directory slug)", required: true },
+	goal: { type: "string", description: "Side-quest goal description", required: true },
+});
+registerCommand("side-quest:list", "List all side-quests with status.", {
+	...globalArgDefs,
+});
+registerCommand("side-quest:show", "Show side-quest details.", {
+	...globalArgDefs,
+	"side-quest": { type: "string", description: "Side-quest name", required: true },
+});
+registerCommand("side-quest:goal-commit", "Commit a side-quest goal. Stdin: {goal: ContentRef}.", {
+	...globalArgDefs,
+	"side-quest": { type: "string", description: "Side-quest name", required: true },
+});
+registerCommand("side-quest:plan-draft", "Draft a side-quest plan. Stdin: {plan: ContentRef}.", {
+	...globalArgDefs,
+	"side-quest": { type: "string", description: "Side-quest name", required: true },
+});
+registerCommand("side-quest:plan-shape-approve", "Approve the plan shape for a side-quest.", {
+	...globalArgDefs,
+	"side-quest": { type: "string", description: "Side-quest name", required: true },
+});
+registerCommand("side-quest:plan-commit", "Commit a side-quest plan. Stdin: {plan: ContentRef}.", {
+	...globalArgDefs,
+	"side-quest": { type: "string", description: "Side-quest name", required: true },
+});
+registerCommand("side-quest:implement-start", "Start implementation of a side-quest.", {
+	...globalArgDefs,
+	"side-quest": { type: "string", description: "Side-quest name", required: true },
+});
+registerCommand(
+	"side-quest:chunk-start",
+	"Start a chunk in a side-quest. Stdin: {chunkId, description}.",
+	{
+		...globalArgDefs,
+		"side-quest": { type: "string", description: "Side-quest name", required: true },
+	},
+);
+registerCommand(
+	"side-quest:chunk-verify",
+	"Verify a chunk in a side-quest. Stdin: {chunkId, evidence}.",
+	{
+		...globalArgDefs,
+		"side-quest": { type: "string", description: "Side-quest name", required: true },
+	},
+);
+registerCommand("side-quest:land", "Land (complete) a side-quest.", {
+	...globalArgDefs,
+	"side-quest": { type: "string", description: "Side-quest name", required: true },
+});
+registerCommand("side-quest:abandon", "Abandon a side-quest. Requires --reason.", {
+	...globalArgDefs,
+	"side-quest": { type: "string", description: "Side-quest name", required: true },
+	reason: { type: "string", description: "Reason for abandoning", required: true },
+});
 
 // ── Event Schema Registry ───────────────────────────────────
 

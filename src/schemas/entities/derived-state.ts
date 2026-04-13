@@ -135,6 +135,7 @@ export interface SideQuestState {
 	active: boolean;
 	landed: boolean;
 	abandoned: boolean;
+	planShapeApproved: boolean;
 }
 
 // --- Project State ---

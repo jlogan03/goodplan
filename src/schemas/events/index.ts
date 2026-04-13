@@ -135,3 +135,55 @@ export type {
 	RefinementCircuitBreakerTrippedPayload,
 	ConvergenceOverriddenPayload,
 } from "./refinement.js";
+
+export {
+	DecisionEventMap,
+	decisionRecordedPayloadSchema,
+	decisionSupersededPayloadSchema,
+} from "./decision.js";
+export type {
+	DecisionEventType,
+	DecisionEventPayload,
+	DecisionRecordedPayload,
+	DecisionSupersededPayload,
+} from "./decision.js";
+
+export {
+	LearningEventMap,
+	learningCapturedPayloadSchema,
+	learningPromotedPayloadSchema,
+} from "./learning.js";
+export type {
+	LearningEventType,
+	LearningEventPayload,
+	LearningCapturedPayload,
+	LearningPromotedPayload,
+} from "./learning.js";
+
+export {
+	SideQuestEventMap,
+	sideQuestCreatedPayloadSchema,
+	sideQuestGoalCommittedPayloadSchema,
+	sideQuestPlanDraftedPayloadSchema,
+	sideQuestPlanShapeApprovedPayloadSchema,
+	sideQuestPlanCommittedPayloadSchema,
+	sideQuestImplementationStartedPayloadSchema,
+	sideQuestChunkStartedPayloadSchema,
+	sideQuestChunkVerifiedPayloadSchema,
+	sideQuestLandedPayloadSchema,
+	sideQuestAbandonedPayloadSchema,
+} from "./side-quest.js";
+export type {
+	SideQuestEventType,
+	SideQuestEventPayload,
+	SideQuestCreatedPayload,
+	SideQuestGoalCommittedPayload,
+	SideQuestPlanDraftedPayload,
+	SideQuestPlanShapeApprovedPayload,
+	SideQuestPlanCommittedPayload,
+	SideQuestImplementationStartedPayload,
+	SideQuestChunkStartedPayload,
+	SideQuestChunkVerifiedPayload,
+	SideQuestLandedPayload,
+	SideQuestAbandonedPayload,
+} from "./side-quest.js";

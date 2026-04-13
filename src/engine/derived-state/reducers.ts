@@ -432,11 +432,58 @@ export function reduceEntityLifecycle(state: DerivedStateData, event: AnyEventEn
 			break;
 		}
 
+		case "side-quest-plan-drafted": {
+			const sq = resolveSideQuest(state, event);
+			if (sq !== undefined) {
+				sq.plan = (payload.plan as ContentRef) ?? null;
+			}
+			break;
+		}
+
+		case "side-quest-plan-shape-approved": {
+			const sq = resolveSideQuest(state, event);
+			if (sq !== undefined) {
+				sq.planShapeApproved = true;
+			}
+			break;
+		}
+
 		case "side-quest-plan-committed": {
 			const sq = resolveSideQuest(state, event);
 			if (sq !== undefined) {
 				sq.plan = (payload.plan as ContentRef) ?? null;
 				sq.phase = "S1";
+			}
+			break;
+		}
+
+		case "side-quest-chunk-started": {
+			const sq = resolveSideQuest(state, event);
+			if (sq !== undefined) {
+				const chunkId = payload.chunkId as string | undefined;
+				const description = payload.description as string | undefined;
+				if (chunkId !== undefined) {
+					sq.chunks.set(chunkId, {
+						id: chunkId,
+						description: description ?? "",
+						verificationType: null,
+						status: "pending",
+					});
+				}
+			}
+			break;
+		}
+
+		case "side-quest-chunk-verified": {
+			const sq = resolveSideQuest(state, event);
+			if (sq !== undefined) {
+				const chunkId = payload.chunkId as string | undefined;
+				if (chunkId !== undefined) {
+					const chunk = sq.chunks.get(chunkId);
+					if (chunk !== undefined) {
+						chunk.status = "verified";
+					}
+				}
 			}
 			break;
 		}
@@ -761,8 +808,22 @@ export function reduceBriefing(state: DerivedStateData, event: AnyEventEnvelope)
 	}
 }
 
-export function reduceDecisionLearning(state: DerivedStateData, _event: AnyEventEnvelope): void {
-	void state;
+export function reduceDecisionLearning(_state: DerivedStateData, event: AnyEventEnvelope): void {
+	switch (event.type) {
+		case "decision-recorded":
+		case "decision-superseded":
+		case "learning-captured":
+		case "learning-promoted":
+			// These events are recorded in the event log for replay.
+			// No derived state updates needed yet — decisions and learnings
+			// are currently read from the v1 data layer (decisions.jsonl, learnings/).
+			// When the v1 data layer is retired, add Map-based tracking here.
+			break;
+
+		default:
+			// Silently skip unknown decision-learning event types (forward compat)
+			break;
+	}
 }
 
 export function reducePauseSteering(state: DerivedStateData, event: AnyEventEnvelope): void {
@@ -897,5 +958,6 @@ function createEmptySideQuestState(dir: string): SideQuestState {
 		active: false,
 		landed: false,
 		abandoned: false,
+		planShapeApproved: false,
 	};
 }
