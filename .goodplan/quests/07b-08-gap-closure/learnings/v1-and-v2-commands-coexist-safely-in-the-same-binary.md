@@ -1,0 +1,1 @@
+decision:create (v1 RPC) and decision:record (v2 event) both work. learning:rollup (v1) and learning:promote (v2) both work. quest:* (v1) and side-quest:* (v2) both work. Skills migrate at their own pace.
