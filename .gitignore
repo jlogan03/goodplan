@@ -18,6 +18,9 @@ structured-iterative-development-primer.md
 *.log
 tools/dogfood/validate-logs/
 
+# Dogfood test transcripts (ephemeral test output)
+tools/dogfood/*-transcript*.jsonl
+
 # Dev sentinel (excluded from plugin builds)
 .goodplan-dev
 
