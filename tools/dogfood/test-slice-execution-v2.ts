@@ -183,11 +183,12 @@ function createPlanReadyFixture(): string {
 		);
 	}
 
-	// Draft and commit goal
+	// Draft and commit goal (both require stdin { content })
+	const goalContent = "Test epic for slice execution v2 validation";
 	const goalDraftResult = gp(["epic:goal-draft", "--epic", EPIC_NAME, "--json"], {
 		cwd: tmpDir,
 		gpBin: GP_BIN,
-		stdin: JSON.stringify({ content: "Test epic for slice execution v2 validation" }),
+		stdin: JSON.stringify({ content: goalContent }),
 	});
 	if (goalDraftResult.exitCode !== 0) {
 		throw new Error(
@@ -198,6 +199,7 @@ function createPlanReadyFixture(): string {
 	const goalCommitResult = gp(["epic:goal-commit", "--epic", EPIC_NAME, "--json"], {
 		cwd: tmpDir,
 		gpBin: GP_BIN,
+		stdin: JSON.stringify({ content: goalContent }),
 	});
 	if (goalCommitResult.exitCode !== 0) {
 		throw new Error(
@@ -205,24 +207,17 @@ function createPlanReadyFixture(): string {
 		);
 	}
 
-	// Activate epic
-	const activateResult = gp(["epic:activate", "--epic", EPIC_NAME, "--json"], {
-		cwd: tmpDir,
-		gpBin: GP_BIN,
-	});
-	if (activateResult.exitCode !== 0) {
-		throw new Error(
-			`gp epic:activate failed (exit ${activateResult.exitCode}): ${activateResult.stdout}`,
-		);
-	}
+	// Note: We skip epic:activate — it requires the full P0→P5 lifecycle (slices committed).
+	// plan-slice works without activation: we pass the epic name explicitly in the prompt,
+	// and the skill resolves it from the slice:show output rather than status --json activeEpic.
 
-	// Create slice
+	// Create slice (--name flag + stdin { goal })
 	const sliceCreateResult = gp(
-		["slice:create", "--epic", EPIC_NAME, "--slice", SLICE_NAME, "--json"],
+		["slice:create", "--epic", EPIC_NAME, "--name", SLICE_NAME, "--json"],
 		{
 			cwd: tmpDir,
 			gpBin: GP_BIN,
-			stdin: JSON.stringify({ goal: SLICE_GOAL }),
+			stdin: JSON.stringify({ name: SLICE_NAME, goal: SLICE_GOAL }),
 		},
 	);
 	if (sliceCreateResult.exitCode !== 0) {
@@ -348,7 +343,7 @@ async function testPlanSliceV2(): Promise<boolean> {
 
 	try {
 		sessionResult = await runSkillSession({
-			prompt: `Plan the slice "${SLICE_NAME}" in epic "${EPIC_NAME}". The goal is: ${SLICE_GOAL}. Follow the plan-slice skill instructions through P7 (draft), P8 (shape checkpoint), and P9 (commit). Use at most ${MAX_ITERATIONS} refinement iterations.`,
+			prompt: `Plan the slice "${SLICE_NAME}" in epic "${EPIC_NAME}". The epic is not activated yet, so use --epic ${EPIC_NAME} explicitly on all commands. The goal is: ${SLICE_GOAL}. Follow the plan-slice skill instructions through P7 (draft), P8 (shape checkpoint), and P9 (commit). Use at most ${MAX_ITERATIONS} refinement iterations.`,
 			options: {
 				cwd: fixtureDir,
 				permissionMode: "bypassPermissions",
