@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 
-PLUGIN_NAME="goodplan"
+PLUGIN_NAME="gp"
 SOURCE_PLUGIN_DIR="$REPO_ROOT/plugins/$PLUGIN_NAME"
 TARGET_PLUGIN_PARENT="${GOODPLAN_CODEX_PLUGIN_PARENT:-$HOME/plugins}"
 TARGET_PLUGIN_DIR="$TARGET_PLUGIN_PARENT/$PLUGIN_NAME"
@@ -18,13 +18,13 @@ usage() {
 Usage: bash scripts/install-codex-plugin-home.sh [--build] [--copy|--symlink]
 
 Installs the built goodplan Codex plugin into the home-local Codex plugin layout:
-  ~/plugins/goodplan
+  ~/plugins/gp
   ~/.agents/plugins/marketplace.json
 
 Options:
   --build     Run the Codex build before installing
-  --copy      Copy the built plugin into ~/plugins/goodplan
-  --symlink   Symlink ~/plugins/goodplan to the repo build output (default)
+  --copy      Copy the built plugin into ~/plugins/gp
+  --symlink   Symlink ~/plugins/gp to the repo build output (default)
   --help      Show this help
 
 Environment overrides:
@@ -130,7 +130,7 @@ if (!sourcePath.startsWith(".")) {
 }
 
 const pluginEntry = {
-	name: "goodplan",
+	name: "gp",
 	source: {
 		source: "local",
 		path: sourcePath,
@@ -162,15 +162,21 @@ if (!marketplace.interface || typeof marketplace.interface !== "object") {
 	marketplace.interface = {};
 }
 
-const existingIndex = marketplace.plugins.findIndex((plugin) => plugin && plugin.name === "goodplan");
-if (existingIndex >= 0) {
-	marketplace.plugins[existingIndex] = {
-		...marketplace.plugins[existingIndex],
+const matchingIndexes = marketplace.plugins
+	.map((plugin, index) => (plugin && (plugin.name === "gp" || plugin.name === "goodplan") ? index : -1))
+	.filter((index) => index >= 0);
+if (matchingIndexes.length > 0) {
+	const [primaryIndex, ...duplicateIndexes] = matchingIndexes;
+	marketplace.plugins[primaryIndex] = {
+		...marketplace.plugins[primaryIndex],
 		...pluginEntry,
 		source: pluginEntry.source,
 		policy: pluginEntry.policy,
 		category: pluginEntry.category,
 	};
+	if (duplicateIndexes.length > 0) {
+		marketplace.plugins = marketplace.plugins.filter((_, index) => !duplicateIndexes.includes(index));
+	}
 } else {
 	marketplace.plugins.push(pluginEntry);
 }
@@ -203,4 +209,4 @@ echo "  $MARKETPLACE_PATH"
 echo ""
 echo "Next steps:"
 echo "  1. Start a fresh Codex session in any repo."
-echo '  2. Use a goodplan skill from the skills UI or in your prompt, e.g. "$goodplan:status" or "$goodplan:init".'
+echo '  2. Use a goodplan skill from the skills UI or in your prompt, e.g. "$gp:status" or "$gp:init".'

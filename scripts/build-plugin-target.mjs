@@ -29,7 +29,13 @@ const pkg = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8"));
 const version = pkg.version;
 const repositoryUrl =
 	typeof pkg.repository === "string" ? pkg.repository : pkg.repository?.url ?? pkg.homepage;
-const pluginRoot = target === "claude" ? join(repoRoot, "dist", "gp-plugin") : join(repoRoot, "plugins", "goodplan");
+const codexPluginName = "gp";
+const codexPluginDisplayName = "goodplan";
+const codexLegacyPluginName = "goodplan";
+const codexPluginRoot = join(repoRoot, "plugins", codexPluginName);
+const codexLegacyPluginRoot = join(repoRoot, "plugins", codexLegacyPluginName);
+const codexMarketplaceSourcePath = `./plugins/${codexPluginName}`;
+const pluginRoot = target === "claude" ? join(repoRoot, "dist", "gp-plugin") : codexPluginRoot;
 const supportedBuildPlatforms = {
 	"macos-arm64": {
 		host: "darwin-arm64",
@@ -385,7 +391,7 @@ function writeClaudeManifest() {
 function writeCodexManifest() {
 	ensureDir(join(pluginRoot, ".codex-plugin"));
 	const manifest = {
-		name: "goodplan",
+		name: codexPluginName,
 		version,
 		description: "Structured development workflow for long-lived coding projects",
 		author: {
@@ -399,7 +405,7 @@ function writeCodexManifest() {
 		skills: "./skills/",
 		hooks: "./hooks.json",
 		interface: {
-			displayName: "goodplan",
+			displayName: codexPluginDisplayName,
 			shortDescription: "Plan, track, and execute long-running coding work",
 			longDescription:
 				"Use goodplan in Codex to manage project state, architecture, epics, slices, quests, and implementation workflows across sessions.",
@@ -458,24 +464,24 @@ function rewriteCodexSpecificFiles() {
 		"  }'",
 		"}",
 		'GP=""',
-		'if [ -x "./plugins/goodplan/bin/gp" ]; then',
-		'  GP="./plugins/goodplan/bin/gp"',
+		'if [ -x "./plugins/gp/bin/gp" ]; then',
+		'  GP="./plugins/gp/bin/gp"',
 		"fi",
-		'if [ -z "$GP" ] && [ -x "$HOME/plugins/goodplan/bin/gp" ]; then',
-		'  GP="$HOME/plugins/goodplan/bin/gp"',
+		'if [ -z "$GP" ] && [ -x "$HOME/plugins/gp/bin/gp" ]; then',
+		'  GP="$HOME/plugins/gp/bin/gp"',
 		"fi",
 		'if [ -z "$GP" ] && [ -d "$HOME/.codex/plugins/cache" ]; then',
 		'  BEST_GP=""',
 		'  BEST_VERSION=""',
 		'  while IFS= read -r candidate; do',
-		'    version=$(printf "%s\\n" "$candidate" | sed -n "s|.*/goodplan/\\([0-9][0-9.]*\\)/bin/gp$|\\1|p")',
+		'    version=$(printf "%s\\n" "$candidate" | sed -n "s|.*/gp/\\([0-9][0-9.]*\\)/bin/gp$|\\1|p")',
 		'    [ -n "$version" ] || continue',
 		'    if [ -z "$BEST_VERSION" ] || version_gt "$version" "$BEST_VERSION"; then',
 		'      BEST_GP="$candidate"',
 		'      BEST_VERSION="$version"',
 		"    fi",
 		'  done <<EOF',
-		'$(find "$HOME/.codex/plugins/cache" -path "*/goodplan/*/bin/gp" -type f -perm -111 2>/dev/null)',
+		'$(find "$HOME/.codex/plugins/cache" -path "*/gp/*/bin/gp" -type f -perm -111 2>/dev/null)',
 		"EOF",
 		'  GP="$BEST_GP"',
 		"fi",
@@ -642,7 +648,8 @@ function rewriteCodexMarkdown() {
 	);
 	for (const file of files) {
 		let text = loadText(file);
-		text = text.replaceAll("/gp:", "$goodplan:");
+		text = text.replaceAll("$goodplan:", "$gp:");
+		text = text.replaceAll("/gp:", "$gp:");
 		text = text.replace(/@\$\{CLAUDE_PLUGIN_ROOT\}\/([^ )`>\n]+)/g, (_, pluginRelativePath) => {
 			const targetFile = join(pluginRoot, pluginRelativePath);
 			return `@${ensureRelativeMarkdownPath(file, targetFile)}`;
@@ -803,13 +810,24 @@ function validateClaudeArtifacts() {
 
 function validateCodexArtifacts() {
 	console.log("\nValidating Codex plugin artifacts...");
-	JSON.parse(loadText(join(pluginRoot, ".codex-plugin", "plugin.json")));
+	const manifest = JSON.parse(loadText(join(pluginRoot, ".codex-plugin", "plugin.json")));
 	JSON.parse(loadText(join(pluginRoot, "hooks.json")));
 	validateCompiledBinaries();
+	if (manifest.name !== codexPluginName) {
+		throw new Error(`FAIL: Codex plugin manifest name must be ${codexPluginName}`);
+	}
+	if (manifest.interface?.displayName !== codexPluginDisplayName) {
+		throw new Error(`FAIL: Codex plugin displayName must be ${codexPluginDisplayName}`);
+	}
 	const marketplace = JSON.parse(loadText(join(repoRoot, ".agents", "plugins", "marketplace.json")));
-	const goodplanEntry = marketplace.plugins.find((entry) => entry.name === "goodplan");
-	if (!goodplanEntry || goodplanEntry.source?.path !== "./plugins/goodplan") {
-		throw new Error("FAIL: .agents/plugins/marketplace.json does not point goodplan at ./plugins/goodplan");
+	const codexEntry = marketplace.plugins.find((entry) => entry.name === codexPluginName);
+	if (!codexEntry || codexEntry.source?.path !== codexMarketplaceSourcePath) {
+		throw new Error(
+			`FAIL: .agents/plugins/marketplace.json does not point ${codexPluginName} at ${codexMarketplaceSourcePath}`,
+		);
+	}
+	if (marketplace.plugins.some((entry) => entry.name === codexLegacyPluginName)) {
+		throw new Error(`FAIL: .agents/plugins/marketplace.json still contains legacy ${codexLegacyPluginName} entry`);
 	}
 	const leftovers = recursiveFiles(pluginRoot).filter((file) => {
 		const textExtensions = [".json", ".md", ".sh"];
@@ -827,7 +845,7 @@ function validateCodexArtifacts() {
 	console.log("  plugin.json: valid JSON");
 	console.log("  hooks.json: valid JSON");
 	console.log(`  binaries: present (${buildPlatforms.map((buildPlatform) => buildPlatform.binaryDir).join(", ")})`);
-	console.log("  marketplace.json: points to ./plugins/goodplan");
+	console.log(`  marketplace.json: points to ${codexMarketplaceSourcePath}`);
 	console.log("  Claude-only placeholders: clean");
 }
 
@@ -839,6 +857,9 @@ function printSummary() {
 }
 
 rmSync(pluginRoot, { recursive: true, force: true });
+if (target === "codex" && codexLegacyPluginRoot !== pluginRoot) {
+	rmSync(codexLegacyPluginRoot, { recursive: true, force: true });
+}
 copySharedAssets();
 compileBinaries();
 

@@ -28,7 +28,7 @@ Codex has a separate publish workflow, but it uses the same release tag as Claud
 
 - Workflow: `.github/workflows/publish-codex-plugin.yml`
 - Build locally with `bash scripts/build-codex-plugin.sh`
-- The generated plugin lives at `plugins/goodplan/`
+- The generated plugin lives at `plugins/gp/`
 - The marketplace entry lives at `.agents/plugins/marketplace.json`
 - Local builds compile the native host platform by default. Set `GOODPLAN_BINARY_PLATFORM=<platform>` to override, or `GOODPLAN_BINARY_PLATFORMS=<comma-separated platforms>` to build a multi-platform payload.
 - Tagged releases attach `goodplan-codex-plugin-vX.Y.Z.tar.gz` to the same GitHub Release tag used by the Claude workflow.
@@ -67,7 +67,7 @@ plugins/
 
 Users install via: `/plugin marketplace add ian97531/goodplan`
 
-The Codex workflow attaches the Codex marketplace payload (`.agents/plugins/marketplace.json` plus `plugins/goodplan/`) as a release asset on the same tag. Both release workflows set `GOODPLAN_BINARY_PLATFORMS=macos-arm64,macos-x64,linux-arm64,linux-x64` so the published payload includes the full supported binary matrix. The `release` branch remains Claude-only.
+The Codex workflow attaches the Codex marketplace payload (`.agents/plugins/marketplace.json` plus `plugins/gp/`) as a release asset on the same tag. Both release workflows set `GOODPLAN_BINARY_PLATFORMS=macos-arm64,macos-x64,linux-arm64,linux-x64` so the published payload includes the full supported binary matrix. The `release` branch remains Claude-only.
 
 ## Rollback
 

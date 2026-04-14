@@ -7,11 +7,11 @@ This repo builds the goodplan workflow system. It contains the source code for b
 ### 1. Repo source code (`plugin/`, `src/`, `.agents/plugins/marketplace.json`)
 This is what we are actively developing. **"Update a skill" always means editing files here.** The `plugin/` directory is the **source of truth** for all goodplan skills, agents, shared hooks, and Codex packaging assets. The `src/` directory is the source for the CLI. `.agents/plugins/marketplace.json` is the tracked repo-local Codex marketplace entry. These are NOT installed or active anywhere until explicitly built/installed.
 
-### 2. Installed tools and generated plugin outputs (`dist/gp-plugin/`, `plugins/goodplan/`, `gp` on PATH)
+### 2. Installed tools and generated plugin outputs (`dist/gp-plugin/`, `plugins/gp/`, `gp` on PATH)
 These are built artifacts or installed plugin payloads:
 
 - `dist/gp-plugin/` is the generated Claude plugin payload
-- `plugins/goodplan/` is the generated repo-local Codex plugin payload
+- `plugins/gp/` is the generated repo-local Codex plugin payload
 - the installed goodplan marketplace plugin is what `/gp:status`, `/gp:plan-slice`, `/gp:implement`, and the other Claude slash commands actually use
 
 They may have **different capabilities** from what's in the repo — we are actively improving the repo versions. **Never edit generated or installed plugin files directly** — they are overwritten on rebuild or plugin update.
@@ -24,7 +24,7 @@ This is managed by the **installed** CLI and skills (#2 above), not the repo sou
 | Action | Correct | Wrong |
 |---|---|---|
 | Edit a skill | Edit `plugin/skills/<name>/SKILL.md` in the repo | Edit `~/.claude/skills/<name>/SKILL.md` |
-| Edit Codex packaging assets | Edit `plugin/codex/` in the repo | Edit `plugins/goodplan/` |
+| Edit Codex packaging assets | Edit `plugin/codex/` in the repo | Edit `plugins/gp/` |
 | Run a workflow command | `gp status --json` (installed CLI) | `./gp status --json` (local build) |
 | Mutate `.goodplan/` state | `gp quest:complete ...` (installed CLI) | Directly edit `.goodplan/quests/*/quest.json` |
 | Test CLI changes | Run `./gp` against a **fixture repo** in `/tmp` | Run `./gp` against this repo's `.goodplan/` |

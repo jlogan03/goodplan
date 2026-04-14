@@ -30,7 +30,7 @@ Codex supports both a repo-local build and a release-published tarball asset on 
 bash scripts/build-codex-plugin.sh
 
 # The build writes the plugin to:
-#   plugins/goodplan/
+#   plugins/gp/
 #
 # And the repo-local marketplace entry already points Codex at:
 #   .agents/plugins/marketplace.json
@@ -42,17 +42,17 @@ To make the plugin available from any repo on the current machine, install it in
 bash scripts/install-codex-plugin-home.sh --build
 ```
 
-That installs the plugin into `~/plugins/goodplan` and adds or updates `~/.agents/plugins/marketplace.json`.
+That installs the plugin into `~/plugins/gp` and adds or updates `~/.agents/plugins/marketplace.json`.
 
 Local builds compile the `gp` binary for the current host platform by default. To pin a specific output during development, set `GOODPLAN_BINARY_PLATFORM` to one of `macos-arm64`, `macos-x64`, `linux-arm64`, or `linux-x64`. To build multiple binaries into one plugin payload, set `GOODPLAN_BINARY_PLATFORMS` to a comma-separated list of those values.
 
-In Codex, goodplan currently loads as namespaced skills in the skills interface, not as slash commands. Use `$goodplan:...` in your prompt or select the skill from the skills UI. For example:
+In Codex, goodplan currently loads as namespaced skills in the skills interface, not as slash commands. Use `$gp:...` in your prompt or select the skill from the skills UI. For example:
 
-- `$goodplan:init`
-- `$goodplan:create-epic`
-- `$goodplan:plan-slice`
-- `$goodplan:implement`
-- `$goodplan:audit`
+- `$gp:init`
+- `$gp:create-epic`
+- `$gp:plan-slice`
+- `$gp:implement`
+- `$gp:audit`
 
 The underlying workflow content is the same in both hosts. Release builds now publish the full supported binary set, while repo-local builds follow the native platform unless overridden.
 
@@ -130,29 +130,29 @@ Project
 
 ### Skills
 
-Each step produces artifacts that persist across sessions. Use `/gp:status` in Claude Code or `$goodplan:status` in Codex at any time to see where you are and what to do next.
+Each step produces artifacts that persist across sessions. Use `/gp:status` in Claude Code or `$gp:status` in Codex at any time to see where you are and what to do next.
 
 **Getting started:**
-- Claude: `/gp:init` or Codex: `$goodplan:init` — Initialize a new project or onboard an existing codebase
-- Claude: `/gp:upgrade` or Codex: `$goodplan:upgrade` — Migrate project state after CLI updates
+- Claude: `/gp:init` or Codex: `$gp:init` — Initialize a new project or onboard an existing codebase
+- Claude: `/gp:upgrade` or Codex: `$gp:upgrade` — Migrate project state after CLI updates
 
 **Status and capture:**
-- Claude: `/gp:status` or Codex: `$goodplan:status` — See where you are, what to do next
-- Claude: `/gp:task` or Codex: `$goodplan:task` — Quick-capture a bug, idea, or improvement without breaking flow
+- Claude: `/gp:status` or Codex: `$gp:status` — See where you are, what to do next
+- Claude: `/gp:task` or Codex: `$gp:task` — Quick-capture a bug, idea, or improvement without breaking flow
 
 **Defining an epic:**
-- Claude: `/gp:create-epic` or Codex: `$goodplan:create-epic` — Define a body of work: goals, architecture, and slices via a 6-phase pipeline
-- Claude: `/gp:explore` or Codex: `$goodplan:explore` — Research, brainstorm, or prototype before committing
-- Claude: `/gp:start-epic` or Codex: `$goodplan:start-epic` — Review and approve an epic's architecture before activation
+- Claude: `/gp:create-epic` or Codex: `$gp:create-epic` — Define a body of work: goals, architecture, and slices via a 6-phase pipeline
+- Claude: `/gp:explore` or Codex: `$gp:explore` — Research, brainstorm, or prototype before committing
+- Claude: `/gp:start-epic` or Codex: `$gp:start-epic` — Review and approve an epic's architecture before activation
 
 **Building an epic slice or side-quest:**
-- Claude: `/gp:plan-slice` or Codex: `$goodplan:plan-slice` — Create and refine an implementation plan with automated reviewers
-- Claude: `/gp:implement` or Codex: `$goodplan:implement` — Execute plans phase-by-phase with built-in review
-- Claude: `/gp:create-side-quest` or Codex: `$goodplan:create-side-quest` — Spin up unplanned work with the same plan/review discipline
-- Claude: `/gp:complete-epic` or Codex: `$goodplan:complete-epic` — Synthesize learnings, update architecture, archive
+- Claude: `/gp:plan-slice` or Codex: `$gp:plan-slice` — Create and refine an implementation plan with automated reviewers
+- Claude: `/gp:implement` or Codex: `$gp:implement` — Execute plans phase-by-phase with built-in review
+- Claude: `/gp:create-side-quest` or Codex: `$gp:create-side-quest` — Spin up unplanned work with the same plan/review discipline
+- Claude: `/gp:complete-epic` or Codex: `$gp:complete-epic` — Synthesize learnings, update architecture, archive
 
 **Auditing:**
-- Claude: `/gp:audit` or Codex: `$goodplan:audit` — Compare intended architecture, docs, and tests against actual code
+- Claude: `/gp:audit` or Codex: `$gp:audit` — Compare intended architecture, docs, and tests against actual code
 
 ### The CLI
 

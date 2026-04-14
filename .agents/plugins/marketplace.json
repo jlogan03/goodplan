@@ -5,10 +5,10 @@
   },
   "plugins": [
     {
-      "name": "goodplan",
+      "name": "gp",
       "source": {
         "source": "local",
-        "path": "./plugins/goodplan"
+        "path": "./plugins/gp"
       },
       "policy": {
         "installation": "AVAILABLE",
