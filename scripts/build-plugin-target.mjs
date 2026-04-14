@@ -447,6 +447,13 @@ function writeCodexHooks() {
 	copyFile(join(repoRoot, "plugin", "codex", "hooks.json"), join(pluginRoot, "hooks.json"));
 }
 
+function rewriteCodexCliExamples(text) {
+	return text
+		.replace(/\bgp \.\.\./g, "$GP ...")
+		.replace(/\bgp </g, "$GP <")
+		.replace(/\bgp (?=(?:--[a-z][a-z-]*|[a-z][a-z-]*(?::[a-z][a-z-]*)?))/g, "$GP ");
+}
+
 function rewriteCodexSpecificFiles() {
 	const codexCliSearchSnippet = [
 		'version_gt() {',
@@ -548,6 +555,7 @@ function rewriteCodexSpecificFiles() {
 		"Omit **Expertise** if `${CLAUDE_PLUGIN_DATA}/expertise.md` does not exist or the plugin data guard fails.",
 		"Omit **Expertise**.",
 	);
+	status = status.replace(/\n\*\*Expertise\*\*:.*\n(?:\n)?/g, "\n");
 	saveText(statusPath, status);
 
 	const explorePath = join(pluginRoot, "skills", "explore", "SKILL.md");
@@ -641,8 +649,9 @@ function rewriteCodexSpecificFiles() {
 }
 
 function rewriteCodexMarkdown() {
+	const skillsRoot = join(pluginRoot, "skills");
 	const files = markdownFiles(
-		join(pluginRoot, "skills"),
+		skillsRoot,
 		join(pluginRoot, "agents"),
 		join(pluginRoot, "commands"),
 	);
@@ -650,6 +659,9 @@ function rewriteCodexMarkdown() {
 		let text = loadText(file);
 		text = text.replaceAll("$goodplan:", "$gp:");
 		text = text.replaceAll("/gp:", "$gp:");
+		if (file.startsWith(`${skillsRoot}${sep}`)) {
+			text = rewriteCodexCliExamples(text);
+		}
 		text = text.replace(/@\$\{CLAUDE_PLUGIN_ROOT\}\/([^ )`>\n]+)/g, (_, pluginRelativePath) => {
 			const targetFile = join(pluginRoot, pluginRelativePath);
 			return `@${ensureRelativeMarkdownPath(file, targetFile)}`;
@@ -841,6 +853,17 @@ function validateCodexArtifacts() {
 		if (text.includes("CLAUDE_PLUGIN_DATA")) {
 			throw new Error(`FAIL: leftover CLAUDE_PLUGIN_DATA in ${normalizePath(relative(repoRoot, file))}`);
 		}
+	}
+	const bareGpSkillPattern = /\bgp (?=(?:--[a-z][a-z-]*|[a-z][a-z-]*(?::[a-z][a-z-]*)?))/;
+	for (const file of markdownFiles(join(pluginRoot, "skills"))) {
+		const text = loadText(file);
+		if (bareGpSkillPattern.test(text) || text.includes("gp ...") || text.includes("gp <")) {
+			throw new Error(`FAIL: found bare gp command example in ${normalizePath(relative(pluginRoot, file))}`);
+		}
+	}
+	const statusSkill = loadText(join(pluginRoot, "skills", "status", "SKILL.md"));
+	if (statusSkill.includes("**Expertise**:")) {
+		throw new Error("FAIL: Codex status skill still contains Expertise output templates");
 	}
 	console.log("  plugin.json: valid JSON");
 	console.log("  hooks.json: valid JSON");
