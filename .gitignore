@@ -1,6 +1,6 @@
 # Build artifacts
 dist/
-plugins/goodplan/
+plugins/gp/
 !plugin/bin/gp
 node_modules
 
