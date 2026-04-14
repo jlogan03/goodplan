@@ -20,7 +20,8 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
+import { query } from "@anthropic-ai/claude-agent-sdk";
+import type { SDKMessage, SDKResultSuccess } from "@anthropic-ai/claude-agent-sdk";
 import {
 	createLogger,
 	createSimulatedUser,
@@ -54,6 +55,8 @@ const GP_BIN = join(PLUGIN_DIR, "binaries", platformBinaryDir(), "gp");
 const LOG_FILE = join(GOODPLAN_DIR, "tools/dogfood/validate-consolidated.log");
 const TRANSCRIPT_FILE = join(GOODPLAN_DIR, "tools/dogfood/validate-consolidated-transcript.jsonl");
 const MODEL = parseModel(tierDefault("e2e"));
+// Simulated user uses Sonnet — capable enough for domain Q&A without Opus cost.
+const SIMULATED_USER_MODEL = "claude-sonnet-4-5";
 // No iteration cap — the E2E test should run the full refinement loop as a real user would.
 // Skills have their own built-in exit criteria (score >= 9, stagnation detection, hard cap of 10-12).
 // Individual skill test harnesses (test-plan-slice.ts, etc.) may still use --max-iterations for
@@ -68,7 +71,10 @@ const EPIC_GOAL =
 const SIDE_QUEST_GOAL =
 	"Add markdown card import — parse .md files with front/back delimiters into Card objects";
 
-const COST_THRESHOLD_USD = 40;
+// V2 pipeline costs more than v1 due to higher refinement thresholds (9/10)
+// and additional steps (land-slice). Budget: create-epic $60 + plan-slice $50
+// + implement $30 + 5 other steps ~$10 each = ~$190 max.
+const COST_THRESHOLD_USD = 200;
 
 // ─── Preflight ──────────────────────────────────────────────
 
@@ -492,7 +498,7 @@ async function runSkill(opts: {
 		cwd: opts.fixtureDir,
 		systemPrompt: opts.userSystemPrompt,
 		transcriptFile: TRANSCRIPT_FILE,
-		model: MODEL,
+		model: SIMULATED_USER_MODEL,
 	});
 
 	let sessionResult: SkillSessionResult | undefined;
@@ -506,7 +512,7 @@ async function runSkill(opts: {
 				permissionMode: "bypassPermissions",
 				allowDangerouslySkipPermissions: true,
 				maxTurns: opts.maxTurns ?? 400,
-				maxBudgetUsd: opts.maxBudgetUsd ?? 30,
+				maxBudgetUsd: opts.maxBudgetUsd ?? 500,
 				model: MODEL,
 				settingSources: [],
 				plugins: [{ type: "local", path: PLUGIN_DIR }],
@@ -538,6 +544,72 @@ async function runSkill(opts: {
 	return { sessionResult, tracker, success };
 }
 
+// ─── Pipeline Verification Helpers ─────────────────────────
+
+/** Check that an event log contains all required event types. */
+function verifyEvents(
+	fixtureDir: string,
+	scope: "project" | "epic",
+	scopeRef: string | null,
+	requiredEvents: string[],
+): { ok: boolean; missing: string[]; found: string[] } {
+	let eventsPath: string;
+	if (scope === "project") {
+		eventsPath = join(fixtureDir, ".goodplan", "events.jsonl");
+	} else {
+		eventsPath = join(fixtureDir, ".goodplan", "epics", scopeRef ?? "", "events.jsonl");
+	}
+
+	if (!existsSync(eventsPath)) {
+		return { ok: false, missing: requiredEvents, found: [] };
+	}
+
+	const content = readFileSync(eventsPath, "utf-8");
+	const found: string[] = [];
+	const missing: string[] = [];
+
+	for (const evt of requiredEvents) {
+		if (content.includes(`"${evt}"`)) {
+			found.push(evt);
+		} else {
+			missing.push(evt);
+		}
+	}
+
+	return { ok: missing.length === 0, missing, found };
+}
+
+/** Get a slice's current phase via CLI. Returns phase string or "unknown". */
+function getSlicePhase(fixtureDir: string, epicName: string, sliceName: string): string {
+	const result = gp(["slice:show", "--epic", epicName, "--slice", sliceName, "--json"], {
+		cwd: fixtureDir,
+		gpBin: GP_BIN,
+	});
+	if (result.exitCode !== 0) return "unknown";
+	try {
+		const data = JSON.parse(result.stdout) as { phase?: string };
+		return data.phase ?? "unknown";
+	} catch {
+		return "unknown";
+	}
+}
+
+/** Parse phase number from phase string (e.g., "P9" → 9, "S3" → 3). */
+function phaseNum(phase: string): number {
+	const match = phase.match(/^[PS](\d+)$/);
+	return match?.[1] !== undefined ? Number.parseInt(match[1], 10) : -1;
+}
+
+/** Find the first slice directory name in an epic. */
+function findFirstSlice(fixtureDir: string, epicName: string): string | null {
+	const slicesDir = join(fixtureDir, ".goodplan", "epics", epicName, "slices");
+	if (!existsSync(slicesDir)) return null;
+	const dirs = readdirSync(slicesDir).filter((d: string) =>
+		statSync(join(slicesDir, d)).isDirectory(),
+	);
+	return dirs[0] ?? null;
+}
+
 // ─── Pipeline Steps ─────────────────────────────────────────
 
 interface PipelineContext {
@@ -567,7 +639,7 @@ async function stepInit(ctx: PipelineContext): Promise<boolean> {
 		].join("\n"),
 		fixtureDir: ctx.fixtureDir,
 		maxTurns: 200,
-		maxBudgetUsd: 15,
+		maxBudgetUsd: 500,
 	});
 
 	ctx.allToolCalls.push(...result.tracker.toolCalls);
@@ -578,15 +650,21 @@ async function stepInit(ctx: PipelineContext): Promise<boolean> {
 		for (const e of result.sessionResult.cliErrors) ctx.allCliErrors.push({ skill: "init", error: e });
 	}
 
-	// Verify .goodplan/ directory exists — no fallbacks
+	// Verify .goodplan/ directory exists and project-initialized event emitted
 	const goodplanDir = join(ctx.fixtureDir, ".goodplan");
-	if (existsSync(goodplanDir)) {
-		logger.log("PASS: .goodplan/ directory created");
-		return true;
+	if (!existsSync(goodplanDir)) {
+		logger.log("FAIL: .goodplan/ directory not created by /gp:init skill");
+		return false;
 	}
 
-	logger.log("FAIL: .goodplan/ directory not created by /gp:init skill");
-	return false;
+	const events = verifyEvents(ctx.fixtureDir, "project", null, ["project-initialized"]);
+	if (!events.ok) {
+		logger.log(`FAIL: Missing project events: ${events.missing.join(", ")}`);
+		return false;
+	}
+
+	logger.log("PASS: .goodplan/ created + project-initialized event emitted");
+	return true;
 }
 
 /** Step 2: /gp:create-epic */
@@ -609,6 +687,10 @@ async function stepCreateEpic(ctx: PipelineContext): Promise<boolean> {
 			"Give concrete, specific answers with reasoning. Draw on your knowledge of the codebase and spaced repetition domain.",
 		].join("\n"),
 		fixtureDir: ctx.fixtureDir,
+		// create-epic runs 6+ phases including architecture and slice-set refinement loops.
+		// Each refinement round at Opus rates costs $3-5, so $30 is insufficient.
+		maxTurns: 600,
+		maxBudgetUsd: 500,
 	});
 
 	ctx.allToolCalls.push(...result.tracker.toolCalls);
@@ -619,22 +701,41 @@ async function stepCreateEpic(ctx: PipelineContext): Promise<boolean> {
 		for (const e of result.sessionResult.cliErrors) ctx.allCliErrors.push({ skill: "create-epic", error: e });
 	}
 
-	// Verify epic reached slices-refined — the terminal state for create-epic.
-	// No fallbacks or partial-success acceptance. If create-epic didn't complete
-	// the full 6-phase pipeline, that's a real failure we need to see.
-	const epicStatus = verifyEntityStatus("epic", EPIC_NAME, "slices-refined", {
+	// Verify epic reached P5 (slice set committed) — the terminal phase for create-epic.
+	const epicStatus = verifyEntityStatus("epic", EPIC_NAME, "P5", {
 		cwd: ctx.fixtureDir,
 		gpBin: GP_BIN,
 	});
 
-	if (epicStatus.ok) {
-		logger.log("PASS: Epic reached 'slices-refined' status");
-		return true;
+	if (!epicStatus.ok) {
+		logger.log(`FAIL: Epic phase is '${epicStatus.actual}' (expected 'P5')`);
+		return false;
 	}
 
-	logger.log(`FAIL: Epic status is '${epicStatus.actual}' (expected 'slices-refined')`);
-	logger.log("The create-epic skill did not complete the full pipeline.");
-	return false;
+	// Verify key events were emitted (proves the pipeline actually ran, not just phase-skipped)
+	const events = verifyEvents(ctx.fixtureDir, "epic", EPIC_NAME, [
+		"epic-created",
+		"epic-goal-committed",
+		"exploration-concluded",
+		"architecture-target-committed",
+		"pressure-test-committed",
+		"slice-set-committed",
+	]);
+
+	if (!events.ok) {
+		logger.log(`FAIL: Missing epic events: ${events.missing.join(", ")}`);
+		return false;
+	}
+
+	// Verify at least one slice was created
+	const firstSlice = findFirstSlice(ctx.fixtureDir, EPIC_NAME);
+	if (firstSlice === null) {
+		logger.log("FAIL: No slices created by create-epic");
+		return false;
+	}
+
+	logger.log(`PASS: Epic at P5, ${events.found.length} events verified, slice '${firstSlice}' exists`);
+	return true;
 }
 
 /** Step 3: Activate epic — uses /gp:start-epic skill */
@@ -643,17 +744,17 @@ async function stepActivateEpic(ctx: PipelineContext): Promise<boolean> {
 	logger.log("STEP 3: /gp:start-epic");
 	logger.log("========================================\n");
 
-	const epicStatus = verifyEntityStatus("epic", EPIC_NAME, "activated", {
+	// Pre-check: epic should be exactly at P5 (output of create-epic).
+	// If it's already at P6, that's unexpected and we should flag it rather than skip.
+	const preStatus = verifyEntityStatus("epic", EPIC_NAME, "P5", {
 		cwd: ctx.fixtureDir,
 		gpBin: GP_BIN,
 	});
 
-	if (epicStatus.actual === "activated") {
-		logger.log("PASS: Epic already activated");
-		return true;
+	if (!preStatus.ok) {
+		logger.log(`WARNING: Epic at '${preStatus.actual}' before start-epic (expected P5)`);
 	}
 
-	// Epic should be in slices-refined (output of create-epic). Activate it via the skill.
 	const result = await runSkill({
 		skillName: "start-epic",
 		prompt: `Activate the epic "${EPIC_NAME}". Review the architecture proposal and approve it.`,
@@ -665,7 +766,7 @@ async function stepActivateEpic(ctx: PipelineContext): Promise<boolean> {
 		].join("\n"),
 		fixtureDir: ctx.fixtureDir,
 		maxTurns: 100,
-		maxBudgetUsd: 10,
+		maxBudgetUsd: 500,
 	});
 
 	ctx.allToolCalls.push(...result.tracker.toolCalls);
@@ -676,18 +777,24 @@ async function stepActivateEpic(ctx: PipelineContext): Promise<boolean> {
 		for (const e of result.sessionResult.cliErrors) ctx.allCliErrors.push({ skill: "start-epic", error: e });
 	}
 
-	const postStatus = verifyEntityStatus("epic", EPIC_NAME, "activated", {
+	const postStatus = verifyEntityStatus("epic", EPIC_NAME, "P6", {
 		cwd: ctx.fixtureDir,
 		gpBin: GP_BIN,
 	});
 
-	if (postStatus.actual === "activated") {
-		logger.log("PASS: Epic activated via /gp:start-epic");
-		return true;
+	if (!postStatus.ok) {
+		logger.log(`FAIL: Epic at '${postStatus.actual}' after start-epic (expected 'P6')`);
+		return false;
 	}
 
-	logger.log(`FAIL: Epic at '${postStatus.actual}' after start-epic (expected 'activated')`);
-	return false;
+	const events = verifyEvents(ctx.fixtureDir, "epic", EPIC_NAME, ["epic-activated"]);
+	if (!events.ok) {
+		logger.log(`FAIL: Missing epic-activated event`);
+		return false;
+	}
+
+	logger.log("PASS: Epic activated (phase P6, epic-activated event verified)");
+	return true;
 }
 
 /** Step 4: /gp:plan-slice */
@@ -728,6 +835,9 @@ async function stepPlanSlice(ctx: PipelineContext): Promise<boolean> {
 			"Give concrete, specific answers with reasoning.",
 		].join("\n"),
 		fixtureDir: ctx.fixtureDir,
+		// plan-slice runs Q&A + shape checkpoint + refinement loop with v2 thresholds (9/10).
+		maxTurns: 500,
+		maxBudgetUsd: 500,
 	});
 
 	ctx.allToolCalls.push(...result.tracker.toolCalls);
@@ -738,24 +848,31 @@ async function stepPlanSlice(ctx: PipelineContext): Promise<boolean> {
 		for (const e of result.sessionResult.cliErrors) ctx.allCliErrors.push({ skill: "plan-slice", error: e });
 	}
 
-	// Verify plan file exists
-	const planDir = join(slicesDir, sliceName);
-	if (existsSync(planDir)) {
-		const planFiles = readdirSync(planDir).filter((f: string) => f.includes("plan"));
-		if (planFiles.length > 0) {
-			logger.log(`PASS: Plan file(s) created: ${planFiles.join(", ")}`);
-			return true;
-		}
+	// Verify slice reached P9 (plan committed) and plan ContentRef exists
+	const slicePhase = getSlicePhase(ctx.fixtureDir, EPIC_NAME, sliceName);
+	if (phaseNum(slicePhase) < 9) {
+		logger.log(`FAIL: Slice at ${slicePhase} after plan-slice (expected >= P9)`);
+		return false;
 	}
 
-	logger.log("FAIL: No plan file found after plan-slice");
-	return false;
+	// Verify planning events were emitted
+	const events = verifyEvents(ctx.fixtureDir, "epic", EPIC_NAME, [
+		"slice-plan-drafted",
+		"slice-plan-committed",
+	]);
+	if (!events.ok) {
+		logger.log(`FAIL: Missing plan events: ${events.missing.join(", ")}`);
+		return false;
+	}
+
+	logger.log(`PASS: Slice '${sliceName}' at ${slicePhase}, plan events verified`);
+	return true;
 }
 
-/** Step 5: /gp:implement */
+/** Step 5: /gp:implement-slice */
 async function stepImplement(ctx: PipelineContext): Promise<boolean> {
 	logger.log("\n========================================");
-	logger.log("STEP 5: /gp:implement");
+	logger.log("STEP 5: /gp:implement-slice");
 	logger.log("========================================\n");
 
 	// Find the slice name
@@ -771,7 +888,7 @@ async function stepImplement(ctx: PipelineContext): Promise<boolean> {
 	}
 
 	const result = await runSkill({
-		skillName: "implement",
+		skillName: "implement-slice",
 		prompt: `Implement the plan for slice "${sliceName}" in epic "${EPIC_NAME}". Follow the plan phases and write the code.`,
 		userSystemPrompt: [
 			"You are a senior TypeScript developer implementing SM-2 spaced repetition.",
@@ -781,30 +898,106 @@ async function stepImplement(ctx: PipelineContext): Promise<boolean> {
 		].join("\n"),
 		fixtureDir: ctx.fixtureDir,
 		maxTurns: 400,
-		maxBudgetUsd: 30,
+		maxBudgetUsd: 500,
 	});
 
 	ctx.allToolCalls.push(...result.tracker.toolCalls);
 	if (result.sessionResult) {
 		ctx.allViolations.push(...result.sessionResult.violations);
 		ctx.allArtifactReadViolations.push(...result.sessionResult.artifactReadViolations);
-		ctx.skillCosts.push({ skill: "implement", cost: result.sessionResult.totalCost });
-		for (const e of result.sessionResult.cliErrors) ctx.allCliErrors.push({ skill: "implement", error: e });
+		ctx.skillCosts.push({ skill: "implement-slice", cost: result.sessionResult.totalCost });
+		for (const e of result.sessionResult.cliErrors) ctx.allCliErrors.push({ skill: "implement-slice", error: e });
 	}
 
-	if (result.success) {
-		logger.log("PASS: Implementation skill completed");
-		return true;
+	if (!result.success) {
+		logger.log("FAIL: Implementation skill did not complete successfully");
+		return false;
 	}
 
-	logger.log("FAIL: Implementation skill did not complete successfully");
-	return false;
+	// Verify slice reached at least P10 (implementation started) and events emitted
+	const slicePhase = getSlicePhase(ctx.fixtureDir, EPIC_NAME, sliceName);
+	if (phaseNum(slicePhase) < 10) {
+		logger.log(`FAIL: Slice at ${slicePhase} after implement-slice (expected >= P10)`);
+		return false;
+	}
+
+	const events = verifyEvents(ctx.fixtureDir, "epic", EPIC_NAME, [
+		"slice-implementation-started",
+	]);
+	if (!events.ok) {
+		logger.log(`FAIL: Missing implementation events: ${events.missing.join(", ")}`);
+		return false;
+	}
+
+	logger.log(`PASS: Slice '${sliceName}' at ${slicePhase}, implementation events verified`);
+	return true;
 }
 
-/** Step 6: /gp:create-side-quest */
+/** Step 6: /gp:land-slice */
+async function stepLandSlice(ctx: PipelineContext): Promise<boolean> {
+	logger.log("\n========================================");
+	logger.log("STEP 6: /gp:land-slice");
+	logger.log("========================================\n");
+
+	// Find the slice name
+	const slicesDir = join(ctx.fixtureDir, ".goodplan", "epics", EPIC_NAME, "slices");
+	let sliceName = "01-sm2-core";
+	if (existsSync(slicesDir)) {
+		const sliceDirs = readdirSync(slicesDir).filter((d: string) =>
+			statSync(join(slicesDir, d)).isDirectory(),
+		);
+		if (sliceDirs.length > 0 && sliceDirs[0]) {
+			sliceName = sliceDirs[0];
+		}
+	}
+
+	const result = await runSkill({
+		skillName: "land-slice",
+		prompt: `Land the slice "${sliceName}" in epic "${EPIC_NAME}". Complete the slice and capture any learnings.`,
+		userSystemPrompt: [
+			"You are a senior TypeScript developer landing the SM-2 spaced repetition implementation.",
+			"The implementation is complete and tested. Review the changes, capture any learnings about the implementation experience, and land the slice.",
+			"For learnings, reflect on what worked well and what you'd do differently.",
+		].join("\n"),
+		fixtureDir: ctx.fixtureDir,
+		maxTurns: 100,
+		maxBudgetUsd: 500,
+	});
+
+	ctx.allToolCalls.push(...result.tracker.toolCalls);
+	if (result.sessionResult) {
+		ctx.allViolations.push(...result.sessionResult.violations);
+		ctx.allArtifactReadViolations.push(...result.sessionResult.artifactReadViolations);
+		ctx.skillCosts.push({ skill: "land-slice", cost: result.sessionResult.totalCost });
+		for (const e of result.sessionResult.cliErrors) ctx.allCliErrors.push({ skill: "land-slice", error: e });
+	}
+
+	if (!result.success) {
+		logger.log("FAIL: Land-slice did not complete successfully");
+		return false;
+	}
+
+	// Verify slice reached P12 (landed) and slice-landed event emitted
+	const slicePhase = getSlicePhase(ctx.fixtureDir, EPIC_NAME, sliceName);
+	if (slicePhase !== "P12") {
+		logger.log(`FAIL: Slice at ${slicePhase} after land-slice (expected P12)`);
+		return false;
+	}
+
+	const events = verifyEvents(ctx.fixtureDir, "epic", EPIC_NAME, ["slice-landed"]);
+	if (!events.ok) {
+		logger.log("FAIL: Missing slice-landed event");
+		return false;
+	}
+
+	logger.log(`PASS: Slice '${sliceName}' at P12, slice-landed event verified`);
+	return true;
+}
+
+/** Step 7: /gp:create-side-quest */
 async function stepCreateSideQuest(ctx: PipelineContext): Promise<boolean> {
 	logger.log("\n========================================");
-	logger.log("STEP 6: /gp:create-side-quest");
+	logger.log("STEP 7: /gp:create-side-quest");
 	logger.log("========================================\n");
 
 	const result = await runSkill({
@@ -820,7 +1013,7 @@ async function stepCreateSideQuest(ctx: PipelineContext): Promise<boolean> {
 		].join("\n"),
 		fixtureDir: ctx.fixtureDir,
 		maxTurns: 200,
-		maxBudgetUsd: 15,
+		maxBudgetUsd: 500,
 	});
 
 	ctx.allToolCalls.push(...result.tracker.toolCalls);
@@ -843,7 +1036,7 @@ async function stepCreateSideQuest(ctx: PipelineContext): Promise<boolean> {
 /** Step 7: /gp:audit */
 async function stepAudit(ctx: PipelineContext): Promise<boolean> {
 	logger.log("\n========================================");
-	logger.log("STEP 7: /gp:audit (architecture)");
+	logger.log("STEP 8: /gp:audit (architecture)");
 	logger.log("========================================\n");
 
 	const result = await runSkill({
@@ -857,7 +1050,7 @@ async function stepAudit(ctx: PipelineContext): Promise<boolean> {
 		].join("\n"),
 		fixtureDir: ctx.fixtureDir,
 		maxTurns: 200,
-		maxBudgetUsd: 15,
+		maxBudgetUsd: 500,
 	});
 
 	ctx.allToolCalls.push(...result.tracker.toolCalls);
@@ -880,7 +1073,7 @@ async function stepAudit(ctx: PipelineContext): Promise<boolean> {
 /** Step 8: /gp:complete-epic */
 async function stepCompleteEpic(ctx: PipelineContext): Promise<boolean> {
 	logger.log("\n========================================");
-	logger.log("STEP 8: /gp:complete-epic");
+	logger.log("STEP 9: /gp:complete-epic");
 	logger.log("========================================\n");
 
 	// No auto-abandon. The complete-epic skill should handle non-terminal slices
@@ -900,7 +1093,7 @@ async function stepCompleteEpic(ctx: PipelineContext): Promise<boolean> {
 		].join("\n"),
 		fixtureDir: ctx.fixtureDir,
 		maxTurns: 200,
-		maxBudgetUsd: 15,
+		maxBudgetUsd: 500,
 	});
 
 	ctx.allToolCalls.push(...result.tracker.toolCalls);
@@ -938,29 +1131,26 @@ function checkArchitectureMetrics(fixtureDir: string): MetricResult {
 	const projectOverview = join(fixtureDir, ".goodplan", "architecture", "_overview.md");
 	const projectOverviewOk = existsSync(projectOverview);
 
-	// Find epic architecture via CLI status
+	// Check epic architecture directly (don't rely on activeEpic — it's null after complete-epic)
+	const epicOverview = join(
+		fixtureDir,
+		".goodplan",
+		"epics",
+		EPIC_NAME,
+		"architecture",
+		"_overview.md",
+	);
+	const epicArchOk = existsSync(epicOverview);
+
+	// CLI architecture file count from status
 	const statusResult = gp(["status", "--json"], { cwd: fixtureDir, gpBin: GP_BIN });
 	let cliFileCount = 0;
-	let epicArchOk = false;
 	if (statusResult.exitCode === 0) {
 		try {
 			const status = JSON.parse(statusResult.stdout) as {
-				artifacts?: { architecture?: { count?: number; files?: string[] } };
-				activeEpic?: { name?: string };
+				artifacts?: { architecture?: { count?: number } };
 			};
 			cliFileCount = status.artifacts?.architecture?.count ?? 0;
-			const epicName = status.activeEpic?.name;
-			if (epicName) {
-				const epicOverview = join(
-					fixtureDir,
-					".goodplan",
-					"epics",
-					epicName,
-					"architecture",
-					"_overview.md",
-				);
-				epicArchOk = existsSync(epicOverview);
-			}
 		} catch {
 			// Parse failure handled by cliFileCount staying 0
 		}
@@ -983,48 +1173,77 @@ function checkArchitectureMetrics(fixtureDir: string): MetricResult {
 }
 
 function checkPlanMetrics(fixtureDir: string, epicName: string): MetricResult {
+	// V2: plans are stored as ContentRef blobs, not files on disk.
+	// Verify via CLI: slice:show --json returns a `plan` field with ContentRef
+	// when the plan has been committed. Also check that the slice reached at
+	// least P9 (plan committed), which proves plan-slice ran to completion.
+
 	const slicesDir = join(fixtureDir, ".goodplan", "epics", epicName, "slices");
 	if (!existsSync(slicesDir)) {
 		return { name: "Plan Structure", passed: false, detail: "slices/ directory not found" };
 	}
 
-	// Find any plan file in any slice
-	let planContent = "";
-	let planFound = false;
 	const sliceDirs = readdirSync(slicesDir).filter((d: string) =>
 		statSync(join(slicesDir, d)).isDirectory(),
 	);
 
+	if (sliceDirs.length === 0) {
+		return { name: "Plan Structure", passed: false, detail: "No slice directories found" };
+	}
+
+	let planContentRefFound = false;
+	let slicePhaseOk = false;
+	let planContent = "";
+
 	for (const sliceDir of sliceDirs) {
-		const slicePath = join(slicesDir, sliceDir);
-		const candidates = ["plan-refined.md", "plan-created.md", "plan.md"];
-		for (const candidate of candidates) {
-			const candidatePath = join(slicePath, candidate);
-			if (existsSync(candidatePath)) {
-				planContent = readFileSync(candidatePath, "utf-8");
-				planFound = true;
-				break;
+		const showResult = gp(["slice:show", "--epic", epicName, "--slice", sliceDir, "--json"], {
+			cwd: fixtureDir,
+			gpBin: GP_BIN,
+		});
+		if (showResult.exitCode !== 0) continue;
+
+		try {
+			const slice = JSON.parse(showResult.stdout) as {
+				phase?: string;
+				plan?: { sha?: string; path?: string };
+			};
+
+			// Plan ContentRef exists (proves plan was committed via CLI)
+			if (slice.plan?.sha) {
+				planContentRefFound = true;
+
+				// Try to read plan content from the file path (skill may have left it on disk)
+				const planPath = slice.plan.path
+					? join(fixtureDir, ".goodplan", slice.plan.path)
+					: null;
+				if (planPath && existsSync(planPath)) {
+					planContent = readFileSync(planPath, "utf-8");
+				}
 			}
+
+			// Phase at or past P9 (plan committed) proves plan-slice completed
+			const phaseNum = slice.phase ? Number.parseInt(slice.phase.replace(/^P/, ""), 10) : 0;
+			if (phaseNum >= 9) {
+				slicePhaseOk = true;
+			}
+		} catch {
+			// Parse failure — continue checking other slices
 		}
-		if (planFound) break;
+
+		if (planContentRefFound) break;
 	}
 
-	if (!planFound) {
-		return { name: "Plan Structure", passed: false, detail: "No plan file found in any slice" };
-	}
+	// File path check: if we got plan content, verify it references actual code
+	const hasFilePaths = planContent.length > 0 && /\b(src|tests|lib)\/\S+\.\w+/m.test(planContent);
 
-	// Tests whether plan-slice produced a plan that the CLI accepted.
-	// A plan file existing in a slice with plan-created/plan-refined status
-	// proves the skill ran and the CLI validated the submission.
-	// We check file paths as a minimal structural signal — the plan should
-	// reference actual code, not be generic advice.
-	const hasFilePaths = /\b(src|tests|lib)\/\S+\.\w+/m.test(planContent);
-
-	const passed = planFound && hasFilePaths;
+	const passed = planContentRefFound && slicePhaseOk;
 
 	const details = [
-		`plan file: ${planFound ? "PASS" : "FAIL"}`,
-		`references codebase paths: ${hasFilePaths ? "PASS" : "FAIL"}`,
+		`plan ContentRef: ${planContentRefFound ? "PASS" : "FAIL"}`,
+		`slice phase >= P9: ${slicePhaseOk ? "PASS" : "FAIL"}`,
+		...(planContent.length > 0
+			? [`references codebase paths: ${hasFilePaths ? "PASS" : "FAIL"}`]
+			: []),
 	];
 
 	return {
@@ -1035,9 +1254,9 @@ function checkPlanMetrics(fixtureDir: string, epicName: string): MetricResult {
 }
 
 function checkReviewMetrics(fixtureDir: string, epicName: string): MetricResult {
-	// Tests whether the review loop infrastructure worked:
-	// 1. A refined plan exists (proves the refinement pipeline ran to completion)
-	// 2. The CLI accepted the refinement submission (plan-refined status)
+	// V2: Tests whether the review/refinement loop infrastructure worked.
+	// 1. Slice reached at least P9 (plan committed after refinement) via CLI phase check
+	// 2. Refinement events exist in the event log (reviewer-scored, refinement-converged)
 	// We don't check for specific severity levels — a plan with no CRITICAL/IMPORTANT
 	// issues is a good plan, not a failed review.
 
@@ -1046,39 +1265,23 @@ function checkReviewMetrics(fixtureDir: string, epicName: string): MetricResult 
 		return { name: "Review Loop", passed: false, detail: "slices/ directory not found" };
 	}
 
-	let refinedFound = false;
 	const sliceDirs = readdirSync(slicesDir).filter((d: string) =>
 		statSync(join(slicesDir, d)).isDirectory(),
 	);
 
+	// Check slice phase via CLI — any phase >= P9 proves plan refinement completed
+	let slicePhaseOk = false;
 	for (const sliceDir of sliceDirs) {
-		// plan-refined.md proves the refinement loop completed and CLI accepted the submission
-		const refinedPath = join(slicesDir, sliceDir, "plan-refined.md");
-		if (existsSync(refinedPath)) {
-			refinedFound = true;
-			break;
-		}
-	}
-
-	// Also verify the slice reached plan-refined status via CLI
-	let cliStatusOk = false;
-	for (const sliceDir of sliceDirs) {
-		const showResult = gp(["slice:show", "--slice", sliceDir, "--json"], {
+		const showResult = gp(["slice:show", "--epic", epicName, "--slice", sliceDir, "--json"], {
 			cwd: fixtureDir,
 			gpBin: GP_BIN,
 		});
 		if (showResult.exitCode === 0) {
 			try {
-				const slice = JSON.parse(showResult.stdout) as { status?: string };
-				// Any status past plan-refined proves refinement completed
-				const postRefinementStatuses = new Set([
-					"plan-refined",
-					"implementing",
-					"implementation-complete",
-					"completed",
-				]);
-				if (postRefinementStatuses.has(slice.status ?? "")) {
-					cliStatusOk = true;
+				const slice = JSON.parse(showResult.stdout) as { phase?: string };
+				const phaseNum = slice.phase ? Number.parseInt(slice.phase.replace(/^P/, ""), 10) : 0;
+				if (phaseNum >= 9) {
+					slicePhaseOk = true;
 					break;
 				}
 			} catch {
@@ -1087,18 +1290,54 @@ function checkReviewMetrics(fixtureDir: string, epicName: string): MetricResult 
 		}
 	}
 
-	const passed = refinedFound && cliStatusOk;
+	// Check for refinement events in the epic event log
+	let hasRefinementEvents = false;
+	const eventsPath = join(fixtureDir, ".goodplan", "epics", epicName, "events.jsonl");
+	if (existsSync(eventsPath)) {
+		const eventsContent = readFileSync(eventsPath, "utf-8");
+		// reviewer-scored proves reviewers ran; refinement-converged or convergence-overridden proves the loop completed
+		hasRefinementEvents =
+			eventsContent.includes("reviewer-scored") &&
+			(eventsContent.includes("refinement-converged") || eventsContent.includes("convergence-overridden"));
+	}
+
+	const passed = slicePhaseOk && hasRefinementEvents;
 
 	return {
 		name: "Review Loop",
 		passed,
-		detail: `refined plan file: ${refinedFound ? "PASS" : "FAIL"}, CLI status post-refinement: ${cliStatusOk ? "PASS" : "FAIL"}`,
+		detail: `slice phase >= P9: ${slicePhaseOk ? "PASS" : "FAIL"}, refinement events: ${hasRefinementEvents ? "PASS" : "FAIL"}`,
 	};
 }
 
-function checkImplementationMetrics(fixtureDir: string): MetricResult {
+function checkImplementationMetrics(fixtureDir: string, epicName: string): MetricResult {
 	const results: string[] = [];
 	let allPassed = true;
+
+	// Guard: verify a slice actually reached P10+ (implementation started).
+	// Without this, the fixture's pre-existing code would make build/test pass
+	// even if implement-slice didn't run or crashed.
+	const slicesDir = join(fixtureDir, ".goodplan", "epics", epicName, "slices");
+	let implementationStarted = false;
+	if (existsSync(slicesDir)) {
+		for (const dir of readdirSync(slicesDir)) {
+			if (!statSync(join(slicesDir, dir)).isDirectory()) continue;
+			const phase = getSlicePhase(fixtureDir, epicName, dir);
+			if (phaseNum(phase) >= 10) {
+				implementationStarted = true;
+				break;
+			}
+		}
+	}
+
+	if (!implementationStarted) {
+		return {
+			name: "Implementation",
+			passed: false,
+			detail: "No slice reached P10 (implementation-started) — build/test would be vacuous",
+		};
+	}
+	results.push("phase >= P10: PASS");
 
 	// bun build
 	try {
@@ -1146,72 +1385,85 @@ function checkImplementationMetrics(fixtureDir: string): MetricResult {
 	};
 }
 
-function checkLearningsMetrics(fixtureDir: string): MetricResult {
-	const learningsResult = gp(["learning:list", "--json"], {
-		cwd: fixtureDir,
-		gpBin: GP_BIN,
-	});
+function checkLearningsMetrics(fixtureDir: string, epicName: string): MetricResult {
+	// V2: Learnings are stored in two places:
+	// 1. `learning-captured` events in project-scope events.jsonl (from gp learning:capture)
+	// 2. `learnings` array in `slice-landed` event payloads in epic-scope events.jsonl
+	// The v1 `learning:list` command reads learnings.jsonl which v2 skills don't write to.
+	// So we read directly from event logs.
 
-	if (learningsResult.exitCode !== 0) {
-		return { name: "Learnings", passed: false, detail: "gp learning:list failed" };
+	const checks: string[] = [];
+	let totalLearnings = 0;
+	const sources = new Set<string>();
+
+	// Check project-scope learning-captured events
+	const projectEventsPath = join(fixtureDir, ".goodplan", "events.jsonl");
+	if (existsSync(projectEventsPath)) {
+		const lines = readFileSync(projectEventsPath, "utf-8")
+			.split("\n")
+			.filter((l) => l.trim().length > 0);
+		for (const line of lines) {
+			try {
+				const event = JSON.parse(line) as { type: string; payload?: { summary?: string } };
+				if (event.type === "learning-captured") {
+					totalLearnings++;
+					sources.add("project");
+				}
+			} catch {
+				// Skip malformed lines
+			}
+		}
 	}
 
-	let learnings: Array<{
-		summary?: string;
-		file?: string;
-		source?: string;
-		category?: string;
-		rollupTo?: string[];
-	}>;
-	try {
-		const parsed = JSON.parse(learningsResult.stdout) as
-			| { items: typeof learnings }
-			| typeof learnings;
-		learnings = Array.isArray(parsed) ? parsed : (parsed.items ?? []);
-	} catch {
-		return {
-			name: "Learnings",
-			passed: false,
-			detail: "Could not parse learning:list JSON output",
-		};
+	// Check epic-scope events for learnings in slice-landed payloads
+	const epicEventsPath = join(fixtureDir, ".goodplan", "epics", epicName, "events.jsonl");
+	if (existsSync(epicEventsPath)) {
+		const lines = readFileSync(epicEventsPath, "utf-8")
+			.split("\n")
+			.filter((l) => l.trim().length > 0);
+		for (const line of lines) {
+			try {
+				const event = JSON.parse(line) as {
+					type: string;
+					payload?: { learnings?: Array<{ summary?: string }> };
+				};
+				if (event.type === "slice-landed" && event.payload?.learnings) {
+					const sliceLearnings = event.payload.learnings.length;
+					totalLearnings += sliceLearnings;
+					if (sliceLearnings > 0) sources.add("slice-landed");
+				}
+				if (event.type === "learning-captured") {
+					totalLearnings++;
+					sources.add("epic");
+				}
+			} catch {
+				// Skip malformed lines
+			}
+		}
 	}
 
-	// 1. Learnings exist (rollup produced output)
-	const count = learnings.length;
-	const countOk = count >= 2;
-
-	// 2. Every learning has a valid category (proves CLI validation ran)
-	const validCategories = new Set(["domain", "worked", "didnt-work", "do-differently"]);
-	const invalidCategory = learnings.filter((l) => !validCategories.has(l.category ?? ""));
-	const categoriesOk = invalidCategory.length === 0;
-
-	// 3. Every learning has a source field (CLI injects this — proves it went through the CLI)
-	const missingSource = learnings.filter((l) => !l.source);
-	const sourcesOk = missingSource.length === 0;
-
-	// 4. Every learning has a file field pointing to an existing .md (CLI creates these)
-	const missingFile = learnings.filter((l) => !l.file);
-	const filesOk = missingFile.length === 0;
-
-	// 5. Learnings came from multiple sources (proves cross-scope rollup)
-	const uniqueSources = new Set(learnings.map((l) => l.source).filter(Boolean));
-	const multiSourceOk = uniqueSources.size >= 2;
-
-	const passed = countOk && categoriesOk && sourcesOk && filesOk && multiSourceOk;
-
-	const checks = [
-		`${count} learnings (>= 2: ${countOk ? "PASS" : "FAIL"})`,
-		`categories: ${categoriesOk ? "PASS" : `${invalidCategory.length} invalid`}`,
-		`CLI source field: ${sourcesOk ? "PASS" : `${missingSource.length} missing`}`,
-		`file paths: ${filesOk ? "PASS" : `${missingFile.length} missing`}`,
-		`multi-source rollup: ${multiSourceOk ? `PASS (${uniqueSources.size} sources)` : `FAIL (${uniqueSources.size} source)`}`,
-	];
-
-	if (count === 0) {
-		console.warn(
-			"  WARNING: 0 learnings found after epic:complete — learnings rollup may not be working",
-		);
+	// Also check for completion/learnings.md files (written by completion-slice agent)
+	const slicesDir = join(fixtureDir, ".goodplan", "epics", epicName, "slices");
+	if (existsSync(slicesDir)) {
+		for (const dir of readdirSync(slicesDir)) {
+			const learningsFile = join(slicesDir, dir, "completion", "learnings.md");
+			if (existsSync(learningsFile)) {
+				sources.add("completion-file");
+				// Count learnings in the file (each ## heading is roughly one learning)
+				const content = readFileSync(learningsFile, "utf-8");
+				const headingCount = (content.match(/^##\s/gm) ?? []).length;
+				if (headingCount > 0 && totalLearnings === 0) {
+					totalLearnings += headingCount; // Only add if we didn't already count from events
+				}
+			}
+		}
 	}
+
+	const countOk = totalLearnings >= 1;
+	checks.push(`${totalLearnings} learnings found (>= 1: ${countOk ? "PASS" : "FAIL"})`);
+	checks.push(`sources: ${sources.size > 0 ? [...sources].join(", ") : "none"}`);
+
+	const passed = countOk;
 
 	return {
 		name: "Learnings",
@@ -1258,6 +1510,503 @@ function checkOrchestratorDiscipline(artifactReadViolations: string[]): MetricRe
 			? "No artifact read violations detected"
 			: `${artifactReadViolations.length} violation(s): ${artifactReadViolations.slice(0, 3).join(", ")}`,
 	};
+}
+
+// ─── LLM-Evaluated Quality Metrics ─────────────────────────
+//
+// These metrics use a single-turn Sonnet call to evaluate LLM output quality.
+// They test whether the workflow produced meaningful artifacts, not just whether
+// the pipeline ran. Each evaluates one link in the artifact chain:
+//   Goal → Architecture → Plan → Implementation → Learnings
+
+/** Read a git blob by SHA. Returns content or null if not found. */
+function readBlob(cwd: string, sha: string): string | null {
+	try {
+		return execFileSync("git", ["cat-file", "-p", sha], {
+			cwd,
+			encoding: "utf-8",
+			stdio: ["pipe", "pipe", "pipe"],
+		});
+	} catch {
+		return null;
+	}
+}
+
+/** Run a single-turn LLM evaluation and parse the JSON response. */
+async function llmEvaluate<T>(prompt: string): Promise<T> {
+	const session = query({
+		prompt,
+		options: {
+			model: "claude-sonnet-4-5",
+			maxTurns: 1,
+			permissionMode: "bypassPermissions",
+			allowDangerouslySkipPermissions: true,
+			systemPrompt: "You are a code review evaluator. Respond only with the requested JSON. No markdown fences.",
+		},
+	});
+
+	let resultText = "";
+	for await (const message of session) {
+		// The result message IS the SDKResultSuccess — message.result is the text string directly.
+		if (message.type === "result" && message.subtype === "success") {
+			resultText = (message as SDKResultSuccess).result;
+		}
+	}
+
+	if (!resultText) {
+		throw new Error("LLM evaluation returned empty result");
+	}
+
+	const jsonText = resultText.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+	return JSON.parse(jsonText) as T;
+}
+
+/** Get epic data (goal, architecture, sliceSet SHAs) from CLI. */
+function getEpicData(
+	fixtureDir: string,
+	epicName: string,
+): { goal?: string; architectureTarget?: string; sliceSet?: string; pressureTest?: string } | null {
+	const result = gp(["epic:show", "--epic", epicName, "--json"], {
+		cwd: fixtureDir,
+		gpBin: GP_BIN,
+	});
+	if (result.exitCode !== 0) return null;
+	try {
+		const data = JSON.parse(result.stdout) as {
+			goal?: { sha?: string };
+			architectureTarget?: { sha?: string };
+			sliceSet?: { sha?: string };
+			pressureTest?: { sha?: string };
+		};
+		return {
+			goal: data.goal?.sha,
+			architectureTarget: data.architectureTarget?.sha,
+			sliceSet: data.sliceSet?.sha,
+			pressureTest: data.pressureTest?.sha,
+		};
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * LLM-evaluated: does the architecture address the epic goal?
+ *
+ * Tests create-epic's architecture phase. A good architecture should decompose
+ * the goal into subsystems that cover the required functionality. A bad one
+ * might be generic boilerplate or miss key requirements.
+ */
+async function checkArchitectureGoalAlignment(
+	fixtureDir: string,
+	epicName: string,
+): Promise<MetricResult> {
+	const epic = getEpicData(fixtureDir, epicName);
+	if (!epic?.goal || !epic.architectureTarget) {
+		return {
+			name: "Architecture-Goal Alignment",
+			passed: false,
+			detail: `Missing artifacts: goal=${!!epic?.goal}, architecture=${!!epic?.architectureTarget}`,
+		};
+	}
+
+	const goalContent = readBlob(fixtureDir, epic.goal);
+	const archContent = readBlob(fixtureDir, epic.architectureTarget);
+	if (!goalContent || !archContent) {
+		return { name: "Architecture-Goal Alignment", passed: false, detail: "Failed to read blobs" };
+	}
+
+	try {
+		logger.log("  [alignment] Running LLM evaluation...");
+		const verdict = await llmEvaluate<{
+			pass: boolean;
+			reason: string;
+			goal_requirements_covered: string[];
+			goal_requirements_missed: string[];
+		}>([
+			"Evaluate whether an architecture document addresses an epic's goal.",
+			"",
+			"## Epic Goal",
+			"```markdown",
+			goalContent.slice(0, 4000),
+			"```",
+			"",
+			"## Architecture",
+			"```markdown",
+			archContent.slice(0, 8000),
+			"```",
+			"",
+			"## Task",
+			"Does the architecture identify subsystems/modules that would address the goal's requirements?",
+			"You are NOT judging architecture quality — only whether it addresses what the goal asks for.",
+			"",
+			"Respond with JSON:",
+			'{ "pass": true/false, "reason": "one sentence", "goal_requirements_covered": ["req1", ...], "goal_requirements_missed": ["req2", ...] }',
+			"",
+			"Pass: architecture identifies components relevant to the goal's core requirements.",
+			"Fail: architecture is generic boilerplate or misses the goal's key requirements entirely.",
+		].join("\n"));
+
+		const covered = verdict.goal_requirements_covered?.length ?? 0;
+		const missed = verdict.goal_requirements_missed?.length ?? 0;
+		return {
+			name: "Architecture-Goal Alignment",
+			passed: verdict.pass,
+			detail: `${verdict.reason} (${covered} covered, ${missed} missed)`,
+		};
+	} catch (err) {
+		return {
+			name: "Architecture-Goal Alignment",
+			passed: false,
+			detail: `LLM error: ${err instanceof Error ? err.message.slice(0, 200) : String(err)}`,
+		};
+	}
+}
+
+/**
+ * LLM-evaluated: are plan chunks concrete and verifiable?
+ *
+ * Tests plan-slice's drafting + refinement quality. A good plan has chunks with
+ * specific file paths, concrete expected behaviors, and falsifiable verification
+ * steps. A bad plan has vague chunks like "implement the feature".
+ */
+async function checkPlanSpecificity(
+	fixtureDir: string,
+	epicName: string,
+): Promise<MetricResult> {
+	const slicesDir = join(fixtureDir, ".goodplan", "epics", epicName, "slices");
+	if (!existsSync(slicesDir)) {
+		return { name: "Plan Specificity", passed: false, detail: "No slices directory" };
+	}
+
+	const sliceDirs = readdirSync(slicesDir).filter((d: string) =>
+		statSync(join(slicesDir, d)).isDirectory(),
+	);
+	if (sliceDirs.length === 0) {
+		return { name: "Plan Specificity", passed: false, detail: "No slice dirs" };
+	}
+
+	const sliceName = sliceDirs[0]!;
+	const showResult = gp(["slice:show", "--epic", epicName, "--slice", sliceName, "--json"], {
+		cwd: fixtureDir,
+		gpBin: GP_BIN,
+	});
+	if (showResult.exitCode !== 0) {
+		return { name: "Plan Specificity", passed: false, detail: "slice:show failed" };
+	}
+
+	let planSha: string | undefined;
+	try {
+		const slice = JSON.parse(showResult.stdout) as { plan?: { sha?: string } };
+		planSha = slice.plan?.sha;
+	} catch {
+		return { name: "Plan Specificity", passed: false, detail: "Failed to parse slice:show" };
+	}
+
+	if (!planSha) {
+		return { name: "Plan Specificity", passed: false, detail: "No plan ContentRef" };
+	}
+
+	const planContent = readBlob(fixtureDir, planSha);
+	if (!planContent) {
+		return { name: "Plan Specificity", passed: false, detail: "Failed to read plan blob" };
+	}
+
+	try {
+		logger.log("  [specificity] Running LLM evaluation...");
+		const verdict = await llmEvaluate<{
+			pass: boolean;
+			reason: string;
+			concrete_chunks: number;
+			vague_chunks: number;
+			has_file_paths: boolean;
+			has_verification_steps: boolean;
+		}>([
+			"Evaluate whether an implementation plan has concrete, actionable chunks.",
+			"",
+			"## Plan",
+			"```markdown",
+			planContent.slice(0, 8000),
+			"```",
+			"",
+			"## Task",
+			"Judge whether the plan's chunks are specific enough to implement without guessing.",
+			"",
+			"Respond with JSON:",
+			'{ "pass": true/false, "reason": "one sentence", "concrete_chunks": N, "vague_chunks": N, "has_file_paths": true/false, "has_verification_steps": true/false }',
+			"",
+			"A chunk is concrete if it names specific files/modules AND has a testable expected behavior.",
+			"A chunk is vague if it says things like 'implement the feature' without specifics.",
+			"",
+			"Pass: majority of chunks are concrete, plan references specific file paths, and has verification steps.",
+			"Fail: majority of chunks are vague, or plan lacks file paths and verification details.",
+		].join("\n"));
+
+		return {
+			name: "Plan Specificity",
+			passed: verdict.pass,
+			detail: `${verdict.reason} (${verdict.concrete_chunks} concrete, ${verdict.vague_chunks} vague, paths=${verdict.has_file_paths}, verification=${verdict.has_verification_steps})`,
+		};
+	} catch (err) {
+		return {
+			name: "Plan Specificity",
+			passed: false,
+			detail: `LLM error: ${err instanceof Error ? err.message.slice(0, 200) : String(err)}`,
+		};
+	}
+}
+
+/**
+ * LLM-evaluated: are learnings substantive and project-specific?
+ *
+ * Tests complete-epic's synthesis quality. Good learnings reference specific
+ * implementation decisions, algorithms, or patterns from this project. Bad
+ * learnings are generic ("testing is important", "plan before coding").
+ */
+async function checkLearningsSubstance(fixtureDir: string, epicName: string): Promise<MetricResult> {
+	// V2: Collect learning texts from event payloads and completion files.
+	const learningTexts: string[] = [];
+
+	// 1. Read learnings from slice-landed event payloads
+	const epicEventsPath = join(fixtureDir, ".goodplan", "epics", epicName, "events.jsonl");
+	if (existsSync(epicEventsPath)) {
+		const lines = readFileSync(epicEventsPath, "utf-8").split("\n").filter((l) => l.trim().length > 0);
+		for (const line of lines) {
+			try {
+				const event = JSON.parse(line) as {
+					type: string;
+					payload?: { learnings?: Array<{ summary?: string }>; summary?: string };
+				};
+				if (event.type === "slice-landed" && event.payload?.learnings) {
+					for (const l of event.payload.learnings) {
+						if (l.summary) learningTexts.push(l.summary);
+					}
+				}
+				if (event.type === "learning-captured" && event.payload?.summary) {
+					learningTexts.push(event.payload.summary);
+				}
+			} catch {
+				// Skip malformed
+			}
+		}
+	}
+
+	// 2. Read from completion/learnings.md files (written by completion-slice agent)
+	const slicesDir = join(fixtureDir, ".goodplan", "epics", epicName, "slices");
+	if (existsSync(slicesDir)) {
+		for (const dir of readdirSync(slicesDir)) {
+			const learningsFile = join(slicesDir, dir, "completion", "learnings.md");
+			if (existsSync(learningsFile)) {
+				learningTexts.push(readFileSync(learningsFile, "utf-8").slice(0, 3000));
+			}
+		}
+	}
+
+	// 3. Read from epic-level completion/consolidated-learnings.md
+	const consolidatedPath = join(fixtureDir, ".goodplan", "epics", epicName, "completion", "consolidated-learnings.md");
+	if (existsSync(consolidatedPath)) {
+		learningTexts.push(readFileSync(consolidatedPath, "utf-8").slice(0, 3000));
+	}
+
+	if (learningTexts.length === 0) {
+		return { name: "Learnings Substance", passed: false, detail: "No learning content found in events or files" };
+	}
+
+	try {
+		logger.log("  [substance] Running LLM evaluation...");
+		const verdict = await llmEvaluate<{
+			pass: boolean;
+			reason: string;
+			specific_count: number;
+			generic_count: number;
+			example_specific: string;
+			example_generic: string;
+		}>([
+			"Evaluate whether project learnings are substantive and project-specific.",
+			"",
+			"## Context",
+			"These learnings were captured after implementing SM-2 spaced repetition for a flashcard CLI app.",
+			"",
+			"## Learnings",
+			learningTexts.map((t, i) => `### Learning ${i + 1}\n${t}`).join("\n\n"),
+			"",
+			"## Task",
+			"Judge whether the learnings reflect actual implementation experience.",
+			"",
+			"Respond with JSON:",
+			'{ "pass": true/false, "reason": "one sentence", "specific_count": N, "generic_count": N, "example_specific": "quote or paraphrase", "example_generic": "quote or paraphrase (empty string if none)" }',
+			"",
+			'A learning is specific if it references concrete decisions, algorithms, patterns, or files from this project (e.g., "SM-2 ease factor clamp at 1.3 prevents runaway difficulty").',
+			'A learning is generic if it could apply to any project (e.g., "writing tests early catches bugs", "good architecture matters").',
+			"",
+			"Pass: at least half of learnings are project-specific.",
+			"Fail: majority are generic boilerplate.",
+		].join("\n"));
+
+		return {
+			name: "Learnings Substance",
+			passed: verdict.pass,
+			detail: `${verdict.reason} (${verdict.specific_count} specific, ${verdict.generic_count} generic)`,
+		};
+	} catch (err) {
+		return {
+			name: "Learnings Substance",
+			passed: false,
+			detail: `LLM error: ${err instanceof Error ? err.message.slice(0, 200) : String(err)}`,
+		};
+	}
+}
+
+/**
+ * LLM-evaluated metric: does the implementation match the plan?
+ *
+ * Retrieves the plan content (via ContentRef SHA) and the git diff of source
+ * files, then asks an LLM to judge whether the implementation addresses the
+ * plan's chunks. The LLM returns structured JSON with a pass/fail verdict.
+ *
+ * This catches cases where implement-slice runs but produces code unrelated
+ * to the plan — something deterministic metrics can't detect.
+ */
+async function checkPlanImplementationCoherence(
+	fixtureDir: string,
+	epicName: string,
+): Promise<MetricResult> {
+	const slicesDir = join(fixtureDir, ".goodplan", "epics", epicName, "slices");
+	if (!existsSync(slicesDir)) {
+		return { name: "Plan-Implementation Coherence", passed: false, detail: "No slices directory" };
+	}
+
+	const sliceDirs = readdirSync(slicesDir).filter((d: string) =>
+		statSync(join(slicesDir, d)).isDirectory(),
+	);
+	if (sliceDirs.length === 0) {
+		return { name: "Plan-Implementation Coherence", passed: false, detail: "No slice dirs found" };
+	}
+
+	// Get plan content from the first slice's ContentRef
+	const sliceName = sliceDirs[0]!;
+	const showResult = gp(["slice:show", "--epic", epicName, "--slice", sliceName, "--json"], {
+		cwd: fixtureDir,
+		gpBin: GP_BIN,
+	});
+
+	if (showResult.exitCode !== 0) {
+		return { name: "Plan-Implementation Coherence", passed: false, detail: "slice:show failed" };
+	}
+
+	let planSha: string | undefined;
+	try {
+		const slice = JSON.parse(showResult.stdout) as { plan?: { sha?: string } };
+		planSha = slice.plan?.sha;
+	} catch {
+		return { name: "Plan-Implementation Coherence", passed: false, detail: "Failed to parse slice:show" };
+	}
+
+	if (!planSha) {
+		return { name: "Plan-Implementation Coherence", passed: false, detail: "No plan ContentRef" };
+	}
+
+	// Read plan content from git blob
+	let planContent: string;
+	try {
+		planContent = execFileSync("git", ["cat-file", "-p", planSha], {
+			cwd: fixtureDir,
+			encoding: "utf-8",
+			stdio: ["pipe", "pipe", "pipe"],
+		});
+	} catch {
+		return { name: "Plan-Implementation Coherence", passed: false, detail: "Failed to read plan blob" };
+	}
+
+	// Get the git diff of source files (what implement-slice actually changed).
+	// Diff between the first commit (fixture skeleton) and current working tree.
+	// This catches both committed and uncommitted changes from implement-slice.
+	let diff: string;
+	try {
+		// Get the root commit (first commit = fixture skeleton)
+		const rootCommit = execFileSync(
+			"git",
+			["rev-list", "--max-parents=0", "HEAD"],
+			{ cwd: fixtureDir, encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] },
+		).trim();
+
+		diff = execFileSync(
+			"git",
+			["diff", "--stat", rootCommit, "--", "src/", "tests/"],
+			{ cwd: fixtureDir, encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] },
+		);
+	} catch {
+		diff = "(unable to get diff)";
+	}
+
+	// Also list all source files for context
+	let sourceFiles: string;
+	try {
+		sourceFiles = execFileSync("find", ["src", "tests", "-name", "*.ts", "-type", "f"], {
+			cwd: fixtureDir,
+			encoding: "utf-8",
+			stdio: ["pipe", "pipe", "pipe"],
+		});
+	} catch {
+		sourceFiles = "(unable to list files)";
+	}
+
+	// Use a single-turn LLM call to evaluate coherence
+	const evaluationPrompt = [
+		"You are evaluating whether a code implementation matches its plan.",
+		"",
+		"## Plan",
+		"```markdown",
+		planContent.slice(0, 8000), // Cap to avoid excessive context
+		"```",
+		"",
+		"## Source files after implementation",
+		"```",
+		sourceFiles.slice(0, 2000),
+		"```",
+		"",
+		"## Git diff summary",
+		"```",
+		diff.slice(0, 3000),
+		"```",
+		"",
+		"## Task",
+		"Evaluate whether the implementation addresses the plan's chunks/phases.",
+		"You are NOT checking code quality — only whether the implementation matches what the plan described.",
+		"",
+		"Respond with ONLY a JSON object (no markdown fences):",
+		'{ "pass": true/false, "reason": "one sentence explanation", "chunks_addressed": ["chunk-id-1", ...], "chunks_missing": ["chunk-id-2", ...] }',
+		"",
+		"Pass criteria: at least one plan chunk has corresponding implementation files.",
+		"Fail criteria: the implementation appears completely unrelated to the plan.",
+	].join("\n");
+
+	try {
+		logger.log("  [coherence] Running LLM evaluation...");
+		const verdict = await llmEvaluate<{
+			pass: boolean;
+			reason: string;
+			chunks_addressed?: string[];
+			chunks_missing?: string[];
+		}>(evaluationPrompt);
+
+		const addressed = verdict.chunks_addressed?.length ?? 0;
+		const missing = verdict.chunks_missing?.length ?? 0;
+		const detail = `${verdict.reason} (${addressed} chunks addressed, ${missing} missing)`;
+
+		return {
+			name: "Plan-Implementation Coherence",
+			passed: verdict.pass,
+			detail,
+		};
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		logger.log(`  [coherence] LLM evaluation failed: ${msg}`);
+		return {
+			name: "Plan-Implementation Coherence",
+			passed: false,
+			detail: `LLM evaluation error: ${msg.slice(0, 200)}`,
+		};
+	}
 }
 
 // ─── Main ───────────────────────────────────────────────────
@@ -1319,7 +2068,8 @@ async function main(): Promise<void> {
 		{ name: "create-epic", fn: () => stepCreateEpic(ctx) },
 		{ name: "activate-epic", fn: () => stepActivateEpic(ctx) },
 		{ name: "plan-slice", fn: () => stepPlanSlice(ctx) },
-		{ name: "implement", fn: () => stepImplement(ctx) },
+		{ name: "implement-slice", fn: () => stepImplement(ctx) },
+		{ name: "land-slice", fn: () => stepLandSlice(ctx) },
 		{ name: "create-side-quest", fn: () => stepCreateSideQuest(ctx) },
 		{ name: "audit", fn: () => stepAudit(ctx) },
 		{ name: "complete-epic", fn: () => stepCompleteEpic(ctx) },
@@ -1327,17 +2077,31 @@ async function main(): Promise<void> {
 
 	const pipelineResults: Array<{ name: string; passed: boolean }> = [];
 
+	// Steps where failure means all downstream steps are invalid and would waste money.
+	// If any of these fail, we stop the pipeline immediately.
+	const CRITICAL_STEPS = new Set(["init", "create-epic", "activate-epic", "plan-slice", "implement-slice"]);
+
 	for (const step of pipelineSteps) {
 		logger.log(`\n>>> Starting pipeline step: ${step.name}`);
 		try {
 			const passed = await step.fn();
 			pipelineResults.push({ name: step.name, passed });
 			logger.log(`<<< Pipeline step ${step.name}: ${passed ? "PASS" : "FAIL"}`);
+
+			if (!passed && CRITICAL_STEPS.has(step.name)) {
+				logger.log(`\n!!! PIPELINE HALTED: ${step.name} is a critical dependency for all downstream steps`);
+				break;
+			}
 		} catch (err) {
 			logger.log(
 				`<<< Pipeline step ${step.name}: ERROR -- ${err instanceof Error ? err.message : String(err)}`,
 			);
 			pipelineResults.push({ name: step.name, passed: false });
+
+			if (CRITICAL_STEPS.has(step.name)) {
+				logger.log(`\n!!! PIPELINE HALTED: ${step.name} errored and is a critical dependency`);
+				break;
+			}
 		}
 	}
 
@@ -1347,19 +2111,64 @@ async function main(): Promise<void> {
 	logger.log("QUALITY PROXY METRICS");
 	logger.log("========================================\n");
 
-	const metrics: MetricResult[] = [
+	// Event log integrity check — catches corruption that individual metrics miss
+	const verifyIntegrity = (): MetricResult => {
+		const verifyResult = gp(["verify", "--json"], { cwd: fixtureDir, gpBin: GP_BIN });
+		if (verifyResult.exitCode === 0) {
+			try {
+				const parsed = JSON.parse(verifyResult.stdout) as {
+					status: string;
+					eventsChecked: number;
+					scopesChecked: number;
+					issues: unknown[];
+				};
+				return {
+					name: "Event Log Integrity",
+					passed: parsed.status === "pass",
+					detail: `${parsed.eventsChecked} events, ${parsed.scopesChecked} scopes, ${parsed.issues.length} issues`,
+				};
+			} catch {
+				return { name: "Event Log Integrity", passed: false, detail: "Failed to parse verify output" };
+			}
+		}
+		return { name: "Event Log Integrity", passed: false, detail: `gp verify exited ${verifyResult.exitCode}` };
+	};
+
+	// Deterministic metrics (pipeline correctness)
+	const deterministicMetrics: MetricResult[] = [
+		verifyIntegrity(),
 		checkArchitectureMetrics(fixtureDir),
 		checkPlanMetrics(fixtureDir, EPIC_NAME),
 		checkReviewMetrics(fixtureDir, EPIC_NAME),
-		checkImplementationMetrics(fixtureDir),
-		checkLearningsMetrics(fixtureDir),
+		checkImplementationMetrics(fixtureDir, EPIC_NAME),
+		checkLearningsMetrics(fixtureDir, EPIC_NAME),
 		checkOrchestratorDiscipline(ctx.allArtifactReadViolations),
 		checkCliErrorMetrics(ctx.allCliErrors),
 	];
 
-	for (const metric of metrics) {
+	logger.log("  --- Deterministic (pipeline correctness) ---");
+	for (const metric of deterministicMetrics) {
 		logger.log(`  ${metric.passed ? "PASS" : "FAIL"}: ${metric.name} -- ${metric.detail}`);
 	}
+
+	// LLM-evaluated metrics (output quality)
+	// These use Sonnet to evaluate whether the LLM produced meaningful artifacts.
+	// Run sequentially to avoid concurrent API rate limits.
+	logger.log("\n  --- LLM-Evaluated (output quality) ---");
+	const llmMetrics: MetricResult[] = [];
+
+	for (const check of [
+		() => checkArchitectureGoalAlignment(fixtureDir, EPIC_NAME),
+		() => checkPlanSpecificity(fixtureDir, EPIC_NAME),
+		() => checkPlanImplementationCoherence(fixtureDir, EPIC_NAME),
+		() => checkLearningsSubstance(fixtureDir, EPIC_NAME),
+	]) {
+		const result = await check();
+		llmMetrics.push(result);
+		logger.log(`  ${result.passed ? "PASS" : "FAIL"}: ${result.name} -- ${result.detail}`);
+	}
+
+	const metrics = [...deterministicMetrics, ...llmMetrics];
 
 	// ─── Cost Summary ───────────────────────────────────────
 

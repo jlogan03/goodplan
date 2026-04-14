@@ -188,19 +188,34 @@ export function gpForce(
 
 // ─── Entity Verification ────────────────────────────────────
 
+/**
+ * Verify an entity's phase (v2) or status (v1 fallback).
+ *
+ * V2 entities (epic, slice, side-quest) return a `phase` field (P0-P12, S0-S3).
+ * V1 entities returned a `status` field (e.g., "slices-refined", "activated").
+ * This function checks `phase` first, then falls back to `status` for v1 compat.
+ *
+ * The `type` parameter maps to the CLI namespace:
+ * - "epic"        → gp epic:show --epic <name>
+ * - "slice"       → gp slice:show --slice <name> --epic <epic>
+ * - "side-quest"  → gp side-quest:show --side-quest <name>
+ * - "quest"       → (v1 compat) gp quest:show --quest <name>
+ */
 export function verifyEntityStatus(
-	type: "epic" | "slice" | "quest",
+	type: "epic" | "slice" | "side-quest" | "quest",
 	name: string,
 	expected: string,
 	opts?: { cwd?: string; gpBin?: string; epic?: string },
 ): { ok: boolean; actual: string } {
 	try {
 		const args = [`${type}:show`, `--${type}`, name, "--json"];
-		if (opts?.epic && type === "slice") {
+		if (opts?.epic && (type === "slice" || type === "side-quest")) {
 			args.push("--epic", opts.epic);
 		}
-		const data = gpJson<{ status: string }>(args, opts);
-		return { ok: data.status === expected, actual: data.status };
+		const data = gpJson<{ phase?: string; status?: string }>(args, opts);
+		// V2 uses `phase` (P0-P12, S0-S3); v1 uses `status` (string labels)
+		const actual = data.phase ?? data.status ?? "unknown";
+		return { ok: actual === expected, actual };
 	} catch {
 		return { ok: false, actual: "not-found" };
 	}
