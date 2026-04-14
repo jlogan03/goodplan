@@ -9,6 +9,7 @@ SOURCE_PLUGIN_DIR="$REPO_ROOT/plugins/$PLUGIN_NAME"
 TARGET_PLUGIN_PARENT="${GOODPLAN_CODEX_PLUGIN_PARENT:-$HOME/plugins}"
 TARGET_PLUGIN_DIR="$TARGET_PLUGIN_PARENT/$PLUGIN_NAME"
 MARKETPLACE_PATH="${GOODPLAN_CODEX_MARKETPLACE_PATH:-$HOME/.agents/plugins/marketplace.json}"
+CODEX_CONFIG_PATH="${GOODPLAN_CODEX_CONFIG_PATH:-$HOME/.codex/config.toml}"
 
 MODE="symlink"
 BUILD_FIRST=0
@@ -30,6 +31,7 @@ Options:
 Environment overrides:
   GOODPLAN_CODEX_PLUGIN_PARENT
   GOODPLAN_CODEX_MARKETPLACE_PATH
+  GOODPLAN_CODEX_CONFIG_PATH
 EOF
 }
 
@@ -70,6 +72,7 @@ fi
 
 mkdir -p "$TARGET_PLUGIN_PARENT"
 mkdir -p "$(dirname "$MARKETPLACE_PATH")"
+mkdir -p "$(dirname "$CODEX_CONFIG_PATH")"
 
 case "$MODE" in
 	symlink)
@@ -96,18 +99,23 @@ case "$MODE" in
 		;;
 esac
 
-MARKETPLACE_PATH="$MARKETPLACE_PATH" TARGET_PLUGIN_DIR="$TARGET_PLUGIN_DIR" node <<'NODE'
+MARKETPLACE_PATH="$MARKETPLACE_PATH" TARGET_PLUGIN_DIR="$TARGET_PLUGIN_DIR" CODEX_CONFIG_PATH="$CODEX_CONFIG_PATH" node <<'NODE'
 const fs = require("node:fs");
 const path = require("node:path");
 
 const marketplacePath = process.env.MARKETPLACE_PATH;
 const targetPluginDir = process.env.TARGET_PLUGIN_DIR;
+const codexConfigPath = process.env.CODEX_CONFIG_PATH;
 if (!marketplacePath) {
 	console.error("MARKETPLACE_PATH is not set");
 	process.exit(1);
 }
 if (!targetPluginDir) {
 	console.error("TARGET_PLUGIN_DIR is not set");
+	process.exit(1);
+}
+if (!codexConfigPath) {
+	console.error("CODEX_CONFIG_PATH is not set");
 	process.exit(1);
 }
 
@@ -183,6 +191,41 @@ if (matchingIndexes.length > 0) {
 
 fs.mkdirSync(path.dirname(marketplacePath), { recursive: true });
 fs.writeFileSync(marketplacePath, `${JSON.stringify(marketplace, null, 2)}\n`);
+
+const marketplaceName =
+	typeof marketplace.name === "string" && marketplace.name.trim() ? marketplace.name.trim() : "local-plugins";
+const pluginSection = `plugins."gp@${marketplaceName}"`;
+const legacyPluginSection = `plugins."goodplan@${marketplaceName}"`;
+const configPath = path.resolve(codexConfigPath);
+let configText = fs.existsSync(configPath) ? fs.readFileSync(configPath, "utf8") : "";
+
+function stripSection(text, sectionName) {
+	const lines = text.split("\n");
+	const kept = [];
+	let skipping = false;
+	for (const line of lines) {
+		const sectionMatch = line.match(/^\[([^\]]+)\]\s*$/);
+		if (sectionMatch) {
+			skipping = sectionMatch[1] === sectionName;
+			if (skipping) continue;
+		}
+		if (!skipping) {
+			kept.push(line);
+		}
+	}
+	while (kept.length > 0 && kept[kept.length - 1] === "") {
+		kept.pop();
+	}
+	return kept.join("\n");
+}
+
+configText = stripSection(configText, pluginSection);
+configText = stripSection(configText, legacyPluginSection);
+const pluginBlock = [`[${pluginSection}]`, "enabled = true"].join("\n");
+configText = configText ? `${configText}\n\n${pluginBlock}\n` : `${pluginBlock}\n`;
+
+fs.mkdirSync(path.dirname(configPath), { recursive: true });
+fs.writeFileSync(configPath, configText);
 NODE
 
 platform_binary_dir() {
@@ -206,6 +249,8 @@ fi
 echo ""
 echo "Updated Codex marketplace file:"
 echo "  $MARKETPLACE_PATH"
+echo "Updated Codex config file:"
+echo "  $CODEX_CONFIG_PATH"
 echo ""
 echo "Next steps:"
 echo "  1. Start a fresh Codex session in any repo."
