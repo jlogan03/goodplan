@@ -1,0 +1,1 @@
+The scope discriminator on each Briefing record identifies provenance.

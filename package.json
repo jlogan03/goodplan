@@ -18,12 +18,17 @@
   "dependencies": {
     "@michaelhomer/jqjs": "github:mwh/jqjs",
     "citty": "^0.2.1",
+    "gray-matter": "^4.0.3",
+    "js-yaml": "^4.1.1",
     "picocolors": "^1.1.1",
+    "proper-lockfile": "^4.1.2",
     "zod": "^4.0.0"
   },
   "devDependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.81",
     "@biomejs/biome": "^1.9.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/proper-lockfile": "^4.1.4",
     "bun-types": "^1.3.11",
     "typescript": "^5.8.0",
     "vitest": "^4.0.0"

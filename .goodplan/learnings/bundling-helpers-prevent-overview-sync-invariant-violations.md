@@ -1,1 +1,0 @@
-`setSliceStatus` bundles status + overview sync + timestamp in one call, making it impossible to skip overview sync. Review caught `slice-submit.ts` bypassing this via direct `setSliceJson`. Apply this bundling pattern to all future entities.

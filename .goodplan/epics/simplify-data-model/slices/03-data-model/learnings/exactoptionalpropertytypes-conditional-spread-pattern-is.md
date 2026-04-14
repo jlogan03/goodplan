@@ -1,1 +1,0 @@
-Every new optional field mapping needs ...(value !== undefined ? { field: value } : {}). This was flagged by reviewers when missed. Consider adding a lint rule or code review checklist item for this pattern.

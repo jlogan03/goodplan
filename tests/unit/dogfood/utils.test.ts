@@ -1,13 +1,9 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import type { SDKMessage, SDKResultMessage } from "@anthropic-ai/claude-agent-sdk";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type {
-	SDKMessage,
-	SDKResultMessage,
-} from "@anthropic-ai/claude-agent-sdk";
 import {
-	type CliResult,
 	FixtureSetupError,
 	checkViolation,
 	createCostTracker,
@@ -145,16 +141,17 @@ describe("verifyEntityStatus", () => {
 		tmpDir = join("/tmp", `gp-verify-test-${Date.now()}`);
 		mkdirSync(tmpDir, { recursive: true });
 		// Initialize a minimal project
-		writeFileSync(
-			join(tmpDir, "package.json"),
-			JSON.stringify({ name: "test", version: "0.1.0" }),
-		);
+		writeFileSync(join(tmpDir, "package.json"), JSON.stringify({ name: "test", version: "0.1.0" }));
 		execFileSync("git", ["init"], { cwd: tmpDir, stdio: "pipe" });
 		execFileSync("git", ["add", "-A"], { cwd: tmpDir, stdio: "pipe" });
-		execFileSync("git", ["-c", "user.name=test", "-c", "user.email=test@test.com", "commit", "-m", "init"], {
-			cwd: tmpDir,
-			stdio: "pipe",
-		});
+		execFileSync(
+			"git",
+			["-c", "user.name=test", "-c", "user.email=test@test.com", "commit", "-m", "init"],
+			{
+				cwd: tmpDir,
+				stdio: "pipe",
+			},
+		);
 		gp(["init", "--name", "verify-test", "--json"], { cwd: tmpDir });
 	});
 
@@ -226,13 +223,21 @@ describe("checkViolation", () => {
 
 	it("detects Bash sed -i on .goodplan/ JSON", () => {
 		const violations: string[] = [];
-		checkViolation("Bash", { command: 'sed -i "" "s/old/new/" /path/.goodplan/project.json' }, violations);
+		checkViolation(
+			"Bash",
+			{ command: 'sed -i "" "s/old/new/" /path/.goodplan/project.json' },
+			violations,
+		);
 		expect(violations).toHaveLength(1);
 	});
 
 	it("detects Bash node -e writing to .goodplan/", () => {
 		const violations: string[] = [];
-		checkViolation("Bash", { command: 'node -e "require(\'fs\').writeFileSync(\'.goodplan/project.json\', \'{}\')"' }, violations);
+		checkViolation(
+			"Bash",
+			{ command: "node -e \"require('fs').writeFileSync('.goodplan/project.json', '{}')\"" },
+			violations,
+		);
 		expect(violations).toHaveLength(1);
 	});
 });
@@ -317,11 +322,14 @@ describe("writeTranscriptEntry + flushTranscript", () => {
 		const file = join(tmpDir, "transcript-flush.jsonl");
 
 		for (let i = 0; i < 5; i++) {
-			writeTranscriptEntry(file, stubMessage({
-				type: "system",
-				subtype: "task_notification",
-				uuid: `uuid-${i}`,
-			}));
+			writeTranscriptEntry(
+				file,
+				stubMessage({
+					type: "system",
+					subtype: "task_notification",
+					uuid: `uuid-${i}`,
+				}),
+			);
 		}
 
 		flushTranscript(file);
@@ -484,18 +492,14 @@ describe("verifyNoArtifactReads", () => {
 	});
 
 	it("flags Read on plan-refined.md", () => {
-		const result = verifyNoArtifactReads([
-			readCall("/Users/ian/project/plan-refined.md"),
-		]);
+		const result = verifyNoArtifactReads([readCall("/Users/ian/project/plan-refined.md")]);
 		expect(result.ok).toBe(false);
 		expect(result.violations).toHaveLength(1);
 		expect(result.violations[0]).toContain("plan-refined.md");
 	});
 
 	it("flags Read on plan-created.md", () => {
-		const result = verifyNoArtifactReads([
-			readCall("/Users/ian/project/plan-created.md"),
-		]);
+		const result = verifyNoArtifactReads([readCall("/Users/ian/project/plan-created.md")]);
 		expect(result.ok).toBe(false);
 		expect(result.violations).toHaveLength(1);
 	});
@@ -503,9 +507,7 @@ describe("verifyNoArtifactReads", () => {
 	// ─── Violation: src/ path ───────────────────────────────
 
 	it("flags Read on src/ path", () => {
-		const result = verifyNoArtifactReads([
-			readCall("/Users/ian/project/src/index.ts"),
-		]);
+		const result = verifyNoArtifactReads([readCall("/Users/ian/project/src/index.ts")]);
 		expect(result.ok).toBe(false);
 		expect(result.violations).toHaveLength(1);
 		expect(result.violations[0]).toContain("src/");
@@ -525,9 +527,7 @@ describe("verifyNoArtifactReads", () => {
 	// ─── Violation: agents/ path ────────────────────────────
 
 	it("flags Read on agents/ path", () => {
-		const result = verifyNoArtifactReads([
-			readCall("/Users/ian/project/agents/reviewer.ts"),
-		]);
+		const result = verifyNoArtifactReads([readCall("/Users/ian/project/agents/reviewer.ts")]);
 		expect(result.ok).toBe(false);
 		expect(result.violations).toHaveLength(1);
 		expect(result.violations[0]).toContain("agents/");
@@ -536,9 +536,7 @@ describe("verifyNoArtifactReads", () => {
 	// ─── Fixture exclusion: /tmp/ ───────────────────────────
 
 	it("does NOT flag Read on /tmp/gp-fixture-.../src/ (fixture exclusion)", () => {
-		const result = verifyNoArtifactReads([
-			readCall("/tmp/gp-fixture-1234-abc123/src/index.ts"),
-		]);
+		const result = verifyNoArtifactReads([readCall("/tmp/gp-fixture-1234-abc123/src/index.ts")]);
 		expect(result.ok).toBe(true);
 		expect(result.violations).toHaveLength(0);
 	});
@@ -603,9 +601,7 @@ describe("verifyNoArtifactReads", () => {
 	// ─── Malformed / missing input ──────────────────────────
 
 	it("handles null input gracefully", () => {
-		const result = verifyNoArtifactReads([
-			{ toolName: "Read", input: null },
-		]);
+		const result = verifyNoArtifactReads([{ toolName: "Read", input: null }]);
 		expect(result.ok).toBe(true);
 		expect(result.violations).toHaveLength(0);
 	});
@@ -619,25 +615,19 @@ describe("verifyNoArtifactReads", () => {
 	});
 
 	it("handles missing file_path gracefully", () => {
-		const result = verifyNoArtifactReads([
-			{ toolName: "Read", input: { content: "hello" } },
-		]);
+		const result = verifyNoArtifactReads([{ toolName: "Read", input: { content: "hello" } }]);
 		expect(result.ok).toBe(true);
 		expect(result.violations).toHaveLength(0);
 	});
 
 	it("handles empty file_path gracefully", () => {
-		const result = verifyNoArtifactReads([
-			{ toolName: "Read", input: { file_path: "" } },
-		]);
+		const result = verifyNoArtifactReads([{ toolName: "Read", input: { file_path: "" } }]);
 		expect(result.ok).toBe(true);
 		expect(result.violations).toHaveLength(0);
 	});
 
 	it("handles non-string file_path gracefully", () => {
-		const result = verifyNoArtifactReads([
-			{ toolName: "Read", input: { file_path: 42 } },
-		]);
+		const result = verifyNoArtifactReads([{ toolName: "Read", input: { file_path: 42 } }]);
 		expect(result.ok).toBe(true);
 		expect(result.violations).toHaveLength(0);
 	});

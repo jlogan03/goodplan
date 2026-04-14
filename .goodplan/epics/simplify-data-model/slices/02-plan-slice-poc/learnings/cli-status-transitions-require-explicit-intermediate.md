@@ -1,1 +1,0 @@
-The path created->planning->plan-created->refining->plan-refined requires 4 CLI commands. Calling submit-refinement from plan-created works for pass but fails for non-pass with STATE_INVALID_TRANSITION. Always include BEGIN_REFINEMENT step.

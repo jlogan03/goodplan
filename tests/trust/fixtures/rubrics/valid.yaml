@@ -1,0 +1,11 @@
+id: test-valid
+version: 1
+dimensions:
+  - name: clarity
+    description: Is the artifact clear and understandable?
+    scoring: "1-10: 1=unclear, 10=crystal clear"
+    threshold: 7
+convergence:
+  max_rounds: 3
+  zero_blocking_required: true
+  zero_critical_required: false

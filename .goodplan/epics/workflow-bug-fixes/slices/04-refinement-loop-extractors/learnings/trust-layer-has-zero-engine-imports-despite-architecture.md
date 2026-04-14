@@ -1,0 +1,1 @@
+Trust only imports from schemas/ and util/, not engine/. Cleaner than architecture allows.

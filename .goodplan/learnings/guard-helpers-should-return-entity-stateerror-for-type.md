@@ -1,1 +1,0 @@
-Guard functions returning `StateError | null` force non-null assertions (`!`) on every subsequent entity access. Returning `Entity | StateError` lets `isStateError()` narrow the type cleanly, eliminating dozens of `!` assertions across handler files.

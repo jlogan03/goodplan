@@ -1,1 +1,0 @@
-Tree types (`ProjectState`, `StateEntry`, navigation helpers) were placed in the data layer but needed by the state machine. Integration review caught this as a layer boundary violation. Extract cross-layer pure types to shared locations (e.g., `src/core/tree.ts`) from the start.

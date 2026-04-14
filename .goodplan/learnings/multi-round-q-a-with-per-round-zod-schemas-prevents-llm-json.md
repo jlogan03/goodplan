@@ -1,1 +1,0 @@
-Breaking structured data collection into small rounds with `z.toJSONSchema()`-generated responseSchemas keeps responses focused and schema-validated. One-shot approaches with large payloads risk truncation and malformed output. Add a circuit breaker for correction rounds.

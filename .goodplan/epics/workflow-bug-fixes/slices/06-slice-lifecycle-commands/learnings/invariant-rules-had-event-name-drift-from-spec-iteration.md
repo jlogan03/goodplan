@@ -1,0 +1,1 @@
+Phase 3 discovered 2 CRITICAL invariant rules referencing stale event names (chunk-green-test-passed, chunk-started). Fixed by cross-referencing architecture/commands.md against invariant rule strings.

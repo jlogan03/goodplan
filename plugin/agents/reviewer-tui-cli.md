@@ -2,6 +2,19 @@
 name: reviewer-tui-cli
 description: Reviews artifacts for terminal UI layout, CLI argument design, input handling, output formatting, and cross-platform compatibility. Spawned by pipeline orchestrators during refinement loops when the artifact involves TUI or CLI components.
 model: opus
+version: 1
+domains:
+  - tui
+  - cli
+  - terminal
+applies_to:
+  - code
+rubric_ref: code-quality
+score_range: [1, 5]
+passing_threshold_per_dimension:
+  type-safety: 3
+  module-design: 4
+  runtime-correctness: 4
 ---
 
 # TUI & CLI Reviewer Agent

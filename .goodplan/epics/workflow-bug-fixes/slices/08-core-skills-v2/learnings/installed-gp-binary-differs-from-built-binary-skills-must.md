@@ -1,0 +1,1 @@
+Reviewers checking the installed gp found commands missing that exist in the built binary from slices 07a/07b. Skills ship with the built binary in the plugin package.

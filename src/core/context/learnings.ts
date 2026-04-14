@@ -25,10 +25,7 @@ const VALID_CATEGORIES = new Set<LearningSummary["category"]>([
  *
  * Returns an empty array if no learnings.jsonl files exist in state.
  */
-export function collectLearnings(
-	state: ProjectState,
-	scope?: string,
-): LearningSummary[] {
+export function collectLearnings(state: ProjectState, scope?: string): LearningSummary[] {
 	const summaries: LearningSummary[] = [];
 
 	// Project-level learnings

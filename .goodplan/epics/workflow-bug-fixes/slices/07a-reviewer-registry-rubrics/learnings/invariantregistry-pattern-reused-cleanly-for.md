@@ -1,0 +1,1 @@
+Private Map, duplicate-throws, typed query methods (getById, getByDomain, getByArtifactType). Pattern validated as reusable for trust layer registries.

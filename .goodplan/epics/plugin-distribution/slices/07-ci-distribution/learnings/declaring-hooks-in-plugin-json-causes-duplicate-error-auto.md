@@ -1,1 +1,0 @@
-Claude Code auto-discovers hooks/hooks.json at the standard plugin location. Declaring it in plugin.json causes a duplicate hooks file error. Only use the hooks field for non-standard locations.

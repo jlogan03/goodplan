@@ -1,1 +1,0 @@
-The version assertion (binary == tag) enforces the contract that package.json must be bumped before tagging. Tags like v1.0.0-test fail because the suffix doesn't match. Use matching versions for real tests.

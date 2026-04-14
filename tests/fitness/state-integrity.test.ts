@@ -9,7 +9,7 @@ import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assembleState } from "../../src/core/data/assemble.js";
 import { commitState } from "../../src/core/data/commit.js";
-import { signStateTree, verifyStateTree } from "../../src/core/data/hmac.js";
+import { verifyStateTree } from "../../src/core/data/hmac.js";
 import { loadState } from "../../src/core/data/load.js";
 import { ZERO_STATE } from "../../src/core/data/tree.js";
 import type { ProjectState } from "../../src/core/data/tree.js";
@@ -65,9 +65,7 @@ describe("INV-009: State file integrity via embedded signature", () => {
 		commitState(projectDir, ZERO_STATE, makeState());
 
 		const state = assembleState(projectDir);
-		const raw = JSON.parse(
-			fs.readFileSync(path.join(projectDir, "project.json"), "utf-8"),
-		);
+		const raw = JSON.parse(fs.readFileSync(path.join(projectDir, "project.json"), "utf-8"));
 		expect(raw.stateSignature).toBeDefined();
 		expect(typeof raw.stateSignature).toBe("string");
 		expect(raw.stateSignature.length).toBe(64); // hex SHA-256
@@ -82,17 +80,13 @@ describe("INV-009: State file integrity via embedded signature", () => {
 
 		// First commit
 		commitState(projectDir, ZERO_STATE, makeState());
-		const raw1 = JSON.parse(
-			fs.readFileSync(path.join(projectDir, "project.json"), "utf-8"),
-		);
+		const raw1 = JSON.parse(fs.readFileSync(path.join(projectDir, "project.json"), "utf-8"));
 
 		// Second commit with different name
 		const state1 = assembleState(projectDir);
 		const state2 = makeState({ name: "changed-project" });
 		commitState(projectDir, state1, state2);
-		const raw2 = JSON.parse(
-			fs.readFileSync(path.join(projectDir, "project.json"), "utf-8"),
-		);
+		const raw2 = JSON.parse(fs.readFileSync(path.join(projectDir, "project.json"), "utf-8"));
 
 		expect(raw1.stateSignature).not.toBe(raw2.stateSignature);
 	});
@@ -137,7 +131,7 @@ describe("INV-009: State file integrity via embedded signature", () => {
 		expect(state).toBeDefined();
 	});
 
-	it("end-to-end: gp epic:create produces a valid signature", async () => {
+	it("end-to-end: gp epic:create produces a valid event log", async () => {
 		const bin = buildBinary();
 
 		await withTempDir(async (dir, env) => {
@@ -148,27 +142,20 @@ describe("INV-009: State file integrity via embedded signature", () => {
 			});
 			expect(initResult.exitCode).toBe(0);
 
-			// Create an epic
-			const createResult = runCommand(
-				bin,
-				["epic:create", "--json"],
-				{
-					cwd: dir,
-					env,
-					stdin: JSON.stringify({ name: "test-epic", goal: "Test HMAC" }),
-				},
-			);
+			// Create an epic (v2: uses --name flag, writes events.jsonl)
+			const createResult = runCommand(bin, ["epic:create", "--name", "test-epic", "--json"], {
+				cwd: dir,
+				env,
+			});
 			expect(createResult.exitCode).toBe(0);
 
-			// Read project.json and verify signature
-			const projectPath = path.join(env.GOODPLAN_DIR, "project.json");
-			const raw = JSON.parse(fs.readFileSync(projectPath, "utf-8"));
-			expect(raw.stateSignature).toBeDefined();
-			expect(raw.stateSignature.length).toBe(64);
-
-			// Verify via assembleState
-			const state = assembleState(env.GOODPLAN_DIR);
-			expect(verifyStateTree(state, raw.stateSignature)).toBe(true);
+			// v2: verify events.jsonl exists with a valid event
+			const eventsPath = path.join(env.GOODPLAN_DIR, "epics", "test-epic", "events.jsonl");
+			expect(fs.existsSync(eventsPath)).toBe(true);
+			const eventsContent = fs.readFileSync(eventsPath, "utf-8").trim();
+			const event = JSON.parse(eventsContent) as { type: string; payload: { directory: string } };
+			expect(event.type).toBe("epic-created");
+			expect(event.payload.directory).toBe("test-epic");
 		});
 	});
 });

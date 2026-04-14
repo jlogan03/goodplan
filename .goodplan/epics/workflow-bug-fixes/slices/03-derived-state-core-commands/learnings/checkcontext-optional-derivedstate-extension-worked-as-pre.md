@@ -1,0 +1,1 @@
+Zero additional I/O, shared event array. exactOptionalPropertyTypes conditional spread.

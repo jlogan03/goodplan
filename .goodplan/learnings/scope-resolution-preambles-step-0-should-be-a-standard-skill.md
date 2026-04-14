@@ -1,1 +1,0 @@
-Skills that branch behavior based on context (initiative vs top-level vs side quest) benefit from resolving scope variables in a Step 0 preamble, then referencing those variables throughout. This pattern emerged through reviewer feedback and should be prescribed in future skill infrastructure work.

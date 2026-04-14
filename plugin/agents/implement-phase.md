@@ -65,7 +65,7 @@ Execute each "Before implementation" Expected Behavior check from the plan phase
 | **UNEXPECTED-PASS** | Check passes when it should fail | STOP — report in return JSON. The orchestrator will surface this to the user. |
 | **AGENT-BLOCKED** | Check requires something outside agent capabilities | Note in results, proceed with implementation |
 
-If any check is UNEXPECTED-PASS, include it in your return with `redGreenResults.passed: false`, set `redGreenResults.hasUnexpectedPass: true`, and explain which check unexpectedly passed and why in `redGreenResults.details`. The orchestrator uses `hasUnexpectedPass` (not string matching on `details`) to decide whether to surface the issue.
+If any check is UNEXPECTED-PASS, include it in your return with `lifecycle.redFailed: false`, set `lifecycle.hasUnexpectedPass: true`, and explain which check unexpectedly passed and why in `lifecycle.details`. The orchestrator uses `hasUnexpectedPass` (not string matching on `details`) to decide whether to surface the issue.
 
 ### 5. Implement Code Changes
 
@@ -117,11 +117,11 @@ If any GREEN check fails:
 1. Analyze why it fails
 2. Fix the implementation
 3. Re-run the check
-4. If still failing after 3 attempts, report in `redGreenResults` with `passed: false`
+4. If still failing after 3 attempts, report in `lifecycle` with `greenPassed: false`
 
 ### 9. Return Results
 
-Return a structured JSON as your final message.
+Return a structured JSON as your final message. The `lifecycle` object provides granular per-step status so the orchestrator knows which chunk lifecycle events to emit (enabling partial-completion resume).
 
 **All checks pass:**
 ```json
@@ -129,24 +129,50 @@ Return a structured JSON as your final message.
   "status": "SUCCESS",
   "summary": "Phase N implemented: <one-line description of what was built>",
   "filesWritten": ["path1", "path2"],
-  "redGreenResults": {
-    "passed": true,
+  "lifecycle": {
+    "redWritten": true,
+    "redFailed": true,
+    "redFailureEvidence": "Expected error: module 'X' not found",
+    "greenPassed": true,
+    "greenEvidence": "All 3 after-checks pass: ...",
     "hasUnexpectedPass": false,
     "details": "N before-checks RED-CONFIRMED, N after-checks GREEN"
   }
 }
 ```
 
-**Some checks fail or issues remain:**
+**Partial completion (e.g., RED written but implementation failed):**
 ```json
 {
   "status": "PARTIAL",
   "summary": "Phase N partially implemented: <what succeeded and what failed>",
   "filesWritten": ["path1", "path2"],
-  "redGreenResults": {
-    "passed": false,
+  "lifecycle": {
+    "redWritten": true,
+    "redFailed": true,
+    "redFailureEvidence": "Expected error: ...",
+    "greenPassed": false,
+    "greenEvidence": "",
+    "hasUnexpectedPass": false,
+    "details": "RED confirmed but implementation incomplete: <specifics>"
+  }
+}
+```
+
+**Unexpected RED pass:**
+```json
+{
+  "status": "PARTIAL",
+  "summary": "Phase N: RED check unexpectedly passed",
+  "filesWritten": ["path1"],
+  "lifecycle": {
+    "redWritten": true,
+    "redFailed": false,
+    "redFailureEvidence": "",
+    "greenPassed": false,
+    "greenEvidence": "",
     "hasUnexpectedPass": true,
-    "details": "Before: N RED-CONFIRMED, N UNEXPECTED-PASS. After: N passed, N failed. Details: <specifics>"
+    "details": "Before-check 'X' passed when it should have failed: <reason>"
   }
 }
 ```
@@ -157,8 +183,12 @@ Return a structured JSON as your final message.
   "status": "FAILED",
   "summary": "Phase N failed: <reason>",
   "filesWritten": [],
-  "redGreenResults": {
-    "passed": false,
+  "lifecycle": {
+    "redWritten": false,
+    "redFailed": false,
+    "redFailureEvidence": "",
+    "greenPassed": false,
+    "greenEvidence": "",
     "hasUnexpectedPass": false,
     "details": "<what went wrong>"
   }
@@ -171,5 +201,5 @@ Return a structured JSON as your final message.
 2. **Do NOT modify the plan file.** The orchestrator manages task checkbox state.
 3. **Do NOT spawn sub-agents.** You have all the tools you need.
 4. **Track every file change.** The `filesWritten` list must be complete — the orchestrator uses it for `git add`.
-5. **Be precise about RED/GREEN results.** The orchestrator relies on `redGreenResults.passed` to decide whether to proceed or escalate.
+5. **Be precise about lifecycle results.** The orchestrator relies on `lifecycle` fields to emit the correct chunk events. Set each boolean only when you have actually completed that step.
 6. **Resume-aware.** If tasks are already checked, skip them. If files already exist from a prior iteration, build on them rather than starting from scratch.

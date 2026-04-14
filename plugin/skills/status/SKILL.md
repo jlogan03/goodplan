@@ -61,6 +61,8 @@ $GP state --json --query '.["activity-log.jsonl"] | .[-5:]'
 
 Parse the returned array and extract: `phase`, `scope`, `status`, and `ts` (timestamp). Format timestamps as human-readable short form (e.g., "Mar 15 16:45"). Arrange entries most recent first for the status report.
 
+Also extract the learning count from the `status --json` response saved in Step 1B: use `.artifacts.learnings` (a number). No additional CLI call is needed — this is already in the status response. Only use `$GP learning:list --json` as a detail drill-down when the user asks for more info (see Step 9).
+
 ## Step 5 — Determine Active Scope
 
 Derive the active scope from the `status --json` response:
@@ -190,10 +192,12 @@ Use this when there is an active slice or side quest being worked on:
 
 **Decisions**: <N active> [, <M revisiting>]
 
+**Learnings**: <N total>
+
 **Next**: `/<skill> <args>`
 ```
 
-Omit the **Expertise** line if `${CLAUDE_PLUGIN_DATA}/expertise.md` does not exist or the plugin data guard fails. Omit the **Work stack** block entirely when empty. Omit the **Tasks** line if `openTasks` is 0 in the `status --json` response. Omit the **Decisions** line if no decisions exist. If any decisions have `revisiting` status, always show the revisiting count. Show the last 3-5 activity-log entries in Recent activity, most recent first.
+Omit the **Expertise** line if `${CLAUDE_PLUGIN_DATA}/expertise.md` does not exist or the plugin data guard fails. Omit the **Work stack** block entirely when empty. Omit the **Tasks** line if `openTasks` is 0 in the `status --json` response. Omit the **Decisions** line if no decisions exist. If any decisions have `revisiting` status, always show the revisiting count. Omit the **Learnings** line if the count from `.artifacts.learnings` is 0. Show the last 3-5 activity-log entries in Recent activity, most recent first.
 
 ### Format B — Between Work Items
 
@@ -243,10 +247,12 @@ Slices: <completed>/<total> complete
 
 **Decisions**: <N active> [, <M revisiting>]
 
+**Learnings**: <N total>
+
 **Next**: `/<skill> <args>`
 ```
 
-Omit **Other Epics** if none exist. Omit **Side Quests** if none exist. Omit **Completed** if count is 0. Omit **Tasks** if `openTasks` is 0. Omit **Expertise** if `${CLAUDE_PLUGIN_DATA}/expertise.md` does not exist or the plugin data guard fails. Omit **Decisions** if none exist.
+Omit **Other Epics** if none exist. Omit **Side Quests** if none exist. Omit **Completed** if count is 0. Omit **Tasks** if `openTasks` is 0. Omit **Expertise** if `${CLAUDE_PLUGIN_DATA}/expertise.md` does not exist or the plugin data guard fails. Omit **Decisions** if none exist. Omit **Learnings** if the count from `.artifacts.learnings` is 0.
 
 #### Format B without Epics
 
@@ -275,10 +281,12 @@ When no `epics/` directory exists (legacy/pre-epic projects), use the original l
 
 **Decisions**: <N active> [, <M revisiting>]
 
+**Learnings**: <N total>
+
 **Next**: `/<skill> <args>`
 ```
 
-Omit the **Expertise** line if `${CLAUDE_PLUGIN_DATA}/expertise.md` does not exist or the plugin data guard fails. Omit the **Side quests** block entirely if no side quests exist. Omit the **Tasks** line if `openTasks` is 0. Omit the **Decisions** line if no decisions exist.
+Omit the **Expertise** line if `${CLAUDE_PLUGIN_DATA}/expertise.md` does not exist or the plugin data guard fails. Omit the **Side quests** block entirely if no side quests exist. Omit the **Tasks** line if `openTasks` is 0. Omit the **Decisions** line if no decisions exist. Omit the **Learnings** line if the count from `.artifacts.learnings` is 0.
 
 For each slice, quest, or epic shown, use the state-to-next-skill mapping (see Status Logic Reference below) to suggest the appropriate command. Complete items do not need a suggestion.
 
@@ -286,9 +294,24 @@ For each slice, quest, or epic shown, use the state-to-next-skill mapping (see S
 
 After presenting the status report, offer:
 
-> Want me to show the full activity-log or all slice statuses?
+> Want me to show the full activity-log, all slice statuses, open tasks, or recent learnings?
 
 Only expand if the user asks. For full activity-log, use `$GP state --json --query '.["activity-log.jsonl"]'`. For all slice statuses, use `$GP slice:list --json` if available, otherwise `$GP state --json --query` for slice directories. Format B already shows an overview when between work items — do not repeat it unprompted.
+
+Additional detail options:
+- **Open tasks**: Run `$GP task:list --json`. Format output as shown in the Task Detail Rendering section below.
+- **Recent learnings**: Run `$GP learning:list --json`. Show each learning's category, summary, and source.
+
+## Task Detail Rendering
+
+When the user asks for task details, format the output from `$GP task:list --json` as:
+
+```
+## Open Tasks
+- **<title>** (<name>) — captured during <capturedDuring>
+```
+
+Omit the section if there are no open tasks.
 
 ## Status Logic Reference
 

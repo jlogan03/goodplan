@@ -1,0 +1,34 @@
+{
+	"created": "2026-04-09T22:27:17.399Z",
+	"deferred": [
+		{
+			"description": "Extract shared v2 command boilerplate into createEpicCommandContext helper — every v2 command repeats ~15 lines of identical setup",
+			"targetSlice": "06-slice-lifecycle-commands"
+		},
+		{
+			"description": "Delete 7 dead v1 epic command files after all entity namespace migrations complete",
+			"targetSlice": "06-slice-lifecycle-commands"
+		}
+	],
+	"epic": "workflow-bug-fixes",
+	"goal": "Implement ~14 gp slice:* commands including chunk lifecycle, code refinement, and landing",
+	"implementationPhase": 5,
+	"name": "06-slice-lifecycle-commands",
+	"refinement": {
+		"maxRounds": 10,
+		"round": 1,
+		"scoreHistory": [
+			{
+				"round": 1,
+				"scores": {
+					"data-layer": 10,
+					"holistic": 9,
+					"software-architecture": 9,
+					"typescript": 9
+				}
+			}
+		]
+	},
+	"status": "completed",
+	"updated": "2026-04-12T17:14:39.566Z"
+}

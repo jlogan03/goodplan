@@ -73,7 +73,9 @@ export function loadState(projectDir?: string): ProjectState {
 	}
 
 	if (cache.version !== CACHE_VERSION) {
-		debug(`loadState: cache version mismatch (${cache.version} !== ${CACHE_VERSION}), falling back`);
+		debug(
+			`loadState: cache version mismatch (${cache.version} !== ${CACHE_VERSION}), falling back`,
+		);
 		const state = assembleState(projectDir);
 		verifyHmacOrThrow(state);
 		return state;
@@ -233,9 +235,7 @@ function updateDirectory(
 	state: ProjectState,
 	dirRelative: string,
 ): ProjectState {
-	const absDir = dirRelative
-		? path.join(projectDir, dirRelative)
-		: projectDir;
+	const absDir = dirRelative ? path.join(projectDir, dirRelative) : projectDir;
 
 	// If directory no longer exists, remove it from the tree
 	if (!fs.existsSync(absDir) || !fs.statSync(absDir).isDirectory()) {
@@ -269,7 +269,7 @@ function updateDirectory(
 
 		if (stat.isDirectory()) {
 			// Directories are handled by their own changedDirs entry; just ensure they exist in tree
-			if (currentContents[name] === undefined || currentContents[name]!.type !== "directory") {
+			if (currentContents[name] === undefined || currentContents[name]?.type !== "directory") {
 				currentContents[name] = { type: "directory", contents: {} };
 			}
 		} else if (stat.isFile()) {
@@ -317,10 +317,7 @@ function readFileEntry(
 	return undefined;
 }
 
-function readJsonFile(
-	relativePath: string,
-	absPath: string,
-): JsonEntry<unknown> | undefined {
+function readJsonFile(relativePath: string, absPath: string): JsonEntry<unknown> | undefined {
 	const schema = findSchema(relativePath);
 	if (schema === undefined) {
 		debug(`incremental skip unregistered json: ${relativePath}`);
@@ -345,10 +342,7 @@ function readJsonFile(
 	return { type: "json", content: result.data };
 }
 
-function readJsonlFile(
-	relativePath: string,
-	absPath: string,
-): JsonlEntry<unknown> | undefined {
+function readJsonlFile(relativePath: string, absPath: string): JsonlEntry<unknown> | undefined {
 	const schema = findSchema(relativePath);
 	if (schema === undefined) {
 		debug(`incremental skip unregistered jsonl: ${relativePath}`);
@@ -427,9 +421,7 @@ function setDirRecursive(
 
 	const child = current.contents[segment];
 	const childDir: DirectoryEntry =
-		child !== undefined && child.type === "directory"
-			? child
-			: { type: "directory", contents: {} };
+		child !== undefined && child.type === "directory" ? child : { type: "directory", contents: {} };
 
 	return {
 		type: "directory",

@@ -5,18 +5,12 @@ import {
 	verificationSchema,
 } from "../../../src/schemas/entities/epic.js";
 import {
-	sliceSchema,
-	sliceStatusSchema,
-} from "../../../src/schemas/entities/slice.js";
-import {
-	questSchema,
-	questStatusSchema,
-} from "../../../src/schemas/entities/quest.js";
-import {
 	epicOverviewItemSchema,
 	sliceOverviewItemSchema,
 	unifiedOverviewSchema,
 } from "../../../src/schemas/entities/overview.js";
+import { questSchema, questStatusSchema } from "../../../src/schemas/entities/quest.js";
+import { sliceSchema, sliceStatusSchema } from "../../../src/schemas/entities/slice.js";
 
 // --- Epic ---
 
@@ -81,17 +75,15 @@ describe("verificationSchema", () => {
 	});
 
 	it("rejects empty description", () => {
-		expect(
-			verificationSchema.safeParse({ ...validVerification, description: "" })
-				.success,
-		).toBe(false);
+		expect(verificationSchema.safeParse({ ...validVerification, description: "" }).success).toBe(
+			false,
+		);
 	});
 
 	it("rejects invalid status", () => {
-		expect(
-			verificationSchema.safeParse({ ...validVerification, status: "unknown" })
-				.success,
-		).toBe(false);
+		expect(verificationSchema.safeParse({ ...validVerification, status: "unknown" }).success).toBe(
+			false,
+		);
 	});
 });
 
@@ -101,9 +93,7 @@ describe("epicSchema", () => {
 	});
 
 	it("accepts epic with null activated", () => {
-		expect(
-			epicSchema.safeParse({ ...validEpic, activated: null }).success,
-		).toBe(true);
+		expect(epicSchema.safeParse({ ...validEpic, activated: null }).success).toBe(true);
 	});
 
 	it("accepts epic with empty verifications", () => {
@@ -121,21 +111,15 @@ describe("epicSchema", () => {
 	});
 
 	it("rejects invalid status", () => {
-		expect(
-			epicSchema.safeParse({ ...validEpic, status: "bogus" }).success,
-		).toBe(false);
+		expect(epicSchema.safeParse({ ...validEpic, status: "bogus" }).success).toBe(false);
 	});
 
 	it("rejects invalid timestamp", () => {
-		expect(
-			epicSchema.safeParse({ ...validEpic, created: "not-a-date" }).success,
-		).toBe(false);
+		expect(epicSchema.safeParse({ ...validEpic, created: "not-a-date" }).success).toBe(false);
 	});
 
 	it("rejects empty goal", () => {
-		expect(
-			epicSchema.safeParse({ ...validEpic, goal: "" }).success,
-		).toBe(false);
+		expect(epicSchema.safeParse({ ...validEpic, goal: "" }).success).toBe(false);
 	});
 });
 
@@ -188,9 +172,7 @@ describe("sliceSchema", () => {
 	});
 
 	it("accepts slice with null refinement", () => {
-		expect(
-			sliceSchema.safeParse({ ...validSlice, refinement: null }).success,
-		).toBe(true);
+		expect(sliceSchema.safeParse({ ...validSlice, refinement: null }).success).toBe(true);
 	});
 
 	it("accepts slice with deferred items", () => {
@@ -211,16 +193,13 @@ describe("sliceSchema", () => {
 	});
 
 	it("rejects invalid status", () => {
-		expect(
-			sliceSchema.safeParse({ ...validSlice, status: "bogus" }).success,
-		).toBe(false);
+		expect(sliceSchema.safeParse({ ...validSlice, status: "bogus" }).success).toBe(false);
 	});
 
 	it("rejects invalid refinement shape", () => {
-		expect(
-			sliceSchema.safeParse({ ...validSlice, refinement: { round: "abc" } })
-				.success,
-		).toBe(false);
+		expect(sliceSchema.safeParse({ ...validSlice, refinement: { round: "abc" } }).success).toBe(
+			false,
+		);
 	});
 });
 
@@ -270,9 +249,7 @@ describe("questSchema", () => {
 				refinement: {
 					round: 1,
 					maxRounds: 10,
-					scoreHistory: [
-						{ round: 1, scores: { correctness: 7, completeness: 8 } },
-					],
+					scoreHistory: [{ round: 1, scores: { correctness: 7, completeness: 8 } }],
 				},
 			}).success,
 		).toBe(true);
@@ -284,9 +261,7 @@ describe("questSchema", () => {
 	});
 
 	it("rejects invalid status", () => {
-		expect(
-			questSchema.safeParse({ ...validQuest, status: "bogus" }).success,
-		).toBe(false);
+		expect(questSchema.safeParse({ ...validQuest, status: "bogus" }).success).toBe(false);
 	});
 
 	it("has no epic field", () => {
@@ -330,27 +305,21 @@ describe("unifiedOverviewSchema", () => {
 	});
 
 	it("accepts empty arrays", () => {
-		expect(
-			unifiedOverviewSchema.safeParse({ epics: [], quests: [], tasks: [] }).success,
-		).toBe(true);
+		expect(unifiedOverviewSchema.safeParse({ epics: [], quests: [], tasks: [] }).success).toBe(
+			true,
+		);
 	});
 
 	it("rejects missing epics", () => {
-		expect(
-			unifiedOverviewSchema.safeParse({ quests: [], tasks: [] }).success,
-		).toBe(false);
+		expect(unifiedOverviewSchema.safeParse({ quests: [], tasks: [] }).success).toBe(false);
 	});
 
 	it("rejects missing quests", () => {
-		expect(
-			unifiedOverviewSchema.safeParse({ epics: [], tasks: [] }).success,
-		).toBe(false);
+		expect(unifiedOverviewSchema.safeParse({ epics: [], tasks: [] }).success).toBe(false);
 	});
 
 	it("rejects missing tasks", () => {
-		expect(
-			unifiedOverviewSchema.safeParse({ epics: [], quests: [] }).success,
-		).toBe(false);
+		expect(unifiedOverviewSchema.safeParse({ epics: [], quests: [] }).success).toBe(false);
 	});
 
 	it("rejects item with empty name", () => {

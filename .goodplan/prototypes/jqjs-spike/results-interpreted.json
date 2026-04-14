@@ -1,9 +1,0 @@
-{
-  "field access": "\"project-init\"",
-  "pipe + builtin": "5",
-  "filter": "{\n  \"name\": \"explore-skill\",\n  \"sequence\": 2,\n  \"status\": \"active\",\n  \"learnings\": [\n    \"jq expressions are powerful for querying project state\"\n  ]\n}",
-  "nested filter": "{\n  \"id\": \"d3\",\n  \"title\": \"JWT-based auth for API\",\n  \"tags\": [\n    \"auth\",\n    \"security\"\n  ],\n  \"rationale\": \"Stateless authentication\"\n}\n{\n  \"id\": \"d4\",\n  \"title\": \"OAuth2 provider integration\",\n  \"tags\": [\n    \"auth\",\n    \"integration\"\n  ],\n  \"rationale\": \"Third-party login support\"\n}",
-  "array slicing": "[\n  \"Deterministic key ordering improves diffs\",\n  \"JSONL beats JSON for append-heavy workflows\",\n  \"Architecture docs need versioning\"\n]",
-  "object construction": "{\n  \"name\": \"goodplan-cli\",\n  \"sliceCount\": 5\n}",
-  "sorting": "[\n  {\n    \"name\": \"project-init\",\n    \"sequence\": 1,\n    \"status\": \"complete\",\n    \"learnings\": [\n      \"Bun compile works well for CLI distribution\",\n      \"JSONL is better than JSON for merge-friendly collections\"\n    ]\n  },\n  {\n    \"name\": \"explore-skill\",\n    \"sequence\": 2,\n    \"status\": \"active\",\n    \"learnings\": [\n      \"jq expressions are powerful for querying project state\"\n    ]\n  },\n  {\n    \"name\": \"create-architecture\",\n    \"sequence\": 3,\n    \"status\": \"pending\",\n    \"learnings\": []\n  },\n  {\n    \"name\": \"create-slices\",\n    \"sequence\": 4,\n    \"status\": \"pending\",\n    \"learnings\": []\n  },\n  {\n    \"name\": \"implement-plan\",\n    \"sequence\": 5,\n    \"status\": \"pending\",\n    \"learnings\": []\n  }\n]"
-}

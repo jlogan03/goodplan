@@ -1,0 +1,1 @@
+Record<Phase, PhaseSpec> with explicit inline/reference keys per phase is easy to review and audit against the architecture spec.

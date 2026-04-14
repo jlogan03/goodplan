@@ -1,0 +1,8 @@
+{
+	"created": "2026-04-13T15:23:48.246Z",
+	"goal": "Close gaps between v2 architecture spec and implementation: (1) wire evaluator to use rubric thresholds, remove reviewer passed field, (2) rewrite gp verify for v2 event logs, (3) unify evaluator+circuit-breaker interface, (4) add reviewerId/relevance to DimensionResult, (5) add location back to ReviewerFinding, (6) create 6 missing reviewer agents (invariant-checker, context-transport, plan, verification-plausibility, goal, slice-set), (7) add event schemas for pause-steering/reshape/milestone domains, (8) rename verifier to verifier-phase, (9) add spine file hook protection, (10) populate reason field on ConvergenceResult",
+	"name": "architecture-fidelity-gaps",
+	"refinement": null,
+	"status": "created",
+	"updated": "2026-04-13T15:23:48.246Z"
+}

@@ -1,0 +1,4 @@
+{"description":"Full invariant engine at src/engine/invariants/ with 24 core rules, registry, checker, YAML extensibility, beforeAppend hook","subsystem":"invariant-engine","ts":"2026-04-10T02:43:25.724Z","type":"add"}
+{"description":"InvariantRule uses ruleType not type; checkInvariants takes CheckContext not DerivedStateData; appliesTo field added","subsystem":"invariant-engine","ts":"2026-04-10T02:43:25.724Z","type":"modify"}
+{"description":"GitOps port interface at src/engine/interfaces/git-ops.ts","subsystem":"engine-interfaces","ts":"2026-04-10T02:43:25.724Z","type":"add"}
+{"description":"Declarative YAML DSL and InvariantError structured error class","subsystem":"invariant-engine","ts":"2026-04-10T02:43:25.724Z","type":"add"}

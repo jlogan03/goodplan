@@ -4,7 +4,6 @@ import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { serializeStateTree } from "../../../src/core/data/serialize.js";
 import type { ProjectState } from "../../../src/core/tree.js";
-import { applyQuery } from "../../../src/util/query.js";
 import { deterministicStringify } from "../../../src/util/json.js";
 
 let tmpDir: string;
@@ -37,10 +36,7 @@ function createProject(name: string) {
 		created: NOW,
 		updated: NOW,
 	};
-	fs.writeFileSync(
-		path.join(projectDir, "project.json"),
-		`${deterministicStringify(project)}\n`,
-	);
+	fs.writeFileSync(path.join(projectDir, "project.json"), `${deterministicStringify(project)}\n`);
 	return projectDir;
 }
 
@@ -75,12 +71,28 @@ function createPopulatedProject() {
 
 	// Decisions
 	writeJsonl(projectDir, "decisions.jsonl", [
-		{ id: "d1", status: "active", domain: "architecture", title: "T1", summary: "S1", date: "2026-03-20", supersededBy: null },
+		{
+			id: "d1",
+			status: "active",
+			domain: "architecture",
+			title: "T1",
+			summary: "S1",
+			date: "2026-03-20",
+			supersededBy: null,
+		},
 	]);
 
 	// Learnings
 	writeJsonl(projectDir, "learnings.jsonl", [
-		{ category: "worked", summary: "Zod is great", file: "learnings/zod-is-great.md", tags: ["zod"], source: "slices/01-auth", rollup: true, rollupTo: ["project"] },
+		{
+			category: "worked",
+			summary: "Zod is great",
+			file: "learnings/zod-is-great.md",
+			tags: ["zod"],
+			source: "slices/01-auth",
+			rollup: true,
+			rollupTo: ["project"],
+		},
 	]);
 
 	// Activity log with 5+ entries for pagination testing
@@ -179,7 +191,7 @@ describe("serializeStateTree", () => {
 		};
 
 		const result = serializeStateTree(state, { inline: false });
-		expect(result["architecture"]).toEqual({ "_overview.md": true });
+		expect(result.architecture).toEqual({ "_overview.md": true });
 	});
 
 	it("serializes a complex tree correctly", () => {
@@ -202,7 +214,7 @@ describe("serializeStateTree", () => {
 		expect(result["project.json"]).toEqual({ name: "test" });
 		expect(result["activity-log.jsonl"]).toEqual([{ ts: NOW }]);
 		expect(result["idea.md"]).toBe(true);
-		expect((result["slices"] as Record<string, unknown>)["overview.json"]).toEqual({ items: [] });
+		expect((result.slices as Record<string, unknown>)["overview.json"]).toEqual({ items: [] });
 	});
 });
 

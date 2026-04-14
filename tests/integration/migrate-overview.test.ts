@@ -145,11 +145,7 @@ function setupOldStyleProject(opts?: {
 	if (opts?.includeSlicesOverview === true) {
 		const slicesDir = path.join(projectDir, "slices");
 		fs.mkdirSync(slicesDir, { recursive: true });
-		fs.writeFileSync(
-			path.join(slicesDir, "overview.json"),
-			'{"items":[]}\n',
-			"utf-8",
-		);
+		fs.writeFileSync(path.join(slicesDir, "overview.json"), '{"items":[]}\n', "utf-8");
 	}
 }
 
@@ -218,20 +214,14 @@ describe("migrateOverviewConsolidation", () => {
 		expect(result1).toBe(true);
 
 		// Capture overview content
-		const overviewAfterFirst = fs.readFileSync(
-			path.join(projectDir, "overview.json"),
-			"utf-8",
-		);
+		const overviewAfterFirst = fs.readFileSync(path.join(projectDir, "overview.json"), "utf-8");
 
 		// Second run — no-op
 		const result2 = migrateOverviewConsolidation(projectDir);
 		expect(result2).toBe(false);
 
 		// Content unchanged
-		const overviewAfterSecond = fs.readFileSync(
-			path.join(projectDir, "overview.json"),
-			"utf-8",
-		);
+		const overviewAfterSecond = fs.readFileSync(path.join(projectDir, "overview.json"), "utf-8");
 		expect(overviewAfterSecond).toBe(overviewAfterFirst);
 	});
 
@@ -299,21 +289,9 @@ describe("migrateOverviewConsolidation", () => {
 		setupOldStyleProject();
 
 		// Overwrite old files with empty items arrays
-		fs.writeFileSync(
-			path.join(projectDir, "epics", "overview.json"),
-			'{"items":[]}\n',
-			"utf-8",
-		);
-		fs.writeFileSync(
-			path.join(projectDir, "quests", "overview.json"),
-			'{"items":[]}\n',
-			"utf-8",
-		);
-		fs.writeFileSync(
-			path.join(projectDir, "tasks", "overview.json"),
-			'{"items":[]}\n',
-			"utf-8",
-		);
+		fs.writeFileSync(path.join(projectDir, "epics", "overview.json"), '{"items":[]}\n', "utf-8");
+		fs.writeFileSync(path.join(projectDir, "quests", "overview.json"), '{"items":[]}\n', "utf-8");
+		fs.writeFileSync(path.join(projectDir, "tasks", "overview.json"), '{"items":[]}\n', "utf-8");
 		// Remove the unified to force re-migration
 		if (fs.existsSync(path.join(projectDir, "overview.json"))) {
 			fs.unlinkSync(path.join(projectDir, "overview.json"));

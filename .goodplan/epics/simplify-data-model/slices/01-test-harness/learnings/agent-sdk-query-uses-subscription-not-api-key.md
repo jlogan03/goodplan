@@ -1,1 +1,0 @@
-@anthropic-ai/claude-agent-sdk query() uses the Claude subscription. @anthropic-ai/sdk messages.create() requires ANTHROPIC_API_KEY. Prefer Agent SDK for tooling that should work without API setup.

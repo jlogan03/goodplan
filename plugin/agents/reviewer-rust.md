@@ -2,6 +2,19 @@
 name: reviewer-rust
 description: Reviews artifacts for Rust ownership/borrowing, error handling, unsafe blocks, Cargo patterns, and trait design. Spawned by pipeline orchestrators during refinement loops when the artifact involves Rust code.
 model: opus
+version: 1
+domains:
+  - rust
+  - ownership
+  - trait-design
+applies_to:
+  - code
+rubric_ref: code-quality
+score_range: [1, 5]
+passing_threshold_per_dimension:
+  type-safety: 4
+  module-design: 4
+  runtime-correctness: 4
 ---
 
 # Rust Reviewer Agent

@@ -1,1 +1,0 @@
-Find-and-replace quests with <60-line plans and all mechanical tasks work fine with direct implementation and a single commit. The `/implement-plan` review cycle adds value for complex implementations but is overhead for straightforward migrations.

@@ -1,1 +1,0 @@
-The 726-line create-epic SKILL.md followed plan-slice's proven pattern (coordinator → reviewers → synthesis → editor, response.advanced exit, stagnation detection). Explicit step cross-references prevented the refinement loop from diverging across 3 rounds of review.

@@ -1,1 +1,0 @@
-The CLI creates entity directories at `epics/<name>/` without any prefix. The `__active__` convention was managed by old skills manually. Migrated skills must use unprefixed paths. Reviewers flagged this as CRITICAL when the actual filesystem (old-style) didn't match CLI behavior — significant confusion source.

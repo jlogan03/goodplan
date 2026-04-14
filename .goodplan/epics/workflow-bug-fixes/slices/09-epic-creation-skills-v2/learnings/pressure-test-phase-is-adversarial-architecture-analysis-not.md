@@ -1,0 +1,1 @@
+The pressure-test-phase agent does standalone adversarial analysis (5 failure-mode classes), not the reviewer dispatch + convergence loop. Findings are dispositioned individually by the user.

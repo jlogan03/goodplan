@@ -1,1 +1,0 @@
-MAX_ITERATIONS=1, do-not-ask instructions, fallback CLI invocations, and auto-abandon all hid real issues. Removing them revealed start-epic uses direct file ops and complete-epic drops learnings.

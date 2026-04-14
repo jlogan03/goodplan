@@ -29,10 +29,7 @@ describe("INV-005: Schema validation — malformed JSON rejected on read", () =>
 
 	it("rejects project.json with missing required fields", () => {
 		// Write invalid project.json (missing 'name')
-		fs.writeFileSync(
-			path.join(projectDir, "project.json"),
-			JSON.stringify({ version: 1 }),
-		);
+		fs.writeFileSync(path.join(projectDir, "project.json"), JSON.stringify({ version: 1 }));
 
 		expect(() => assembleState(projectDir)).toThrow(GoodplanError);
 
@@ -58,10 +55,7 @@ describe("INV-005: Schema validation — malformed JSON rejected on read", () =>
 
 	it("rejects activity-log.jsonl with invalid entries", () => {
 		// Write invalid JSONL
-		fs.writeFileSync(
-			path.join(projectDir, "activity-log.jsonl"),
-			'{"not": "valid activity"}\n',
-		);
+		fs.writeFileSync(path.join(projectDir, "activity-log.jsonl"), '{"not": "valid activity"}\n');
 
 		expect(() => assembleState(projectDir)).toThrow(GoodplanError);
 
@@ -75,19 +69,13 @@ describe("INV-005: Schema validation — malformed JSON rejected on read", () =>
 	});
 
 	it("rejects unparseable JSON", () => {
-		fs.writeFileSync(
-			path.join(projectDir, "project.json"),
-			"{ this is not json",
-		);
+		fs.writeFileSync(path.join(projectDir, "project.json"), "{ this is not json");
 
 		expect(() => assembleState(projectDir)).toThrow(GoodplanError);
 	});
 
 	it("error detail includes file paths", () => {
-		fs.writeFileSync(
-			path.join(projectDir, "project.json"),
-			JSON.stringify({ invalid: true }),
-		);
+		fs.writeFileSync(path.join(projectDir, "project.json"), JSON.stringify({ invalid: true }));
 
 		try {
 			assembleState(projectDir);
@@ -97,8 +85,8 @@ describe("INV-005: Schema validation — malformed JSON rejected on read", () =>
 			expect(ge.code).toBe("DATA_VALIDATION_ERROR");
 			expect(ge.detail).toBeDefined();
 			const detail = ge.detail as Record<string, unknown>;
-			expect(detail["errors"]).toBeDefined();
-			const errors = detail["errors"] as Array<{ file: string; message: string }>;
+			expect(detail.errors).toBeDefined();
+			const errors = detail.errors as Array<{ file: string; message: string }>;
 			expect(errors.length).toBeGreaterThan(0);
 			const fileNames = errors.map((e) => e.file);
 			expect(fileNames.some((f) => f.includes("project.json"))).toBe(true);

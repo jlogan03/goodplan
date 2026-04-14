@@ -27,6 +27,4 @@ function readVersionFallback(): string {
 }
 
 export const VERSION: string =
-	typeof __GOODPLAN_VERSION__ !== "undefined"
-		? __GOODPLAN_VERSION__
-		: readVersionFallback();
+	typeof __GOODPLAN_VERSION__ !== "undefined" ? __GOODPLAN_VERSION__ : readVersionFallback();

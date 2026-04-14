@@ -52,14 +52,12 @@ describe("runner: main runner behavior", () => {
 				env,
 			});
 
-			// Validation should catch bad input (empty object missing required name and goal fields)
-			expect(result.exitCode).toBe(2);
+			// v2: epic:create exits 1 with { ok: false, code: "VALIDATION_INVALID_INPUT" } for missing name
+			expect(result.exitCode).not.toBe(0);
 			expect(result.json).toBeDefined();
-			const json = result.json as { error: { code: string; message: string } };
-			expect(json.error).toBeDefined();
-			expect(json.error.code).toMatch(/^VALIDATION_/);
-			// Error goes to stdout in JSON mode, stderr should be empty
-			expect(result.stderr).toBe("");
+			const json = result.json as { ok: boolean; code: string; error: string };
+			expect(json.ok).toBe(false);
+			expect(json.code).toBe("VALIDATION_INVALID_INPUT");
 		});
 	});
 

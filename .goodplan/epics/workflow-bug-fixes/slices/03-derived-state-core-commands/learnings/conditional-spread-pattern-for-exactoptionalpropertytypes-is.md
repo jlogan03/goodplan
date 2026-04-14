@@ -1,0 +1,1 @@
+Used in CheckContext, MutatingCommandOutput, buildStatusResult. Consider utility if proliferating.

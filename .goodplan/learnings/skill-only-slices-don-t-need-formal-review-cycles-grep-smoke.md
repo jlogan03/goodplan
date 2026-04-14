@@ -1,1 +1,0 @@
-All 4 skill SKILL.md migrations passed first iteration. Skill files are LLM prompts, not code — changes are structural pattern replacements with no runtime behavior. Future skill-only slices should skip formal review cycles and use grep checks + CLI smoke tests as verification.

@@ -2,6 +2,21 @@
 name: reviewer-ml-pipeline
 description: Reviews artifacts for data preprocessing, feature engineering, model training, evaluation metrics, deployment, and reproducibility. Spawned by pipeline orchestrators during refinement loops when the artifact involves ML pipelines.
 model: opus
+version: 1
+domains:
+  - ml-pipeline
+  - data-preprocessing
+  - model-training
+  - evaluation
+applies_to:
+  - code
+  - architecture
+rubric_ref: code-quality
+score_range: [1, 5]
+passing_threshold_per_dimension:
+  type-safety: 3
+  module-design: 4
+  runtime-correctness: 4
 ---
 
 # ML Pipeline Reviewer Agent

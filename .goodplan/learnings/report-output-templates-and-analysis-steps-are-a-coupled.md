@@ -1,1 +1,0 @@
-Adding analysis steps without updating the output template creates a gap where agents improvise. Any plan that adds analysis steps should include a corresponding template update task.

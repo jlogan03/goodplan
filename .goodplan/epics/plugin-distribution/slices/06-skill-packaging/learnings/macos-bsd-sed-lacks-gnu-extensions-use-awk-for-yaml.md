@@ -1,1 +1,0 @@
-macOS ships BSD sed which does not support {/pattern/!q} syntax. awk with state tracking works on both macOS and Linux. Future build script tasks should prefer awk over sed for portability.

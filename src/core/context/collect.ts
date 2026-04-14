@@ -29,10 +29,7 @@ export interface CollectedEntry {
  *
  * Returns an empty array if the path doesn't resolve or isn't a directory.
  */
-export function collectMarkdownEntries(
-	state: ProjectState,
-	path: string,
-): CollectedEntry[] {
+export function collectMarkdownEntries(state: ProjectState, path: string): CollectedEntry[] {
 	const entry = resolve(state, path);
 	if (entry === undefined || entry.type !== "directory") return [];
 
@@ -41,22 +38,14 @@ export function collectMarkdownEntries(
 	return results.sort((a, b) => a.key.localeCompare(b.key));
 }
 
-function walkDirectory(
-	dir: DirectoryEntry,
-	basePath: string,
-	results: CollectedEntry[],
-): void {
+function walkDirectory(dir: DirectoryEntry, basePath: string, results: CollectedEntry[]): void {
 	for (const [name, child] of Object.entries(dir.contents)) {
 		const childPath = basePath ? `${basePath}/${name}` : name;
 		collectEntry(child, childPath, results);
 	}
 }
 
-function collectEntry(
-	entry: StateEntry,
-	path: string,
-	results: CollectedEntry[],
-): void {
+function collectEntry(entry: StateEntry, path: string, results: CollectedEntry[]): void {
 	if (entry.type === "markdown") {
 		results.push({ key: path, content: entry.content });
 	} else if (entry.type === "directory") {
@@ -102,8 +91,8 @@ export function resolveContentSource(
 		const content = entry.content;
 		if (content !== null && typeof content === "object" && "goal" in content) {
 			const record = content as Record<string, unknown>;
-			if (typeof record["goal"] === "string") {
-				return [{ key: path, content: record["goal"] }];
+			if (typeof record.goal === "string") {
+				return [{ key: path, content: record.goal }];
 			}
 		}
 		// Fallback: stringify the whole JSON content

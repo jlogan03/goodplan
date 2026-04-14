@@ -1,0 +1,1 @@
+TypeScript interfaces with Map for runtime, Zod z.record() only for serialized JSON output.

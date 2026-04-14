@@ -1,1 +1,0 @@
-Broad substring greps (e.g., refine-architecture) match legitimate CLI sub-command references like $GP epic:refine-architecture. Verification patterns must match /-prefixed skill invocations only and exclude $GP/gp lines. POSIX [^d-] is more portable than \b word boundaries on macOS BSD grep.

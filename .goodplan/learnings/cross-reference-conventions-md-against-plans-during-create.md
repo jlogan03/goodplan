@@ -1,1 +1,0 @@
-Plan listed 14 skill dirs; conventions.md and goal required 15 (including `migrate` stub). Caught as CRITICAL in refinement. Checking conventions alignment during planning prevents this class of error.

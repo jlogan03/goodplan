@@ -1,1 +1,0 @@
-Replace prescriptive scripts with role context. The LLM reasons naturally from domain knowledge, exercising realistic code paths.

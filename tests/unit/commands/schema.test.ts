@@ -1,12 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 import { globalArgs } from "../../../src/commands/global-args.js";
-import { commandRegistry, stdinSchemaRegistry } from "../../../src/commands/global/schema.js";
+import {
+	commandRegistry,
+	eventSchemaRegistry,
+	stdinSchemaRegistry,
+} from "../../../src/commands/global/schema.js";
 import { mainCommand } from "../../../src/commands/main.js";
 
 describe("schema command", () => {
 	async function runSchema(args: {
 		json?: boolean;
 		command?: string;
+		events?: boolean;
 		query?: string;
 		quiet?: boolean;
 		verbose?: boolean;
@@ -18,6 +23,7 @@ describe("schema command", () => {
 				args: {
 					json: args.json ?? false,
 					command: args.command ?? undefined,
+					events: args.events ?? false,
 					query: args.query ?? undefined,
 					quiet: args.quiet ?? false,
 					verbose: args.verbose ?? false,
@@ -48,8 +54,9 @@ describe("schema command", () => {
 		expect(names).toContain("status");
 		expect(names).toContain("init");
 		expect(names).toContain("epic:create");
-		expect(names).toContain("slice:complete");
-		expect(names).toContain("decision:create");
+		expect(names).toContain("slice:create");
+		expect(names).toContain("slice:abandon");
+		expect(names).toContain("decision:record");
 
 		vi.restoreAllMocks();
 	});
@@ -61,19 +68,18 @@ describe("schema command", () => {
 			return true;
 		});
 
-		await runSchema({ json: true, command: "slice:complete" });
+		await runSchema({ json: true, command: "epic:complete" });
 
 		const outputStr = chunks.join("");
 		const parsed = JSON.parse(outputStr);
-		expect(parsed.name).toBe("slice:complete");
+		expect(parsed.name).toBe("epic:complete");
 		expect(parsed.description).toBeTruthy();
 		expect(parsed.args).toBeTruthy();
 		expect(parsed.stdinSchema).toBeTruthy();
 
 		// Verify stdin schema has expected properties
 		expect(parsed.stdinSchema.type).toBe("object");
-		expect(parsed.stdinSchema.properties).toHaveProperty("verificationPassed");
-		expect(parsed.stdinSchema.properties).toHaveProperty("slice");
+		expect(parsed.stdinSchema.properties).toHaveProperty("verificationResults");
 
 		vi.restoreAllMocks();
 	});
@@ -140,6 +146,33 @@ describe("schema command", () => {
 		expect(outputStr).toContain('"name": "status"');
 		// Should be indented (not tab-indented like deterministicStringify)
 		expect(outputStr).toContain("  ");
+
+		vi.restoreAllMocks();
+	});
+
+	it("returns event catalog with --events --json", async () => {
+		const chunks: string[] = [];
+		vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
+			chunks.push(String(chunk));
+			return true;
+		});
+
+		await runSchema({ json: true, events: true });
+
+		const outputStr = chunks.join("");
+		const parsed = JSON.parse(outputStr);
+		expect(parsed).toHaveProperty("events");
+		expect(Array.isArray(parsed.events)).toBe(true);
+		expect(parsed.events.length).toBeGreaterThan(0);
+
+		// Verify project-initialized event is present with JSON Schema payload
+		const projectInit = parsed.events.find(
+			(e: { type: string }) => e.type === "project-initialized",
+		);
+		expect(projectInit).toBeDefined();
+		expect(projectInit.payloadSchema).toBeDefined();
+		expect(projectInit.payloadSchema.type).toBe("object");
+		expect(projectInit.payloadSchema.properties).toHaveProperty("name");
 
 		vi.restoreAllMocks();
 	});
@@ -210,6 +243,20 @@ describe("command registry drift detection (INV-006)", () => {
 	});
 });
 
+describe("eventSchemaRegistry", () => {
+	it("contains project-initialized event", () => {
+		expect(eventSchemaRegistry).toHaveProperty("project-initialized");
+	});
+
+	it("every entry is a valid Zod schema", () => {
+		for (const [type, schema] of Object.entries(eventSchemaRegistry)) {
+			expect(schema, `event "${type}" should be a Zod schema with safeParse`).toHaveProperty(
+				"safeParse",
+			);
+		}
+	});
+});
+
 describe("stdinSchemaRegistry drift detection", () => {
 	it("every command that accepts stdin has a stdinSchemaRegistry entry", async () => {
 		// Commands known to accept stdin input (via validateInput or direct safeParse).
@@ -218,24 +265,10 @@ describe("stdinSchemaRegistry drift detection", () => {
 		const stdinCommands = [
 			"epic:create",
 			"epic:complete",
-			"epic:add-verification",
-			"epic:update-verification",
-			"migrate",
 			"slice:create",
-			"slice:complete",
-			"quest:create",
-			"quest:complete",
-			"task:create",
-			"decision:create",
-			"decision:update",
-			"submit-plan",
-			"submit-refinement",
-			"submit-implementation",
-			"submit-explore",
-			"submit-architecture",
-			"submit-slices",
-			"submit-refine-architecture",
-			"submit-refine-slices",
+			"subsystem:register",
+			"subsystem:update-maturity",
+			"briefing:write",
 		];
 
 		const registryKeys = Object.keys(stdinSchemaRegistry);

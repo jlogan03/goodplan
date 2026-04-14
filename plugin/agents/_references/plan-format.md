@@ -151,3 +151,32 @@ Phases should be independently reviewable with clear boundaries between them.
 **Refactoring phases**: Before checks *pass* (regression anchors). After checks confirm the same behavior holds plus structural assertions (e.g., "module Y has no imports from Z"). The red state is the structural assertion.
 
 **Pure documentation/configuration**: Use file-level checks ("Before: file X doesn't exist. After: file X exists with content Y"). Red-green still applies at the file level.
+
+## v2 Chunk Format
+
+When plans are consumed by `/gp:implement-slice` (v2), each Expected Behavior section should declare chunks for the TDD lifecycle. Chunks are the unit of implementation — each chunk has a RED test, implementation, and GREEN verification.
+
+Within the Expected Behavior section, declare chunks using this format:
+
+```yaml
+chunks:
+  - id: short-kebab-case-id
+    description: "What this chunk implements"
+    expectation: "What changes after implementation"
+    redTest: "What should fail before implementation (the RED test)"
+    verificationType: live | supplementary-tests | impossible-with-reason
+    dependencies: [other-chunk-id]  # optional — chunks this depends on
+```
+
+**Field descriptions:**
+- `id`: Short kebab-case identifier (e.g., `add-rubric-path-arg`, `update-barrel-exports`)
+- `description`: What the chunk implements (1-2 sentences)
+- `expectation`: Observable change after implementation
+- `redTest`: Concrete check that should FAIL before implementation — the implement-phase agent writes and runs this test first
+- `verificationType`: How this chunk will be verified:
+  - `live` — execute and observe (default)
+  - `supplementary-tests` — run test suite
+  - `impossible-with-reason` — requires user decision (chunk-unverifiable flow)
+- `dependencies`: Array of chunk IDs this chunk depends on (orchestrator resolves execution order via topological sort)
+
+The plan extractor parses these chunks for the `chunk-start` command. The implement-slice orchestrator uses the dependency graph to determine execution order.

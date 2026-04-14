@@ -1,9 +1,0 @@
-{
-	"context": {},
-	"created": "2026-03-28T14:46:19.474Z",
-	"description": "data-determinism, schema-validation, and tree-accuracy tests each have their own recursive TS file collector. Update them to import from tests/fitness/helpers.ts instead.",
-	"droppedReason": "Completed as part of quest test-infrastructure-polish",
-	"name": "dedup-fitness-collect-ts",
-	"status": "dropped",
-	"title": "Deduplicate collectTsFiles() across fitness tests"
-}

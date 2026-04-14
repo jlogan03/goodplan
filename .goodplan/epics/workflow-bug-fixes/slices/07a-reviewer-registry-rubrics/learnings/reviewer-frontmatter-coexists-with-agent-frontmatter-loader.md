@@ -1,0 +1,1 @@
+Reviewer agent .md files have both Claude Code agent fields (name, description, model) and registry fields (version, domains, applies_to, rubric_ref, score_range, passing_threshold_per_dimension). The loader transforms raw frontmatter before schema validation, mapping name to id.

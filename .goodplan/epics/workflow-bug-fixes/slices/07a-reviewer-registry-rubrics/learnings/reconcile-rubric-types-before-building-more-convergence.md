@@ -1,0 +1,1 @@
+The convergence evaluator has inline Rubric/RubricDimension types while the new rubric system has RubricYaml/RubricDimensionYaml. These should be unified before the convergence evaluator is updated to use YAML-loaded rubrics.

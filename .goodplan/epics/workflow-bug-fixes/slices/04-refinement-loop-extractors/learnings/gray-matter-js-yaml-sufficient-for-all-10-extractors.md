@@ -1,0 +1,1 @@
+Architecture spec called for remark + remark-gfm + remark-frontmatter + unist-util-select (~35KB). Implementation proved gray-matter + js-yaml (~6KB) handles all controlled templates.

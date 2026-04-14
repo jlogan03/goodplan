@@ -1,30 +1,20 @@
 import { defineCommand } from "citty";
 import { z } from "zod";
-import { LEGACY_DIR_NAME, PROJECT_DIR_NAME } from "../../core/data/project.js";
-import { migrationResponseSchema } from "../../core/rpc/migrate.js";
+import { PROJECT_DIR_NAME } from "../../core/data/project.js";
+import { writeBriefingInputSchema } from "../../schemas/commands/briefing.js";
+import { completeEpicInputSchema, createEpicInputSchema } from "../../schemas/commands/epic.js";
+import { createSliceInputSchema } from "../../schemas/commands/slice.js";
 import {
-	createDecisionInputSchema,
-	updateDecisionInputSchema,
-} from "../../schemas/commands/decision.js";
+	registerSubsystemInputSchema,
+	updateMaturityInputSchema,
+} from "../../schemas/commands/subsystem.js";
+import { briefingWrittenPayloadSchema } from "../../schemas/events/briefing.js";
+import { projectInitializedPayloadSchema } from "../../schemas/events/index.js";
 import {
-	addVerificationInputSchema,
-	completeEpicInputSchema,
-	createEpicInputSchema,
-	updateVerificationInputSchema,
-} from "../../schemas/commands/epic.js";
-import { completeQuestInputSchema, createQuestInputSchema } from "../../schemas/commands/quest.js";
-import { completeSliceInputSchema, createSliceInputSchema } from "../../schemas/commands/slice.js";
-import {
-	submitArchitectureInputSchema,
-	submitExploreInputSchema,
-	submitImplementationInputSchema,
-	submitPlanInputSchema,
-	submitRefineArchitectureInputSchema,
-	submitRefineSlicesInputSchema,
-	submitRefinementInputSchema,
-	submitSlicesInputSchema,
-} from "../../schemas/commands/submit.js";
-import { taskCreateInputSchema } from "../../schemas/commands/task.js";
+	subsystemMaturityUpdatedPayloadSchema,
+	subsystemRegisteredPayloadSchema,
+	subsystemRetiredPayloadSchema,
+} from "../../schemas/events/subsystem.js";
 import { GoodplanError } from "../../util/errors.js";
 import { output } from "../../util/output.js";
 import { globalArgs, listArgs } from "../global-args.js";
@@ -53,24 +43,10 @@ interface CommandRegistryEntry {
 export const stdinSchemaRegistry: Record<string, z.ZodType> = {
 	"epic:create": createEpicInputSchema,
 	"epic:complete": completeEpicInputSchema,
-	"epic:add-verification": addVerificationInputSchema,
-	"epic:update-verification": updateVerificationInputSchema,
 	"slice:create": createSliceInputSchema,
-	"slice:complete": completeSliceInputSchema,
-	"quest:create": createQuestInputSchema,
-	"quest:complete": completeQuestInputSchema,
-	"task:create": taskCreateInputSchema,
-	"decision:create": createDecisionInputSchema,
-	"decision:update": updateDecisionInputSchema,
-	"submit-plan": submitPlanInputSchema,
-	"submit-refinement": submitRefinementInputSchema,
-	"submit-implementation": submitImplementationInputSchema,
-	"submit-explore": submitExploreInputSchema,
-	"submit-architecture": submitArchitectureInputSchema,
-	"submit-slices": submitSlicesInputSchema,
-	"submit-refine-architecture": submitRefineArchitectureInputSchema,
-	"submit-refine-slices": submitRefineSlicesInputSchema,
-	migrate: migrationResponseSchema,
+	"briefing:write": writeBriefingInputSchema,
+	"subsystem:register": registerSubsystemInputSchema,
+	"subsystem:update-maturity": updateMaturityInputSchema,
 };
 
 // ── Command Registry ─────────────────────────────────────────
@@ -125,7 +101,7 @@ registerCommand("init", `Initialize a new ${PROJECT_DIR_NAME}/ directory`, {
 });
 registerCommand(
 	"migrate",
-	`Migrate a ${PROJECT_DIR_NAME}/ or legacy ${LEGACY_DIR_NAME}/ directory to CLI format. Stdin: {round, answers: [{id, data}]}. Accepts both ${PROJECT_DIR_NAME}/ (re-migration) and ${LEGACY_DIR_NAME}/ (legacy migration).`,
+	"Migrate project from v1 to v2 event-sourced format.",
 	{
 		...globalArgDefs,
 	},
@@ -136,6 +112,11 @@ registerCommand("status", "Show current project status", {
 registerCommand("schema", "Show CLI command tree with input/output schemas", {
 	...globalArgDefs,
 	command: { type: "string", description: "Show detail for a specific command" },
+	events: {
+		type: "boolean",
+		description: "Show event type catalog with payload schemas",
+		default: false,
+	},
 });
 registerCommand(
 	"state",
@@ -174,8 +155,9 @@ registerCommand(
 );
 
 // Epic commands
-registerCommand("epic:create", "Create a new epic. Stdin: {name, goal}.", {
+registerCommand("epic:create", "Create a new epic. Accepts --name flag or stdin JSON { name }.", {
 	...globalArgDefs,
+	name: { type: "string", description: "Epic name (used as directory slug)", required: false },
 });
 registerCommand(
 	"epic:list",
@@ -189,25 +171,134 @@ registerCommand("epic:show", "Show details for a specific epic.", {
 	...globalArgDefs,
 	epic: { type: "string", description: "Epic name", required: true },
 });
-registerCommand("epic:explore", "Begin exploration phase for an epic.", {
+registerCommand(
+	"epic:goal-draft",
+	"Draft an epic goal. Accepts --epic flag and stdin JSON { content }.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+	},
+);
+registerCommand(
+	"epic:goal-commit",
+	"Commit an epic goal. Accepts --epic flag and stdin JSON { content }.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+	},
+);
+registerCommand("epic:explore-start", "Start an exploration cycle for an epic.", {
 	...globalArgDefs,
 	epic: { type: "string", description: "Epic name", required: true },
 });
-registerCommand("epic:define-architecture", "Begin architecture definition for an epic.", {
+registerCommand("epic:explore-conclude", "Conclude exploration for an epic.", {
 	...globalArgDefs,
 	epic: { type: "string", description: "Epic name", required: true },
 });
-registerCommand("epic:refine-architecture", "Begin architecture refinement for an epic.", {
+registerCommand("epic:research-capture", "Capture a research artifact for an epic.", {
 	...globalArgDefs,
 	epic: { type: "string", description: "Epic name", required: true },
 });
-registerCommand("epic:define-slices", "Begin slice definition for an epic.", {
+registerCommand("epic:brainstorm-capture", "Capture a brainstorm artifact for an epic.", {
 	...globalArgDefs,
 	epic: { type: "string", description: "Epic name", required: true },
 });
-registerCommand("epic:refine-slices", "Begin slice refinement for an epic.", {
+registerCommand("epic:architecture-draft", "Draft an architecture target for an epic.", {
 	...globalArgDefs,
 	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand("epic:architecture-commit", "Commit the architecture target for an epic.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand(
+	"epic:architecture-shape-start",
+	"Start the architecture shape checkpoint for an epic.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+	},
+);
+registerCommand("epic:architecture-shape-approve", "Approve the architecture shape for an epic.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand(
+	"epic:architecture-shape-auto",
+	"Auto-shape the architecture checkpoint for an epic.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+	},
+);
+// v1 epic:refine-architecture, epic:define-slices, epic:refine-slices removed
+// (deferred to slice 07 / superseded by v2 equivalents)
+registerCommand(
+	"epic:pressure-test-draft",
+	"Draft a pressure test for an epic. Stdin: { content }.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+	},
+);
+registerCommand(
+	"epic:pressure-test-commit",
+	"Commit the pressure test for an epic. Stdin: { content }.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+	},
+);
+registerCommand(
+	"epic:pressure-test-finding-disposition",
+	"Set the disposition of a pressure test finding.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+		finding: { type: "string", description: "Finding ID", required: true },
+		disposition: {
+			type: "string",
+			description: "Disposition: accepted or dismissed",
+			required: true,
+		},
+	},
+);
+registerCommand("epic:slices-draft", "Draft a slice set for an epic. Stdin: { content }.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand("epic:slices-commit", "Commit the slice set for an epic. Stdin: { content }.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand("epic:slice-set-shape-start", "Start the slice set shape checkpoint for an epic.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand("epic:slice-set-shape-approve", "Approve the slice set shape for an epic.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand("epic:slice-set-shape-auto", "Auto-shape the slice set checkpoint for an epic.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand("epic:pause", "Pause an epic.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand("epic:resume", "Resume a paused epic.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand("epic:set-steering", "Set the steering preference for an epic.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+	preference: {
+		type: "string",
+		description: "Steering preference: always-consult, best-guess-and-flag, or ask-in-the-moment",
+		required: true,
+	},
 });
 registerCommand("epic:activate", "Activate an epic for work.", {
 	...globalArgDefs,
@@ -222,116 +313,160 @@ registerCommand("epic:abandon", "Abandon an epic.", {
 	epic: { type: "string", description: "Epic name", required: true },
 	reason: { type: "string", description: "Reason for abandoning", required: true },
 });
-registerCommand(
-	"epic:add-verification",
-	"Add a verification criterion to an epic. Stdin: {verification}.",
-	{
-		...globalArgDefs,
-		epic: { type: "string", description: "Epic name", required: true },
-	},
-);
-registerCommand(
-	"epic:update-verification",
-	"Update a verification criterion. Stdin: {verification}.",
-	{
-		...globalArgDefs,
-		epic: { type: "string", description: "Epic name", required: true },
-		index: { type: "string", description: "Verification index", required: true },
-	},
-);
+// v1 epic:add-verification, epic:update-verification removed
+// (core/rpc dependency; will be migrated to v2 events in a future slice)
 
 // Slice commands
-registerCommand("slice:create", "Create a new slice. Stdin: {name, goal}.", {
-	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
-});
-registerCommand("slice:list", "List all slices.", {
+registerCommand(
+	"slice:create",
+	"Create a new slice. Accepts --name flag or stdin JSON { name, goal }.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name (required)", required: true },
+		name: { type: "string", description: "Slice name (used as directory slug)", required: false },
+	},
+);
+registerCommand("slice:list", "List slices from event-sourced state.", {
 	...globalArgDefs,
 	...listArgDefs,
 	epic: { type: "string", description: "Filter by epic name" },
 	all: { type: "boolean", description: "Show slices from all epics" },
 });
-registerCommand("slice:show", "Show details for a specific slice.", {
+registerCommand("slice:show", "Show full slice entity details from event-sourced state.", {
 	...globalArgDefs,
 	slice: { type: "string", description: "Slice name", required: true },
-	epic: { type: "string", description: "Epic name (defaults to active epic)" },
+	epic: { type: "string", description: "Epic name", required: true },
 });
-registerCommand("slice:plan", "Begin planning for a slice.", {
+// v1 slice:plan, slice:refine-plan, slice:implement, slice:complete removed —
+// superseded by v2 event commands (plan-draft, plan-commit, implement-start, land)
+registerCommand("slice:abandon", "Abandon a slice with a reason.", {
 	...globalArgDefs,
 	slice: { type: "string", description: "Slice name", required: true },
-});
-registerCommand("slice:refine-plan", "Begin plan refinement for a slice.", {
-	...globalArgDefs,
-	slice: { type: "string", description: "Slice name", required: true },
-});
-registerCommand("slice:implement", "Begin implementation for a slice.", {
-	...globalArgDefs,
-	slice: { type: "string", description: "Slice name", required: true },
+	epic: { type: "string", description: "Epic name", required: true },
+	reason: { type: "string", description: "Reason for abandoning", required: true },
 });
 registerCommand(
-	"slice:complete",
-	"Complete a slice. Stdin: {verificationPassed, deferred?, learnings?, architectureDelta?}.",
+	"slice:plan-draft",
+	"Draft a slice plan. Accepts --epic and --slice flags and stdin JSON { content }.",
 	{
 		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
 		slice: { type: "string", description: "Slice name", required: true },
 	},
 );
-registerCommand("slice:abandon", "Abandon a slice.", {
+registerCommand(
+	"slice:plan-commit",
+	"Commit a slice plan. Accepts --epic and --slice flags and stdin JSON { content }.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+		slice: { type: "string", description: "Slice name", required: true },
+	},
+);
+registerCommand("slice:plan-shape-start", "Start the plan shape checkpoint for a slice.", {
 	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
 	slice: { type: "string", description: "Slice name", required: true },
-	reason: { type: "string", description: "Reason for abandoning", required: true },
-});
-
-// Quest commands
-registerCommand("quest:create", "Create a new quest. Stdin: {name, goal}.", {
-	...globalArgDefs,
-});
-registerCommand("quest:list", "List all quests.", {
-	...globalArgDefs,
-	...listArgDefs,
-});
-registerCommand("quest:show", "Show details for a specific quest.", {
-	...globalArgDefs,
-	quest: { type: "string", description: "Quest name", required: true },
-});
-registerCommand("quest:explore", "Begin exploration phase for a quest.", {
-	...globalArgDefs,
-	quest: { type: "string", description: "Quest name", required: true },
-});
-registerCommand("quest:plan", "Begin planning for a quest. Precondition: 'created' or 'explored' status.", {
-	...globalArgDefs,
-	quest: { type: "string", description: "Quest name", required: true },
-});
-registerCommand("quest:refine-plan", "Begin plan refinement for a quest.", {
-	...globalArgDefs,
-	quest: { type: "string", description: "Quest name", required: true },
-});
-registerCommand("quest:implement", "Begin implementation for a quest.", {
-	...globalArgDefs,
-	quest: { type: "string", description: "Quest name", required: true },
 });
 registerCommand(
-	"quest:complete",
-	"Complete a quest. Stdin: {verificationPassed, learnings?, architectureDelta?}.",
+	"slice:plan-shape-revise",
+	"Propose a plan shape revision. Accepts --epic, --slice, and stdin JSON { content, revision }.",
 	{
 		...globalArgDefs,
-		quest: { type: "string", description: "Quest name", required: true },
+		epic: { type: "string", description: "Epic name", required: true },
+		slice: { type: "string", description: "Slice name", required: true },
 	},
 );
-registerCommand("quest:abandon", "Abandon a quest.", {
+registerCommand("slice:plan-shape-approve", "Approve the plan shape for a slice.", {
 	...globalArgDefs,
-	quest: { type: "string", description: "Quest name", required: true },
-	reason: { type: "string", description: "Reason for abandoning", required: true },
+	epic: { type: "string", description: "Epic name", required: true },
+	slice: { type: "string", description: "Slice name", required: true },
 });
-
-// Task commands
+registerCommand("slice:plan-shape-auto", "Auto-shape the plan checkpoint for a slice.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+	slice: { type: "string", description: "Slice name", required: true },
+});
+registerCommand("slice:implement-start", "Start implementation of a slice.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+	slice: { type: "string", description: "Slice name", required: true },
+});
+registerCommand("slice:chunk-start", "Start a TDD chunk within a slice implementation.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+	slice: { type: "string", description: "Slice name", required: true },
+	chunk: { type: "string", description: "Chunk ID", required: true },
+});
+registerCommand("slice:chunk-red-written", "Record that a red test has been written for a chunk.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+	slice: { type: "string", description: "Slice name", required: true },
+	chunk: { type: "string", description: "Chunk ID", required: true },
+});
 registerCommand(
-	"task:create",
-	"Create a new task. Stdin: {name, title, description?, context?}. Transitions to 'open' status.",
+	"slice:chunk-red-failed",
+	"Record that a red test has failed (expected) for a chunk.",
 	{
 		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+		slice: { type: "string", description: "Slice name", required: true },
+		chunk: { type: "string", description: "Chunk ID", required: true },
 	},
 );
+registerCommand("slice:chunk-green", "Record that green has been achieved for a chunk.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+	slice: { type: "string", description: "Slice name", required: true },
+	chunk: { type: "string", description: "Chunk ID", required: true },
+});
+registerCommand("slice:chunk-verify", "Verify a chunk with evidence.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+	slice: { type: "string", description: "Slice name", required: true },
+	chunk: { type: "string", description: "Chunk ID", required: true },
+});
+registerCommand(
+	"slice:chunk-unverifiable",
+	"Mark a chunk as unverifiable (alternative to verify).",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+		slice: { type: "string", description: "Slice name", required: true },
+		chunk: { type: "string", description: "Chunk ID", required: true },
+	},
+);
+registerCommand(
+	"slice:chunk-decide",
+	"Decide on an unverifiable chunk (accept, revert, or defer).",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+		slice: { type: "string", description: "Slice name", required: true },
+		chunk: { type: "string", description: "Chunk ID", required: true },
+	},
+);
+registerCommand("slice:code-refine-start", "Start code refinement for a slice.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+	slice: { type: "string", description: "Slice name", required: true },
+});
+registerCommand("slice:code-refine-commit", "Record code refinement convergence for a slice.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+	slice: { type: "string", description: "Slice name", required: true },
+});
+registerCommand(
+	"slice:land",
+	"Land a slice after code refinement convergence. Stdin: {deferred?, learnings?, architectureDelta?}.",
+	{
+		...globalArgDefs,
+		epic: { type: "string", description: "Epic name", required: true },
+		slice: { type: "string", description: "Slice name", required: true },
+	},
+);
+
+// Task commands (task:list, task:show kept — task:create/drop/convert removed)
 registerCommand(
 	"task:list",
 	"List tasks. Defaults to open tasks only; use --all to include converted/dropped. JSON includes filter field.",
@@ -345,31 +480,8 @@ registerCommand("task:show", "Show full task entity details.", {
 	...globalArgDefs,
 	task: { type: "string", description: "Task name", required: true },
 });
-registerCommand(
-	"task:drop",
-	"Drop a task with a reason. Requires --task and --reason flags. Transition: open -> dropped.",
-	{
-		...globalArgDefs,
-		task: { type: "string", description: "Task name", required: true },
-		reason: { type: "string", description: "Reason for dropping", required: true },
-	},
-);
-registerCommand(
-	"task:convert",
-	"Convert a task to a quest or epic. Requires --task and --to flags. Optional --name and --goal overrides. Transition: open -> converted.",
-	{
-		...globalArgDefs,
-		task: { type: "string", description: "Task name", required: true },
-		to: { type: "string", description: 'Target entity type: "quest" or "epic"', required: true },
-		name: { type: "string", description: "Override name for created entity" },
-		goal: { type: "string", description: "Override goal for created entity" },
-	},
-);
 
 // Decision commands
-registerCommand("decision:create", "Create a new decision. Stdin: {id, domain, title, summary}.", {
-	...globalArgDefs,
-});
 registerCommand("decision:list", "List all decisions.", {
 	...globalArgDefs,
 	...listArgDefs,
@@ -378,128 +490,329 @@ registerCommand("decision:show", "Show details for a specific decision.", {
 	...globalArgDefs,
 	id: { type: "string", description: "Decision ID", required: true },
 });
+
+// Decision v2 event commands
 registerCommand(
-	"decision:update",
-	"Update a decision. Stdin: {changes: {status?, domain?, title?, summary?, supersededBy?}}.",
+	"decision:record",
+	"Record a decision (v2 event). Stdin: {id, domain, title, summary, entityPath?, reconsiderWhen?}.",
 	{
 		...globalArgDefs,
-		id: { type: "string", description: "Decision ID", required: true },
+	},
+);
+registerCommand(
+	"decision:supersede",
+	"Supersede a decision (v2 event). Stdin: {decisionId, reason, supersededBy?}.",
+	{
+		...globalArgDefs,
 	},
 );
 
 // Learning commands
+registerCommand(
+	"learning:capture",
+	"Capture a learning (v2 event). Stdin: {summary, scope?, tags?}.",
+	{
+		...globalArgDefs,
+	},
+);
 registerCommand("learning:list", "List learnings.", {
 	...globalArgDefs,
 	...listArgDefs,
 	source: { type: "string", description: "Filter by source scope" },
 });
-registerCommand("learning:rollup", "Roll up learnings from one scope to another.", {
-	...globalArgDefs,
-	from: { type: "string", description: "Source scope", required: true },
-	to: { type: "string", description: "Target scope", required: true },
-});
+registerCommand(
+	"learning:promote",
+	"Promote a learning to a wider scope (v2 event). Stdin: {learningId, from, to}.",
+	{
+		...globalArgDefs,
+	},
+);
 
 // Activity commands
 // Check if activity:list exists
 // (It's referenced in commands-api.md but may not be implemented yet — skipping if absent)
 
-// Sub-agent commands
-registerCommand("start-plan", "Get context for planning a slice or quest.", {
+
+// ── Subsystem commands ──────────────────────────────────────
+
+registerCommand(
+	"subsystem:register",
+	"Register a new subsystem. Accepts stdin JSON { name, maturity, owns }.",
+	{
+		...globalArgDefs,
+	},
+);
+registerCommand("subsystem:list", "List all registered subsystems with maturity and ownership.", {
 	...globalArgDefs,
-	slice: { type: "string", description: "Slice name" },
-	quest: { type: "string", description: "Quest name" },
-	inline: { type: "string", description: "Include inlined content (boolean or byte budget)" },
+	...listArgDefs,
 });
-registerCommand("start-refinement", "Get context for refining a slice or quest plan.", {
+registerCommand("subsystem:show", "Show full subsystem details. Requires --name flag.", {
 	...globalArgDefs,
-	slice: { type: "string", description: "Slice name" },
-	quest: { type: "string", description: "Quest name" },
-	inline: { type: "string", description: "Include inlined content (boolean or byte budget)" },
+	name: { type: "string", description: "Subsystem name", required: true },
 });
-registerCommand("start-implementation", "Get context for implementing a slice or quest.", {
+registerCommand(
+	"subsystem:update-maturity",
+	"Update a subsystem's maturity level. Requires --name flag and stdin JSON { maturity }.",
+	{
+		...globalArgDefs,
+		name: { type: "string", description: "Subsystem name", required: true },
+	},
+);
+registerCommand("subsystem:retire", "Retire a subsystem. Requires --name flag.", {
 	...globalArgDefs,
-	slice: { type: "string", description: "Slice name" },
-	quest: { type: "string", description: "Quest name" },
-	inline: { type: "string", description: "Include inlined content (boolean or byte budget)" },
+	name: { type: "string", description: "Subsystem name", required: true },
 });
-registerCommand("start-explore", "Get context for exploring an epic or quest. Requires --epic or --quest (mutually exclusive).", {
+
+// ── Briefing commands ──────────────────────────────────────
+
+registerCommand(
+	"briefing:write",
+	"Write a structured briefing. Accepts stdin JSON and --scope (project|epic) flag.",
+	{
+		...globalArgDefs,
+		scope: {
+			type: "string",
+			description: 'Briefing scope: "project" or "epic" (default: "project")',
+			default: "project",
+		},
+		epic: { type: "string", description: "Epic name (required when --scope epic)" },
+	},
+);
+registerCommand("briefing:latest", "Return the most recent briefing for a given scope.", {
+	...globalArgDefs,
+	scope: { type: "string", description: 'Filter scope: "project" or "epic"' },
+	"scope-ref": { type: "string", description: "Scope reference (e.g., epic name) to filter by" },
+});
+
+// ── Project commands ──────────────────────────────────────
+
+registerCommand("project:show", "Show project metadata and subsystem summary.", {
+	...globalArgDefs,
+});
+registerCommand(
+	"project:set-steering",
+	"Set the project steering preference. Accepts stdin JSON { preference }.",
+	{
+		...globalArgDefs,
+	},
+);
+
+// ── Events commands ──────────────────────────────────────
+
+registerCommand("events:tail", "Show recent events from a scope's event log.", {
+	...globalArgDefs,
+	scope: { type: "string", description: "Scope: project, epic, or side-quest" },
+	"scope-ref": { type: "string", description: "Scope reference (e.g., epic name)" },
+	n: { type: "string", description: "Number of events to show (default: 10)" },
+});
+registerCommand("events:query", "Query events from a scope's event log with optional filters.", {
+	...globalArgDefs,
+	scope: { type: "string", description: "Scope: project, epic, or side-quest" },
+	"scope-ref": { type: "string", description: "Scope reference (e.g., epic name)" },
+	domain: { type: "string", description: "Filter by event domain" },
+	type: { type: "string", description: "Filter by event type" },
+	after: { type: "string", description: "Only events at or after this ISO-8601 timestamp" },
+	before: { type: "string", description: "Only events at or before this ISO-8601 timestamp" },
+	limit: { type: "string", description: "Maximum number of events to return (default: 50)" },
+});
+
+// ── Finding commands ──────────────────────────────────────
+
+registerCommand("finding:capture", "Capture a finding for an epic. Accepts stdin JSON.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+registerCommand("finding:list", "List findings for an epic.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+	status: { type: "string", description: "Filter by disposition status" },
+});
+registerCommand("finding:triage", "Triage a finding. Stdin: {findingId, disposition, reason}.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name", required: true },
+});
+
+// ── Invariant commands ──────────────────────────────────────
+
+registerCommand("invariant:list", "List all custom invariants.", {
+	...globalArgDefs,
+	...listArgDefs,
+});
+registerCommand("invariant:check", "Run invariant checks against a scope.", {
+	...globalArgDefs,
+});
+registerCommand(
+	"invariant:propose",
+	"Propose a new custom invariant. Stdin: {description, rule?}.",
+	{
+		...globalArgDefs,
+	},
+);
+registerCommand("invariant:activate", "Activate a proposed invariant. Stdin: {id}.", {
+	...globalArgDefs,
+});
+registerCommand("invariant:deactivate", "Deactivate an invariant. Stdin: {id}.", {
+	...globalArgDefs,
+});
+
+// ── Reviewer commands ──────────────────────────────────────
+
+registerCommand("reviewer:list", "List all registered reviewers.", {
+	...globalArgDefs,
+	...listArgDefs,
+});
+registerCommand("reviewer:show", "Show details for a specific reviewer.", {
+	...globalArgDefs,
+	id: {
+		type: "positional",
+		description: "Reviewer agent ID (e.g., reviewer-holistic)",
+		required: true,
+	},
+});
+
+// ── Rubric commands ──────────────────────────────────────
+
+registerCommand("rubric:list", "List all registered rubrics.", {
+	...globalArgDefs,
+	...listArgDefs,
+});
+registerCommand("rubric:show", "Show details for a specific rubric.", {
+	...globalArgDefs,
+	name: { type: "positional", description: "Rubric ID (e.g., holistic)", required: true },
+});
+registerCommand("rubric:validate", "Validate all rubrics.", {
+	...globalArgDefs,
+});
+
+// ── Refine commands ──────────────────────────────────────
+
+registerCommand("refine:start", "Start a new refinement round for an artifact.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name (mutually exclusive with --side-quest)" },
+	"side-quest": { type: "string", description: "Side-quest name (mutually exclusive with --epic)" },
+	"artifact-type": { type: "string", description: "Artifact type being refined", required: true },
+});
+registerCommand("refine:score", "Submit reviewer scores for the current refinement round.", {
 	...globalArgDefs,
 	epic: { type: "string", description: "Epic name" },
-	quest: { type: "string", description: "Quest name" },
-	inline: { type: "string", description: "Include inlined content (boolean or byte budget)" },
+	"side-quest": { type: "string", description: "Side-quest name" },
+	"artifact-type": { type: "string", description: "Artifact type", required: true },
+	reviewer: { type: "string", description: "Reviewer ID", required: true },
 });
-registerCommand("start-architecture", "Get context for defining epic architecture.", {
-	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
-	inline: { type: "string", description: "Include inlined content (boolean or byte budget)" },
-});
-registerCommand("start-slices", "Get context for defining epic slices.", {
-	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
-	inline: { type: "string", description: "Include inlined content (boolean or byte budget)" },
-});
-registerCommand("start-refine-architecture", "Get context for refining epic architecture.", {
-	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
-	inline: { type: "string", description: "Include inlined content (boolean or byte budget)" },
-});
-registerCommand("start-refine-slices", "Get context for refining epic slices.", {
-	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
-	inline: { type: "string", description: "Include inlined content (boolean or byte budget)" },
-});
-registerCommand("submit-plan", "Submit a completed plan.", {
-	...globalArgDefs,
-	slice: { type: "string", description: "Slice name" },
-	quest: { type: "string", description: "Quest name" },
-});
-registerCommand("submit-refinement", "Submit refinement scores.", {
-	...globalArgDefs,
-	slice: { type: "string", description: "Slice name" },
-	quest: { type: "string", description: "Quest name" },
-	override: {
-		type: "boolean",
-		description: "Bypass score threshold circuit breaker",
-		default: false,
-	},
-});
-registerCommand("submit-implementation", "Submit implementation results.", {
-	...globalArgDefs,
-	phase: { type: "string", description: "Implementation phase number" },
-	slice: { type: "string", description: "Slice name" },
-	quest: { type: "string", description: "Quest name" },
-});
-registerCommand("submit-explore", "Submit exploration results. Requires --epic or --quest (mutually exclusive).", {
+registerCommand("refine:synthesize", "Record feedback synthesis for the current round.", {
 	...globalArgDefs,
 	epic: { type: "string", description: "Epic name" },
-	quest: { type: "string", description: "Quest name" },
+	"side-quest": { type: "string", description: "Side-quest name" },
+	"artifact-type": { type: "string", description: "Artifact type", required: true },
 });
-registerCommand("submit-architecture", "Submit architecture definition.", {
+registerCommand("refine:revise", "Record an artifact revision for the current round.", {
 	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
+	epic: { type: "string", description: "Epic name" },
+	"side-quest": { type: "string", description: "Side-quest name" },
+	"artifact-type": { type: "string", description: "Artifact type", required: true },
 });
-registerCommand("submit-slices", "Submit slice definitions.", {
+registerCommand("refine:evaluate", "Evaluate convergence for the current round (read-only).", {
 	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
+	epic: { type: "string", description: "Epic name" },
+	"side-quest": { type: "string", description: "Side-quest name" },
+	"artifact-type": { type: "string", description: "Artifact type", required: true },
+	"rubric-path": { type: "string", description: "Path to rubric YAML file" },
 });
-registerCommand("submit-refine-architecture", "Submit architecture refinement scores.", {
+registerCommand("refine:converge", "Record convergence for the current round.", {
 	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
-	override: {
-		type: "boolean",
-		description: "Bypass score threshold circuit breaker",
-		default: false,
+	epic: { type: "string", description: "Epic name" },
+	"side-quest": { type: "string", description: "Side-quest name" },
+	"artifact-type": { type: "string", description: "Artifact type", required: true },
+	"rubric-path": { type: "string", description: "Path to rubric YAML file" },
+});
+registerCommand("refine:stuck", "Record a circuit breaker trip for the current round.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name" },
+	"side-quest": { type: "string", description: "Side-quest name" },
+	"artifact-type": { type: "string", description: "Artifact type", required: true },
+	reason: { type: "string", description: "Explicit reason (if no auto-detected condition)" },
+});
+registerCommand("refine:override", "Override convergence evaluation with a manual decision.", {
+	...globalArgDefs,
+	epic: { type: "string", description: "Epic name" },
+	"side-quest": { type: "string", description: "Side-quest name" },
+	"artifact-type": { type: "string", description: "Artifact type", required: true },
+	reason: { type: "string", description: "Reason for override", required: true },
+});
+
+// ── Side-quest commands ──────────────────────────────────
+
+registerCommand("side-quest:create", "Create a new side-quest. Requires --name and --goal.", {
+	...globalArgDefs,
+	name: { type: "string", description: "Side-quest name (used as directory slug)", required: true },
+	goal: { type: "string", description: "Side-quest goal description", required: true },
+});
+registerCommand("side-quest:list", "List all side-quests with status.", {
+	...globalArgDefs,
+});
+registerCommand("side-quest:show", "Show side-quest details.", {
+	...globalArgDefs,
+	"side-quest": { type: "string", description: "Side-quest name", required: true },
+});
+registerCommand("side-quest:goal-commit", "Commit a side-quest goal. Stdin: {goal: ContentRef}.", {
+	...globalArgDefs,
+	"side-quest": { type: "string", description: "Side-quest name", required: true },
+});
+registerCommand("side-quest:plan-draft", "Draft a side-quest plan. Stdin: {plan: ContentRef}.", {
+	...globalArgDefs,
+	"side-quest": { type: "string", description: "Side-quest name", required: true },
+});
+registerCommand("side-quest:plan-shape-approve", "Approve the plan shape for a side-quest.", {
+	...globalArgDefs,
+	"side-quest": { type: "string", description: "Side-quest name", required: true },
+});
+registerCommand("side-quest:plan-commit", "Commit a side-quest plan. Stdin: {plan: ContentRef}.", {
+	...globalArgDefs,
+	"side-quest": { type: "string", description: "Side-quest name", required: true },
+});
+registerCommand("side-quest:implement-start", "Start implementation of a side-quest.", {
+	...globalArgDefs,
+	"side-quest": { type: "string", description: "Side-quest name", required: true },
+});
+registerCommand(
+	"side-quest:chunk-start",
+	"Start a chunk in a side-quest. Stdin: {chunkId, description}.",
+	{
+		...globalArgDefs,
+		"side-quest": { type: "string", description: "Side-quest name", required: true },
 	},
-});
-registerCommand("submit-refine-slices", "Submit slice refinement scores.", {
-	...globalArgDefs,
-	epic: { type: "string", description: "Epic name", required: true },
-	override: {
-		type: "boolean",
-		description: "Bypass score threshold circuit breaker",
-		default: false,
+);
+registerCommand(
+	"side-quest:chunk-verify",
+	"Verify a chunk in a side-quest. Stdin: {chunkId, evidence}.",
+	{
+		...globalArgDefs,
+		"side-quest": { type: "string", description: "Side-quest name", required: true },
 	},
+);
+registerCommand("side-quest:land", "Land (complete) a side-quest.", {
+	...globalArgDefs,
+	"side-quest": { type: "string", description: "Side-quest name", required: true },
 });
+registerCommand("side-quest:abandon", "Abandon a side-quest. Requires --reason.", {
+	...globalArgDefs,
+	"side-quest": { type: "string", description: "Side-quest name", required: true },
+	reason: { type: "string", description: "Reason for abandoning", required: true },
+});
+
+// ── Event Schema Registry ───────────────────────────────────
+
+/**
+ * Maps event type names to their Zod payload schemas.
+ * Used by `gp schema --events` to produce a JSON Schema catalog.
+ */
+export const eventSchemaRegistry: Record<string, z.ZodType> = {
+	"project-initialized": projectInitializedPayloadSchema,
+	"briefing-written": briefingWrittenPayloadSchema,
+	"subsystem-registered": subsystemRegisteredPayloadSchema,
+	"subsystem-maturity-updated": subsystemMaturityUpdatedPayloadSchema,
+	"subsystem-retired": subsystemRetiredPayloadSchema,
+};
 
 // ── Schema command ───────────────────────────────────────────
 
@@ -537,10 +850,24 @@ function buildCommandDetail(commandName: string): Record<string, unknown> {
 }
 
 /**
+ * Build the event type catalog with JSON Schema payloads.
+ */
+function buildEventCatalog(): {
+	events: Array<{ type: string; payloadSchema: Record<string, unknown> }>;
+} {
+	const events = Object.entries(eventSchemaRegistry).map(([type, schema]) => ({
+		type,
+		payloadSchema: z.toJSONSchema(schema, { unrepresentable: "any" }) as Record<string, unknown>,
+	}));
+	return { events };
+}
+
+/**
  * `gp schema` — show CLI command tree with input/output schemas.
  *
- * Without `--command`: returns `{ commands: [...] }` with all registered commands.
+ * Without flags: returns `{ commands: [...] }` with all registered commands.
  * With `--command <name>`: returns that command's detail including stdin schema (if any).
+ * With `--events`: returns event type catalog with JSON Schema payloads.
  *
  * INV-006: schema output reflects actual command signatures via parallel registry
  * and Zod-derived JSON Schema from actual schema objects.
@@ -557,14 +884,27 @@ export const schemaCommand = defineCommand({
 			description: "Show detail for a specific command",
 			required: false,
 		},
+		events: {
+			type: "boolean",
+			description: "Show event type catalog with payload schemas",
+			default: false,
+		},
 	},
 	setup() {},
 	async run({ args }) {
-		const data = args.command ? buildCommandDetail(args.command) : buildCommandHierarchy();
+		let data: unknown;
+		if (args.events) {
+			data = buildEventCatalog();
+		} else if (args.command) {
+			data = buildCommandDetail(args.command);
+		} else {
+			data = buildCommandHierarchy();
+		}
+
 		if (args.json || args.query) {
 			output(data, args);
 		} else {
-			// Human-readable: indented JSON
+			// Human-readable: indented JSON (schema is inherently structured)
 			process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
 		}
 	},

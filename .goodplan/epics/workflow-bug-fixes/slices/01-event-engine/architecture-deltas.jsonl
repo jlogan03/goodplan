@@ -1,0 +1,3 @@
+{"description":"engine.md: flock -> proper-lockfile, STATE_CONFLICT -> DATA_CONCURRENT_MODIFICATION","subsystem":"engine.events","ts":"2026-04-09T23:51:27.633Z","type":"modify"}
+{"description":"engine.md: clarified eventTimestampSchema (precision:3) vs timestampSchema","subsystem":"engine.events","ts":"2026-04-09T23:51:27.633Z","type":"modify"}
+{"description":"Documented sidecar lock file pattern and tail-read strategy","subsystem":"engine.events","ts":"2026-04-09T23:51:27.633Z","type":"add"}

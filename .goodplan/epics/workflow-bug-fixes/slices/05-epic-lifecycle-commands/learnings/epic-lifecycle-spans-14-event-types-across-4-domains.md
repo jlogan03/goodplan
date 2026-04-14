@@ -1,0 +1,1 @@
+V1 monolithic commands (explore.ts, define-architecture.ts) were split into 2-5 granular v2 commands each. The entity-lifecycle, exploration, pause-steering, and pressure-test domains each have different reducer treatment. This decomposition maps cleanly to the phase model.

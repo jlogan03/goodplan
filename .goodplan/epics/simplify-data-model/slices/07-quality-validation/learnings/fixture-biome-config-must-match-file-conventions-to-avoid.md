@@ -1,1 +1,0 @@
-Fixture wrote JSON with spaces but biome defaulted to tabs. Must exclude .goodplan/ and dist/ from linting.

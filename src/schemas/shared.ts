@@ -4,6 +4,10 @@ import { z } from "zod";
 export const timestampSchema = z.string().datetime();
 export type Timestamp = z.infer<typeof timestampSchema>;
 
+/** ISO 8601 timestamp with enforced ms precision (3 decimal places) — for event envelopes */
+export const eventTimestampSchema = z.string().datetime({ precision: 3 });
+export type EventTimestamp = z.infer<typeof eventTimestampSchema>;
+
 /** Score entry for refinement rounds */
 export const scoreEntrySchema = z.object({
 	round: z.number().int().positive(),

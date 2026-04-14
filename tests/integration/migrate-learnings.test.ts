@@ -2,10 +2,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { describe, expect, it } from "vitest";
-import {
-	QUESTION_IDS,
-	epicDetailQuestionId,
-} from "../../src/commands/global/migrate/schemas.js";
+import { QUESTION_IDS, epicDetailQuestionId } from "../../src/commands/global/migrate/schemas.js";
 import type {
 	ConfirmationResponse,
 	EpicDetailResponse,
@@ -35,10 +32,7 @@ async function withLearningsMigrationFixture<T>(
 }
 
 /** Run the full 3-round migration on the learnings fixture. */
-async function runFullMigration(
-	tmpDir: string,
-	projectDir: string,
-): Promise<void> {
+async function runFullMigration(tmpDir: string, projectDir: string): Promise<void> {
 	// Round 1: get inventory questions
 	await rpcMigrate(projectDir, null, tmpDir);
 
@@ -164,14 +158,14 @@ Second learning detail.
 		const entries = parseLearningsMd(content);
 		expect(entries).toHaveLength(2);
 
-		expect(entries[0]!.summary).toBe("First learning summary");
-		expect(entries[0]!.source).toBe("01-slice");
-		expect(entries[0]!.detail).toContain("This is the detail for the first learning.");
-		expect(entries[0]!.detail).toContain("It spans multiple lines.");
+		expect(entries[0]?.summary).toBe("First learning summary");
+		expect(entries[0]?.source).toBe("01-slice");
+		expect(entries[0]?.detail).toContain("This is the detail for the first learning.");
+		expect(entries[0]?.detail).toContain("It spans multiple lines.");
 
-		expect(entries[1]!.summary).toBe("Second learning summary");
-		expect(entries[1]!.source).toBe("epic-name (epic)");
-		expect(entries[1]!.detail).toBe("Second learning detail.");
+		expect(entries[1]?.summary).toBe("Second learning summary");
+		expect(entries[1]?.source).toBe("epic-name (epic)");
+		expect(entries[1]?.detail).toBe("Second learning detail.");
 	});
 
 	it("handles source with suffixes like (updated by <slice>)", () => {
@@ -185,7 +179,7 @@ Detail text here.
 
 		const entries = parseLearningsMd(content);
 		expect(entries).toHaveLength(1);
-		expect(entries[0]!.source).toBe("03-core (updated by 05-cleanup)");
+		expect(entries[0]?.source).toBe("03-core (updated by 05-cleanup)");
 	});
 
 	it("returns empty array for empty content", () => {
@@ -207,7 +201,7 @@ Actual detail here.
 
 		const entries = parseLearningsMd(content);
 		expect(entries).toHaveLength(1);
-		expect(entries[0]!.summary).toBe("Entry with body");
+		expect(entries[0]?.summary).toBe("Entry with body");
 	});
 });
 
@@ -232,9 +226,7 @@ describe("migrate: learnings conversion", () => {
 
 			// Verify at least one known file exists
 			const fileNames = learningFiles.map((f) => f.replace(".md", ""));
-			expect(
-				fileNames.some((f) => f.includes("schema-registry")),
-			).toBe(true);
+			expect(fileNames.some((f) => f.includes("schema-registry"))).toBe(true);
 		});
 	});
 
@@ -246,7 +238,9 @@ describe("migrate: learnings conversion", () => {
 			const jsonlPath = path.join(projectDir, "learnings.jsonl");
 			expect(fs.existsSync(jsonlPath)).toBe(true);
 			const jsonlContent = fs.readFileSync(jsonlPath, "utf-8").trim();
-			const entries = jsonlContent.split("\n").map((line) => JSON.parse(line) as Record<string, unknown>);
+			const entries = jsonlContent
+				.split("\n")
+				.map((line) => JSON.parse(line) as Record<string, unknown>);
 
 			// All entries should have `file` field and no `detail` field
 			for (const entry of entries) {
@@ -266,9 +260,7 @@ describe("migrate: learnings conversion", () => {
 			await runFullMigration(tmpDir, projectDir);
 
 			// Check all scopes
-			const jsonlFiles = [
-				path.join(projectDir, "learnings.jsonl"),
-			];
+			const jsonlFiles = [path.join(projectDir, "learnings.jsonl")];
 
 			for (const jsonlPath of jsonlFiles) {
 				if (!fs.existsSync(jsonlPath)) continue;

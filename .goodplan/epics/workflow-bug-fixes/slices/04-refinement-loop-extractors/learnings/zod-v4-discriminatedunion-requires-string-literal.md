@@ -1,0 +1,1 @@
+CircuitBreakerResult uses z.union with z.literal(true)/z.literal(false) instead. Type narrowing still works.
