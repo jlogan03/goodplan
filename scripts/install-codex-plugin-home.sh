@@ -79,11 +79,11 @@ case "$MODE" in
 		echo "  $TARGET_PLUGIN_DIR -> $SOURCE_PLUGIN_DIR"
 		;;
 	copy)
+		rm -rf "$TARGET_PLUGIN_DIR"
 		if command -v rsync >/dev/null 2>&1; then
 			mkdir -p "$TARGET_PLUGIN_DIR"
 			rsync -a --delete "$SOURCE_PLUGIN_DIR/" "$TARGET_PLUGIN_DIR/"
 		else
-			rm -rf "$TARGET_PLUGIN_DIR"
 			mkdir -p "$TARGET_PLUGIN_DIR"
 			cp -R "$SOURCE_PLUGIN_DIR/." "$TARGET_PLUGIN_DIR/"
 		fi
