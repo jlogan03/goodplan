@@ -1,4 +1,4 @@
-# /gp-explore
+# /explore
 
 Run the goodplan explore workflow.
 

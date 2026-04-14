@@ -1,4 +1,4 @@
-# /gp-create-side-quest
+# /create-side-quest
 
 Run the goodplan create-side-quest workflow.
 

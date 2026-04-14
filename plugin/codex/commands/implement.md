@@ -1,4 +1,4 @@
-# /gp-implement
+# /implement
 
 Run the goodplan implement workflow.
 

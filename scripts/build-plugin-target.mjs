@@ -67,18 +67,18 @@ const deletedSkills = [
 ];
 const expectedSkillCount = 13;
 const expectedCodexCommands = [
-	"gp-audit.md",
-	"gp-complete-epic.md",
-	"gp-create-epic.md",
-	"gp-create-side-quest.md",
-	"gp-explore.md",
-	"gp-implement.md",
-	"gp-init.md",
-	"gp-plan-slice.md",
-	"gp-start-epic.md",
-	"gp-status.md",
-	"gp-task.md",
-	"gp-upgrade.md",
+	"audit.md",
+	"complete-epic.md",
+	"create-epic.md",
+	"create-side-quest.md",
+	"explore.md",
+	"implement.md",
+	"init.md",
+	"plan-slice.md",
+	"start-epic.md",
+	"status.md",
+	"task.md",
+	"upgrade.md",
 ];
 let buildPlatforms;
 try {
@@ -464,9 +464,6 @@ function rewriteCodexSpecificFiles() {
 		'if [ -z "$GP" ] && [ -x "$HOME/plugins/goodplan/bin/gp" ]; then',
 		'  GP="$HOME/plugins/goodplan/bin/gp"',
 		"fi",
-		'if [ -z "$GP" ]; then',
-		'  GP="$(command -v gp || true)"',
-		"fi",
 		'if [ -z "$GP" ] && [ -d "$HOME/.codex/plugins/cache" ]; then',
 		'  BEST_GP=""',
 		'  BEST_VERSION=""',
@@ -481,6 +478,9 @@ function rewriteCodexSpecificFiles() {
 		'$(find "$HOME/.codex/plugins/cache" -path "*/goodplan/*/bin/gp" -type f -perm -111 2>/dev/null)',
 		"EOF",
 		'  GP="$BEST_GP"',
+		"fi",
+		'if [ -z "$GP" ]; then',
+		'  GP="$(command -v gp || true)"',
 		"fi",
 	].join("\n");
 	const codexCliResolutionBlock = [

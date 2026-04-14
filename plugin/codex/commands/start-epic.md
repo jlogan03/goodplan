@@ -1,4 +1,4 @@
-# /gp-start-epic
+# /start-epic
 
 Run the goodplan start-epic workflow.
 

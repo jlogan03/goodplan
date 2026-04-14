@@ -1,4 +1,4 @@
-# /gp-audit
+# /audit
 
 Run the goodplan audit workflow.
 

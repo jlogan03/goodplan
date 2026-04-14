@@ -1,4 +1,4 @@
-# /gp-task
+# /task
 
 Run the goodplan task workflow.
 

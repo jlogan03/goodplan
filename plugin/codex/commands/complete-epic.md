@@ -1,4 +1,4 @@
-# /gp-complete-epic
+# /complete-epic
 
 Run the goodplan complete-epic workflow.
 

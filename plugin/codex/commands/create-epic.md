@@ -1,4 +1,4 @@
-# /gp-create-epic
+# /create-epic
 
 Run the goodplan create-epic workflow.
 

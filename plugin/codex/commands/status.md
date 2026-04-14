@@ -1,4 +1,4 @@
-# /gp-status
+# /status
 
 Run the goodplan status workflow.
 

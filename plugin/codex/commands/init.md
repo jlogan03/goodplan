@@ -1,4 +1,4 @@
-# /gp-init
+# /init
 
 Run the goodplan init workflow.
 

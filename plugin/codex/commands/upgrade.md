@@ -1,4 +1,4 @@
-# /gp-upgrade
+# /upgrade
 
 Run the goodplan upgrade workflow.
 

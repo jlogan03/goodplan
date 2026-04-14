@@ -1,4 +1,4 @@
-# /gp-plan-slice
+# /plan-slice
 
 Run the goodplan plan-slice workflow.
 
