@@ -1,1 +1,0 @@
-The split between response.advanced (CLI decides if scores pass threshold) and the orchestrator's CRITICAL/IMPORTANT pre-submit gate (orchestrator decides if content quality is sufficient) is the right separation. Don't duplicate threshold logic in the orchestrator.

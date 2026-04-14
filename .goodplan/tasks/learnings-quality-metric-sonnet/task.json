@@ -1,8 +1,0 @@
-{
-	"context": {},
-	"created": "2026-04-05T17:08:11.471Z",
-	"description": "Learnings quality metric fails with sonnet model — all 10 learnings under 100 chars. Harness limitation: either tune metric threshold, add model-tier awareness, or improve complete-epic prompt.",
-	"name": "learnings-quality-metric-sonnet",
-	"status": "open",
-	"title": "Learnings quality metric fails with sonnet"
-}

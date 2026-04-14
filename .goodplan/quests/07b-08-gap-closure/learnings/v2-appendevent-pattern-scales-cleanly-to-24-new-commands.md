@@ -1,0 +1,1 @@
+All new commands (refine:*, decision:record/supersede, learning:capture/promote, side-quest:*) use the same appendEvent pattern. No new infrastructure needed beyond event schemas and reducer cases.

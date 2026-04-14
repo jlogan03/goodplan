@@ -1,0 +1,23 @@
+id: implementation-plan
+version: 1
+dimensions:
+  - name: completeness
+    description: "All goal requirements are covered by plan phases with no gaps"
+    scoring: "1-10: 1=major requirements missing, 5=partial coverage, 10=every requirement mapped to a phase"
+    threshold: 9
+  - name: verification-first
+    description: "Each phase has concrete, falsifiable expected-behavior checks (before/after)"
+    scoring: "1-10: 1=no checks, 5=vague checks, 10=every phase has runnable before/after checks"
+    threshold: 9
+  - name: phasing
+    description: "Phases are properly sequenced with clear dependencies and incremental verifiability"
+    scoring: "1-10: 1=random ordering, 5=mostly sequential, 10=each phase builds on the last with clear rationale"
+    threshold: 9
+  - name: chunk-decidability
+    description: "Each chunk declares verificationType and has enough detail for independent execution"
+    scoring: "1-10: 1=no chunks, 5=partial chunk definitions, 10=every chunk has id, expectation, verificationType"
+    threshold: 9
+convergence:
+  max_rounds: 8
+  zero_blocking_required: true
+  zero_critical_required: true

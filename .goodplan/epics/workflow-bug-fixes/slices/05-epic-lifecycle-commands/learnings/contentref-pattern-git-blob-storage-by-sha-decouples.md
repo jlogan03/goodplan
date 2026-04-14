@@ -1,0 +1,1 @@
+Using git hash-object -w to store content and referencing by SHA keeps event payloads small while content remains durable and addressable. storeContentRef and readContentRef utilities in src/engine/content/ establish the canonical pattern for all artifact storage.

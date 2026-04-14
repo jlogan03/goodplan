@@ -8,10 +8,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { describe, expect, it } from "vitest";
 
-const COMMIT_SOURCE_PATH = path.resolve(
-	import.meta.dirname,
-	"../../src/core/data/commit.ts",
-);
+const COMMIT_SOURCE_PATH = path.resolve(import.meta.dirname, "../../src/core/data/commit.ts");
 
 describe("INV-007: Atomic writes — temp-file-then-rename pattern", () => {
 	const source = fs.readFileSync(COMMIT_SOURCE_PATH, "utf-8");
@@ -38,7 +35,7 @@ describe("INV-007: Atomic writes — temp-file-then-rename pattern", () => {
 		const appendMatch = /function atomicAppend[\s\S]*?^}/m.exec(source);
 		expect(appendMatch).not.toBeNull();
 
-		const appendBody = appendMatch![0];
+		const appendBody = appendMatch?.[0];
 		expect(appendBody).toContain("writeFileSync(tmpPath");
 		expect(appendBody).toContain("renameSync(tmpPath");
 	});
@@ -62,13 +59,9 @@ describe("INV-007: Atomic writes — temp-file-then-rename pattern", () => {
 		// All writeFileSync calls should write to tmpPath, not absPath directly
 		// (except the state cache which is a special case)
 		for (const call of writeFileCalls) {
-			const writesToTmp =
-				call.text.includes("tmpPath") ||
-				call.text.includes("tmp");
+			const writesToTmp = call.text.includes("tmpPath") || call.text.includes("tmp");
 			const isCacheOrComment =
-				call.text.includes("cache") ||
-				call.text.startsWith("//") ||
-				call.text.startsWith("*");
+				call.text.includes("cache") || call.text.startsWith("//") || call.text.startsWith("*");
 
 			expect(
 				writesToTmp || isCacheOrComment,

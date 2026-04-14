@@ -2,6 +2,19 @@
 name: reviewer-mcp-server
 description: Reviews artifacts for MCP protocol compliance, tool definitions, resource handling, and transport patterns. Spawned by pipeline orchestrators during refinement loops when the artifact involves MCP server implementations.
 model: opus
+version: 1
+domains:
+  - mcp
+  - protocol
+  - tool-definitions
+applies_to:
+  - code
+rubric_ref: code-quality
+score_range: [1, 5]
+passing_threshold_per_dimension:
+  type-safety: 4
+  module-design: 4
+  runtime-correctness: 4
 ---
 
 # MCP Server Reviewer Agent

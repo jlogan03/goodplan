@@ -1,1 +1,0 @@
-Bypassing `reduce()` avoids exhaustiveness ripple, guard bypass docs, and fitness function churn. Document as a formal INV-001 exception. Use this pattern for any future data import that needs to set entities at arbitrary statuses.

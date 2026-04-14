@@ -1,0 +1,11 @@
+{
+	"created": "2026-04-12T18:08:24.872Z",
+	"deferred": [],
+	"epic": "workflow-bug-fixes",
+	"goal": "Implement all remaining CLI commands for supporting entities: side-quests, findings, briefings, decisions, learnings, events, subsystems, invariants, and project-level commands.",
+	"implementationPhase": null,
+	"name": "07b-supporting-entity-commands",
+	"refinement": null,
+	"status": "abandoned",
+	"updated": "2026-04-12T18:09:47.000Z"
+}

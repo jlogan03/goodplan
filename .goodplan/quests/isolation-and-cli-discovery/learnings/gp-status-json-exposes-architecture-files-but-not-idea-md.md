@@ -1,1 +1,0 @@
-gp status --json returns architecture, brainstorm, research, and decision file paths under artifacts.*. But idea.md and conventions.md are not included. CLAUDE.md must retain explicit references to files not yet CLI-discoverable.

@@ -1,0 +1,1 @@
+Adding a lighter project-scope variant with no epic/slice args worked cleanly and both share invariant-engine wiring.

@@ -1,1 +1,0 @@
-`implement-plan` and `refine-plan` do not write flow-log entries. Protocols that reference flow-log for cross-skill state (e.g., finding pre-implementation commits) should verify the referenced skill actually writes the expected entries during plan creation, not during implementation.

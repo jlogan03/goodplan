@@ -1,1 +1,0 @@
-Refinement round 1 flagged the dual-mode completion-phase.md and recommended splitting. The split held through implementation with zero issues. Future plans should default to separate agents when I/O shapes differ.

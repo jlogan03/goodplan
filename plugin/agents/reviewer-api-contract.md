@@ -2,6 +2,20 @@
 name: reviewer-api-contract
 description: Reviews artifacts for API contract design, versioning, backward compatibility, documentation, and error response standards. Spawned by pipeline orchestrators during refinement loops when the artifact involves public API surfaces.
 model: opus
+version: 1
+domains:
+  - api-contract
+  - versioning
+  - backward-compatibility
+applies_to:
+  - code
+  - architecture
+rubric_ref: code-quality
+score_range: [1, 5]
+passing_threshold_per_dimension:
+  type-safety: 4
+  module-design: 4
+  runtime-correctness: 3
 ---
 
 # API Contract Reviewer Agent

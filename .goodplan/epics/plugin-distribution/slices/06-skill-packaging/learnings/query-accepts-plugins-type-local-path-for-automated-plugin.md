@@ -1,1 +1,0 @@
-The @anthropic-ai/claude-agent-sdk query() function accepts plugins: [{ type: local, path: PLUGIN_DIR }] to load a plugin from a local directory. This enables automated integration testing without manual sessions. See tools/dogfood/test-plugin-skills.ts.

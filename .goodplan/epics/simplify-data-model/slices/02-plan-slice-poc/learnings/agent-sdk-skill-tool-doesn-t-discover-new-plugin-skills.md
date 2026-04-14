@@ -1,1 +1,0 @@
-The Agent SDK query() Skill tool only discovers skills in the installed plugin cache at session start. New skills copied to cache before query() aren't found. For test harness, inject SKILL.md content into system prompt.

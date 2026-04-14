@@ -1,1 +1,0 @@
-decision:list and learning:list return all entries without --epic filtering. The orchestrator must filter by entityPath prefix client-side. This is a known gap — adding flags would require CLI changes outside this slice's scope.

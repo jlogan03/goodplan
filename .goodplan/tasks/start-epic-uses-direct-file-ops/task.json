@@ -1,7 +1,0 @@
-{
-	"context": {},
-	"created": "2026-04-05T05:27:13.941Z",
-	"name": "start-epic-uses-direct-file-ops",
-	"status": "open",
-	"title": "start-epic skill uses direct file operations instead of CLI commands"
-}

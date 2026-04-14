@@ -1,0 +1,23 @@
+id: architecture-design
+version: 1
+dimensions:
+  - name: boundaries
+    description: Are subsystem boundaries well-defined with clear ownership and minimal surface area?
+    scoring: "1-10: 1=no clear boundaries, 5=boundaries exist but are porous, 10=strict boundaries with documented contracts"
+    threshold: 9
+  - name: dependency-direction
+    description: Do dependencies flow in the correct direction (outer layers depend on inner, never reverse)?
+    scoring: "1-10: 1=circular dependencies, 5=mostly correct with occasional violations, 10=strict unidirectional flow"
+    threshold: 9
+  - name: layering
+    description: Is the system properly layered with appropriate abstraction levels?
+    scoring: "1-10: 1=flat/mixed concerns, 5=layers exist but occasionally bypassed, 10=clean layering with no shortcuts"
+    threshold: 9
+  - name: coupling-cohesion
+    description: Is coupling between modules minimized while cohesion within modules is maximized?
+    scoring: "1-10: 1=tightly coupled/low cohesion, 5=acceptable coupling, 10=loose coupling with high cohesion"
+    threshold: 9
+convergence:
+  max_rounds: 8
+  zero_blocking_required: true
+  zero_critical_required: true

@@ -1,2 +1,0 @@
-{"description":"Added nextCommands: NextCommands to BeginResult, SubmitResult, CompleteResult. New computeNextCommands() function and commandMappings registry derived from transition tables.","subsystem":"rpc-layer","ts":"2026-03-30T16:04:48.114Z","type":"modify"}
-{"description":"All mutation --json output now includes nextCommands field with entity/other command arrays. Read-only commands excluded.","subsystem":"commands","ts":"2026-03-30T16:04:48.114Z","type":"modify"}

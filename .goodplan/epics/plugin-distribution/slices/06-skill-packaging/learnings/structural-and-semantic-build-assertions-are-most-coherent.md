@@ -1,1 +1,0 @@
-The plan split frontmatter validation into Phase 2 but it was more natural alongside skill copying assertions in Phase 1. Future plans should group all build-script assertions into a single phase rather than splitting structural vs semantic validation.

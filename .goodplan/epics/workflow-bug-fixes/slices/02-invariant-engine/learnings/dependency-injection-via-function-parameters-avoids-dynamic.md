@@ -1,0 +1,1 @@
+createReplayGetContext accepts replayEvents as parameter. Statically analyzable, testable.

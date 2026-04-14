@@ -1,1 +1,0 @@
-Expected grep counts took 3 refinement iterations to converge. Running the actual `grep` commands during plan creation and recording real output eliminates this back-and-forth. Applies to any plan with "before/after" verification sections.

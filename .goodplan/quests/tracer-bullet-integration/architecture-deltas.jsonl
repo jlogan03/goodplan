@@ -1,0 +1,2 @@
+{"description":"Added Command Integration Test Pattern section with Bun.spawnSync pattern for CLI binary testing","subsystem":"commands","ts":"2026-04-10T14:52:10.083Z","type":"modify"}
+{"description":"Added Verification Strategy section documenting 5-tier verification model aligned to architectural layers","subsystem":"sequencing","ts":"2026-04-10T14:52:10.083Z","type":"modify"}

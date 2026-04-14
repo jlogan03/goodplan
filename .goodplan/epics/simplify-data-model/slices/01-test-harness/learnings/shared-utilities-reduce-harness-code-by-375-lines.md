@@ -1,1 +1,0 @@
-Migrating simplest-to-most-complex (test-plugin-skills to harness.ts) worked well. patchSkillModels was safely eliminated since skills are now plugin-bundled.

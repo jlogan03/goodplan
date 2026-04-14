@@ -1,0 +1,1 @@
+Both evaluateConvergence and checkCircuitBreaker are pure functions with no I/O. Tests are synchronous, fast, and deterministic.

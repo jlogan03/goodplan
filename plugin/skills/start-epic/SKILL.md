@@ -41,16 +41,16 @@ $GP epic:list --json
 
 ### If no argument was passed
 
-List all epics and find one in `slices-refined` status:
+List all epics and find one in phase `P5` (slice-set committed, ready for activation):
 
 ```bash
 $GP epic:list --json
 ```
 
-- If exactly one epic is in `slices-refined` status, select it automatically and confirm with the user: "Found epic '<name>' ready for activation. Proceed?" If the user declines, list all epics with their statuses and let the user choose, or stop if none are suitable.
-- If multiple epics are in `slices-refined` status, list them and use AskUserQuestion to ask the user to choose.
-- If no epic is in `slices-refined` status, check for an `activated` epic (already done). If found, tell the user: "Epic '<name>' is already activated. Run `/gp:plan-slice` to plan the next slice, or `/gp:status` to see progress."
-- If no epics match any actionable status, list existing epics with their statuses and suggest per-status next steps (same mapping as Step 2). If no epics exist at all, tell the user: "No epics found. Run `/gp:create-epic` to create one." **Stop.**
+- If exactly one epic is in phase `P5` (slice-set committed), select it automatically and confirm with the user: "Found epic '<name>' ready for activation. Proceed?" If the user declines, list all epics with their phases and let the user choose, or stop if none are suitable.
+- If multiple epics are in phase `P5`, list them and use AskUserQuestion to ask the user to choose.
+- If no epic is in phase `P5`, check for phase `P6` (already activated). If found, tell the user: "Epic '<name>' is already activated. Run `/gp:plan-slice` to plan the next slice, or `/gp:status` to see progress."
+- If no epics match any actionable phase, list existing epics with their phases and suggest per-phase next steps (same mapping as Step 2). If no epics exist at all, tell the user: "No epics found. Run `/gp:create-epic` to create one." **Stop.**
 
 ## Step 2 — Pre-activation Check
 
@@ -60,27 +60,16 @@ Get full epic details (reuse the `epic:show` response from Step 1 if already ret
 $GP epic:show --epic <name> --json
 ```
 
-Verify the status is `slices-refined`. If not, handle by status:
+Verify the phase is `P5` (slice-set committed, ready for activation). The v2 CLI uses a phase model from event replay. Check the `phase` field from `epic:show --json`. If not `P5`, handle by phase:
 
-- **`activated`** — "Epic '<name>' is already activated. Run `/gp:plan-slice` to plan the next slice, or `/gp:status` to see progress." **Stop.**
-- **`created`** — "Epic '<name>' needs exploration and architecture first. Run `/gp:create-epic <name>` to continue the pipeline (it resumes from the current phase)." **Stop.**
-- **`explored`** — "Epic '<name>' needs architecture and slices. Run `/gp:create-epic <name>` to continue (resumes at the architecture phase)." **Stop.**
-- **`slices-defined`** — "Epic '<name>' has slices that need refinement. Run `/gp:create-epic <name>` to continue (resumes at the slices refinement phase)." **Stop.**
-- **In-progress statuses** — use this mapping to suggest the correct skill:
-
-  | Status | Skill |
-  |---|---|
-  | `exploring` | `/gp:explore` |
-  | `defining-architecture` | `/gp:create-epic <name>` (resumes at architecture phase) |
-  | `architecture-defined` | `/gp:create-epic <name>` (resumes at architecture refinement) |
-  | `refining-architecture` | `/gp:create-epic <name>` (resumes at architecture refinement) |
-  | `architecture-refined` | `/gp:create-epic <name>` (resumes at slices Q&A) |
-  | `defining-slices` | `/gp:create-epic <name>` (resumes at slices phase) |
-  | `refining-slices` | `/gp:create-epic <name>` (resumes at slices refinement) |
-
-  Report: "{status} is in progress. Run `{skill}` to continue." **Stop.**
+- **`P6`** (activated) — "Epic '<name>' is already activated. Run `/gp:plan-slice` to plan the next slice, or `/gp:status` to see progress." **Stop.**
+- **`P0`** (created, no goal yet) — "Epic '<name>' needs goal capture, exploration, and architecture. Run `/gp:create-epic <name>` to continue the pipeline (it resumes from the current phase)." **Stop.**
+- **`P1`** (goal committed, ready for exploration) — "Epic '<name>' needs exploration and architecture. Run `/gp:create-epic <name>` to continue (resumes at exploration)." **Stop.**
+- **`P2`** (exploration concluded, ready for architecture) — "Epic '<name>' needs architecture and slices. Run `/gp:create-epic <name>` to continue (resumes at architecture phase)." **Stop.**
+- **`P3`** (architecture committed, ready for pressure-test) — "Epic '<name>' needs pressure-testing and slices. Run `/gp:create-epic <name>` to continue (resumes at pressure-test phase)." **Stop.**
+- **`P4`** (pressure-test committed, ready for slices) — "Epic '<name>' needs slice definition. Run `/gp:create-epic <name>` to continue (resumes at slices phase)." **Stop.**
 - **Terminal statuses** (`completed`, `abandoned`) — "This epic is already {status}." **Stop.** Do not suggest running another skill.
-- **Any other status** — Report the current status and suggest running `/gp:status` for guidance. **Stop.**
+- **Any other phase** — Report the current phase and suggest running `/gp:status` for guidance. **Stop.**
 
 ## Step 3 — Pre-activation Guard
 
@@ -95,6 +84,10 @@ Check the following guards in order (most actionable first):
    echo '{"verification":{"description":"All unit tests pass","status":"pending","addedDuring":"pre-activation","modifiedDuring":null}}' | $GP epic:add-verification --epic <name> --json
    ```
    " **Stop.**
+
+4. **Architecture shape approved**: Check `architectureShapeApproved` from the `epic:show` response. If `false`, tell the user: "Architecture shape checkpoint not completed — run `/gp:create-epic <name>` to continue the pipeline." **Stop.**
+
+5. **Slice-set shape approved**: Check `sliceSetShapeApproved` from the `epic:show` response. If `false`, tell the user: "Slice-set shape checkpoint not completed — run `/gp:create-epic <name>` to continue the pipeline." **Stop.**
 
 These are UX guards — `epic:activate` enforces these via state machine errors (`STATE_MISSING_VERIFICATIONS`, `STATE_EPIC_ALREADY_ACTIVE`), but checking upfront gives better error messages.
 
@@ -111,6 +104,7 @@ Present a structured summary to the user:
 2. **Architecture overview** — key subsystems and design decisions from `_overview.md`.
 3. **Additional architecture files** — summarize each additional file's key points.
 4. **Slice count** — how many slices are defined. Query `$GP slice:list --epic <name> --json` and use `.total` from the response.
+5. **Steering preference** — display the `steeringPreference` value from the `epic:show` response (e.g., "always-consult", "best-guess-and-flag", or "ask-in-the-moment"). This helps the user understand how autonomous phases will behave before activating.
 
 ## Step 5 — User Approval
 
@@ -125,7 +119,7 @@ Options:
 
 ### If "Request changes"
 
-Tell the user: "The epic is in `slices-refined` status — the state machine does not allow backward revision from here. Options: (1) Activate and address changes in implementation slices, (2) Abandon this epic and create a new one with revised architecture." **Stop.**
+Tell the user: "The epic is in phase `P5` — the state machine does not allow backward revision from here. Options: (1) Activate and address changes in implementation slices, (2) Abandon this epic and create a new one with revised architecture." **Stop.**
 
 ### If "Cancel"
 

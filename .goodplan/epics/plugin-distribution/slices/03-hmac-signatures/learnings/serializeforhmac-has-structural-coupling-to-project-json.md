@@ -1,1 +1,0 @@
-The project.json key destructure assumes stable tree layout. Entity-restructuring epic should revisit this coupling.

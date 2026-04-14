@@ -1,0 +1,1 @@
+GitOps port interface with MemoryGitOps test adapter. All engine tests run without filesystem or git.

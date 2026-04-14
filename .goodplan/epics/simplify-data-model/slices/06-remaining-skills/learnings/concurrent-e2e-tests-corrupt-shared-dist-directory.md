@@ -1,1 +1,0 @@
-Running multiple E2E test harnesses in parallel causes `build:plugin` races that corrupt `dist/gp-plugin/`. Tests must be run sequentially unless they use separate output directories.

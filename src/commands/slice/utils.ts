@@ -1,5 +1,11 @@
 /**
  * Shared helpers for slice commands.
+ *
+ * Inventory decisions (Phase 1):
+ * - requireActiveEpic: KEEP in slice/utils.ts — still used by quest commands
+ *   and any command that defaults to the active epic. v2 commands prefer
+ *   explicit --epic flags, so usage is declining. Will be removable when
+ *   all commands require explicit --epic.
  */
 
 import * as fs from "node:fs";
@@ -14,9 +20,8 @@ import { GoodplanError } from "../../util/errors.js";
  * when callers subsequently pass projectDir to RPC functions that load state
  * internally.
  *
- * Used by slice commands that default to the active epic (plan, refine-plan,
- * implement, complete, abandon, show, and all subagent commands).
- * NOT used by create.ts (which has a required --epic flag).
+ * Used by quest commands and any command that defaults to the active epic.
+ * NOT used by v2 slice commands (which require explicit --epic flag).
  */
 export function requireActiveEpic(projectDir: string): string {
 	const filePath = path.join(projectDir, "project.json");

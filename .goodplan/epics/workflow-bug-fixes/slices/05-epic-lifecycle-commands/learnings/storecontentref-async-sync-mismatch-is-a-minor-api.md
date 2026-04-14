@@ -1,0 +1,1 @@
+The function is marked async (returns Promise<ContentRef>) but uses execSync internally. This is misleading — callers await a promise that resolves synchronously.

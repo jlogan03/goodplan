@@ -1,0 +1,1 @@
+Following the GitOps pattern from engine layer, port interfaces allowed the refinement loop to be fully tested with mock implementations.

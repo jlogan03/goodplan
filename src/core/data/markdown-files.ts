@@ -27,10 +27,7 @@ export interface MarkdownCopy {
  * @param projectDir - Absolute path to .goodplan/
  * @param files - Array of {path, content} where path is relative to projectDir
  */
-export function writeMarkdownFiles(
-	projectDir: string,
-	files: ReadonlyArray<MarkdownFile>,
-): void {
+export function writeMarkdownFiles(projectDir: string, files: ReadonlyArray<MarkdownFile>): void {
 	for (const file of files) {
 		const absPath = path.join(projectDir, file.path);
 		const dir = path.dirname(absPath);
@@ -62,10 +59,7 @@ export function writeMarkdownFiles(
  * @param projectDir - Absolute path to .goodplan/
  * @param copies - Array of {from, to} where paths are relative to projectDir
  */
-export function copyMarkdownFiles(
-	projectDir: string,
-	copies: ReadonlyArray<MarkdownCopy>,
-): void {
+export function copyMarkdownFiles(projectDir: string, copies: ReadonlyArray<MarkdownCopy>): void {
 	for (const copy of copies) {
 		const srcAbs = path.join(projectDir, copy.from);
 		const destAbs = path.join(projectDir, copy.to);

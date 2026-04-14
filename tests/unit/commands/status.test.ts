@@ -3,15 +3,21 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildStatusResult, formatStatusHuman } from "../../../src/commands/global/status.js";
+import { createEmptyState } from "../../../src/engine/derived-state/index.js";
 import { statusResultSchema } from "../../../src/schemas/commands/status.js";
-import { deterministicStringify } from "../../../src/util/json.js";
+import type {
+	DerivedStateData,
+	EpicState,
+	SideQuestState,
+	SliceState,
+} from "../../../src/schemas/entities/derived-state.js";
 import { applyQuery } from "../../../src/util/query.js";
 
 let tmpDir: string;
 let originalCwd: string;
 
 beforeEach(() => {
-	tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-status-test-"));
+	tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-status-v2-test-"));
 	originalCwd = process.cwd();
 	process.chdir(tmpDir);
 });
@@ -22,170 +28,204 @@ afterEach(() => {
 	vi.restoreAllMocks();
 });
 
-const NOW = "2026-03-22T00:00:00.000Z";
+/** Create a .goodplan/ directory with optional filesystem artifacts */
+function createGoodplanDir(opts?: {
+	decisions?: number;
+	learnings?: number;
+	architectureFiles?: string[];
+	researchFiles?: string[];
+	brainstormFiles?: string[];
+	prototypesDirs?: string[];
+	epicArchFiles?: Array<{ epic: string; file: string }>;
+	epicResearchFiles?: Array<{ epic: string; file: string }>;
+	epicBrainstormFiles?: Array<{ epic: string; file: string }>;
+	epicPrototypeDirs?: Array<{ epic: string; dir: string }>;
+	overview?: { tasks?: Array<{ status: string }> };
+}): string {
+	const goodplanDir = path.join(tmpDir, ".goodplan");
+	fs.mkdirSync(goodplanDir, { recursive: true });
 
-/** Helper: create a minimal .goodplan/ with project.json */
-function createProject(
-	name: string,
-	overrides?: Partial<{
-		activeEpic: string | null;
-		activeSlice: string | null;
-		activeQuest: string | null;
-	}>,
-) {
-	const projectDir = path.join(tmpDir, ".goodplan");
-	fs.mkdirSync(projectDir, { recursive: true });
-	const project = {
-		version: "1.0.0",
-		name,
-		activeEpic: overrides?.activeEpic ?? null,
-		activeSlice: overrides?.activeSlice ?? null,
-		activeQuest: overrides?.activeQuest ?? null,
-		created: NOW,
-		updated: NOW,
+	// Decisions JSONL
+	if (opts?.decisions !== undefined && opts.decisions > 0) {
+		const entries = Array.from({ length: opts.decisions }, (_, i) =>
+			JSON.stringify({
+				id: `d${i}`,
+				status: "active",
+				domain: "arch",
+				title: `T${i}`,
+				summary: `S${i}`,
+				date: "2026-03-20",
+				supersededBy: null,
+			}),
+		);
+		fs.writeFileSync(path.join(goodplanDir, "decisions.jsonl"), `${entries.join("\n")}\n`);
+	}
+
+	// Learnings JSONL
+	if (opts?.learnings !== undefined && opts.learnings > 0) {
+		const entries = Array.from({ length: opts.learnings }, (_, i) =>
+			JSON.stringify({
+				category: "worked",
+				summary: `L${i}`,
+				file: `learnings/l${i}.md`,
+				tags: [],
+				source: "project",
+				rollup: false,
+				rollupTo: [],
+			}),
+		);
+		fs.writeFileSync(path.join(goodplanDir, "learnings.jsonl"), `${entries.join("\n")}\n`);
+	}
+
+	// Project-level architecture files
+	if (opts?.architectureFiles) {
+		const dir = path.join(goodplanDir, "architecture");
+		fs.mkdirSync(dir, { recursive: true });
+		for (const f of opts.architectureFiles) {
+			fs.writeFileSync(path.join(dir, f), `# ${f}`);
+		}
+	}
+
+	// Project-level research files
+	if (opts?.researchFiles) {
+		const dir = path.join(goodplanDir, "research");
+		fs.mkdirSync(dir, { recursive: true });
+		for (const f of opts.researchFiles) {
+			fs.writeFileSync(path.join(dir, f), `# ${f}`);
+		}
+	}
+
+	// Project-level brainstorm files
+	if (opts?.brainstormFiles) {
+		const dir = path.join(goodplanDir, "brainstorm");
+		fs.mkdirSync(dir, { recursive: true });
+		for (const f of opts.brainstormFiles) {
+			fs.writeFileSync(path.join(dir, f), `# ${f}`);
+		}
+	}
+
+	// Project-level prototype dirs
+	if (opts?.prototypesDirs) {
+		const dir = path.join(goodplanDir, "prototypes");
+		fs.mkdirSync(dir, { recursive: true });
+		for (const d of opts.prototypesDirs) {
+			fs.mkdirSync(path.join(dir, d), { recursive: true });
+		}
+	}
+
+	// Epic-level architecture files
+	if (opts?.epicArchFiles) {
+		for (const { epic, file } of opts.epicArchFiles) {
+			const dir = path.join(goodplanDir, "epics", epic, "architecture");
+			fs.mkdirSync(dir, { recursive: true });
+			fs.writeFileSync(path.join(dir, file), `# ${file}`);
+		}
+	}
+
+	// Epic-level research files
+	if (opts?.epicResearchFiles) {
+		for (const { epic, file } of opts.epicResearchFiles) {
+			const dir = path.join(goodplanDir, "epics", epic, "research");
+			fs.mkdirSync(dir, { recursive: true });
+			fs.writeFileSync(path.join(dir, file), `# ${file}`);
+		}
+	}
+
+	// Epic-level brainstorm files
+	if (opts?.epicBrainstormFiles) {
+		for (const { epic, file } of opts.epicBrainstormFiles) {
+			const dir = path.join(goodplanDir, "epics", epic, "brainstorm");
+			fs.mkdirSync(dir, { recursive: true });
+			fs.writeFileSync(path.join(dir, file), `# ${file}`);
+		}
+	}
+
+	// Epic-level prototype dirs
+	if (opts?.epicPrototypeDirs) {
+		for (const { epic, dir: d } of opts.epicPrototypeDirs) {
+			const protoDir = path.join(goodplanDir, "epics", epic, "prototypes");
+			fs.mkdirSync(path.join(protoDir, d), { recursive: true });
+		}
+	}
+
+	// Overview JSON
+	if (opts?.overview) {
+		fs.writeFileSync(path.join(goodplanDir, "overview.json"), JSON.stringify(opts.overview));
+	}
+
+	return goodplanDir;
+}
+
+/** Create initialized DerivedStateData with project name */
+function createInitState(name: string): DerivedStateData {
+	const state = createEmptyState();
+	state.project.initialized = true;
+	state.project.name = name;
+	state.project.version = "2.0.0";
+	return state;
+}
+
+/** Create a minimal epic state */
+function createEpicState(dir: string, overrides?: Partial<EpicState>): EpicState {
+	return {
+		dir,
+		goal: null,
+		architectureTarget: null,
+		pressureTest: null,
+		sliceSet: null,
+		steeringPreference: "best-guess-and-flag",
+		phase: "P6",
+		slices: new Map(),
+		findings: [],
+		active: true,
+		paused: false,
+		completed: false,
+		abandoned: false,
+		...overrides,
 	};
-	fs.writeFileSync(path.join(projectDir, "project.json"), `${deterministicStringify(project)}\n`);
-	return projectDir;
 }
 
-/** Helper: write a JSON file in the project dir */
-function writeJson(projectDir: string, relPath: string, data: unknown) {
-	const abs = path.join(projectDir, relPath);
-	fs.mkdirSync(path.dirname(abs), { recursive: true });
-	fs.writeFileSync(abs, `${deterministicStringify(data)}\n`);
+/** Create a minimal slice state */
+function createSliceState(dir: string, phase: string): SliceState {
+	return {
+		dir,
+		goal: null,
+		plan: null,
+		phase: phase as SliceState["phase"],
+		chunks: new Map(),
+		abandoned: false,
+	};
 }
 
-/** Helper: write a JSONL file in the project dir */
-function writeJsonl(projectDir: string, relPath: string, entries: unknown[]) {
-	const abs = path.join(projectDir, relPath);
-	fs.mkdirSync(path.dirname(abs), { recursive: true });
-	const content = entries.map((e) => JSON.stringify(e)).join("\n");
-	fs.writeFileSync(abs, content.length > 0 ? `${content}\n` : "");
+/** Create a minimal side-quest state */
+function createSideQuestState(
+	dir: string,
+	phase: string,
+	overrides?: Partial<SideQuestState>,
+): SideQuestState {
+	return {
+		dir,
+		goal: null,
+		plan: null,
+		phase: phase as SideQuestState["phase"],
+		chunks: new Map(),
+		active: true,
+		landed: false,
+		abandoned: false,
+		...overrides,
+	};
 }
 
-/** Helper: write a markdown file */
-function writeMarkdown(projectDir: string, relPath: string, content: string) {
-	const abs = path.join(projectDir, relPath);
-	fs.mkdirSync(path.dirname(abs), { recursive: true });
-	fs.writeFileSync(abs, content);
-}
-
-/** Helper: create a fully populated project for artifact counting */
-function createPopulatedProject() {
-	const projectDir = createProject("populated", {
-		activeEpic: "my-epic",
-		activeSlice: "01-auth",
-		activeQuest: null,
-	});
-
-	// Unified overview with epics, quests, tasks
-	writeJson(projectDir, "overview.json", {
-		epics: [{
-			name: "my-epic", status: "activated", created: NOW, completed: null,
-			slices: [
-				{ name: "01-auth", status: "implementing", created: NOW, completed: null },
-				{ name: "02-api", status: "created", created: NOW, completed: null },
-				{ name: "03-ui", status: "completed", created: NOW, completed: NOW },
-			],
-		}],
-		quests: [],
-		tasks: [
-			{ name: "fix-bug", status: "open", title: "Fix bug", created: NOW, completed: null },
-			{ name: "add-tests", status: "open", title: "Add tests", created: NOW, completed: null },
-			{ name: "old-task", status: "dropped", title: "Old task", created: NOW, completed: NOW },
-		],
-	});
-	writeJson(projectDir, "epics/my-epic/epic.json", {
-		name: "my-epic",
-		status: "activated",
-		goal: "Build things",
-		verifications: [],
-		refinement: null,
-		sliceSequence: ["01-auth", "02-api", "03-ui"],
-		created: NOW,
-		activated: NOW,
-		updated: NOW,
-	});
-
-	// Epic-level markdown artifacts
-	writeMarkdown(projectDir, "epics/my-epic/architecture/_overview.md", "# Arch");
-	writeMarkdown(projectDir, "epics/my-epic/architecture/data-model.md", "# Data");
-	writeMarkdown(projectDir, "epics/my-epic/research/topic.md", "# Topic");
-	writeMarkdown(projectDir, "epics/my-epic/brainstorm/ideas.md", "# Ideas");
-
-	// Slice data (nested under epic)
-	writeJson(projectDir, "epics/my-epic/slices/01-auth/slice.json", {
-		name: "01-auth",
-		epic: "my-epic",
-		status: "implementing",
-		goal: "Auth slice",
-		deferred: [],
-		refinement: null,
-		created: NOW,
-		updated: NOW,
-	});
-	writeJsonl(projectDir, "epics/my-epic/slices/01-auth/learnings.jsonl", []);
-	writeJsonl(projectDir, "epics/my-epic/slices/01-auth/architecture-deltas.jsonl", []);
-
-	// Decisions
-	writeJsonl(projectDir, "decisions.jsonl", [
-		{
-			id: "d1",
-			status: "active",
-			domain: "architecture",
-			title: "T1",
-			summary: "S1",
-			date: "2026-03-20",
-			supersededBy: null,
-		},
-		{
-			id: "d2",
-			status: "active",
-			domain: "testing",
-			title: "T2",
-			summary: "S2",
-			date: "2026-03-21",
-			supersededBy: null,
-		},
-	]);
-
-	// Learnings (project-level)
-	writeJsonl(projectDir, "learnings.jsonl", [
-		{
-			category: "worked",
-			summary: "Zod is great",
-			file: "learnings/zod-is-great.md",
-			tags: ["zod"],
-			source: "slices/01-auth",
-			rollup: true,
-			rollupTo: ["project"],
-		},
-	]);
-
-	// Activity log
-	writeJsonl(projectDir, "activity-log.jsonl", [
-		{
-			ts: NOW,
-			phase: "begin-implementation",
-			scope: "epics/my-epic/slices/01-auth",
-			status: "complete",
-			summary: "Started impl",
-		},
-	]);
-
-	return projectDir;
-}
-
-describe("buildStatusResult", () => {
-	it("returns valid StatusResult for a fresh project", () => {
-		const projectDir = createProject("test-project");
-		const result = buildStatusResult(projectDir);
+describe("buildStatusResult (v2)", () => {
+	it("returns valid StatusResult for a fresh initialized project", () => {
+		const goodplanDir = createGoodplanDir();
+		const state = createInitState("test-project");
+		const result = buildStatusResult(state, goodplanDir);
 
 		const parsed = statusResultSchema.safeParse(result);
 		expect(parsed.success).toBe(true);
 
 		expect(result.project.name).toBe("test-project");
-		expect(result.project.version).toBe("1.0.0");
 		expect(result.activeEpic).toBeNull();
 		expect(result.activeSlice).toBeNull();
 		expect(result.activeQuest).toBeNull();
@@ -193,259 +233,275 @@ describe("buildStatusResult", () => {
 		expect(result.artifacts.learnings).toBe(0);
 		expect(result.artifacts.completedSlices).toBe(0);
 		expect(result.artifacts.totalSlices).toBe(0);
-		expect(result.recommendations).toContain("Run epic:create to start");
 		expect(result.warnings).toEqual([]);
 	});
 
-	it("uses resolveProjectDir when no projectDir given", () => {
-		createProject("resolve-test");
-		const result = buildStatusResult();
+	it("resolves active epic from derived state", () => {
+		const goodplanDir = createGoodplanDir();
+		const state = createInitState("epic-test");
+		const epic = createEpicState("my-epic");
+		state.epics.set("my-epic", epic);
 
-		expect(result.project.name).toBe("resolve-test");
+		const result = buildStatusResult(state, goodplanDir);
+		expect(result.activeEpic).toEqual({ name: "my-epic", status: "activated" });
 	});
 
-	it("counts artifacts accurately for a populated project", () => {
-		const projectDir = createPopulatedProject();
-		const result = buildStatusResult(projectDir);
+	it("resolves active slice from derived state", () => {
+		const goodplanDir = createGoodplanDir();
+		const state = createInitState("slice-test");
+		const epic = createEpicState("my-epic");
+		epic.slices.set("01-auth", createSliceState("01-auth", "P10"));
+		state.epics.set("my-epic", epic);
 
-		expect(result.artifacts.architecture.count).toBe(2); // 2 epic arch files
-		expect(result.artifacts.architecture.files).toEqual([
-			"epics/my-epic/architecture/_overview.md",
-			"epics/my-epic/architecture/data-model.md",
-		]);
-		expect(result.artifacts.research.count).toBe(1);
-		expect(result.artifacts.research.files).toEqual(["epics/my-epic/research/topic.md"]);
-		expect(result.artifacts.brainstorm.count).toBe(1);
-		expect(result.artifacts.brainstorm.files).toEqual(["epics/my-epic/brainstorm/ideas.md"]);
-		expect(result.artifacts.prototypes.count).toBe(0);
-		expect(result.artifacts.prototypes.files).toEqual([]);
-		expect(result.artifacts.decisions).toBe(2);
-		expect(result.artifacts.learnings).toBe(1);
+		const result = buildStatusResult(state, goodplanDir);
+		expect(result.activeSlice).toEqual({ name: "01-auth", status: "implementing" });
+	});
+
+	it("resolves active side-quest from derived state", () => {
+		const goodplanDir = createGoodplanDir();
+		const state = createInitState("quest-test");
+		state.sideQuests.set("fix-logging", createSideQuestState("fix-logging", "S1"));
+
+		const result = buildStatusResult(state, goodplanDir);
+		expect(result.activeQuest).toEqual({ name: "fix-logging", status: "planning" });
+	});
+
+	it("excludes abandoned side-quests from activeQuest", () => {
+		const goodplanDir = createGoodplanDir();
+		const state = createInitState("quest-test");
+		state.sideQuests.set(
+			"abandoned-quest",
+			createSideQuestState("abandoned-quest", "S1", { abandoned: true }),
+		);
+
+		const result = buildStatusResult(state, goodplanDir);
+		expect(result.activeQuest).toBeNull();
+	});
+
+	it("maps side-quest phases correctly: S0->created, S1->planning, S2->implementing, S3->completed", () => {
+		const goodplanDir = createGoodplanDir();
+
+		for (const [phase, expected] of [
+			["S0", "created"],
+			["S1", "planning"],
+			["S2", "implementing"],
+		] as const) {
+			const state = createInitState("phase-map-test");
+			state.sideQuests.set("test-quest", createSideQuestState("test-quest", phase));
+			const result = buildStatusResult(state, goodplanDir);
+			expect(result.activeQuest?.status).toBe(expected);
+		}
+	});
+
+	it("counts slices from derived state", () => {
+		const goodplanDir = createGoodplanDir();
+		const state = createInitState("slice-count-test");
+		const epic = createEpicState("my-epic");
+		epic.slices.set("01-done", createSliceState("01-done", "P12"));
+		epic.slices.set("02-wip", createSliceState("02-wip", "P10"));
+		epic.slices.set("03-new", createSliceState("03-new", "P6"));
+		state.epics.set("my-epic", epic);
+
+		const result = buildStatusResult(state, goodplanDir);
 		expect(result.artifacts.completedSlices).toBe(1);
 		expect(result.artifacts.totalSlices).toBe(3);
+	});
+
+	it("counts decisions from filesystem fallback", () => {
+		const goodplanDir = createGoodplanDir({ decisions: 3 });
+		const state = createInitState("decisions-test");
+
+		const result = buildStatusResult(state, goodplanDir);
+		expect(result.artifacts.decisions).toBe(3);
+	});
+
+	it("counts learnings from filesystem fallback", () => {
+		const goodplanDir = createGoodplanDir({ learnings: 2 });
+		const state = createInitState("learnings-test");
+
+		const result = buildStatusResult(state, goodplanDir);
+		expect(result.artifacts.learnings).toBe(2);
+	});
+
+	it("counts tasks from overview.json fallback", () => {
+		const goodplanDir = createGoodplanDir({
+			overview: {
+				tasks: [{ status: "open" }, { status: "open" }, { status: "dropped" }],
+			},
+		});
+		const state = createInitState("tasks-test");
+
+		const result = buildStatusResult(state, goodplanDir);
 		expect(result.artifacts.openTasks).toBe(2);
 		expect(result.artifacts.totalTasks).toBe(3);
 	});
 
-	it("detects active epic with name and status", () => {
-		const projectDir = createPopulatedProject();
-		const result = buildStatusResult(projectDir);
-
-		expect(result.activeEpic).toEqual({ name: "my-epic", status: "activated" });
-	});
-
-	it("detects active slice with name and status", () => {
-		const projectDir = createPopulatedProject();
-		const result = buildStatusResult(projectDir);
-
-		expect(result.activeSlice).toEqual({ name: "01-auth", status: "implementing" });
-	});
-
-	it("returns null for active entities when no active epic/slice/quest", () => {
-		const projectDir = createProject("empty-proj");
-		const result = buildStatusResult(projectDir);
-
-		expect(result.activeEpic).toBeNull();
-		expect(result.activeSlice).toBeNull();
-		expect(result.activeQuest).toBeNull();
-	});
-
-	it("detects active quest", () => {
-		const projectDir = createProject("quest-proj", { activeQuest: "fix-logging" });
-		writeJson(projectDir, "overview.json", {
-			epics: [],
-			quests: [{ name: "fix-logging", status: "planning", created: NOW, completed: null }],
-			tasks: [],
+	it("scans architecture files from filesystem (project + epic)", () => {
+		const goodplanDir = createGoodplanDir({
+			architectureFiles: ["overview.md"],
+			epicArchFiles: [
+				{ epic: "my-epic", file: "_overview.md" },
+				{ epic: "my-epic", file: "data-model.md" },
+			],
 		});
-		writeJson(projectDir, "quests/fix-logging/quest.json", {
-			name: "fix-logging",
-			status: "planning",
-			goal: "Fix logging",
-			refinement: null,
-			created: NOW,
-			updated: NOW,
-		});
+		const state = createInitState("arch-test");
 
-		const result = buildStatusResult(projectDir);
-		expect(result.activeQuest).toEqual({ name: "fix-logging", status: "planning" });
-	});
-
-	it("generates slice progress recommendation", () => {
-		const projectDir = createPopulatedProject();
-		const result = buildStatusResult(projectDir);
-
-		expect(result.recommendations).toEqual(
-			expect.arrayContaining([expect.stringContaining("Epic my-epic: 1/3 slices complete")]),
+		const result = buildStatusResult(state, goodplanDir);
+		expect(result.artifacts.architecture.count).toBe(3);
+		expect(result.artifacts.architecture.files).toContain("architecture/overview.md");
+		expect(result.artifacts.architecture.files).toContain(
+			"epics/my-epic/architecture/_overview.md",
+		);
+		expect(result.artifacts.architecture.files).toContain(
+			"epics/my-epic/architecture/data-model.md",
 		);
 	});
 
-	it("generates next-action recommendation for active slice", () => {
-		const projectDir = createPopulatedProject();
-		const result = buildStatusResult(projectDir);
+	it("scans research files from filesystem", () => {
+		const goodplanDir = createGoodplanDir({
+			researchFiles: ["topic.md"],
+			epicResearchFiles: [{ epic: "my-epic", file: "analysis.md" }],
+		});
+		const state = createInitState("research-test");
 
-		expect(result.recommendations).toEqual(
-			expect.arrayContaining([expect.stringContaining("Active slice 01-auth is implementing")]),
-		);
+		const result = buildStatusResult(state, goodplanDir);
+		expect(result.artifacts.research.count).toBe(2);
+		expect(result.artifacts.research.files).toContain("research/topic.md");
+		expect(result.artifacts.research.files).toContain("epics/my-epic/research/analysis.md");
 	});
 
-	it("generates stale warning when entity has no recent activity", () => {
-		const projectDir = createProject("stale-proj", {
-			activeEpic: "my-epic",
-			activeSlice: "01-stale",
+	it("scans brainstorm files from filesystem", () => {
+		const goodplanDir = createGoodplanDir({
+			brainstormFiles: ["ideas.md"],
+			epicBrainstormFiles: [{ epic: "my-epic", file: "concepts.md" }],
 		});
-		writeJson(projectDir, "overview.json", {
-			epics: [{
-				name: "my-epic", status: "activated", created: NOW, completed: null,
-				slices: [
-					{ name: "01-stale", status: "implementing", created: NOW, completed: null },
-				],
-			}],
-			quests: [],
-			tasks: [],
-		});
-		writeJson(projectDir, "epics/my-epic/epic.json", {
-			name: "my-epic", status: "activated", goal: "Test stale",
-			verifications: [], refinement: null, sliceSequence: ["01-stale"],
-			created: NOW, activated: NOW, updated: NOW,
-		});
-		writeJson(projectDir, "epics/my-epic/slices/01-stale/slice.json", {
-			name: "01-stale",
-			epic: "my-epic",
-			status: "implementing",
-			goal: "Stale slice",
-			deferred: [],
-			refinement: null,
-			created: NOW,
-			updated: NOW,
-		});
-		writeJsonl(projectDir, "epics/my-epic/slices/01-stale/learnings.jsonl", []);
-		writeJsonl(projectDir, "epics/my-epic/slices/01-stale/architecture-deltas.jsonl", []);
+		const state = createInitState("brainstorm-test");
 
-		// Activity log with old timestamp (10 days ago)
-		const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
-		writeJsonl(projectDir, "activity-log.jsonl", [
-			{
-				ts: tenDaysAgo,
-				phase: "begin-plan",
-				scope: "epics/my-epic/slices/01-stale",
-				status: "complete",
-				summary: "Old",
-			},
-		]);
-
-		const result = buildStatusResult(projectDir);
-		expect(result.warnings).toEqual(
-			expect.arrayContaining([
-				expect.stringContaining("Active slice 01-stale has had no activity for"),
-			]),
-		);
+		const result = buildStatusResult(state, goodplanDir);
+		expect(result.artifacts.brainstorm.count).toBe(2);
 	});
 
-	it("enriched artifact shape: count matches files array length", () => {
-		const projectDir = createPopulatedProject();
-		const result = buildStatusResult(projectDir);
+	it("scans prototype directories from filesystem", () => {
+		const goodplanDir = createGoodplanDir({
+			prototypesDirs: ["proto-a"],
+			epicPrototypeDirs: [{ epic: "my-epic", dir: "proto-b" }],
+		});
+		const state = createInitState("proto-test");
 
-		expect(result.artifacts.architecture.count).toBe(result.artifacts.architecture.files.length);
-		expect(result.artifacts.research.count).toBe(result.artifacts.research.files.length);
-		expect(result.artifacts.brainstorm.count).toBe(result.artifacts.brainstorm.files.length);
-		expect(result.artifacts.prototypes.count).toBe(result.artifacts.prototypes.files.length);
+		const result = buildStatusResult(state, goodplanDir);
+		expect(result.artifacts.prototypes.count).toBe(2);
+		expect(result.artifacts.prototypes.files).toContain("prototypes/proto-a");
+		expect(result.artifacts.prototypes.files).toContain("epics/my-epic/prototypes/proto-b");
 	});
 
-	it("enriched artifact shape: files use state-tree-relative paths", () => {
-		const projectDir = createPopulatedProject();
-		const result = buildStatusResult(projectDir);
+	it("uses state-tree-relative paths (no absolute paths)", () => {
+		const goodplanDir = createGoodplanDir({
+			architectureFiles: ["overview.md"],
+			epicArchFiles: [{ epic: "my-epic", file: "data.md" }],
+		});
+		const state = createInitState("rel-paths-test");
 
-		// All file paths should be relative to .goodplan/ (no absolute paths)
+		const result = buildStatusResult(state, goodplanDir);
 		for (const f of result.artifacts.architecture.files) {
 			expect(f).not.toMatch(/^\//);
 			expect(f).toMatch(/\.md$/);
 		}
 	});
 
-	it("enriched artifact shape: dual-directory aggregation includes both project-level and epic files", () => {
-		const projectDir = createProject("dual-dir", {
-			activeEpic: "my-epic",
-			activeSlice: null,
-			activeQuest: null,
-		});
-		writeJson(projectDir, "overview.json", {
-			epics: [{ name: "my-epic", status: "activated", created: NOW, completed: null, slices: [] }],
-			quests: [],
-			tasks: [],
-		});
-		writeJson(projectDir, "epics/my-epic/epic.json", {
-			name: "my-epic",
-			status: "activated",
-			goal: "Test dual-dir",
-			verifications: [],
-			refinement: null,
-			sliceSequence: [],
-			created: NOW,
-			activated: NOW,
-			updated: NOW,
-		});
+	it("fresh project has empty files arrays", () => {
+		const goodplanDir = createGoodplanDir();
+		const state = createInitState("fresh");
 
-		// Project-level architecture
-		writeMarkdown(projectDir, "architecture/overview.md", "# Project arch");
-		// Epic-level architecture
-		writeMarkdown(projectDir, "epics/my-epic/architecture/epic-arch.md", "# Epic arch");
-
-		const result = buildStatusResult(projectDir);
-
-		expect(result.artifacts.architecture.count).toBe(2);
-		expect(result.artifacts.architecture.files).toContain("architecture/overview.md");
-		expect(result.artifacts.architecture.files).toContain(
-			"epics/my-epic/architecture/epic-arch.md",
-		);
-	});
-
-	it("enriched artifact shape: fresh project has empty files arrays", () => {
-		const projectDir = createProject("fresh");
-		const result = buildStatusResult(projectDir);
-
+		const result = buildStatusResult(state, goodplanDir);
 		expect(result.artifacts.architecture).toEqual({ count: 0, files: [] });
 		expect(result.artifacts.research).toEqual({ count: 0, files: [] });
 		expect(result.artifacts.brainstorm).toEqual({ count: 0, files: [] });
 		expect(result.artifacts.prototypes).toEqual({ count: 0, files: [] });
 	});
 
-	it("decisions, learnings, completedSlices, totalSlices remain plain numbers", () => {
-		const projectDir = createPopulatedProject();
-		const result = buildStatusResult(projectDir);
+	it("generates recommendations from suggestedNextSteps", () => {
+		const goodplanDir = createGoodplanDir();
+		const state = createInitState("rec-test");
+		// No epics, no side-quests -- should be empty project
+		// suggestedNextSteps for initialized project with no epics returns nothing
+		// (since project is initialized, the "gp init" step is skipped)
+		const result = buildStatusResult(state, goodplanDir);
+		expect(result.recommendations).toEqual([]);
+	});
 
+	it("generates 'Initialize the project' recommendation when not initialized", () => {
+		const goodplanDir = createGoodplanDir();
+		const state = createEmptyState();
+
+		const result = buildStatusResult(state, goodplanDir);
+		expect(result.recommendations).toContain("Initialize the project");
+	});
+
+	it("validates against statusResultSchema", () => {
+		const goodplanDir = createGoodplanDir({ decisions: 2, learnings: 1 });
+		const state = createInitState("validate-test");
+		const epic = createEpicState("my-epic");
+		epic.slices.set("01-auth", createSliceState("01-auth", "P10"));
+		epic.slices.set("02-done", createSliceState("02-done", "P12"));
+		state.epics.set("my-epic", epic);
+
+		const result = buildStatusResult(state, goodplanDir);
+		const parsed = statusResultSchema.safeParse(result);
+		expect(parsed.success).toBe(true);
+	});
+
+	it("returns null for active entities when no active epic/slice/quest", () => {
+		const goodplanDir = createGoodplanDir();
+		const state = createInitState("empty-proj");
+
+		const result = buildStatusResult(state, goodplanDir);
+		expect(result.activeEpic).toBeNull();
+		expect(result.activeSlice).toBeNull();
+		expect(result.activeQuest).toBeNull();
+	});
+
+	it("decisions, learnings, completedSlices, totalSlices remain plain numbers", () => {
+		const goodplanDir = createGoodplanDir({ decisions: 1, learnings: 1 });
+		const state = createInitState("number-types");
+		const epic = createEpicState("my-epic");
+		epic.slices.set("01", createSliceState("01", "P12"));
+		state.epics.set("my-epic", epic);
+
+		const result = buildStatusResult(state, goodplanDir);
 		expect(typeof result.artifacts.decisions).toBe("number");
 		expect(typeof result.artifacts.learnings).toBe("number");
 		expect(typeof result.artifacts.completedSlices).toBe("number");
 		expect(typeof result.artifacts.totalSlices).toBe("number");
 	});
-
-	it("validates against statusResultSchema", () => {
-		const projectDir = createPopulatedProject();
-		const result = buildStatusResult(projectDir);
-		const parsed = statusResultSchema.safeParse(result);
-		expect(parsed.success).toBe(true);
-	});
 });
 
-describe("formatStatusHuman", () => {
+describe("formatStatusHuman (v2)", () => {
 	it("shows project name and version", () => {
-		const status = buildStatusResult(createProject("human-test"));
+		const goodplanDir = createGoodplanDir();
+		const state = createInitState("human-test");
+		const status = buildStatusResult(state, goodplanDir);
 		const output = formatStatusHuman(status);
 
 		expect(output).toContain("human-test");
-		expect(output).toContain("v1.0.0");
 	});
 
 	it("shows 'No active work' when no active entities", () => {
-		const status = buildStatusResult(createProject("inactive"));
+		const goodplanDir = createGoodplanDir();
+		const state = createInitState("inactive");
+		const status = buildStatusResult(state, goodplanDir);
 		const output = formatStatusHuman(status);
 
 		expect(output).toContain("No active work");
 	});
 
 	it("shows active work section with entities", () => {
-		const projectDir = createPopulatedProject();
-		const status = buildStatusResult(projectDir);
+		const goodplanDir = createGoodplanDir();
+		const state = createInitState("active-test");
+		const epic = createEpicState("my-epic");
+		epic.slices.set("01-auth", createSliceState("01-auth", "P10"));
+		state.epics.set("my-epic", epic);
+
+		const status = buildStatusResult(state, goodplanDir);
 		const output = formatStatusHuman(status);
 
 		expect(output).toContain("Active Work");
@@ -453,18 +509,30 @@ describe("formatStatusHuman", () => {
 		expect(output).toContain("01-auth");
 	});
 
-	it("shows progress section", () => {
-		const projectDir = createPopulatedProject();
-		const status = buildStatusResult(projectDir);
+	it("shows progress section when slices exist", () => {
+		const goodplanDir = createGoodplanDir();
+		const state = createInitState("progress-test");
+		const epic = createEpicState("my-epic");
+		epic.slices.set("01-done", createSliceState("01-done", "P12"));
+		epic.slices.set("02-wip", createSliceState("02-wip", "P10"));
+		epic.slices.set("03-new", createSliceState("03-new", "P6"));
+		state.epics.set("my-epic", epic);
+
+		const status = buildStatusResult(state, goodplanDir);
 		const output = formatStatusHuman(status);
 
 		expect(output).toContain("Progress");
 		expect(output).toContain("1/3 complete");
 	});
 
-	it("shows artifacts section", () => {
-		const projectDir = createPopulatedProject();
-		const status = buildStatusResult(projectDir);
+	it("shows artifacts section when present", () => {
+		const goodplanDir = createGoodplanDir({
+			decisions: 2,
+			architectureFiles: ["overview.md", "data-model.md"],
+		});
+		const state = createInitState("artifacts-test");
+
+		const status = buildStatusResult(state, goodplanDir);
 		const output = formatStatusHuman(status);
 
 		expect(output).toContain("Artifacts");
@@ -472,15 +540,10 @@ describe("formatStatusHuman", () => {
 		expect(output).toContain("Decisions:    2");
 	});
 
-	it("shows recommendations", () => {
-		const status = buildStatusResult(createProject("rec-test"));
-		const output = formatStatusHuman(status);
-
-		expect(output).toContain("Run epic:create to start");
-	});
-
 	it("shows warnings when present", () => {
-		const status = buildStatusResult(createProject("warn-test"));
+		const goodplanDir = createGoodplanDir();
+		const state = createInitState("warn-test");
+		const status = buildStatusResult(state, goodplanDir);
 		status.warnings = ["Something needs attention"];
 		const output = formatStatusHuman(status);
 
@@ -488,14 +551,18 @@ describe("formatStatusHuman", () => {
 	});
 
 	it("omits artifacts section when all zeros", () => {
-		const status = buildStatusResult(createProject("empty-artifacts"));
+		const goodplanDir = createGoodplanDir();
+		const state = createInitState("empty-artifacts");
+		const status = buildStatusResult(state, goodplanDir);
 		const output = formatStatusHuman(status);
 
 		expect(output).not.toContain("Artifacts");
 	});
 
 	it("omits progress section when no slices", () => {
-		const status = buildStatusResult(createProject("no-slices"));
+		const goodplanDir = createGoodplanDir();
+		const state = createInitState("no-slices");
+		const status = buildStatusResult(state, goodplanDir);
 		const output = formatStatusHuman(status);
 
 		expect(output).not.toContain("Progress");
@@ -541,33 +608,66 @@ describe("applyQuery", () => {
 
 describe("--query on new StatusResult shape", () => {
 	it("queries artifacts.decisions", () => {
-		const projectDir = createPopulatedProject();
-		const status = buildStatusResult(projectDir);
+		const goodplanDir = createGoodplanDir({ decisions: 2 });
+		const state = createInitState("query-test");
+		const status = buildStatusResult(state, goodplanDir);
 		const result = applyQuery(status, ".artifacts.decisions");
 		expect(result).toBe(2);
 	});
 
 	it("queries activeEpic.name", () => {
-		const projectDir = createPopulatedProject();
-		const status = buildStatusResult(projectDir);
+		const goodplanDir = createGoodplanDir();
+		const state = createInitState("query-epic-test");
+		state.epics.set("my-epic", createEpicState("my-epic"));
+		const status = buildStatusResult(state, goodplanDir);
 		const result = applyQuery(status, ".activeEpic.name");
 		expect(result).toBe("my-epic");
 	});
 
 	it("queries completedSlices", () => {
-		const projectDir = createPopulatedProject();
-		const status = buildStatusResult(projectDir);
+		const goodplanDir = createGoodplanDir();
+		const state = createInitState("query-slices-test");
+		const epic = createEpicState("my-epic");
+		epic.slices.set("01", createSliceState("01", "P12"));
+		state.epics.set("my-epic", epic);
+		const status = buildStatusResult(state, goodplanDir);
 		const result = applyQuery(status, ".artifacts.completedSlices");
 		expect(result).toBe(1);
 	});
 });
 
-describe("status command integration", () => {
+describe("status command integration (v2)", () => {
+	/** Set up a minimal event-sourced project */
+	function createEventProject(name: string): string {
+		const goodplanDir = path.join(tmpDir, ".goodplan");
+		fs.mkdirSync(goodplanDir, { recursive: true });
+
+		// Create a minimal events.jsonl with project-initialized
+		const event = {
+			id: "a0000000-0000-4000-8000-000000000001",
+			schemaVersion: 1,
+			ts: "2026-03-22T00:00:00.000Z",
+			scope: "project",
+			scopeRef: null,
+			actor: { kind: "cli", id: "gp:init" },
+			branch: "main",
+			commitHint: null,
+			domain: "entity-lifecycle",
+			type: "project-initialized",
+			payload: { name },
+			prevId: null,
+		};
+		fs.writeFileSync(path.join(goodplanDir, "events.jsonl"), `${JSON.stringify(event)}\n`);
+
+		return goodplanDir;
+	}
+
 	async function runStatus(args: {
 		json?: boolean;
 		query?: string;
 		quiet?: boolean;
 		verbose?: boolean;
+		force?: boolean;
 	}) {
 		const { statusCommand } = await import("../../../src/commands/global/status.js");
 		const def = await statusCommand;
@@ -578,6 +678,7 @@ describe("status command integration", () => {
 					query: args.query ?? "",
 					quiet: args.quiet ?? false,
 					verbose: args.verbose ?? false,
+					force: args.force ?? false,
 				},
 				rawArgs: [],
 				cmd: def,
@@ -586,7 +687,7 @@ describe("status command integration", () => {
 	}
 
 	it("outputs valid JSON with --json", async () => {
-		createProject("json-status");
+		createEventProject("json-status");
 		const chunks: string[] = [];
 		vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
 			chunks.push(String(chunk));
@@ -605,7 +706,7 @@ describe("status command integration", () => {
 	});
 
 	it("outputs human-readable format without --json", async () => {
-		createProject("human-status");
+		createEventProject("human-status");
 		const chunks: string[] = [];
 		vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
 			chunks.push(String(chunk));
@@ -620,7 +721,7 @@ describe("status command integration", () => {
 	});
 
 	it("applies --query with --json", async () => {
-		createProject("query-test");
+		createEventProject("query-test");
 		const chunks: string[] = [];
 		vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
 			chunks.push(String(chunk));
@@ -634,7 +735,7 @@ describe("status command integration", () => {
 	});
 
 	it("--query without --json succeeds (--query implies --json)", async () => {
-		createProject("no-json-query");
+		createEventProject("no-json-query");
 
 		const chunks: string[] = [];
 		const origWrite = process.stdout.write;
@@ -651,21 +752,5 @@ describe("status command integration", () => {
 
 		const outputStr = chunks.join("").trim();
 		expect(JSON.parse(outputStr)).toBe("no-json-query");
-	});
-
-	it("--json output includes artifacts with populated project", async () => {
-		createPopulatedProject();
-		const chunks: string[] = [];
-		vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
-			chunks.push(String(chunk));
-			return true;
-		});
-
-		await runStatus({ json: true });
-
-		const outputStr = chunks.join("");
-		const parsed = JSON.parse(outputStr);
-		expect(parsed.artifacts.decisions).toBe(2);
-		expect(parsed.activeEpic.name).toBe("my-epic");
 	});
 });

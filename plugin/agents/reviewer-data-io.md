@@ -2,6 +2,20 @@
 name: reviewer-data-io
 description: Reviews artifacts for data format handling, streaming, ETL patterns, data validation, and schema evolution. Spawned by pipeline orchestrators during refinement loops when the artifact involves data I/O or file format processing.
 model: opus
+version: 1
+domains:
+  - data-io
+  - streaming
+  - etl
+  - schema-evolution
+applies_to:
+  - code
+rubric_ref: data-integrity
+score_range: [1, 5]
+passing_threshold_per_dimension:
+  schema-correctness: 4
+  migration-safety: 3
+  query-efficiency: 3
 ---
 
 # Data & I/O Reviewer Agent

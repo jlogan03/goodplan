@@ -1,8 +1,0 @@
-{
-	"created": "2026-03-28T00:06:46.961Z",
-	"goal": "Rename /complete-slice to /complete and extend it to handle slices, quests, and initiatives.",
-	"name": "complete-rename",
-	"refinement": null,
-	"status": "completed",
-	"updated": "2026-03-28T00:06:46.961Z"
-}

@@ -1,1 +1,0 @@
-sliceSequence survived in buildMigrationState output for an entire epic because epicJsonContent was typed as Record<string, unknown>. Applying z.infer<typeof epicSchema> immediately surfaces future schema/output divergence. Apply entity types to all migration output builders.

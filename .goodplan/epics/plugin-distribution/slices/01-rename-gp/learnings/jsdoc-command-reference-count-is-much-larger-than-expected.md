@@ -1,1 +1,0 @@
-Plan estimated ~15 files with JSDoc goodplan CLI references; grep found ~64. Future plans involving cross-codebase string renames should use grep-based counts from audit, not estimates.

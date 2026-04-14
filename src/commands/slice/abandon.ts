@@ -1,29 +1,31 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { resolveProjectDir } from "../../core/data/project.js";
-import { begin } from "../../core/rpc/begin.js";
+import { appendEvent } from "../../engine/events/append.js";
 import { output } from "../../util/output.js";
+import { createEventCommandContext, handleInvariantError } from "../_shared/command-context.js";
 import { globalArgs } from "../global-args.js";
-import { requireActiveEpic } from "./utils.js";
 
 /**
- * `gp slice:abandon --slice <name> --reason <text>` — abandon a slice.
+ * `gp slice:abandon --slice <name> --epic <name> --reason <text>` (v2)
  *
- * Uses flags (not stdin) because reason is a simple scalar.
- * Precondition: slice exists and is not already completed/abandoned.
- * Transition: -> abandoned
+ * Appends a `slice-abandoned` event (domain: entity-lifecycle)
+ * to the epic-scope events.jsonl.
  */
 export const sliceAbandonCommand = defineCommand({
 	meta: {
 		name: "slice:abandon",
-		description:
-			"Abandon a slice with a reason. Requires --slice and --reason flags. Transition: -> abandoned.",
+		description: "Abandon a slice with a reason. Requires --slice, --epic, and --reason flags.",
 	},
 	args: {
 		...globalArgs,
 		slice: {
 			type: "string",
 			description: "Slice name",
+			required: true,
+		},
+		epic: {
+			type: "string",
+			description: "Epic name",
 			required: true,
 		},
 		reason: {
@@ -34,24 +36,35 @@ export const sliceAbandonCommand = defineCommand({
 	},
 	setup() {},
 	async run({ args }) {
-		const projectDir = resolveProjectDir();
-		const epic = requireActiveEpic(projectDir);
-		const result = await begin(
-			projectDir,
-			"abandon",
-			{ type: "slice", name: args.slice, epic },
-			{
-				reason: args.reason,
-			},
-		);
+		const ctx = createEventCommandContext(args, { requireSlice: true });
 
-		if (args.json || args.query) {
-			output(result, args);
-		} else if (!args.quiet) {
-			output(
-				`${pc.bold(result.entity)}: ${result.previousStatus} ${pc.dim("->")} ${pc.yellow(result.newStatus)}`,
-				args,
-			);
+		try {
+			const result = await appendEvent({
+				eventsPath: ctx.epicEventsPath,
+				scope: "epic",
+				scopeRef: ctx.epicName,
+				actor: { kind: "cli", id: "gp:slice:abandon" },
+				branch: ctx.branch,
+				commitHint: ctx.commitHint,
+				domain: "entity-lifecycle",
+				type: "slice-abandoned",
+				payload: {
+					sliceRef: ctx.sliceName,
+					reason: args.reason as string,
+				},
+				beforeAppend: ctx.beforeAppend,
+			});
+
+			if (args.json || args.query) {
+				output({ ok: true, event: result.event.id, entity: `slice:${ctx.sliceName}` }, args);
+			} else if (!args.quiet) {
+				output(
+					`Abandoned slice ${pc.bold(ctx.sliceName)} in epic ${pc.bold(ctx.epicName)}: ${args.reason}`,
+					args,
+				);
+			}
+		} catch (error) {
+			handleInvariantError(error, args);
 		}
 	},
 });

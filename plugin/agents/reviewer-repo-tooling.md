@@ -2,6 +2,20 @@
 name: reviewer-repo-tooling
 description: Reviews artifacts for project structure, build configuration, dependency management, developer tooling, and documentation organization. Spawned by pipeline orchestrators during refinement loops when the artifact touches repo-level concerns.
 model: opus
+version: 1
+domains:
+  - repo-tooling
+  - build-config
+  - dependency-management
+applies_to:
+  - code
+  - architecture
+rubric_ref: process-holistic
+score_range: [1, 5]
+passing_threshold_per_dimension:
+  invariant-compliance: 3
+  context-transport: 3
+  verification-plausibility: 4
 ---
 
 # Repo, Tooling, & Docs Reviewer Agent

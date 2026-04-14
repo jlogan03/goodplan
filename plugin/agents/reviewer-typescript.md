@@ -2,6 +2,19 @@
 name: reviewer-typescript
 description: Reviews artifacts for TypeScript/JavaScript type safety, module design, runtime correctness, framework patterns, and build tooling alignment. Spawned by pipeline orchestrators during refinement loops when the artifact involves TypeScript or JavaScript code.
 model: opus
+version: 1
+domains:
+  - typescript
+  - type-safety
+  - module-design
+applies_to:
+  - code
+rubric_ref: code-quality
+score_range: [1, 5]
+passing_threshold_per_dimension:
+  type-safety: 4
+  module-design: 3
+  runtime-correctness: 4
 ---
 
 # TypeScript & JavaScript Reviewer Agent

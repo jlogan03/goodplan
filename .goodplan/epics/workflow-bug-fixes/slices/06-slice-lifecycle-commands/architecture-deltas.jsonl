@@ -1,0 +1,6 @@
+{"description":"Added src/commands/_shared/command-context.ts — shared createEventCommandContext helper used by 45 command files","subsystem":"Command Layer","ts":"2026-04-12T17:14:39.566Z","type":"add"}
+{"description":"Added 21 slice lifecycle commands matching architecture/commands.md:93-117","subsystem":"Command Layer","ts":"2026-04-12T17:14:39.566Z","type":"add"}
+{"description":"Added src/schemas/entities/slice-artifacts.ts with DeferredItemSchema and ArchitectureDeltaSchema","subsystem":"Schemas","ts":"2026-04-12T17:14:39.566Z","type":"add"}
+{"description":"Deleted 11 dead v1 files: 7 epic commands + 4 slice commands","subsystem":"Command Layer","ts":"2026-04-12T17:14:39.566Z","type":"remove"}
+{"description":"Fixed 2 invariant rules with stale event names; confirmed chunk-unverifiable vs chunk-unverifiable-decided distinction","subsystem":"Invariant Engine","ts":"2026-04-12T17:14:39.566Z","type":"modify"}
+{"description":"ContextBundle integration added to 3 phase-starting slice commands","subsystem":"Context Layer","ts":"2026-04-12T17:14:39.566Z","type":"modify"}

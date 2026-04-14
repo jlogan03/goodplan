@@ -1,1 +1,0 @@
-ENTITY_EXEMPT_COMMANDS (for migrate) is distinct from READ_ONLY_COMMANDS (which includes init). Both are project-scoped but the exemption reason differs. Clear comments explaining why each command is in each set prevents future confusion.

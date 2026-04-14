@@ -1,1 +1,0 @@
-Migration test verified success but did not assert output directory. The output-path bug passed all existing tests. Tests for path-sensitive operations should assert the actual output path, not just success status.

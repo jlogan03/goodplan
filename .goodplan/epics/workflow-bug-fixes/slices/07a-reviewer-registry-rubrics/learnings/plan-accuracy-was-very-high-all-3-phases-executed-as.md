@@ -1,0 +1,1 @@
+Only divergences: always-on reviewer list adaptation and js-yaml vs yaml package choice. No scope changes, no blocked tasks, 30 tests all passing.

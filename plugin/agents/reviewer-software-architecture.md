@@ -2,6 +2,23 @@
 name: reviewer-software-architecture
 description: Reviews artifacts for module boundaries, dependency direction, layering, coupling, cohesion, and architectural fitness. Spawned by pipeline orchestrators during refinement loops when the artifact touches system structure.
 model: opus
+version: 1
+domains:
+  - architecture
+  - boundaries
+  - dependency-direction
+  - layering
+applies_to:
+  - architecture
+  - plan
+  - slice-set
+rubric_ref: architecture-design
+score_range: [1, 5]
+passing_threshold_per_dimension:
+  boundaries: 4
+  dependency-direction: 4
+  layering: 3
+  coupling-cohesion: 3
 ---
 
 # Software Architecture Reviewer Agent

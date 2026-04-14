@@ -1,0 +1,10 @@
+id: test-invalid-schema
+dimensions:
+  - name: clarity
+    description: Is it clear?
+    scoring: "1-10"
+    threshold: 7
+convergence:
+  max_rounds: 3
+  zero_blocking_required: true
+  zero_critical_required: false

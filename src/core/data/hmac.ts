@@ -7,10 +7,9 @@
 
 // node:crypto used instead of Bun.CryptoHasher because Vitest runs under Node runtime.
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { GoodplanError } from "../../util/errors.js";
+import type { Project } from "../../schemas/entities/project.js";
 import { debug } from "../../util/debug.js";
 import { deterministicStringify } from "../../util/json.js";
-import type { Project } from "../../schemas/entities/project.js";
 import type { ProjectState, StateEntry } from "./tree.js";
 import { getJson } from "./tree.js";
 
@@ -77,7 +76,9 @@ function serializeExcludingMarkdown(entry: StateEntry): unknown {
 		case "markdown":
 			// Unreachable: markdown entries are filtered at the directory level before recursion.
 			// Throw rather than return undefined to match the defensive never-guard pattern.
-			throw new Error("serializeExcludingMarkdown: unexpected markdown entry (should be filtered by caller)");
+			throw new Error(
+				"serializeExcludingMarkdown: unexpected markdown entry (should be filtered by caller)",
+			);
 		default: {
 			const _exhaustive: never = entry;
 			throw new Error(`Unknown StateEntry type: ${(_exhaustive as StateEntry).type}`);
@@ -115,7 +116,9 @@ export function verifyHmacOrThrow(state: ProjectState): void {
 
 	const signature = project.stateSignature;
 	if (signature === undefined) {
-		debug("verifyHmacOrThrow: no stateSignature in project node (bootstrap), skipping verification");
+		debug(
+			"verifyHmacOrThrow: no stateSignature in project node (bootstrap), skipping verification",
+		);
 		return;
 	}
 

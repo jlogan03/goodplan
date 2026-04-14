@@ -1,0 +1,11 @@
+{
+	"created": "2026-04-12T18:08:25.001Z",
+	"deferred": [],
+	"epic": "workflow-bug-fixes",
+	"goal": "Implement epic creation skills: create-epic orchestrator (goal, explore, architecture, slices phases) and start-epic approval skill.",
+	"implementationPhase": null,
+	"name": "09-epic-creation-skills",
+	"refinement": null,
+	"status": "abandoned",
+	"updated": "2026-04-12T18:09:47.123Z"
+}

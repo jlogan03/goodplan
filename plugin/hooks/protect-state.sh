@@ -59,6 +59,15 @@ case "$abs_path" in
 				esac
 				;;
 		esac
+		# Spine files: top-level markdown files that define project structure.
+		# These should only be updated through CLI commands, not direct writes.
+		basename="${abs_path##*/}"
+		case "$basename" in
+			architecture-current.md|conventions.md|invariants.md)
+				echo "Blocked: direct write to .goodplan/ spine file ($basename). Spine files are managed by the gp CLI." >&2
+				exit 2
+				;;
+		esac
 		;;
 esac
 

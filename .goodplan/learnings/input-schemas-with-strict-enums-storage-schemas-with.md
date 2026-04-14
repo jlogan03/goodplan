@@ -1,1 +1,0 @@
-`learningInputSchema` validates category with `z.enum()` at input boundary; `learningEntrySchema` uses `z.string()` for forward-compatibility in storage. This pattern prevents invalid data entry while allowing schema evolution.

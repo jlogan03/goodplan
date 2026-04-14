@@ -1,1 +1,0 @@
-The 6-phase create-epic test ($3.12, 27 min) is 5x more expensive than the 2-phase plan-slice test ($0.60, 6 min). Fixture setup complexity also scales nonlinearly. Use --max-iterations 1 for structural tests, opus only for quality validation.

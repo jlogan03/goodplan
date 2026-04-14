@@ -2,6 +2,24 @@
 name: reviewer-agent-skill
 description: Reviews artifacts for agent/skill design quality — context discipline, prompt clarity, tool usage, sub-agent coordination, return format correctness. Spawned by pipeline orchestrators during refinement loops when the artifact involves agents or skills.
 model: opus
+version: 1
+domains:
+  - agent-design
+  - skill-design
+  - prompt-engineering
+applies_to:
+  - plan
+  - architecture
+  - goal
+  - slice-set
+  - pressure-test
+  - code
+rubric_ref: process-holistic
+score_range: [1, 5]
+passing_threshold_per_dimension:
+  invariant-compliance: 4
+  context-transport: 4
+  verification-plausibility: 3
 ---
 
 # Agent & Skill Reviewer Agent

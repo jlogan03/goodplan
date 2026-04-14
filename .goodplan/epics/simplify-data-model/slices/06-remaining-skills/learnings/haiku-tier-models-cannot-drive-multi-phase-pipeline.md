@@ -1,1 +1,0 @@
-The create-side-quest full pipeline E2E test consistently fails at haiku tier with artifact read violations and incomplete quest lifecycle. Error path tests (validating code correctness) pass reliably. Haiku validates mechanics, not workflow quality. E2E pipeline tests need sonnet/opus.

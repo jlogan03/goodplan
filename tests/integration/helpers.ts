@@ -22,10 +22,7 @@ import * as path from "node:path";
 function pluginBinaryPath(): string {
 	const arch = process.arch === "x64" ? "x64" : "arm64";
 	const platform = process.platform === "linux" ? "linux" : "macos";
-	return path.resolve(
-		import.meta.dirname,
-		`../../dist/gp-plugin/binaries/${platform}-${arch}/gp`,
-	);
+	return path.resolve(import.meta.dirname, `../../dist/gp-plugin/binaries/${platform}-${arch}/gp`);
 }
 const BINARY_PATH = pluginBinaryPath();
 
@@ -126,9 +123,7 @@ export async function withFixture<T>(
 		throw new Error(`Fixture "${fixtureName}" not found at ${fixtureDir}`);
 	}
 
-	const tmpDir = fs.mkdtempSync(
-		path.join(os.tmpdir(), `gp-integration-${fixtureName}-`),
-	);
+	const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), `gp-integration-${fixtureName}-`));
 
 	try {
 		// Deep copy fixture to temp dir
@@ -153,9 +148,7 @@ export async function withFixture<T>(
 export async function withTempDir<T>(
 	fn: (tmpDir: string, env: Record<string, string>) => T | Promise<T>,
 ): Promise<T> {
-	const tmpDir = fs.mkdtempSync(
-		path.join(os.tmpdir(), "gp-integration-temp-"),
-	);
+	const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-integration-temp-"));
 
 	try {
 		const env: Record<string, string> = {

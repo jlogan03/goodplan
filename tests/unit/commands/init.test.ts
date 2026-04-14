@@ -2,13 +2,14 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { projectSchema } from "../../../src/schemas/entities/project.js";
+import { AnyEventEnvelopeSchema } from "../../../src/schemas/envelope.js";
+import { projectInitializedPayloadSchema } from "../../../src/schemas/events/project.js";
 
 let tmpDir: string;
 let originalCwd: string;
 
 beforeEach(() => {
-	tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-init-test-"));
+	tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gp-init-v2-test-"));
 	originalCwd = process.cwd();
 	process.chdir(tmpDir);
 });
@@ -21,7 +22,6 @@ afterEach(() => {
 
 /**
  * Helper: dynamically import initCommand fresh each test to avoid module caching issues.
- * We run the command's setup + run by calling its run function directly.
  */
 async function runInit(args: {
 	name?: string;
@@ -45,67 +45,56 @@ async function runInit(args: {
 	}
 }
 
-describe("init command", () => {
-	it("creates .goodplan/ with valid project.json", async () => {
-		// Capture stdout
+describe("init command (v2)", () => {
+	it("creates .goodplan/ with events.jsonl containing project-initialized event", async () => {
 		const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 
 		await runInit({ name: "test-project" });
 
-		const projectJsonPath = path.join(tmpDir, ".goodplan", "project.json");
-		expect(fs.existsSync(projectJsonPath)).toBe(true);
+		const eventsPath = path.join(tmpDir, ".goodplan", "events.jsonl");
+		expect(fs.existsSync(eventsPath)).toBe(true);
 
-		const raw = fs.readFileSync(projectJsonPath, "utf-8");
-		const data = JSON.parse(raw);
-		const result = projectSchema.safeParse(data);
-		expect(result.success).toBe(true);
-		if (result.success) {
-			expect(result.data.name).toBe("test-project");
-			expect(result.data.version).toBe("1.0.3");
-			expect(result.data.activeEpic).toBeNull();
-			expect(result.data.activeSlice).toBeNull();
-			expect(result.data.activeQuest).toBeNull();
+		const content = fs.readFileSync(eventsPath, "utf-8");
+		const lines = content.trim().split("\n");
+		expect(lines).toHaveLength(1);
+
+		const firstLine = lines[0];
+		expect(firstLine).toBeDefined();
+		const event = JSON.parse(firstLine as string);
+		const envelopeResult = AnyEventEnvelopeSchema.safeParse(event);
+		expect(envelopeResult.success).toBe(true);
+
+		expect(event.type).toBe("project-initialized");
+		expect(event.domain).toBe("entity-lifecycle");
+		expect(event.scope).toBe("project");
+		expect(event.scopeRef).toBeNull();
+		expect(event.actor).toEqual({ kind: "cli", id: "gp:init" });
+		expect(event.prevId).toBeNull(); // first event
+
+		writeSpy.mockRestore();
+	});
+
+	it("project-initialized event has correct payload", async () => {
+		const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+		await runInit({ name: "my-project" });
+
+		const eventsPath = path.join(tmpDir, ".goodplan", "events.jsonl");
+		const content = fs.readFileSync(eventsPath, "utf-8");
+		const firstLine = content.trim().split("\n")[0];
+		expect(firstLine).toBeDefined();
+		const event = JSON.parse(firstLine as string);
+
+		const payloadResult = projectInitializedPayloadSchema.safeParse(event.payload);
+		expect(payloadResult.success).toBe(true);
+		if (payloadResult.success) {
+			expect(payloadResult.data.name).toBe("my-project");
 		}
 
 		writeSpy.mockRestore();
 	});
 
-	it("creates overview files and collection directories", async () => {
-		const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
-
-		await runInit({ name: "full-tree" });
-
-		const projectDir = path.join(tmpDir, ".goodplan");
-
-		// Consolidated overview file
-		expect(fs.existsSync(path.join(projectDir, "overview.json"))).toBe(true);
-
-		// JSONL files
-		expect(fs.existsSync(path.join(projectDir, "activity-log.jsonl"))).toBe(true);
-		expect(fs.existsSync(path.join(projectDir, "decisions.jsonl"))).toBe(true);
-		expect(fs.existsSync(path.join(projectDir, "learnings.jsonl"))).toBe(true);
-
-		// Activity log has init entry
-		const activityLog = fs.readFileSync(path.join(projectDir, "activity-log.jsonl"), "utf-8");
-		const lines = activityLog.trim().split("\n");
-		expect(lines).toHaveLength(1);
-		const entry = JSON.parse(lines[0]!);
-		expect(entry.phase).toBe("init");
-		expect(entry.scope).toBe("project");
-		expect(entry.status).toBe("complete");
-		expect(entry.summary).toContain("full-tree");
-
-		// Empty JSONL files
-		const decisions = fs.readFileSync(path.join(projectDir, "decisions.jsonl"), "utf-8");
-		expect(decisions.trim()).toBe("");
-		const learnings = fs.readFileSync(path.join(projectDir, "learnings.jsonl"), "utf-8");
-		expect(learnings.trim()).toBe("");
-
-		writeSpy.mockRestore();
-	});
-
 	it("defaults --name to path.basename(cwd)", async () => {
-		// Create a subdirectory with a known name and chdir into it
 		const namedDir = path.join(tmpDir, "my-cool-project");
 		fs.mkdirSync(namedDir);
 		process.chdir(namedDir);
@@ -114,9 +103,12 @@ describe("init command", () => {
 
 		await runInit({});
 
-		const projectJsonPath = path.join(namedDir, ".goodplan", "project.json");
-		const data = JSON.parse(fs.readFileSync(projectJsonPath, "utf-8"));
-		expect(data.name).toBe("my-cool-project");
+		const eventsPath = path.join(namedDir, ".goodplan", "events.jsonl");
+		const content = fs.readFileSync(eventsPath, "utf-8");
+		const firstLine = content.trim().split("\n")[0];
+		expect(firstLine).toBeDefined();
+		const event = JSON.parse(firstLine as string);
+		expect(event.payload.name).toBe("my-cool-project");
 
 		writeSpy.mockRestore();
 	});
@@ -128,26 +120,23 @@ describe("init command", () => {
 	});
 
 	it("does NOT detect parent .goodplan/ (only checks cwd)", async () => {
-		// Create .goodplan/ in parent
 		fs.mkdirSync(path.join(tmpDir, ".goodplan"));
 
-		// Create a child directory and chdir into it
 		const childDir = path.join(tmpDir, "child");
 		fs.mkdirSync(childDir);
 		process.chdir(childDir);
 
 		const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 
-		// Should succeed — init only checks cwd, not parents
 		await runInit({ name: "child-project" });
 
-		const projectJsonPath = path.join(childDir, ".goodplan", "project.json");
-		expect(fs.existsSync(projectJsonPath)).toBe(true);
+		const eventsPath = path.join(childDir, ".goodplan", "events.jsonl");
+		expect(fs.existsSync(eventsPath)).toBe(true);
 
 		writeSpy.mockRestore();
 	});
 
-	it("outputs JSON when --json flag is set", async () => {
+	it("outputs JSON matching MutatingCommandOutput when --json is set", async () => {
 		const chunks: string[] = [];
 		vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
 			chunks.push(String(chunk));
@@ -158,8 +147,9 @@ describe("init command", () => {
 
 		const outputStr = chunks.join("");
 		const parsed = JSON.parse(outputStr);
-		expect(parsed.name).toBe("json-test");
-		expect(parsed.version).toBe("1.0.3");
+		expect(parsed.ok).toBe(true);
+		expect(parsed.event).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+		expect(parsed.entity).toBe("project");
 	});
 
 	it("outputs human-readable message when --json is not set", async () => {
@@ -174,6 +164,7 @@ describe("init command", () => {
 		const outputStr = chunks.join("");
 		expect(outputStr).toContain("human-test");
 		expect(outputStr).toContain("Initialized");
+		expect(outputStr).toContain(".goodplan/");
 	});
 
 	it("suppresses output with --quiet", async () => {
@@ -185,10 +176,30 @@ describe("init command", () => {
 
 		await runInit({ name: "quiet-test", quiet: true });
 
-		// No output should be produced
 		expect(chunks.join("")).toBe("");
 
 		// But project should still be created
-		expect(fs.existsSync(path.join(tmpDir, ".goodplan", "project.json"))).toBe(true);
+		expect(fs.existsSync(path.join(tmpDir, ".goodplan", "events.jsonl"))).toBe(true);
+	});
+
+	it("event envelope has valid branch and commitHint fields", async () => {
+		const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+		await runInit({ name: "git-test" });
+
+		const eventsPath = path.join(tmpDir, ".goodplan", "events.jsonl");
+		const content = fs.readFileSync(eventsPath, "utf-8");
+		const firstLine = content.trim().split("\n")[0];
+		expect(firstLine).toBeDefined();
+		const event = JSON.parse(firstLine as string);
+
+		// branch must be a non-empty string (either real branch or "unknown")
+		expect(typeof event.branch).toBe("string");
+		expect(event.branch.length).toBeGreaterThan(0);
+
+		// commitHint is either a string (sha) or null
+		expect(event.commitHint === null || typeof event.commitHint === "string").toBe(true);
+
+		writeSpy.mockRestore();
 	});
 });

@@ -1,26 +1,24 @@
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { detectArtifacts } from "../../core/artifacts.js";
-import { loadState } from "../../core/data/load.js";
 import { resolveProjectDir } from "../../core/data/project.js";
-import { getDir, getJson } from "../../core/tree.js";
-import type { Slice } from "../../schemas/entities/slice.js";
-import { GoodplanError } from "../../util/errors.js";
+import { computeDerivedState } from "../../engine/derived-state/compute.js";
+import { serializeDerivedState } from "../../engine/derived-state/serialize.js";
+import { replayEvents } from "../../engine/events/replay.js";
 import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
-import { requireActiveEpic } from "./utils.js";
 
 /**
- * `gp slice:show --slice <name> [--epic <name>]` — show full slice entity.
+ * `gp slice:show --slice <name> --epic <name>` — show slice state from event replay.
  *
- * Read-only: goes directly to the data layer, no RPC.
- * Returns the full slice.json content for the named slice.
- * Defaults to active epic when --epic is omitted.
+ * Replays the epic's events and returns the SliceState projection.
  */
 export const sliceShowCommand = defineCommand({
 	meta: {
 		name: "slice:show",
-		description: "Show full slice entity details. Requires --slice flag. Optional --epic.",
+		description:
+			"Show full slice entity details from event-sourced state. Requires --slice and --epic flags.",
 	},
 	args: {
 		...globalArgs,
@@ -31,43 +29,62 @@ export const sliceShowCommand = defineCommand({
 		},
 		epic: {
 			type: "string",
-			description: "Epic name (defaults to active epic)",
+			description: "Epic name",
+			required: true,
 		},
 	},
 	setup() {},
 	async run({ args }) {
-		const projectDir = resolveProjectDir();
-		const epic = (args.epic as string | undefined) ?? requireActiveEpic(projectDir);
-		const state = loadState(projectDir);
+		const goodplanDir = resolveProjectDir();
+		const epicName = args.epic as string;
+		const sliceName = args.slice as string;
+		const epicEventsPath = path.join(goodplanDir, "epics", epicName, "events.jsonl");
 
-		const slice = getJson<Slice>(state, `epics/${epic}/slices/${args.slice}/slice.json`);
-		if (slice === undefined) {
-			throw new GoodplanError("DATA_FILE_NOT_FOUND", `Slice '${args.slice}' not found`);
+		if (fs.existsSync(epicEventsPath)) {
+			const { events } = await replayEvents({ eventsPath: epicEventsPath });
+			const state = computeDerivedState(events);
+			const epicState = state.epics.get(epicName);
+			const sliceState = epicState?.slices.get(sliceName);
+
+			if (sliceState !== undefined) {
+				// Serialize for output (Maps -> Records)
+				const serialized = serializeDerivedState(state);
+				const epicData = serialized.epics[epicName] as
+					| { slices?: Record<string, unknown> }
+					| undefined;
+				const sliceData = epicData?.slices?.[sliceName] as Record<string, unknown> | undefined;
+
+				if (args.json || args.query) {
+					output({ ok: true, ...sliceData }, args);
+				} else if (!args.quiet) {
+					const lines: string[] = [];
+					lines.push(`${pc.bold(sliceName)}  phase=${sliceState.phase}  (epic: ${epicName})`);
+					lines.push(`  Abandoned: ${sliceState.abandoned}`);
+					if (sliceState.goal !== null) {
+						lines.push(`  Goal: ${sliceState.goal.sha.slice(0, 8)}...`);
+					}
+					if (sliceState.plan !== null) {
+						lines.push(`  Plan: ${sliceState.plan.sha.slice(0, 8)}...`);
+					}
+					output(lines.join("\n"), args);
+				}
+				return;
+			}
 		}
 
+		// Not found
+		const errorOutput = {
+			ok: false,
+			error: `Slice '${sliceName}' not found in epic '${epicName}'`,
+			code: "ENTITY_NOT_FOUND",
+		};
 		if (args.json || args.query) {
-			const artifacts = detectArtifacts(
-				getDir(state, `epics/${epic}/slices/${args.slice}`),
-				"slice",
-				slice,
+			output(errorOutput, args);
+		} else {
+			process.stderr.write(
+				`${pc.red("Error")}: Slice '${sliceName}' not found in epic '${epicName}'\n`,
 			);
-			output({ ...slice, artifacts }, args);
-		} else if (!args.quiet) {
-			const lines: string[] = [];
-			lines.push(`${pc.bold(slice.name)}  ${slice.status}  (epic: ${slice.epic})`);
-			lines.push(`  Goal: ${slice.goal}`);
-			lines.push(`  Created: ${slice.created}`);
-			lines.push(`  Updated: ${slice.updated}`);
-			if (slice.deferred.length > 0) {
-				lines.push(`  Deferred: ${slice.deferred.length}`);
-			}
-			if (slice.implementationPhase != null) {
-				lines.push(`  Implementation phase: ${slice.implementationPhase}`);
-			}
-			if (slice.refinement !== null) {
-				lines.push(`  Refinement: round ${slice.refinement.round}/${slice.refinement.maxRounds}`);
-			}
-			output(lines.join("\n"), args);
 		}
+		process.exit(1);
 	},
 });

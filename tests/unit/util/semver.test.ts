@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-	checkCompatibility,
-	parseSemver,
-	semverGreaterThan,
-} from "../../../src/util/semver.js";
 import { GoodplanError } from "../../../src/util/errors.js";
+import { checkCompatibility, parseSemver, semverGreaterThan } from "../../../src/util/semver.js";
 
 describe("parseSemver", () => {
 	it("parses valid semver strings", () => {
@@ -65,21 +61,35 @@ describe("checkCompatibility", () => {
 
 describe("semverGreaterThan", () => {
 	it("compares major", () => {
-		expect(semverGreaterThan({ major: 2, minor: 0, patch: 0 }, { major: 1, minor: 0, patch: 0 })).toBe(true);
-		expect(semverGreaterThan({ major: 1, minor: 0, patch: 0 }, { major: 2, minor: 0, patch: 0 })).toBe(false);
+		expect(
+			semverGreaterThan({ major: 2, minor: 0, patch: 0 }, { major: 1, minor: 0, patch: 0 }),
+		).toBe(true);
+		expect(
+			semverGreaterThan({ major: 1, minor: 0, patch: 0 }, { major: 2, minor: 0, patch: 0 }),
+		).toBe(false);
 	});
 
 	it("compares minor when major equal", () => {
-		expect(semverGreaterThan({ major: 1, minor: 2, patch: 0 }, { major: 1, minor: 1, patch: 0 })).toBe(true);
-		expect(semverGreaterThan({ major: 1, minor: 1, patch: 0 }, { major: 1, minor: 2, patch: 0 })).toBe(false);
+		expect(
+			semverGreaterThan({ major: 1, minor: 2, patch: 0 }, { major: 1, minor: 1, patch: 0 }),
+		).toBe(true);
+		expect(
+			semverGreaterThan({ major: 1, minor: 1, patch: 0 }, { major: 1, minor: 2, patch: 0 }),
+		).toBe(false);
 	});
 
 	it("compares patch when major and minor equal", () => {
-		expect(semverGreaterThan({ major: 1, minor: 0, patch: 2 }, { major: 1, minor: 0, patch: 1 })).toBe(true);
-		expect(semverGreaterThan({ major: 1, minor: 0, patch: 1 }, { major: 1, minor: 0, patch: 2 })).toBe(false);
+		expect(
+			semverGreaterThan({ major: 1, minor: 0, patch: 2 }, { major: 1, minor: 0, patch: 1 }),
+		).toBe(true);
+		expect(
+			semverGreaterThan({ major: 1, minor: 0, patch: 1 }, { major: 1, minor: 0, patch: 2 }),
+		).toBe(false);
 	});
 
 	it("returns false when equal", () => {
-		expect(semverGreaterThan({ major: 1, minor: 0, patch: 0 }, { major: 1, minor: 0, patch: 0 })).toBe(false);
+		expect(
+			semverGreaterThan({ major: 1, minor: 0, patch: 0 }, { major: 1, minor: 0, patch: 0 }),
+		).toBe(false);
 	});
 });

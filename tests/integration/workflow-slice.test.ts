@@ -1,135 +1,116 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { describe, expect, it } from "vitest";
-import { runCommand, withFixture } from "./helpers.js";
+import { buildBinary, runCommand, withTempDir } from "./helpers.js";
 
-describe("workflow: slice lifecycle", () => {
-	it("slice:create from epic-activated creates slice directory", async () => {
-		await withFixture("epic-activated", ({ env, bin }) => {
-			const result = runCommand(bin, ["slice:create", "--epic", "test-epic", "--json"], {
-				env,
-				stdin: JSON.stringify({ name: "new-slice", goal: "New slice goal" }),
+describe("workflow: slice lifecycle (v2)", () => {
+	it("slice:create, list, show, abandon lifecycle via binary", async () => {
+		await withTempDir(async (tmpDir) => {
+			const bin = buildBinary();
+
+			// Initialize project
+			const initResult = runCommand(bin, ["init", "--name", "test", "--json"], { cwd: tmpDir });
+			expect(initResult.exitCode).toBe(0);
+
+			// Create epic
+			const createEpicResult = runCommand(bin, ["epic:create", "--name", "test-epic", "--json"], {
+				cwd: tmpDir,
+			});
+			expect(createEpicResult.exitCode).toBe(0);
+
+			// Verify events.jsonl created for epic
+			const eventsPath = path.join(tmpDir, ".goodplan", "epics", "test-epic", "events.jsonl");
+			expect(fs.existsSync(eventsPath)).toBe(true);
+
+			// Create slice
+			const createResult = runCommand(bin, ["slice:create", "--epic", "test-epic", "--json"], {
+				cwd: tmpDir,
+				stdin: JSON.stringify({ name: "test-slice", goal: "Test goal" }),
+			});
+			expect(createResult.exitCode).toBe(0);
+			const createJson = createResult.json as { ok: boolean; entity: string };
+			expect(createJson.ok).toBe(true);
+			expect(createJson.entity).toBe("slice:test-slice");
+
+			// Verify slice directory was created
+			const sliceDir = path.join(tmpDir, ".goodplan", "epics", "test-epic", "slices", "test-slice");
+			expect(fs.existsSync(sliceDir)).toBe(true);
+
+			// List slices
+			const listResult = runCommand(bin, ["slice:list", "--epic", "test-epic", "--json"], {
+				cwd: tmpDir,
+			});
+			expect(listResult.exitCode).toBe(0);
+			const listJson = listResult.json as { items: Array<{ dir: string }>; total: number };
+			expect(listJson.items).toHaveLength(1);
+			expect(listJson.total).toBe(1);
+
+			// Show slice
+			const showResult = runCommand(
+				bin,
+				["slice:show", "--epic", "test-epic", "--slice", "test-slice", "--json"],
+				{ cwd: tmpDir },
+			);
+			expect(showResult.exitCode).toBe(0);
+			const showJson = showResult.json as { ok: boolean; dir: string };
+			expect(showJson.ok).toBe(true);
+			expect(showJson.dir).toBe("test-slice");
+
+			// Abandon slice
+			const abandonResult = runCommand(
+				bin,
+				[
+					"slice:abandon",
+					"--epic",
+					"test-epic",
+					"--slice",
+					"test-slice",
+					"--reason",
+					"No longer needed",
+					"--json",
+				],
+				{ cwd: tmpDir },
+			);
+			expect(abandonResult.exitCode).toBe(0);
+			const abandonJson = abandonResult.json as { ok: boolean; entity: string };
+			expect(abandonJson.ok).toBe(true);
+			expect(abandonJson.entity).toBe("slice:test-slice");
+
+			// Show abandoned slice
+			const showAbandoned = runCommand(
+				bin,
+				["slice:show", "--epic", "test-epic", "--slice", "test-slice", "--json"],
+				{ cwd: tmpDir },
+			);
+			expect(showAbandoned.exitCode).toBe(0);
+			const showAbandonedJson = showAbandoned.json as { ok: boolean; abandoned: boolean };
+			expect(showAbandonedJson.ok).toBe(true);
+			expect(showAbandonedJson.abandoned).toBe(true);
+		});
+	});
+
+	it("slice:list --all returns slices across all epics", async () => {
+		await withTempDir(async (tmpDir) => {
+			const bin = buildBinary();
+
+			runCommand(bin, ["init", "--name", "test", "--json"], { cwd: tmpDir });
+			runCommand(bin, ["epic:create", "--name", "epic-a", "--json"], { cwd: tmpDir });
+			runCommand(bin, ["epic:create", "--name", "epic-b", "--json"], { cwd: tmpDir });
+
+			runCommand(bin, ["slice:create", "--epic", "epic-a", "--json"], {
+				cwd: tmpDir,
+				stdin: JSON.stringify({ name: "slice-1", goal: "Goal 1" }),
+			});
+			runCommand(bin, ["slice:create", "--epic", "epic-b", "--json"], {
+				cwd: tmpDir,
+				stdin: JSON.stringify({ name: "slice-2", goal: "Goal 2" }),
 			});
 
+			const result = runCommand(bin, ["slice:list", "--all", "--json"], { cwd: tmpDir });
 			expect(result.exitCode).toBe(0);
-			expect(result.json).toBeDefined();
-			const json = result.json as Record<string, unknown>;
-			expect(json.newStatus).toBe("created");
-
-			// Verify slice directory
-			const sliceDir = path.join(env.GOODPLAN_DIR, "epics", "test-epic", "slices", "new-slice");
-			expect(fs.existsSync(sliceDir)).toBe(true);
-			expect(fs.existsSync(path.join(sliceDir, "slice.json"))).toBe(true);
-		});
-	});
-
-	it("full slice lifecycle: plan -> refine -> implement -> complete", async () => {
-		await withFixture("epic-activated", ({ env, bin }) => {
-			// First, start planning the existing test-slice (status: created, first slice)
-			const planResult = runCommand(bin, ["slice:plan", "--slice", "test-slice", "--json"], { env, stdin: "" });
-			expect(planResult.exitCode).toBe(0);
-			expect(planResult.json).toBeDefined();
-			expect((planResult.json as Record<string, unknown>).newStatus).toBe("planning");
-
-			// Write plan.md to filesystem (sub-agent normally does this)
-			const sliceDir = path.join(env.GOODPLAN_DIR, "epics", "test-epic", "slices", "test-slice");
-			fs.writeFileSync(path.join(sliceDir, "plan.md"), "# Test Plan\n\nThis is the plan.");
-
-			// Submit plan
-			const submitPlanResult = runCommand(bin, ["submit-plan", "--slice", "test-slice", "--json"], { env, stdin: "" });
-			expect(submitPlanResult.exitCode).toBe(0);
-			expect(submitPlanResult.json).toBeDefined();
-			expect((submitPlanResult.json as Record<string, unknown>).newStatus).toBe("plan-created");
-
-			// Begin refinement
-			const refineResult = runCommand(bin, ["slice:refine-plan", "--slice", "test-slice", "--json"], { env, stdin: "" });
-			expect(refineResult.exitCode).toBe(0);
-			expect(refineResult.json).toBeDefined();
-			expect((refineResult.json as Record<string, unknown>).newStatus).toBe("refining");
-
-			// Write plan-refined.md (sub-agent writes this during refinement)
-			fs.writeFileSync(path.join(sliceDir, "plan-refined.md"), "# Refined Plan\n\nRefined content.");
-
-			// Submit refinement with passing scores (>= 9)
-			const submitRefineResult = runCommand(
-				bin,
-				["submit-refinement", "--slice", "test-slice", "--json"],
-				{
-					env,
-					stdin: JSON.stringify({ scores: { correctness: 9, completeness: 9 } }),
-				},
-			);
-			expect(submitRefineResult.exitCode).toBe(0);
-			expect(submitRefineResult.json).toBeDefined();
-			expect((submitRefineResult.json as Record<string, unknown>).newStatus).toBe("plan-refined");
-
-			// Begin implementation
-			const implResult = runCommand(bin, ["slice:implement", "--slice", "test-slice", "--json"], { env, stdin: "" });
-			expect(implResult.exitCode).toBe(0);
-			expect(implResult.json).toBeDefined();
-			expect((implResult.json as Record<string, unknown>).newStatus).toBe("implementing");
-
-			// Submit implementation
-			const submitImplResult = runCommand(
-				bin,
-				["submit-implementation", "--slice", "test-slice", "--json"],
-				{ env, stdin: "" },
-			);
-			expect(submitImplResult.exitCode).toBe(0);
-			expect(submitImplResult.json).toBeDefined();
-			expect((submitImplResult.json as Record<string, unknown>).newStatus).toBe("implementation-complete");
-
-			// Complete slice
-			const completeResult = runCommand(
-				bin,
-				["slice:complete", "--slice", "test-slice", "--json"],
-				{
-					env,
-					stdin: JSON.stringify({
-						verificationPassed: true,
-						learnings: [],
-						deferred: [],
-						architectureDelta: [],
-					}),
-				},
-			);
-			expect(completeResult.exitCode).toBe(0);
-			expect(completeResult.json).toBeDefined();
-			expect((completeResult.json as Record<string, unknown>).newStatus).toBe("completed");
-
-			// Verify on-disk status
-			const sliceJson = JSON.parse(
-				fs.readFileSync(path.join(sliceDir, "slice.json"), "utf-8"),
-			) as Record<string, unknown>;
-			expect(sliceJson.status).toBe("completed");
-
-			// MIN-6: Verify activity-log.jsonl grew during the lifecycle
-			const activityLog = fs.readFileSync(
-				path.join(env.GOODPLAN_DIR, "activity-log.jsonl"),
-				"utf-8",
-			);
-			const logLines = activityLog.trim().split("\n").filter((line) => line.length > 0);
-			// At minimum: plan + submit-plan + refine + submit-refinement + implement + submit-impl + complete = 7 new entries
-			// Plus any that existed in the fixture
-			expect(logLines.length).toBeGreaterThanOrEqual(7);
-		});
-	});
-
-	it("slice:list returns slice data", async () => {
-		await withFixture("epic-activated", ({ env, bin }) => {
-			const result = runCommand(bin, ["slice:list", "--json"], { env, stdin: "" });
-
-			expect(result.exitCode).toBe(0);
-			expect(result.json).toBeDefined();
-		});
-	});
-
-	it("slice:show returns slice details", async () => {
-		await withFixture("epic-activated", ({ env, bin }) => {
-			const result = runCommand(bin, ["slice:show", "--slice", "test-slice", "--json"], { env, stdin: "" });
-
-			expect(result.exitCode).toBe(0);
-			expect(result.json).toBeDefined();
+			const json = result.json as { items: Array<{ dir: string; epic: string }>; total: number };
+			expect(json.total).toBe(2);
+			expect(json.items).toHaveLength(2);
 		});
 	});
 });

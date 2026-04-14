@@ -1,0 +1,1 @@
+Phase 5 grep audit found stale v1 references in cli-interaction.md that would have been missed without systematic checking. All target skill files were clean.

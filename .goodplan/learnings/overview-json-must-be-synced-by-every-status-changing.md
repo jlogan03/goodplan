@@ -1,1 +1,0 @@
-Setting overview status only at creation time leaves it permanently stale. Use a shared `updateOverviewStatus` helper called by every handler that changes entity status. Apply this pattern to future entities (slice, quest) from the start.

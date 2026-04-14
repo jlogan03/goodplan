@@ -1,20 +1,19 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { begin } from "../../core/rpc/begin.js";
-import { resolveProjectDir } from "../../core/data/project.js";
+import { appendEvent } from "../../engine/events/append.js";
 import { output } from "../../util/output.js";
+import { createEventCommandContext, handleInvariantError } from "../_shared/command-context.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `gp epic:activate --epic <name>` — activate an epic.
+ * `gp epic:activate --epic <name>` (v2) — activate an epic.
  *
- * Precondition: epic in 'slices-defined' or 'slices-refined' status, has verifications.
- * Transition: -> activated
+ * Emits `epic-activated` with domain "entity-lifecycle", advances phase to P6.
  */
 export const epicActivateCommand = defineCommand({
 	meta: {
 		name: "epic:activate",
-		description: "Activate an epic for implementation. Requires verifications. Precondition: 'slices-defined' or 'slices-refined'. Transition: -> activated.",
+		description: "Activate an epic for implementation.",
 	},
 	args: {
 		...globalArgs,
@@ -26,13 +25,29 @@ export const epicActivateCommand = defineCommand({
 	},
 	setup() {},
 	async run({ args }) {
-		const projectDir = resolveProjectDir();
-		const result = await begin(projectDir, "activate", { type: "epic", name: args.epic }, {});
+		const ctx = createEventCommandContext(args, { requireSlice: false });
 
-		if (args.json || args.query) {
-			output(result, args);
-		} else if (!args.quiet) {
-			output(`${pc.bold(result.entity)}: ${result.previousStatus} ${pc.dim("->")} ${pc.green(result.newStatus)}`, args);
+		try {
+			const result = await appendEvent({
+				eventsPath: ctx.epicEventsPath,
+				scope: "epic",
+				scopeRef: ctx.epicName,
+				actor: { kind: "cli", id: "gp:epic:activate" },
+				branch: ctx.branch,
+				commitHint: ctx.commitHint,
+				domain: "entity-lifecycle",
+				type: "epic-activated",
+				payload: {},
+				beforeAppend: ctx.beforeAppend,
+			});
+
+			if (args.json || args.query) {
+				output({ ok: true, event: result.event.id, entity: `epic:${ctx.epicName}` }, args);
+			} else if (!args.quiet) {
+				output(`Activated epic ${pc.bold(ctx.epicName)}`, args);
+			}
+		} catch (error) {
+			handleInvariantError(error, args);
 		}
 	},
 });

@@ -25,20 +25,41 @@ const READ_ONLY_COMMANDS = new Set([
 	"learning:list",
 	"task:list",
 	"task:show",
+	"briefing:latest",
+	"project:show",
+	"subsystem:list",
+	"side-quest:list",
+	"side-quest:show",
+	"invariant:list",
+	"reviewer:list",
+	"rubric:list",
+	"refine:evaluate",
 ]);
 
 /**
  * Entity-identifying arg names. At least one of these (or a stdin schema
  * with a required name/id field) must be present on mutation commands.
  */
-const ENTITY_ARGS = new Set(["epic", "slice", "quest", "task", "id", "from", "to"]);
+const ENTITY_ARGS = new Set([
+	"epic",
+	"slice",
+	"quest",
+	"task",
+	"id",
+	"from",
+	"to",
+	"name",
+	"scope",
+	"side-quest",
+	"artifact-type",
+]);
 
 /**
  * Commands that operate on the entire project rather than targeting a specific entity.
  * Note: `init` is also project-scoped but lives in `READ_ONLY_COMMANDS`.
  */
 /** verify --fix writes project.json (signature repair), like migrate writes during schema upgrades. */
-const ENTITY_EXEMPT_COMMANDS = new Set(["migrate", "verify"]);
+const ENTITY_EXEMPT_COMMANDS = new Set(["migrate", "verify", "project:set-steering"]);
 
 /** Commands that accept stdin with required entity-identifying fields. */
 const STDIN_ENTITY_COMMANDS = new Set([
@@ -46,6 +67,16 @@ const STDIN_ENTITY_COMMANDS = new Set([
 	"quest:create", // stdin has required 'name'
 	"task:create", // stdin has required 'name'
 	"decision:create", // stdin has required 'id'
+	"subsystem:register", // stdin has required 'name'
+	"decision:record", // stdin has required 'id', 'domain', 'title', 'summary'
+	"decision:supersede", // stdin has required 'decisionId', 'reason'
+	"learning:capture", // stdin has required 'summary'
+	"learning:promote", // stdin has required 'learningId', 'from', 'to'
+	"invariant:check", // project-scoped, checks all invariants
+	"invariant:propose", // stdin has required invariant definition
+	"invariant:activate", // stdin has required invariant id
+	"invariant:deactivate", // stdin has required invariant id
+	"rubric:validate", // stdin has required rubric definition
 ]);
 
 describe("INV-004: Stateless commands — entity-identifying flags required", () => {
