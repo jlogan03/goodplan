@@ -69,6 +69,8 @@ Users install via: `/plugin marketplace add ian97531/goodplan`
 
 The Codex workflow attaches the Codex marketplace payload (`.agents/plugins/marketplace.json` plus `plugins/gp/`) as a release asset on the same tag. Both release workflows set `GOODPLAN_BINARY_PLATFORMS=macos-arm64,macos-x64,linux-arm64,linux-x64` so the published payload includes the full supported binary matrix. The `release` branch remains Claude-only.
 
+Codex currently ships skills and the bundled `gp` CLI only. Claude-style hook packaging is not included in the Codex plugin payload.
+
 ## Rollback
 
 Each release tags the previous release branch HEAD before force-pushing:

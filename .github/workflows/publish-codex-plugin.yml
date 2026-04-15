@@ -65,10 +65,8 @@ jobs:
 
           plugin_manifest = Path("plugins/gp/.codex-plugin/plugin.json")
           marketplace = Path(".agents/plugins/marketplace.json")
-          hooks = Path("plugins/gp/hooks.json")
           assert plugin_manifest.exists(), f"Missing {plugin_manifest}"
           assert marketplace.exists(), f"Missing {marketplace}"
-          assert hooks.exists(), f"Missing {hooks}"
 
           plugin = json.loads(plugin_manifest.read_text())
           market = json.loads(marketplace.read_text())

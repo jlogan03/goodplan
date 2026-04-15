@@ -365,11 +365,15 @@ function copySharedAssets() {
 	ensureDir(pluginRoot);
 	copyDir(join(repoRoot, "plugin", "skills"), join(pluginRoot, "skills"));
 	copyDir(join(repoRoot, "plugin", "agents"), join(pluginRoot, "agents"));
-	copyDir(join(repoRoot, "plugin", "hooks"), join(pluginRoot, "hooks"));
+	if (target === "claude") {
+		copyDir(join(repoRoot, "plugin", "hooks"), join(pluginRoot, "hooks"));
+	}
 	copyFile(join(repoRoot, "plugin", "bin", "gp"), join(pluginRoot, "bin", "gp"));
 	chmodSync(join(pluginRoot, "bin", "gp"), 0o755);
-	for (const hookScript of recursiveFiles(join(pluginRoot, "hooks")).filter((file) => file.endsWith(".sh"))) {
-		chmodSync(hookScript, 0o755);
+	if (target === "claude") {
+		for (const hookScript of recursiveFiles(join(pluginRoot, "hooks")).filter((file) => file.endsWith(".sh"))) {
+			chmodSync(hookScript, 0o755);
+		}
 	}
 }
 
@@ -403,7 +407,6 @@ function writeCodexManifest() {
 		license: pkg.license,
 		keywords: ["goodplan", "workflow", "planning", "epics", "coding"],
 		skills: "./skills/",
-		hooks: "./hooks.json",
 		interface: {
 			displayName: codexPluginDisplayName,
 			shortDescription: "Plan, track, and execute long-running coding work",
@@ -441,10 +444,6 @@ function prefixClaudeSkillNames() {
 
 function writeCodexCommands() {
 	copyDir(join(repoRoot, "plugin", "codex", "commands"), join(pluginRoot, "commands"));
-}
-
-function writeCodexHooks() {
-	copyFile(join(repoRoot, "plugin", "codex", "hooks.json"), join(pluginRoot, "hooks.json"));
 }
 
 function rewriteCodexCliExamples(text) {
@@ -830,7 +829,6 @@ function validateClaudeArtifacts() {
 function validateCodexArtifacts() {
 	console.log("\nValidating Codex plugin artifacts...");
 	const manifest = JSON.parse(loadText(join(pluginRoot, ".codex-plugin", "plugin.json")));
-	JSON.parse(loadText(join(pluginRoot, "hooks.json")));
 	validateCompiledBinaries();
 	if (manifest.name !== codexPluginName) {
 		throw new Error(`FAIL: Codex plugin manifest name must be ${codexPluginName}`);
@@ -873,7 +871,6 @@ function validateCodexArtifacts() {
 		throw new Error("FAIL: Codex status skill still contains Expertise output templates");
 	}
 	console.log("  plugin.json: valid JSON");
-	console.log("  hooks.json: valid JSON");
 	console.log(`  binaries: present (${buildPlatforms.map((buildPlatform) => buildPlatform.binaryDir).join(", ")})`);
 	console.log(`  marketplace.json: points to ${codexMarketplaceSourcePath}`);
 	console.log("  Claude-only placeholders: clean");
@@ -901,13 +898,12 @@ if (target === "claude") {
 	validateAgents();
 	validateMarkdownReferences();
 	validateClaudeArtifacts();
-} else {
-	rmSync(join(pluginRoot, "hooks", "hooks.json"), { force: true });
-	writeCodexManifest();
-	writeCodexHooks();
-	writeCodexCommands();
-	rewriteCodexSpecificFiles();
-	rewriteCodexMarkdown();
+	} else {
+		rmSync(join(pluginRoot, "hooks"), { recursive: true, force: true });
+		writeCodexManifest();
+		writeCodexCommands();
+		rewriteCodexSpecificFiles();
+		rewriteCodexMarkdown();
 	normalizePackagedFrontmatter(join(pluginRoot, "skills"), join(pluginRoot, "agents"), join(pluginRoot, "commands"));
 	validateSkillPackaging({ prefixedNames: false });
 	validateAgents();
