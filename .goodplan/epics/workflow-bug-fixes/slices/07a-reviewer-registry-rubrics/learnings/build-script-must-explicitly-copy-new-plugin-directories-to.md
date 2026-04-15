@@ -1,0 +1,1 @@
+scripts/build-plugin.sh needed an rsync line for plugin/rubrics/ to be included in the plugin distribution. Each new plugin subdirectory requires a corresponding build script update.

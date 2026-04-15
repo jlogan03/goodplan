@@ -1,1 +1,0 @@
-Removing the STATE_ALREADY_INITIALIZED guard fundamentally changes migrate from 'convert a pre-CLI project' to 'rebuild state from directory contents at any time.' The warning field on re-migration keeps the change safe and machine-parseable (INV-007 compliant).

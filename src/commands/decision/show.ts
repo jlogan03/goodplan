@@ -1,7 +1,7 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { resolveProjectDir } from "../../core/data/project.js";
 import { loadState } from "../../core/data/load.js";
+import { resolveProjectDir } from "../../core/data/project.js";
 import { getJsonl } from "../../core/tree.js";
 import type { DecisionEntry } from "../../schemas/records/decision.js";
 import { GoodplanError } from "../../util/errors.js";
@@ -36,10 +36,7 @@ export const decisionShowCommand = defineCommand({
 		const decision = decisions.find((d) => d.id === args.id);
 
 		if (decision === undefined) {
-			throw new GoodplanError(
-				"DATA_FILE_NOT_FOUND",
-				`Decision '${args.id}' not found`,
-			);
+			throw new GoodplanError("DATA_FILE_NOT_FOUND", `Decision '${args.id}' not found`);
 		}
 
 		if (args.json || args.query) {
@@ -58,7 +55,7 @@ export const decisionShowCommand = defineCommand({
 				lines.push(`  Scope: ${decision.entityPath}`);
 			}
 			if (decision.reconsiderWhen !== undefined && decision.reconsiderWhen.length > 0) {
-				lines.push(`  Reconsider when:`);
+				lines.push("  Reconsider when:");
 				for (const condition of decision.reconsiderWhen) {
 					lines.push(`    - ${condition}`);
 				}

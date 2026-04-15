@@ -1,1 +1,0 @@
-Moving the old directory aside and building fresh state eliminates all naming convention logic. The LLM provides clean names; the CLI never touches old naming schemes. The old directory serves as both backup and artifact source for copy.

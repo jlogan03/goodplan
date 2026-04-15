@@ -1,1 +1,0 @@
-The z.union([schemaNew, schemaLegacy]) approach let existing data validate while new features were built, but every code path touching learnings had to handle both variants. Phase 4 tightened the schema immediately after migration, simplifying 5+ files. Future schema migrations should plan union then tighten as an atomic pair.

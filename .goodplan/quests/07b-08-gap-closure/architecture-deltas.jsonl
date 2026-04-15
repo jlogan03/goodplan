@@ -1,0 +1,4 @@
+{"description":"Added 8 refine:* commands with CLI surface for the trust layer convergence evaluator","subsystem":"Refinement Commands","ts":"2026-04-13T00:38:13.592Z","type":"add"}
+{"description":"Added decision:record, decision:supersede, learning:capture, learning:promote as v2 event-based commands","subsystem":"Entity Commands","ts":"2026-04-13T00:38:13.592Z","type":"add"}
+{"description":"Added 12 side-quest:* commands with full v2 lifecycle (create through land)","subsystem":"Side-Quest Commands","ts":"2026-04-13T00:38:13.592Z","type":"add"}
+{"description":"Extended reducers for refinement events and new side-quest phase events. Added ConvergenceSnapshot.overridden, SideQuestState.planShapeApproved. Fixed ConvergenceConfig defaults.","subsystem":"Derived State","ts":"2026-04-13T00:38:13.592Z","type":"modify"}

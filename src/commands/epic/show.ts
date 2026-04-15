@@ -1,24 +1,25 @@
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { detectArtifacts } from "../../core/artifacts.js";
-import { loadState } from "../../core/data/load.js";
 import { resolveProjectDir } from "../../core/data/project.js";
-import { getDir, getJson } from "../../core/tree.js";
-import type { Epic } from "../../schemas/entities/epic.js";
+import { computeDerivedState } from "../../engine/derived-state/compute.js";
+import { serializeDerivedState } from "../../engine/derived-state/serialize.js";
+import { replayEvents } from "../../engine/events/replay.js";
 import { GoodplanError } from "../../util/errors.js";
 import { output } from "../../util/output.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `gp epic:show --epic <name>` — show full epic entity.
+ * `gp epic:show --epic <name>` (v2) — show epic state from event replay.
  *
- * Read-only: goes directly to the data layer, no RPC.
- * Returns the full epic.json content for the named epic.
+ * Replays the epic's events and returns the EpicState projection
+ * from derived state computation.
  */
 export const epicShowCommand = defineCommand({
 	meta: {
 		name: "epic:show",
-		description: "Show full epic entity details. Requires --epic flag.",
+		description: "Show full epic entity details from event-sourced state. Requires --epic flag.",
 	},
 	args: {
 		...globalArgs,
@@ -30,30 +31,50 @@ export const epicShowCommand = defineCommand({
 	},
 	setup() {},
 	async run({ args }) {
-		const projectDir = resolveProjectDir();
-		const state = loadState(projectDir);
+		const goodplanDir = resolveProjectDir();
+		const epicName = args.epic as string;
+		const epicEventsPath = path.join(goodplanDir, "epics", epicName, "events.jsonl");
 
-		const epic = getJson<Epic>(state, `epics/${args.epic}/epic.json`);
-		if (epic === undefined) {
-			throw new GoodplanError("DATA_FILE_NOT_FOUND", `Epic '${args.epic}' not found`);
+		if (!fs.existsSync(epicEventsPath)) {
+			const errorOutput = {
+				ok: false,
+				error: `Epic '${epicName}' not found`,
+				code: "ENTITY_NOT_FOUND",
+			};
+			if (args.json || args.query) {
+				output(errorOutput, args);
+			} else {
+				process.stderr.write(`${pc.red("Error")}: Epic '${epicName}' not found\n`);
+			}
+			process.exit(1);
 		}
 
+		const { events } = await replayEvents({ eventsPath: epicEventsPath });
+		const state = computeDerivedState(events);
+		const epicState = state.epics.get(epicName);
+
+		if (epicState === undefined) {
+			throw new GoodplanError(
+				"DATA_FILE_NOT_FOUND",
+				`Epic '${epicName}' has events but no derived state`,
+			);
+		}
+
+		// Serialize the epic state for output (Maps -> Records)
+		const serialized = serializeDerivedState(state);
+		const epicData = serialized.epics[epicName];
+
 		if (args.json || args.query) {
-			const artifacts = detectArtifacts(getDir(state, `epics/${args.epic}`), "epic", epic);
-			output({ ...epic, artifacts }, args);
+			output({ ok: true, ...epicData }, args);
 		} else if (!args.quiet) {
 			const lines: string[] = [];
-			lines.push(`${pc.bold(epic.name)}  ${epic.status}`);
-			lines.push(`  Goal: ${epic.goal}`);
-			lines.push(`  Created: ${epic.created}`);
-			if (epic.activated !== null) {
-				lines.push(`  Activated: ${epic.activated}`);
-			}
-			if (epic.verifications.length > 0) {
-				lines.push(`  Verifications: ${epic.verifications.length}`);
-			}
-			if (epic.refinement !== null) {
-				lines.push(`  Refinement: round ${epic.refinement.round}/${epic.refinement.maxRounds}`);
+			lines.push(`${pc.bold(epicName)}  phase=${epicState.phase}`);
+			lines.push(`  Active: ${epicState.active}`);
+			lines.push(`  Paused: ${epicState.paused}`);
+			lines.push(`  Completed: ${epicState.completed}`);
+			lines.push(`  Abandoned: ${epicState.abandoned}`);
+			if (epicState.goal !== null) {
+				lines.push(`  Goal: ${epicState.goal.sha.slice(0, 8)}...`);
 			}
 			output(lines.join("\n"), args);
 		}

@@ -1,0 +1,1 @@
+Slices 07b and 08 were scoped from memory/analysis instead of reading the original goal files, causing significant gaps. The original goals had detailed in-scope lists, verification criteria, and test tier specifications that were missed.

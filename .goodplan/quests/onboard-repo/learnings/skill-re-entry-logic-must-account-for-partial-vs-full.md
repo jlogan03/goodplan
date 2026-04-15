@@ -1,1 +1,0 @@
-A naive if .project/ exists stop guard makes all downstream re-entry guards unreachable. The pre-flight check should distinguish between a fully-onboarded project and a bare partial run using goodplan status --json for structured detection.

@@ -1,1 +1,0 @@
-The $GP environment variable is set by the plugin launcher for orchestrator skills. Non-orchestrator skills like start-epic should use bare gp (available on PATH from the plugin bin directory). Using $GP in a non-orchestrator skill silently produces empty commands.

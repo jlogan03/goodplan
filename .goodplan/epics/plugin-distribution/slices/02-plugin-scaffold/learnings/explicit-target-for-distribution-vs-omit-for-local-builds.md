@@ -1,1 +1,0 @@
-bun run build omits --target (host platform), build-plugin.sh uses --target=bun-darwin-arm64 (v1 distribution). This distinction matters for future cross-platform support.

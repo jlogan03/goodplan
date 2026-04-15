@@ -1,0 +1,1 @@
+Invariants run BEFORE state is computed. CheckContext breaks the circular dependency while remaining forward-compatible.

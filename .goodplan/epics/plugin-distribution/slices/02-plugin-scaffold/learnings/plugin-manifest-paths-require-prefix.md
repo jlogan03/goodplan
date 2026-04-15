@@ -1,1 +1,0 @@
-claude plugin validate rejects bare component paths like skills: "skills" — must be ./skills. Epic architecture doc (plugin-api.md) had this wrong. Future slices modifying plugin.json must use ./ prefix.

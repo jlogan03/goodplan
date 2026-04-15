@@ -1,0 +1,1 @@
+Rules like epic.architecture-shape-approval trigger on pressure-test domain events. appliesTo must list ALL triggering domains.

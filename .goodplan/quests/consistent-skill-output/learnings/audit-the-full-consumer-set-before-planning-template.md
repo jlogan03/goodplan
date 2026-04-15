@@ -1,1 +1,0 @@
-The initial plan identified 3 consumers per template group. Review found 2 more Done Summary consumers and 1 more Completion Summary consumer. Missing consumers leaves the same drift problem. Always grep for inline markers across ALL skill files before scoping.

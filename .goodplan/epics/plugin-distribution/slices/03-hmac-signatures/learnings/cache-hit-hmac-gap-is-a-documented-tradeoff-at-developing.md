@@ -1,1 +1,0 @@
-loadState cache-hit path skips HMAC reverification. Accepted at Developing maturity with gp verify as escape hatch. Architecture docs distinguish non-cache-hit verification from simplified claim.

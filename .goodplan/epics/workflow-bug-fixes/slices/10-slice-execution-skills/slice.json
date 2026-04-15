@@ -1,0 +1,11 @@
+{
+	"created": "2026-04-12T18:08:25.069Z",
+	"deferred": [],
+	"epic": "workflow-bug-fixes",
+	"goal": "Implement slice execution skills: plan-slice (Q&A + draft + refinement), implement (phase loop + completion), and create-side-quest.",
+	"implementationPhase": null,
+	"name": "10-slice-execution-skills",
+	"refinement": null,
+	"status": "abandoned",
+	"updated": "2026-04-12T18:09:47.185Z"
+}

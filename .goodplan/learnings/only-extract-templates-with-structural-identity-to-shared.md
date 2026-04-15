@@ -1,1 +1,0 @@
-When consolidating output templates across skills, only extract templates that are structurally identical (differing by at most a conditional prefix). Templates that diverge in structure should stay inline — shared extraction adds indirection without reducing duplication.

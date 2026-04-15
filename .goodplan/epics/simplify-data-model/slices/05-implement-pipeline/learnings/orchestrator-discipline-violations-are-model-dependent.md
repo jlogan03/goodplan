@@ -1,1 +1,0 @@
-Haiku does not reliably follow 'orchestrator must not Read artifact files' rules. Structural tests validate pipeline mechanics; quality tests (opus) validate behavioral invariants like context discipline.

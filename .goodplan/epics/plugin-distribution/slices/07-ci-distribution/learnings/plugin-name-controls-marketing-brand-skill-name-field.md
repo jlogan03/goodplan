@@ -1,1 +1,0 @@
-The plugin name field in plugin.json controls the marketing brand (what users see in /plugin listings), while skill names control the invocation prefix (/gp:explore). Auto-namespacing from the plugin name produces /goodplan:explore which is too verbose. Build-time namespace injection in dist SKILL.md files solves this.

@@ -1,1 +1,0 @@
-When planting CJS/ESM coexistence in a TypeScript fixture, CJS files with require() must use .cjs extension or be placed outside src/. TypeScript verbatimModuleSyntax flag will error on CJS syntax in .ts files within the include scope.

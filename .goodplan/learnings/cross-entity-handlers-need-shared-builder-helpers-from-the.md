@@ -1,1 +1,0 @@
-CONVERT_TASK's inlined entity creation duplicated quest/epic shapes until review extracted shared builders. Plans for cross-entity operations should include builder extraction as an explicit task upfront.

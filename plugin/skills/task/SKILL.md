@@ -57,6 +57,8 @@ If the user said something like "/task the error handling in migrate.ts needs fi
    Expected response: `{ "entity": "<slug>", "phase": "create-task", "previousStatus": "none", "newStatus": "open", "paths": {}, "nextCommands": [...] }`. Confirm creation succeeded by checking `newStatus` is `"open"`. Note: `title` is not in the response — use the title you derived in step 1.
 5. **Present result**: One-liner summary using your derived title and the CLI's confirmation:
    > Captured: **<title>** (while working on <active entity>, branch: <branch>)
+   >
+   > _Later: `/gp:task` to list, or convert to a quest with `task:convert`._
 
 ### Path B: Bare `/task` with no description
 
@@ -73,3 +75,17 @@ If the user said something like "/task the error handling in migrate.ts needs fi
 - **Use `--json`** for all CLI calls.
 - **Omit empty context fields**: Use conditional spread — don't include fields with undefined/null values.
 - **Name collisions**: If `task:create` returns an error about duplicate names, append `-2` to the slug and retry once.
+
+## Task Lifecycle
+
+Tasks are lightweight captures. After creation, they have two paths:
+
+- **Convert to quest**: When a task needs structured follow-up (research, planning, implementation), use `task:convert`. This creates a quest with the task's title as the goal and marks the task as converted.
+- **Drop**: When a task is no longer relevant, use `task:drop`.
+- **List open tasks**: Use `task:list --json`.
+
+See `cli-interaction.md` for full command syntax and examples.
+
+Tasks remain open until explicitly converted or dropped. The `/gp:status` skill shows open task count.
+
+> **Structured alternative**: For bugs with severity and classification metadata, consider `finding:capture` instead — it supports severity levels, categories, and links to affected subsystems.

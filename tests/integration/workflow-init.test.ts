@@ -23,13 +23,12 @@ describe("workflow: init", () => {
 
 			const projectDir = path.join(tmpDir, ".goodplan");
 			expect(fs.existsSync(projectDir)).toBe(true);
-			expect(fs.existsSync(path.join(projectDir, "project.json"))).toBe(true);
-			expect(fs.existsSync(path.join(projectDir, "activity-log.jsonl"))).toBe(true);
-			expect(fs.existsSync(path.join(projectDir, "overview.json"))).toBe(true);
+			// v2: init creates events.jsonl with project-initialized event
+			expect(fs.existsSync(path.join(projectDir, "events.jsonl"))).toBe(true);
 		});
 	});
 
-	it("returns JSON output with project name and version", async () => {
+	it("returns JSON output with ok, event, and entity", async () => {
 		await withTempDir((tmpDir, env) => {
 			const result = runCommand(bin, ["init", "--json"], {
 				cwd: tmpDir,
@@ -39,9 +38,10 @@ describe("workflow: init", () => {
 
 			expect(result.exitCode).toBe(0);
 			expect(result.json).toBeDefined();
-			const json = result.json as Record<string, unknown>;
-			expect(json.name).toBeDefined();
-			expect(json.version).toBeDefined();
+			const json = result.json as { ok: boolean; event: string; entity: string };
+			expect(json.ok).toBe(true);
+			expect(json.event).toBeTruthy();
+			expect(json.entity).toBe("project");
 		});
 	});
 
@@ -55,9 +55,11 @@ describe("workflow: init", () => {
 
 			expect(result.exitCode).toBe(0);
 
-			const projectJsonPath = path.join(tmpDir, ".goodplan", "project.json");
-			const projectJson = JSON.parse(fs.readFileSync(projectJsonPath, "utf-8")) as Record<string, unknown>;
-			expect(projectJson.name).toBe("my-custom-project");
+			// v2: verify name via status command (reads from event log)
+			const statusResult = runCommand(bin, ["status", "--json"], { cwd: tmpDir, env });
+			expect(statusResult.exitCode).toBe(0);
+			const status = statusResult.json as { project: { name: string } };
+			expect(status.project.name).toBe("my-custom-project");
 		});
 	});
 

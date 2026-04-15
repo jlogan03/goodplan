@@ -1,107 +1,115 @@
-# Project Conventions
+# Conventions
 
 ## Tech Stack
 
-- **Language:** TypeScript 6.0
-- **Runtime/Compiler:** Bun 1.3.x (`bun build --compile` for platform-specific binaries)
-- **CLI Framework:** citty 0.2.x (UnJS, pre-1.0 but actively maintained)
-- **Validation:** Zod 4.x (v4 for perf gains; use `@zod/mini` if bundle size matters)
-- **jq Queries:** @michaelhomer/jqjs 1.6.x (pure JS jq implementation, validated in prototype)
-- **Terminal Color:** picocolors 1.1.x
-- **Test Framework:** Vitest 4.x
+- **Language:** TypeScript 5.8, ESNext modules, `type: "module"`
+- **Runtime:** Bun (`bun-types`, `bun.lock` is the lockfile)
+- **Package manager:** Bun (`bun install`, `bun run <script>`)
+- **CLI framework:** citty
+- **Validation:** Zod v4 (note: see project memory re. `optional()` + `exactOptionalPropertyTypes` workarounds)
+- **Test framework:** Vitest 4
+- **Lint/format:** Biome 1.9
+- **Plugin runtime:** Claude Code plugin system (skills, agents, bash hooks)
+- **Agent SDK:** `@anthropic-ai/claude-agent-sdk` for end-to-end harnesses
 
 ## Repo Structure
 
 ```
-skills/                   # source of truth for goodplan workflow skills (12 skills)
-├── _shared/
-│   └── references/       # shared review criteria, preamble, conventions
-├── audit/                # /gp:audit — dispatches to architecture/docs/tests agents
-├── complete-epic/        # /gp:complete-epic — epic completion with learnings rollup
-├── create-epic/          # /gp:create-epic — 6-phase pipeline orchestrator
-├── create-side-quest/    # /gp:create-side-quest — 4-phase pipeline for quests
-├── explore/              # /gp:explore — iterative research/brainstorm/prototype
-├── implement/            # /gp:implement — implement plan with review loops
-├── init/                 # /gp:init — initialize project (onboard or new)
-├── plan-slice/           # /gp:plan-slice — plan creation + refinement pipeline
-├── start-epic/           # /gp:start-epic — approve and activate epic
-├── status/               # /gp:status — project state query
-├── task/                 # /gp:task — quick capture of bugs/ideas
-└── upgrade/              # /gp:upgrade — migrate project state format
-agents/                   # agent definitions spawned by skills (34 total)
-├── explore-phase.md, plan-phase.md, ...  # pipeline phase agents
-├── reviewer-*.md         # 20 domain specialist reviewers
-└── audit-*-phase.md      # audit mode agents
-src/
-├── commands/
-│   ├── epic/               # epic:create, epic:list, epic:show, epic:explore, epic:define-architecture,
-│   │                       # epic:refine-architecture, epic:define-slices, epic:refine-slices,
-│   │                       # epic:activate, epic:complete, epic:abandon, epic:add-verification,
-│   │                       # epic:update-verification
-│   ├── subagent/           # start-plan, start-refinement, start-implementation, start-explore,
-│   │                       # start-architecture, start-slices, start-refine-architecture,
-│   │                       # start-refine-slices, submit-plan, submit-refinement,
-│   │                       # submit-implementation, submit-explore, submit-architecture,
-│   │                       # submit-slices, submit-refine-architecture, submit-refine-slices
-│   │                       # (organizational dir; registered as flat top-level commands)
-│   ├── slice/              # slice:create, slice:list, slice:show, slice:plan, slice:refine-plan,
-│   │                       # slice:implement, slice:complete, slice:abandon
-│   ├── quest/              # quest:create, quest:list, quest:show, quest:explore, quest:plan,
-│   │                       # quest:refine-plan, quest:implement, quest:complete, quest:abandon
-│   ├── task/               # task:create, task:list, task:show, task:drop, task:convert
-│   ├── decision/           # decision:create, decision:update, decision:list, decision:show
-│   ├── learning/           # learning:rollup, learning:list
-│   └── global/
-├── core/
-│   ├── state/
-│   │   └── transitions/    # per-event transition handlers (epic-create, epic-phase, epic-refine,
-│   │                       # epic-lifecycle, epic-verify, slice-create, slice-plan, slice-submit,
-│   │                       # slice-implement, slice-complete, slice-abandon, quest-create,
-│   │                       # quest-explore, quest-plan, quest-implement, quest-complete, quest-abandon,
-│   │                       # task-create, task-lifecycle)
-│   ├── data/               # assemble/commit/load state tree, tree types, schema registry
-│   ├── rpc/                # workflow orchestration: init, begin, complete, submit, status, types
-│   └── context/            # context bundling: startContext, priorities, budget, collect, decisions, learnings
-├── schemas/
-│   ├── commands/           # Zod schemas for CLI input validation (epic.ts, slice.ts, quest.ts, task.ts, submit.ts, decision.ts, status.ts)
-│   ├── entities/           # Zod schemas for JSON entities (project, epic, slice, quest, task, overview)
-│   └── records/            # Zod schemas for JSONL records (activity-log, decision, learning, architecture-delta)
-├── util/                   # output, errors, validate, query (applyQuery jq helper)
-└── index.ts
+src/                       CLI source (compiled to dist/)
+  commands/                citty command modules, one dir per entity
+    decision/ epic/ global/ learning/ quest/ slice/ subagent/ task/
+    main.ts                CLI entrypoint
+  core/
+    artifacts.ts  tree.ts
+    context/               context bundling for skills
+    data/                  data layer (filesystem-backed records)
+    rpc/                   skill <-> CLI RPC (subagent commands)
+    state/                 state machine
+  schemas/                 Zod schemas
+    commands/ entities/ records/  state-events.ts  error-output.ts
+  util/                    shared helpers
+  types/                   shared TS types
+  index.ts  version.ts
+
+plugin/                    Source of truth for the installed plugin
+  skills/<name>/SKILL.md   12 namespaced /gp:* skills
+  agents/                  phase agents + reviewer agents + _references
+  hooks/                   pure-bash hooks (protect-state, warn-bash-state)
+  bin/                     gp launcher
+
 tests/
-├── unit/
-├── integration/
-├── fitness/
-└── fixtures/
+  unit/                    fast unit tests
+  integration/             multi-module CLI tests
+  fitness/                 architectural fitness functions
+  fixtures/                fixture repos
+  global-setup.ts
+
+tools/dogfood/             Agent SDK end-to-end harnesses (test-*.ts, validate*.ts)
+scripts/                   build-plugin.sh, generate-onboard-fixture.sh
+docs/                      Vision, work items, design docs, primer
+.goodplan/                 This repo's own dogfooded project state
 ```
 
 ## Dependency Management
 
-- **Package manager:** Bun (bun install, bun.lockb)
-- **Lockfile:** committed to repo
-- **No monorepo tooling** — single package
+- Lockfile: `bun.lock` (committed). No `package-lock.json` / `yarn.lock`.
+- Install: `bun install`. Scripts: `bun run check`, `bun run test`, `bun run build`.
+- No monorepo / workspaces.
 
 ## Code Style
 
-- **Linter/Formatter:** Biome (single tool, fast, TypeScript-native)
-- **Naming:** camelCase for variables/functions, PascalCase for types/classes, kebab-case for files and CLI commands
-- **Imports:** explicit named imports, no barrel files, `verbatimModuleSyntax: true`
-- **Strict TypeScript:** `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax` all enabled (per global CLAUDE.md)
+- **Formatter:** Biome — tabs (width 2), line width 100, organize imports on.
+- **Linter rules:** Biome recommended + `noUnusedImports`, `noUnusedVariables`, `noNonNullAssertion` all `error`.
+- **TypeScript strictness:** `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`, `forceConsistentCasingInFileNames`. No `as any`, no `@ts-ignore`.
+- **File naming:** kebab-case `.ts` files (`global-args.ts`, `state-events.ts`).
+- **Module layout:** flat per-entity directories under `src/commands/<entity>/`; no barrel files.
+- **Imports:** explicit `import type` for type-only (verbatimModuleSyntax requires it).
+- **Subsystem boundaries:** strictly typed public APIs; hide internals; expose only what's needed.
 
 ## Testing
 
-- **Framework:** Vitest 4.x
-- **Unit tests:** for core/ logic (state machine, context bundling, schema validation)
-- **Integration tests:** spawn compiled binary, send commands, assert JSON output
-- **No mocks for filesystem** — use temp directories with real .project/ structures from fixtures
-- **Coverage:** not enforced numerically, but all state transitions and validation paths must be tested
+- **Framework:** Vitest 4 (`bun run test` → `vitest`).
+- **Location:** `tests/{unit,integration,fitness}/` — separate from `src/`, NOT co-located.
+- **Naming:** `*.test.ts`.
+- **Fixtures:** `tests/fixtures/` (sample `.goodplan/` repos used by integration tests).
+- **Fitness tests:** `tests/fitness/` enforce architectural invariants (subsystem boundaries, schemas).
+- **End-to-end:** `tools/dogfood/test-*.ts` and `validate*.ts` use the Agent SDK to drive real Claude Code sessions against isolated fixture repos. Always use `opus` model for E2E validation. Never ask the user to run manual sessions.
+- **Verification rule:** every code change must be verified before completion (lint/build/test or live run).
+
+## CLI / `.goodplan/` State Conventions
+
+- All `.goodplan/` mutations go through the installed `gp` CLI. **Never write directly into `.goodplan/`** — HMAC + `protect-state.sh` hook will reject it.
+- Use `gp status --json --query '...'` to discover state; CLI is the only blessed reader for structured data too.
+- Commands are entity-namespaced: `gp epic:create`, `gp slice:start`, `gp quest:complete`, `gp learning:list`, `gp decision:list`, etc.
+- Skills (in `plugin/skills/`) call the CLI via subagent RPC (`src/core/rpc/`) — never bypass it.
+
+## Three-Worlds Discipline (repo-specific)
+
+This repo simultaneously **builds** the goodplan workflow and **uses** an installed copy of it to manage its own `.goodplan/`. Always keep these distinct:
+
+| World | Location | How to interact |
+|---|---|---|
+| Repo source | `src/`, `plugin/` | Edit directly. Source of truth. |
+| Installed plugin + `gp` on PATH | marketplace-managed | Use via `/gp:*` and `gp` CLI. Never edit. |
+| This repo's `.goodplan/` | `.goodplan/` here | Mutate only via installed `gp` CLI. |
+
+Test CLI changes against fixture repos in `/tmp`, never against this repo's `.goodplan/`. Test plugin/skill changes via `tools/dogfood/` harnesses with `createTestEnv()` isolation.
+
+## Git / PR Conventions
+
+- Commit format: short imperative subject line, optional version bump in parentheses. Examples from recent history: `Rewrite hooks in pure bash, drop python3 dependency (1.0.6)`, `Fix warn-bash-state.sh shell quoting bug, bump to 1.0.5`, `Bump version to 1.0.4`.
+- Single primary contributor (Ian White).
+- Branch: work primarily on `main`.
+- Releases bump `package.json` version inline with the relevant fix/feature commit.
+
+## CI
+
+No `.github/workflows/` files detected (only `.github/` exists without workflows). CI is effectively local: `bun run check`, `bun run test`, dogfood harnesses, and `bun run build` before publishing the plugin.
 
 ## Other Conventions
 
-- **Error handling:** structured errors with error codes. CLI exits with non-zero status and JSON error object on failure. No empty catch blocks.
-- **Logging:** stderr for diagnostics (only with `--verbose`), stdout for command output. Never mix.
-- **JSON output:** deterministic key ordering (alphabetical) for git merge friendliness. JSONL files are append-only.
-- **Environment variables:** `GOODPLAN_DIR` overrides default `.project/` location (useful for testing). `GOODPLAN_DEBUG=1` enables debug logging to stderr (dev/test only — use `--verbose` for production diagnostics).
-- **stdin for content:** mutations accept content via stdin (piped heredocs). Read-only commands use flags only.
-- **Skill development:** All goodplan workflow skills live in `skills/` as the source of truth (12 skills). Distributed as a Claude Code plugin via `bun run build`. Never edit installed plugin files directly. Commit skill changes explaining why and what changed (per global CLAUDE.md).
-- **Agent definitions:** Agent `.md` files in `agents/` are spawned by orchestrator skills. 20 reviewer agents + pipeline phase agents + audit mode agents (34 total).
+- **Hooks must be pure bash** — no python3, no node runtime dependency.
+- **macOS realpath caveat:** does not handle nonexistent paths; hook scripts must guard for this.
+- **Never bypass HMAC** — hooks and HMAC are integrity safeguards; CLI commands only, even if a skill says otherwise.
+- **Settings.json protection** — sub-agents must never modify `~/.claude/settings.json`; restore if changed.
+- **Build is explicit** — `bun run build` is user-initiated; never auto-build during development.

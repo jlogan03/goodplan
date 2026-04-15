@@ -7,7 +7,6 @@ import { loadState } from "../../../src/core/data/load.js";
 import type { StateCache } from "../../../src/core/data/load.js";
 import { ZERO_STATE } from "../../../src/core/data/tree.js";
 import type { ProjectState } from "../../../src/core/data/tree.js";
-import { GoodplanError } from "../../../src/util/errors.js";
 
 // ── Helpers ───────────────────────────────────────────────────
 
@@ -53,7 +52,7 @@ const activityEntry = {
 	summary: "Project initialized",
 };
 
-const validActivityEntry = JSON.stringify(activityEntry);
+const _validActivityEntry = JSON.stringify(activityEntry);
 
 beforeEach(() => {
 	tmpDir = fs.mkdtempSync(path.join(import.meta.dirname ?? ".", "load-test-"));
@@ -160,7 +159,7 @@ describe("loadState", () => {
 		// loadState should detect the changed directory mtime and pick up the new file
 		const state = loadState(projectDir());
 		expect(state.contents["notes.md"]).toBeDefined();
-		expect(state.contents["notes.md"]!.type).toBe("markdown");
+		expect(state.contents["notes.md"]?.type).toBe("markdown");
 	});
 
 	it("detects removed file and updates tree", () => {

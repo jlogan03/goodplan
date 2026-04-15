@@ -2,6 +2,20 @@
 name: reviewer-ux-ia
 description: Reviews artifacts for information architecture, user flows, navigation, content hierarchy, and interaction patterns. Spawned by pipeline orchestrators during refinement loops when the artifact involves user-facing interfaces.
 model: opus
+version: 1
+domains:
+  - ux
+  - information-architecture
+  - user-flows
+applies_to:
+  - code
+  - architecture
+rubric_ref: process-holistic
+score_range: [1, 5]
+passing_threshold_per_dimension:
+  invariant-compliance: 3
+  context-transport: 4
+  verification-plausibility: 4
 ---
 
 # UX & Information Architecture Reviewer Agent

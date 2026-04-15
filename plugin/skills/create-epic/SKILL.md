@@ -1,6 +1,6 @@
 ---
 name: create-epic
-description: This skill should be used when the user wants to create a new epic or start a new project. Guides through goal capture, exploration, architecture design, and slice definition. Common triggers: 'create epic', 'new epic', 'start project', 'new project', 'I have a new idea', 'add epic', 'start fresh'.
+description: This skill should be used when the user wants to create a new epic or start a new project. Guides through goal capture, exploration, architecture design, pressure-testing, and slice definition. Common triggers: 'create epic', 'new epic', 'start project', 'new project', 'I have a new idea', 'add epic', 'start fresh'.
 user-invocable: true
 requires: gp >= 1.0.0
 ---
@@ -17,14 +17,25 @@ requires: gp >= 1.0.0
 
 ## Phase Table
 
-| Phase | Type | CLI Status Transition | What Happens |
-|---|---|---|---|
-| 1. Goal capture | Interactive | `created` | Ask user about epic goal, `gp epic:create` |
-| 2. Explore | Autonomous | `created` -> `exploring` -> `explored` | Spawn explore-phase agent, user-controlled exit |
-| 3. Architecture Q&A | Interactive | `explored` -> `defining-architecture` | Broad + deep design Q&A via AskUserQuestion |
-| 4. Architecture draft + refinement | Autonomous | `defining-architecture` -> `architecture-defined` -> `refining-architecture` -> `architecture-refined` | Spawn architecture-phase, then refinement loop |
-| 5. Slices Q&A | Interactive | `architecture-refined` -> `defining-slices` | Scope/ordering discussion via AskUserQuestion |
-| 6. Slices draft + refinement | Autonomous | `defining-slices` -> `slices-defined` -> `refining-slices` -> `slices-refined` | Spawn slices-phase, then refinement loop |
+| Phase | Type | What Happens |
+|---|---|---|
+| P1. Goal capture | Collaborative | Design-tree interviewing for goal, `epic:create` + `epic:goal-draft` + `epic:goal-commit` |
+| P2. Explore | Collaborative | `epic:explore-start`, spawn explore-phase, user-controlled exit, `epic:explore-conclude` |
+| P3. Architecture shape | Collaborative (Q&A) + Autonomous (draft/refine) | Architecture Q&A with design-tree interviewing, `epic:architecture-draft` + `epic:architecture-commit`, shape checkpoint |
+| P4. Pressure-test | Autonomous | Spawn pressure-test-phase agent, `epic:pressure-test-draft` + `epic:pressure-test-commit`, finding dispositions |
+| P5. Slice-set shape | Collaborative (Q&A) + Autonomous (draft/refine) | Slices Q&A, `epic:slices-draft` + `epic:slices-commit`, shape checkpoint |
+
+### Collaborative vs Autonomous Phase Awareness
+
+| Phase | Mode | Behavior |
+|---|---|---|
+| P1 Goal capture | Collaborative | Always uses AskUserQuestion, design-tree interviewing |
+| P2 Explore | Collaborative | User-controlled exploration cycles |
+| P3 Architecture | Mixed | Q&A is collaborative; draft+refine is autonomous (respects steering) |
+| P4 Pressure-test | Autonomous | Agent runs independently; findings presented to user for disposition |
+| P5 Slices | Mixed | Q&A is collaborative; draft+refine is autonomous (respects steering) |
+
+Before autonomous phases (P4, autonomous parts of P3/P5), check steering preference via `epic:show --epic $EPIC_NAME --json` and read the `steering` field to determine behavior.
 
 @${CLAUDE_PLUGIN_ROOT}/skills/_references/expertise-tracking.md
 
@@ -38,35 +49,29 @@ Accept an epic name as argument, or auto-detect:
 
 1. **Argument provided**: use it directly as `EPIC_NAME`.
 2. **No argument**: query `$GP status --json`. Check `.activeEpic` — if present, use `.activeEpic.name`. Otherwise, use AskUserQuestion to ask the user for the epic name.
-3. If the user wants to create a new epic (no existing epic), proceed to Phase 1 goal capture.
+3. If the user wants to create a new epic (no existing epic), proceed to P1 goal capture.
 
 ## Step 2 — Re-Entry Detection
 
-Query current epic status (if the epic exists):
+Query current epic state (if the epic exists):
 
 ```bash
 $GP epic:show --epic $EPIC_NAME --json
 ```
 
-If the epic doesn't exist yet (command fails with entity-not-found), proceed to Phase 1 (goal capture) to create it.
+If the epic doesn't exist yet (command fails with entity-not-found), proceed to P1 (goal capture) to create it.
 
-Map the `status` field to resume the pipeline:
+Map the `phase` field from the response to resume the pipeline:
 
-| Status | Action |
-|---|---|
-| `created` | Proceed to Phase 2 (explore). Goal already captured. |
-| `exploring` | Resume Phase 2 — check if `$TMPDIR/continuation.md` exists; if so, re-spawn explore-phase with it. If not (e.g., /tmp cleaned), re-spawn without continuation (agent starts fresh exploration). |
-| `explored` | Skip to Phase 3 (architecture Q&A). |
-| `defining-architecture` | Resume Phase 3 — continue architecture Q&A. |
-| `architecture-defined` | Skip to Phase 4 refinement — begin refinement loop. Context from `start-refine-architecture` includes the architecture files (no temp Q&A needed). |
-| `refining-architecture` | Resume Phase 4 — continue refinement loop. |
-| `architecture-refined` | Skip to Phase 5 (slices Q&A). |
-| `defining-slices` | Resume Phase 5 — continue slices Q&A. |
-| `slices-defined` | Skip to Phase 6 refinement — begin refinement loop. |
-| `refining-slices` | Resume Phase 6 — continue refinement loop. |
-| `slices-refined` | Pipeline already complete. Use AskUserQuestion: "Epic is fully defined. View status / Activate with /gp:start-epic" |
-| `activated` | Epic already active. Inform user. |
-| Other | Stop: "Epic is in `{status}` status — not in the create-epic pipeline flow." |
+| Phase | Meaning | Action |
+|---|---|---|
+| `P0` | Created, no goal yet | Resume P1 — goal capture (draft + commit goal). |
+| `P1` | Goal committed, ready for exploration | Proceed to P2 (explore). |
+| `P2` | Exploration concluded, ready for architecture | Skip to P3 (architecture Q&A). |
+| `P3` | Architecture committed | Check `architectureShapeApproved`: if false, resume shape checkpoint. If true, proceed to P4 (pressure-test). |
+| `P4` | Pressure-test committed | Proceed to P5 (slices Q&A). |
+| `P5` | Slices committed | Check `sliceSetShapeApproved`: if false, resume shape checkpoint. If true, pipeline complete. |
+| `P6` | Activated (epic is live) | Epic already active. Inform user. |
 
 Present re-entry context to the user: "Epic **{EPIC_NAME}** is in progress. Completed: {completed phases}. Next: {next phase}. Continue / Go back to a previous phase?"
 
@@ -83,28 +88,43 @@ mkdir -p "$TMPDIR"
 
 Log to stderr: `[create-epic] Working directory: $TMPDIR`
 
-## Step 3 — Phase 1: Interactive Goal Capture
+## Step 3 — P1: Interactive Goal Capture with Design-Tree Interviewing
 
 ### 3a. Goal Capture
 
-If the epic doesn't exist yet:
+If the epic doesn't exist yet, create it first:
 
-Use AskUserQuestion to ask the user about the epic goal:
-- "What is this epic about? What do you want to achieve?"
-- Follow up on answers that raise new questions. Cover goal, motivation, and rough scope.
-- Continue until the user signals readiness.
+```bash
+$GP epic:create --name $EPIC_NAME --json
+```
+
+This creates the epic directory and emits the `epic-created` event only (no goal). Verify the response includes the epic entity.
+
+Then use **design-tree interviewing** to capture the goal. Instead of open-ended questions, present structured alternatives at each branch:
+
+1. **Goal**: "What is this epic about?" — present 2-3 possible goal framings based on the user's initial description. Let the user choose or propose their own.
+2. **Motivation**: "What's driving this?" — present alternative motivations (e.g., user-facing value, tech debt reduction, scalability, compliance). User selects or refines.
+3. **Scope**: "How broad should this be?" — present 2-3 scope alternatives (minimal, moderate, comprehensive). User picks the right boundary.
+4. **Key constraints**: "What constraints matter most?" — present common constraint categories (time, compatibility, performance, team size). User identifies which apply.
+5. Continue until the user signals readiness. At each branch, present alternatives and let the user choose or propose their own.
 
 Write the goal summary to `$TMPDIR/goal.md` using the Write tool.
 
-Create the epic via CLI:
+Draft and commit the goal via CLI:
 
 ```bash
-echo "{\"name\":\"$EPIC_NAME\",\"goal\":\"<goal-summary>\"}" | $GP epic:create --json
+echo '{"content":"<goal-summary-content>"}' | $GP epic:goal-draft --epic $EPIC_NAME --json
 ```
 
-Verify the response includes `entity` and `newStatus: "created"`.
+```bash
+$GP epic:goal-commit --epic $EPIC_NAME --json
+```
 
-If the epic already exists (re-entry), load the existing goal from the CLI response (`gp epic:show` output) — do not re-ask.
+Verify the response confirms the goal was committed (phase advances to P1).
+
+If the epic already exists at P0 (re-entry with no goal yet), skip `epic:create` and proceed directly to goal drafting.
+
+If the epic already exists at P1 or later (re-entry with goal committed), load the existing goal from `epic:show` output — do not re-ask.
 
 ### 3b. Expertise Calibration
 
@@ -112,53 +132,37 @@ Use the guard pattern and format from expertise-tracking.md (auto-included above
 
 Load existing expertise data (if any) to calibrate communication depth for the rest of this epic. If the user's expertise profile doesn't exist yet, observe their responses during goal capture to build an initial profile. Update the expertise file following the guard and format from the reference.
 
-## Step 4 — Phase 2: Autonomous Explore
+## Step 4 — P2: Collaborative Explore
 
 @${CLAUDE_PLUGIN_ROOT}/skills/_references/explore-phase-pattern.md
 
-Follow the shared explore phase pattern defined in explore-phase-pattern.md (auto-included above) with these values:
+Follow the shared explore phase pattern defined in explore-phase-pattern.md (auto-included above). This is an **epic-scope** invocation, so use the epic command set from the pattern:
 
-| Placeholder | Value |
+| Step | Command |
 |---|---|
-| `{ENTITY_TYPE}` | `epics` |
-| `{ENTITY_TYPE-singular}` | `epic` |
-| `{ENTITY_NAME}` | `$EPIC_NAME` |
-| `{ENTITY_CLI_FLAG}` | `--epic` |
-| `{START_EXPLORE_EXTRA_FLAGS}` | _(none)_ |
+| Start exploration | `$GP epic:explore-start --epic $EPIC_NAME --json` |
+| Capture research artifact | `$GP epic:research-capture --epic $EPIC_NAME --json` |
+| Capture brainstorm artifact | `$GP epic:brainstorm-capture --epic $EPIC_NAME --json` |
+| Conclude exploration | `$GP epic:explore-conclude --epic $EPIC_NAME --json` |
 
-## Step 5 — Phase 3: Interactive Architecture Q&A
+## Step 5 — P3: Architecture Shape (Mixed: Collaborative Q&A + Autonomous Draft/Refine)
 
-### 5a. Status Transition
+### 5a. Design-Tree Architecture Q&A
 
-```bash
-$GP epic:define-architecture --epic $EPIC_NAME --json
-```
-
-Transitions `explored` -> `defining-architecture`. Verify success.
-
-### 5b. Load Context
-
-```bash
-$GP start-architecture --epic $EPIC_NAME --json
-```
-
-Returns a `ContextBundle` with explore output, goal, conventions.
-
-### 5c. Design Tree Q&A
-
-Run a structured design Q&A using AskUserQuestion. Two passes:
+Run a structured design Q&A using AskUserQuestion with **design-tree interviewing**. At each decision point, present 2-3 alternatives and let the user choose or propose their own.
 
 **Broad pass** (3-5 questions):
-- What are the major subsystems or components?
-- What are their responsibilities and boundaries?
-- How do they communicate (APIs, events, shared state)?
+- What are the major subsystems or components? Present 2-3 possible decompositions based on the goal and exploration output.
+- What are their responsibilities and boundaries? Present alternative boundary definitions.
+- How do they communicate (APIs, events, shared state)? Present communication pattern alternatives.
 - Present the subsystem map for confirmation. Move to deep pass when user confirms.
 
 **Deep pass** (2-3 questions per subsystem, cap at 3 subsystems in detail; remaining get 1 question each; total Q&A under 15 questions):
 - For each subsystem: API surfaces, data models, communication patterns.
+- At each decision point, present 2-3 alternatives rather than asking open-ended questions.
 - User can say "that's enough detail" to move on at any time.
 
-### 5d. Write Q&A Summary
+### 5b. Write Q&A Summary
 
 Write the structured Q&A to the temp directory using the Write tool:
 
@@ -188,31 +192,21 @@ Format:
 {anything flagged during Q&A}
 ```
 
-## Step 6 — Phase 4: Autonomous Architecture Draft + Refinement
+### 5c. Spawn Architecture-Phase Agent
 
-### 6a. Spawn Architecture-Phase Agent
+Check steering preference via `$GP epic:show --epic $EPIC_NAME --json` — read the `steering` field.
 
-Spawn `architecture-phase` with: epic name, Q&A summary path (`$TMPDIR/architecture-qa.md`), output directory (from `epic:define-architecture` response `paths.architecture` in Step 5a), goal, ContextBundle (inline, references, decisions, learnings), active conditions. Tools: Read, Grep, Glob, Write, Bash. No Agent tool.
+Spawn `architecture-phase` with: epic name, Q&A summary path (`$TMPDIR/architecture-qa.md`), output directory, goal, ContextBundle (inline, references, decisions, learnings), active conditions. Tools: Read, Grep, Glob, Write, Bash. No Agent tool.
 
-Parse return: SUCCESS → extract `filesWritten`, proceed. PARTIAL → present `questions` via AskUserQuestion, re-spawn with answers. FAILED → stop. Surface any `triggeredConditions` to user.
+Parse return: SUCCESS -> extract `filesWritten`, proceed. PARTIAL -> present `questions` via AskUserQuestion, re-spawn with answers. FAILED -> stop. Surface any `triggeredConditions` to user.
 
-### 6b. Submit Architecture
-
-```bash
-stdin: "" | $GP submit-architecture --epic $EPIC_NAME --json
-```
-
-Transitions `defining-architecture` -> `architecture-defined`. No stdin payload required.
-
-### 6c. Begin Refinement
+### 5d. Draft and Commit Architecture
 
 ```bash
-stdin: "" | $GP epic:refine-architecture --epic $EPIC_NAME --json
+$GP epic:architecture-draft --epic $EPIC_NAME --json
 ```
 
-Transitions `architecture-defined` -> `refining-architecture`.
-
-### 6d. Architecture Refinement Loop
+### 5e. Architecture Refinement Loop
 
 @${CLAUDE_PLUGIN_ROOT}/skills/_references/iteration-loop.md
 
@@ -222,36 +216,73 @@ Set `maxIterations = parseInt($GP_CREATE_EPIC_MAX_ITERATIONS) || 3`.
 
 Use `$TMPDIR/architecture-refining/` as the run directory (following iteration-loop.md's round-based structure: `round-{N}/reviews/`, `round-{N}/merged.md`).
 
-Each round: load context via `$GP start-refine-architecture --epic $EPIC_NAME --json`, then follow iteration-loop.md's Reviewer Spawn Pattern → Synthesis → Editor → Exit Criteria Evaluation. Pass the ContextBundle inline context and reference paths to each agent. Write each reviewer's `review` field to `$TMPDIR/architecture-refining/round-{N}/reviews/{reviewer-name}.md`. Spawn synthesis agent with output path `$TMPDIR/architecture-refining/round-{N}/merged.md`.
+Each round follows the iteration-loop.md pattern: Reviewer Spawn -> Synthesis -> Editor -> Exit Criteria Evaluation. The `refine:*` commands are called at each stage per the iteration-loop.md protocol to create an auditable event trail.
 
-Submit each round:
+### 5f. Commit Architecture
+
+After refinement converges:
+
 ```bash
-echo '{"scores":{REVIEWER_SCORES_JSON}}' | $GP submit-refine-architecture --epic $EPIC_NAME --json
+$GP epic:architecture-commit --epic $EPIC_NAME --json
 ```
-
-**Exit flow**: The orchestrator evaluates exit criteria per iteration-loop.md. On normal pass (score >= 9), submit without `--override` — the CLI confirms via `response.advanced: true`. On stagnation/reduction/cap exits, append `--override` to force the CLI to advance. If `response.advanced` is `false` without `--override`, the CLI's circuit breaker disagrees — continue the loop.
 
 Log: `[create-epic] Architecture refinement complete. Rounds: {N}, Scores: {scores}, Reason: {reason}`
 
-## Step 7 — Phase 5: Interactive Slices Q&A
-
-### 7a. Status Transition
+### 5g. Architecture Shape Checkpoint
 
 ```bash
-$GP epic:define-slices --epic $EPIC_NAME --json
+$GP epic:architecture-shape-start --epic $EPIC_NAME --json
 ```
 
-Transitions `architecture-refined` -> `defining-slices`. Verify success.
+Check steering preference via `$GP epic:show --epic $EPIC_NAME --json`:
 
-### 7b. Load Context
+- **Autonomous steering**: Call `$GP epic:architecture-shape-auto --epic $EPIC_NAME --json` to auto-approve.
+- **Collaborative steering** (default): Present a summary of the architecture to the user. Use AskUserQuestion: "Architecture shape is ready for review. Here's a summary: {key subsystems, boundaries, communication patterns}. Approve this architecture shape? / Request changes?" On approval, call `$GP epic:architecture-shape-approve --epic $EPIC_NAME --json`.
+
+## Step 6 — P4: Autonomous Pressure-Test
+
+After architecture shape is approved:
+
+### 6a. Spawn Pressure-Test-Phase Agent
+
+Spawn `pressure-test-phase` with: architecture-target file paths (from `epic:show` response), subsystem context (from `subsystem:list --json`), epic goal path, conventions path, inline context and reference paths from context bundle. Tools: Read, Grep, Glob, Write. No Agent tool. No Bash.
+
+The agent analyzes the architecture across five failure-mode classes:
+- **Scalability risks** — components that won't scale with expected growth
+- **Integration fragility** — coupling points, brittle interfaces, missing error handling
+- **Assumption violations** — implicit assumptions that could be wrong
+- **Missing capabilities** — gaps in the architecture for stated goals
+- **Operational blind spots** — deployment, monitoring, debugging gaps
+
+Parse return: SUCCESS -> extract `filesWritten` and `findings` array. PARTIAL -> log warning, proceed with available findings. FAILED -> stop with error.
+
+### 6b. Draft and Commit Pressure-Test
 
 ```bash
-$GP start-slices --epic $EPIC_NAME --json
+$GP epic:pressure-test-draft --epic $EPIC_NAME --json
 ```
 
-Returns `ContextBundle` with architecture, goal, conventions.
+```bash
+$GP epic:pressure-test-commit --epic $EPIC_NAME --json
+```
 
-### 7c. Slices Q&A
+### 6c. Finding Dispositions
+
+For each finding in the pressure-test report, present to the user and record disposition:
+
+1. Present the finding: class, severity, description, affected subsystem(s), recommendation.
+2. Use AskUserQuestion: "How do you want to handle this finding? Accept risk / Mitigate now / Defer to implementation / Dismiss (with reason)"
+3. Record the disposition:
+
+```bash
+echo '{"findingId":"<id>","disposition":"<accept|mitigate|defer|dismiss>","reason":"<user-reason>"}' | $GP epic:pressure-test-finding-disposition --epic $EPIC_NAME --json
+```
+
+All findings must be dispositioned before proceeding to P5.
+
+## Step 7 — P5: Slice-Set Shape (Mixed: Collaborative Q&A + Autonomous Draft/Refine)
+
+### 7a. Slices Q&A
 
 Use AskUserQuestion to discuss slice scope and ordering:
 
@@ -263,7 +294,7 @@ Use AskUserQuestion to discuss slice scope and ordering:
 
 Continue until the user signals readiness.
 
-### 7d. Write Q&A Summary
+### 7b. Write Q&A Summary
 
 Write to `$TMPDIR/slices-qa.md`:
 
@@ -286,15 +317,15 @@ Write to `$TMPDIR/slices-qa.md`:
 {anything flagged during Q&A}
 ```
 
-## Step 8 — Phase 6: Autonomous Slices Draft + Refinement
+### 7c. Spawn Slices-Phase Agent
 
-### 8a. Spawn Slices-Phase Agent
+Check steering preference via `$GP epic:show --epic $EPIC_NAME --json`.
 
 Spawn `slices-phase` with: epic name, Q&A summary path (`$TMPDIR/slices-qa.md`), temp directory (`$TMPDIR/slices-draft`), goal, ContextBundle (inline, references). Tools: Read, Grep, Glob, Write. No Agent tool.
 
-Parse return: SUCCESS → extract `filesWritten` and `slices` array (`{name, goal}` pairs). PARTIAL → present `questions` via AskUserQuestion, re-spawn with answers. FAILED → stop.
+Parse return: SUCCESS -> extract `filesWritten` and `slices` array (`{name, goal}` pairs). PARTIAL -> present `questions` via AskUserQuestion, re-spawn with answers. FAILED -> stop.
 
-### 8b. Create Slices via CLI
+### 7d. Create Slices via CLI
 
 For each slice in the agent's `slices` array, create via CLI:
 
@@ -306,44 +337,42 @@ Use the structured `{name, goal}` metadata from the agent return — do not pars
 
 If any `slice:create` call fails, stop immediately and surface the error. Partial slice creation is acceptable — re-entry will detect existing slices on the next run.
 
-### 8c. Copy Artifacts
-
-Copy per-slice goal.md files from temp dir to `<paths.slices>/<slice-name>/goal.md`, where `paths.slices` comes from the `epic:define-slices` response in Step 7a and `<slice-name>` from each entry in the slices array. Copy sequencing.md to `<paths.slices>/sequencing.md`. Note: `slice:create` returns empty `paths: {}` — use the `epic:define-slices` path instead. Use shell `cp` via Bash tool (not Read+Write).
-
-### 8d. Submit Slices
+### 7e. Draft and Commit Slices
 
 ```bash
-stdin: "" | $GP submit-slices --epic $EPIC_NAME --json
+$GP epic:slices-draft --epic $EPIC_NAME --json
 ```
 
-Transitions `defining-slices` -> `slices-defined`.
+### 7f. Slices Refinement Loop
 
-### 8e. Begin Refinement
-
-```bash
-stdin: "" | $GP epic:refine-slices --epic $EPIC_NAME --json
-```
-
-Transitions `slices-defined` -> `refining-slices`.
-
-### 8f. Slices Refinement Loop
-
-Same pattern as architecture refinement (Step 6d), using the **Slices Loop Parameters** at the end of this file. Initialize fresh tracking state per iteration-loop.md.
+Same pattern as architecture refinement (Step 5e), using the **Slices Loop Parameters** at the end of this file. Initialize fresh tracking state per iteration-loop.md.
 
 Use `$TMPDIR/slices-refining/` as the run directory (separate from architecture refinement to avoid artifact collision).
 
-Each round: load context via `$GP start-refine-slices --epic $EPIC_NAME --json`, then follow the same Reviewer → Synthesis → Editor → Exit pattern. Write each reviewer's `review` field to `$TMPDIR/slices-refining/round-{N}/reviews/{reviewer-name}.md`. Spawn synthesis agent with output path `$TMPDIR/slices-refining/round-{N}/merged.md`.
+Each round follows the iteration-loop.md pattern with `refine:*` commands for the `slices` artifact.
 
-Submit each round:
+### 7g. Commit Slices
+
+After refinement converges:
+
 ```bash
-echo '{"scores":{REVIEWER_SCORES_JSON}}' | $GP submit-refine-slices --epic $EPIC_NAME --json
+$GP epic:slices-commit --epic $EPIC_NAME --json
 ```
-
-Same exit flow as architecture refinement: submit without `--override` on normal pass, with `--override` on stagnation/reduction/cap exits.
 
 Log: `[create-epic] Slices refinement complete. Rounds: {N}, Scores: {scores}, Reason: {reason}`
 
-## Step 9 — Cleanup
+### 7h. Slice-Set Shape Checkpoint
+
+```bash
+$GP epic:slice-set-shape-start --epic $EPIC_NAME --json
+```
+
+Check steering preference via `$GP epic:show --epic $EPIC_NAME --json`:
+
+- **Autonomous steering**: Call `$GP epic:slice-set-shape-auto --epic $EPIC_NAME --json` to auto-approve.
+- **Collaborative steering** (default): Present a summary of the slice set to the user. Use AskUserQuestion: "Slice-set shape is ready for review. Here's a summary: {slice count, ordering, key dependencies}. Approve this slice-set shape? / Request changes?" On approval, call `$GP epic:slice-set-shape-approve --epic $EPIC_NAME --json`.
+
+## Step 8 — Cleanup
 
 On successful completion (no errors), delete the temp directory:
 ```bash
@@ -355,7 +384,7 @@ On any error, preserve it for debugging and log:
 [create-epic] Artifacts preserved at: $TMPDIR
 ```
 
-## Step 10 — Done Summary
+## Step 9 — Done Summary
 
 Present results to the user:
 
@@ -364,22 +393,26 @@ Present results to the user:
 - **Epic**: {EPIC_NAME}
 - **Architecture refinement rounds**: {count}
 - **Architecture final score**: {score}/10
+- **Architecture shape**: {approved/auto-approved}
+- **Pressure-test findings**: {total count} ({mitigated}/{accepted}/{deferred}/{dismissed})
 - **Slices refinement rounds**: {count}
 - **Slices final score**: {score}/10
+- **Slice-set shape**: {approved/auto-approved}
 - **Slices created**: {count}
 - **Next step**: /gp:start-epic {EPIC_NAME}
 ```
 
 ## Architecture Loop Parameters
 
-Parameters for the iteration-loop.md shared reference (auto-included in Step 6d above):
+Parameters for the iteration-loop.md shared reference (auto-included in Step 5e above):
 
 | Parameter | Value |
 |---|---|
 | **max_iterations** | 3 (override via `$GP_CREATE_EPIC_MAX_ITERATIONS` env var for test harness cost control) |
 | **override_flag** | `--override` — appended to submit command on stagnation/reduction/cap exits |
 | **run_dir_mode** | `temp` |
-| **submit_command** | `echo '{"scores":{REVIEWER_SCORES_JSON}}' \| $GP submit-refine-architecture --epic $EPIC_NAME --json` |
+| **artifact** | `architecture` -- passed to all `refine:*` commands as `--artifact architecture` |
+| **scope_flag** | `--epic $EPIC_NAME` |
 | **stagnation_window** | 2 |
 | **reduction_exit_threshold** | 2 |
 | **resume_detection** | yes — deterministic temp dir means prior rounds may exist on re-entry |
@@ -387,14 +420,15 @@ Parameters for the iteration-loop.md shared reference (auto-included in Step 6d 
 
 ## Slices Loop Parameters
 
-Parameters for the iteration-loop.md shared reference (used in Step 8f above):
+Parameters for the iteration-loop.md shared reference (used in Step 7f above):
 
 | Parameter | Value |
 |---|---|
 | **max_iterations** | 3 (override via `$GP_CREATE_EPIC_MAX_ITERATIONS` env var for test harness cost control) |
 | **override_flag** | `--override` — appended to submit command on stagnation/reduction/cap exits |
 | **run_dir_mode** | `temp` |
-| **submit_command** | `echo '{"scores":{REVIEWER_SCORES_JSON}}' \| $GP submit-refine-slices --epic $EPIC_NAME --json` |
+| **artifact** | `slices` -- passed to all `refine:*` commands as `--artifact slices` |
+| **scope_flag** | `--epic $EPIC_NAME` |
 | **stagnation_window** | 2 |
 | **reduction_exit_threshold** | 2 |
 | **resume_detection** | yes — deterministic temp dir means prior rounds may exist on re-entry |
@@ -406,3 +440,6 @@ Parameters for the iteration-loop.md shared reference (used in Step 8f above):
 
 Additional cases:
 - **slice:create failure**: Stop immediately, surface error. Partial creation is OK — re-entry handles it.
+- **Shape checkpoint failure**: If `epic:architecture-shape-start` or `epic:slice-set-shape-start` fails, surface the error. The user may need to re-run `create-epic` to retry.
+- **Pressure-test agent failure**: If the pressure-test agent fails, log the error and ask the user whether to skip pressure-testing and proceed to slices, or abort.
+- **Finding disposition failure**: If `epic:pressure-test-finding-disposition` fails for a finding, surface the error and retry. All findings must be dispositioned before proceeding.

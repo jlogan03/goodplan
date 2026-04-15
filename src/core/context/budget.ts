@@ -34,10 +34,7 @@ export interface BudgetResult {
  * - Budget is measured in bytes via `Buffer.byteLength(content, 'utf8')`,
  *   not `string.length` (which returns UTF-16 code units and undercounts multi-byte chars).
  */
-export function applyBudget(
-	entries: CollectedEntry[],
-	budget: number,
-): BudgetResult {
+export function applyBudget(entries: CollectedEntry[], budget: number): BudgetResult {
 	if (entries.length === 0) {
 		return { inline: {}, references: [] };
 	}

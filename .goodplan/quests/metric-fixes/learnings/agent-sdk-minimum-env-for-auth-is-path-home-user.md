@@ -1,1 +1,0 @@
-Experimentally verified: PATH, HOME, USER are the only env vars needed for Agent SDK auth. No CLAUDE_* vars required.

@@ -1,1 +1,0 @@
-The --define flag in bun build --compile interprets values as JS expressions. In package.json scripts (shell context), quoting works differently than in global-setup.ts (execFileSync, no shell). Future test infrastructure changes to --define should verify the compiled binary embedded values, not just that compilation succeeds.

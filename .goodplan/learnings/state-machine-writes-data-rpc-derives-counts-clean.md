@@ -1,1 +1,0 @@
-COMPLETE_SLICE is the system's most complex handler but stays clean because the state machine only writes data. The RPC layer's `buildCompleteResult` derives all computed values (deferredRouted, epicComplete, learningsRolledUp) by diffing old vs new state. Keeps `ProjectState | StateError` as the only return type.

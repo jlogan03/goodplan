@@ -1,1 +1,0 @@
-The architecture source included `start-complete` (non-existent command). Convention docs referencing CLI commands must verify each command against `goodplan schema --json` or `src/commands/main.ts` before inclusion.

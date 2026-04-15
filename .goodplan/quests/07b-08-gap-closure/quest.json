@@ -1,0 +1,21 @@
+{
+	"created": "2026-04-12T23:00:16.291Z",
+	"goal": "Close implementation gaps in slices 07b and 08. 07b missing: side-quest:* commands (create/start/implement-start/land/abandon/list/show), finding:show, briefing:generate + briefing:list, decision:record + decision:supersede, learning:capture + learning:promote, invariant:show + invariant:enable + invariant:disable, side-quest lifecycle integration tests. 08 missing: Agent SDK harness test (test-core-skills-v2.ts) and proper v2 skill rewrites vs incremental additions.",
+	"name": "07b-08-gap-closure",
+	"refinement": {
+		"maxRounds": 10,
+		"round": 1,
+		"scoreHistory": [
+			{
+				"round": 1,
+				"scores": {
+					"holistic": 9,
+					"software-architecture": 9,
+					"typescript": 9
+				}
+			}
+		]
+	},
+	"status": "completed",
+	"updated": "2026-04-13T00:38:13.592Z"
+}

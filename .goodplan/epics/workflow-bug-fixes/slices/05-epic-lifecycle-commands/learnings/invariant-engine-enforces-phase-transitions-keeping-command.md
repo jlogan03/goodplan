@@ -1,0 +1,1 @@
+Commands just append events; the invariant engine prevents invalid transitions via rules like epic.goal.committed-before-explore. This separation means command files contain no state machine logic, reducing bugs and duplication.

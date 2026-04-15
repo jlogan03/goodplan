@@ -1,1 +1,0 @@
-When files differ only in framing (e.g., "reviewing a plan" vs "reviewing code"), use a shared file with a `{placeholder}` that each consumer fills in. This keeps the substantive content (evaluation criteria, protocols) in one place while preserving context-specific framing. Better than full duplication or forced uniformity.

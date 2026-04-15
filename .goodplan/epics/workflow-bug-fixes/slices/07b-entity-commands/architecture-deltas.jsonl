@@ -1,0 +1,4 @@
+{"description":"Extended DerivedStateData with subsystems, customInvariants, briefings; fleshed out reduceSpine, reduceBriefing, finding-triaged handler","subsystem":"Derived State Computer","ts":"2026-04-12T22:00:20.225Z","type":"modify"}
+{"description":"Added 19 commands across 6 namespaces (subsystem, project, briefing, finding, invariant, events)","subsystem":"CLI Commands","ts":"2026-04-12T22:00:20.225Z","type":"add"}
+{"description":"Added event payload schemas and command schemas for all 6 entity types","subsystem":"Schemas","ts":"2026-04-12T22:00:20.225Z","type":"add"}
+{"description":"Added resolveScopePath utility and createProjectCommandContext factory","subsystem":"Shared Utilities","ts":"2026-04-12T22:00:20.225Z","type":"add"}

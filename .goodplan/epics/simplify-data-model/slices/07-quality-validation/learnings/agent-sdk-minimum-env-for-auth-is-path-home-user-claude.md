@@ -1,1 +1,0 @@
-Experimentally verified: only 3 env vars needed. CLAUDE_PLUGIN_DATA and CLAUDE_PLUGIN_ROOT are substitution tokens for marketplace plugins only.

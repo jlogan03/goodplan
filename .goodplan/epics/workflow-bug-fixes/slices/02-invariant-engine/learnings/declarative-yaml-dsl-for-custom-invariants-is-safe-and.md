@@ -1,0 +1,1 @@
+Three check types (event-count, field-exists, field-matches) with no eval. Discriminated union compiled to pure functions.

@@ -1,1 +1,0 @@
-Context bundling (novel, no precedent) had 8 review issues; quest state machine (following slice patterns) had 0. Plan extra iterations for phases without codebase precedent.

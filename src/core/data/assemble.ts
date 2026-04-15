@@ -6,8 +6,8 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { GoodplanError } from "../../util/errors.js";
 import { debug } from "../../util/debug.js";
+import { GoodplanError } from "../../util/errors.js";
 import { findSchema } from "./schema-registry.js";
 import { ZERO_STATE } from "./tree.js";
 import type {
@@ -190,10 +190,7 @@ function readJsonlFile(
 	return { type: "jsonl", content: items };
 }
 
-function readMarkdownFile(
-	relativePath: string,
-	absPath: string,
-): MarkdownEntry {
+function readMarkdownFile(relativePath: string, absPath: string): MarkdownEntry {
 	debug(`read markdown: ${relativePath}`);
 	const content = fs.readFileSync(absPath, "utf-8");
 	return { type: "markdown", content };

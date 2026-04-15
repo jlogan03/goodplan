@@ -1,0 +1,1 @@
+Two-step pattern ensures user oversight for unverifiable chunks. The invariant engine correctly enforces this: chunk-unverifiable alone does NOT satisfy the all-chunks-decided precondition for code-refine-start.

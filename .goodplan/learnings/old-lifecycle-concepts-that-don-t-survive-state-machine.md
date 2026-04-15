@@ -1,1 +1,0 @@
-The old start-epic skill's "activation" mapped to a completely different lifecycle point than `epic:activate`. Retirement and responsibility redistribution was cleaner than forced mapping. Apply this when migrating any skill whose core concept doesn't exist in the new model.

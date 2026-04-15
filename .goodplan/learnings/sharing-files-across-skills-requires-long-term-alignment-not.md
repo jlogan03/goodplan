@@ -1,1 +1,0 @@
-Shared reviewer files forced context-agnostic language and conditional criteria. The deeper question is whether consumers will stay aligned long-term — if their needs diverge, the shared file becomes a constraint. Prefer independent copies with occasional manual sync over forced generalization when alignment is uncertain.

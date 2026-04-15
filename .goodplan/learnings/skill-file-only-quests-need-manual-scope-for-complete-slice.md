@@ -1,1 +1,0 @@
-Quests that modify only skill files (outside the repo, in ~/.claude/skills/) don't produce standard implementation/ artifacts. The auto-detect heuristic won't find them. Pass the scope explicitly when running /complete-slice for such quests.

@@ -1,1 +1,0 @@
-Without `stdin: ""` the compiled binary blocks forever. Without `GOODPLAN_DIR` env var, the binary finds the repo's own `.project/` via cwd walking. Both are required for every integration test spawning the binary.

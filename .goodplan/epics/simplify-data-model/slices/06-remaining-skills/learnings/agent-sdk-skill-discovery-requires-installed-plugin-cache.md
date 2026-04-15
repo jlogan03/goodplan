@@ -1,1 +1,0 @@
-The Agent SDK `plugins: [{ type: "local", path: PLUGIN_DIR }]` option alone is insufficient for skill discovery — skills must also be synced to the installed plugin cache at `~/.claude/plugins/cache/goodplan-marketplace/goodplan/<version>/`. Test harnesses must rsync new skills and agents from `dist/gp-plugin/` to the cache before invoking `runSkillSession`.

@@ -1,1 +1,0 @@
-Before modifying shared reference files, map all consumers with a codebase exploration agent. This prevents both over-reach (changing files that should stay independent) and under-reach (missing consumers that need updates).

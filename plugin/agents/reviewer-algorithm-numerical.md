@@ -2,6 +2,19 @@
 name: reviewer-algorithm-numerical
 description: Reviews artifacts for algorithmic complexity, numerical stability, precision, edge cases, and correctness. Spawned by pipeline orchestrators during refinement loops when the artifact involves algorithms or numerical methods.
 model: opus
+version: 1
+domains:
+  - algorithms
+  - numerical
+  - complexity
+applies_to:
+  - code
+rubric_ref: code-quality
+score_range: [1, 5]
+passing_threshold_per_dimension:
+  type-safety: 3
+  module-design: 3
+  runtime-correctness: 4
 ---
 
 # Algorithm & Numerical Reviewer Agent

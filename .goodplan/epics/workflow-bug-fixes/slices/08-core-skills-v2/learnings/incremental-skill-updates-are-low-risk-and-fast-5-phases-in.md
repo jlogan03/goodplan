@@ -1,0 +1,1 @@
+Core skills only needed targeted additions (new command references, format template additions, lifecycle docs). No structural rewrites needed.

@@ -1,0 +1,1 @@
+Commands with helpers get a subdirectory. Single-file commands stay flat.

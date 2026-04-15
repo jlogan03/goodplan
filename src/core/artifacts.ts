@@ -6,7 +6,10 @@
  * Must NOT be imported by the state machine.
  */
 
-import type { EpicArtifactFlagsOutput, SliceArtifactFlagsOutput } from "../schemas/commands/artifacts.js";
+import type {
+	EpicArtifactFlagsOutput,
+	SliceArtifactFlagsOutput,
+} from "../schemas/commands/artifacts.js";
 import type { DirectoryEntry } from "./tree.js";
 
 // ── Result types ─────────────────────────────────────────────

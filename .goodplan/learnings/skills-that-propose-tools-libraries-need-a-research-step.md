@@ -1,1 +1,0 @@
-When a skill drafts content with specific tool names, library versions, or framework recommendations, the model defaults to training data which may be stale. Spawn a sub-agent to WebSearch current versions and alternatives before drafting. Applies to any skill that proposes a tech stack or version-pinned configuration.

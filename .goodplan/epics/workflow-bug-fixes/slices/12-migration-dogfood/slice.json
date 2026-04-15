@@ -1,0 +1,11 @@
+{
+	"created": "2026-04-12T18:08:25.219Z",
+	"deferred": [],
+	"epic": "workflow-bug-fixes",
+	"goal": "Migration tooling and dogfood validation: migrate existing projects to v2 event-sourced state, run full Agent SDK validation suite, remove v1 fallback shims.",
+	"implementationPhase": null,
+	"name": "12-migration-dogfood",
+	"refinement": null,
+	"status": "abandoned",
+	"updated": "2026-04-12T18:09:47.313Z"
+}

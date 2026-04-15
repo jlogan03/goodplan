@@ -1,1 +1,0 @@
-Graceful stop markers are canonical keys parsed by resume detection. The plan specified em-dashes but initial implementation used double hyphens, caught as CRITICAL in review. Future skill implementations must match exact marker text including punctuation.

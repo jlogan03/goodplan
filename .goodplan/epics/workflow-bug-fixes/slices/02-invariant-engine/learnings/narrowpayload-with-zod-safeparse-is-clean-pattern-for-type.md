@@ -1,0 +1,1 @@
+Rules narrow unknown payload via inline Zod schemas. Failed parse returns null meaning rule does not apply.

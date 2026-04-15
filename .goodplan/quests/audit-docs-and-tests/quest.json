@@ -1,8 +1,0 @@
-{
-	"created": "2026-03-28T00:06:46.961Z",
-	"goal": "Two new audit skills that detect drift, gaps, and staleness.",
-	"name": "audit-docs-and-tests",
-	"refinement": null,
-	"status": "completed",
-	"updated": "2026-03-28T03:13:15.136Z"
-}

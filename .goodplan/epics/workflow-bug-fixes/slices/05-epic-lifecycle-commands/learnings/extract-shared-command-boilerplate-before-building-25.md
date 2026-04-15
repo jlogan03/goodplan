@@ -1,0 +1,1 @@
+Every v2 command repeats ~15 lines of identical setup: resolve project dir, check events path, read stdin, wire invariant engine, get git context. A createEpicCommandContext helper would have reduced each command to its unique logic. Should be done before slices 06-07 add more commands.

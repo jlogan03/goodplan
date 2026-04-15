@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyBudget, DEFAULT_INLINE_BUDGET } from "../../../src/core/context/budget.js";
+import { DEFAULT_INLINE_BUDGET, applyBudget } from "../../../src/core/context/budget.js";
 import type { CollectedEntry } from "../../../src/core/context/collect.js";
 
 describe("applyBudget", () => {
@@ -56,7 +56,11 @@ describe("applyBudget", () => {
 		const multiByteEntries: CollectedEntry[] = [
 			{ key: "first.md", content: "ok" },
 			// 10 emoji chars = 40 bytes in UTF-8 but 20 in string.length
-			{ key: "emoji.md", content: "\u{1F600}\u{1F600}\u{1F600}\u{1F600}\u{1F600}\u{1F600}\u{1F600}\u{1F600}\u{1F600}\u{1F600}" },
+			{
+				key: "emoji.md",
+				content:
+					"\u{1F600}\u{1F600}\u{1F600}\u{1F600}\u{1F600}\u{1F600}\u{1F600}\u{1F600}\u{1F600}\u{1F600}",
+			},
 		];
 		// Budget: 2 (for "ok") + 30 = 32. String.length of emojis is 20 but byte size is 40.
 		// So with budget 32, the emoji entry should NOT fit.

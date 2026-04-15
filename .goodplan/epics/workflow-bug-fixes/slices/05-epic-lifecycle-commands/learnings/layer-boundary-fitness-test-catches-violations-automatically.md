@@ -1,0 +1,1 @@
+tests/fitness/v2-layer-boundaries.test.ts scans imports in src/engine/, src/context/, src/trust/, src/commands/ to enforce dependency direction. Adding this in Phase 1 meant 25+ command files added in later phases were automatically validated.

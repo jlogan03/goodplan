@@ -1,1 +1,0 @@
-When work has known downstream consumers, read their goal files during planning and refinement. This caught missing decision readers, absent extension policies, and unclear dependency terms that would have required rework later.

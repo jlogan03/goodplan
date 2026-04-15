@@ -1,1 +1,0 @@
-Loading the context bundle once and reusing across refinement iterations means reviewers operate on stale context after the first edit. Fix: reload via `start-plan --quest <name> --inline --json` at each iteration.

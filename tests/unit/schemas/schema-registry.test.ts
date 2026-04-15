@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { findSchema, schemaRegistry } from "../../../src/core/data/schema-registry.js";
-import { projectSchema } from "../../../src/schemas/entities/project.js";
 import { epicSchema } from "../../../src/schemas/entities/epic.js";
-import { sliceSchema } from "../../../src/schemas/entities/slice.js";
-import { questSchema } from "../../../src/schemas/entities/quest.js";
 import { unifiedOverviewSchema } from "../../../src/schemas/entities/overview.js";
+import { projectSchema } from "../../../src/schemas/entities/project.js";
+import { questSchema } from "../../../src/schemas/entities/quest.js";
+import { sliceSchema } from "../../../src/schemas/entities/slice.js";
 import { activityEntrySchema } from "../../../src/schemas/records/activity-log.js";
+import { architectureDeltaSchema } from "../../../src/schemas/records/architecture-delta.js";
 import { decisionEntrySchema } from "../../../src/schemas/records/decision.js";
 import { learningEntrySchema } from "../../../src/schemas/records/learning.js";
-import { architectureDeltaSchema } from "../../../src/schemas/records/architecture-delta.js";
 
 describe("findSchema", () => {
 	// JSON entity schemas
@@ -52,21 +52,19 @@ describe("findSchema", () => {
 	});
 
 	it("resolves per-quest learnings.jsonl", () => {
-		expect(findSchema("quests/fix-logging/learnings.jsonl")).toBe(
-			learningEntrySchema,
-		);
+		expect(findSchema("quests/fix-logging/learnings.jsonl")).toBe(learningEntrySchema);
 	});
 
 	it("resolves per-slice architecture-deltas.jsonl (nested path)", () => {
-		expect(
-			findSchema("epics/goodplan-cli/slices/01-data-layer/architecture-deltas.jsonl"),
-		).toBe(architectureDeltaSchema);
+		expect(findSchema("epics/goodplan-cli/slices/01-data-layer/architecture-deltas.jsonl")).toBe(
+			architectureDeltaSchema,
+		);
 	});
 
 	it("resolves per-quest architecture-deltas.jsonl", () => {
-		expect(
-			findSchema("quests/fix-logging/architecture-deltas.jsonl"),
-		).toBe(architectureDeltaSchema);
+		expect(findSchema("quests/fix-logging/architecture-deltas.jsonl")).toBe(
+			architectureDeltaSchema,
+		);
 	});
 
 	// Unknown paths

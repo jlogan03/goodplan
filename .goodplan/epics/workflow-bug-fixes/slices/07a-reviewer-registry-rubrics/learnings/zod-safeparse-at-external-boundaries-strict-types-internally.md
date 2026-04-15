@@ -1,0 +1,1 @@
+All YAML frontmatter and rubric files validated via safeParse with aggregated error messages. Internal code uses z.infer types. Clean separation between validated and trusted data.

@@ -1,24 +1,19 @@
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { complete } from "../../core/rpc/complete.js";
-import { resolveProjectDir } from "../../core/data/project.js";
-import { completeEpicInputSchema } from "../../schemas/commands/epic.js";
+import { appendEvent } from "../../engine/events/append.js";
 import { output } from "../../util/output.js";
-import { readStdin } from "../../util/stdin.js";
-import { validateInput } from "../../util/validate.js";
+import { createEventCommandContext, handleInvariantError } from "../_shared/command-context.js";
 import { globalArgs } from "../global-args.js";
 
 /**
- * `gp epic:complete --epic <name>` — complete an epic.
+ * `gp epic:complete --epic <name>` (v2) — complete an epic.
  *
- * Stdin: { "verificationResults": [{ "index": 0, "passed": true, "notes": "..." }, ...] }
- * Precondition: epic in 'activated' status, all verifications passed.
- * Transition: activated -> completed
+ * Emits `epic-completed` with domain "entity-lifecycle".
  */
 export const epicCompleteCommand = defineCommand({
 	meta: {
 		name: "epic:complete",
-		description: "Complete an epic with verification results via stdin. Requires --epic. Stdin: {verificationResults: [{index, passed, notes}]}.",
+		description: "Complete an epic.",
 	},
 	args: {
 		...globalArgs,
@@ -30,20 +25,29 @@ export const epicCompleteCommand = defineCommand({
 	},
 	setup() {},
 	async run({ args }) {
-		const stdin = await readStdin();
-		const input = validateInput(completeEpicInputSchema, args, stdin);
+		const ctx = createEventCommandContext(args, { requireSlice: false });
 
-		const projectDir = resolveProjectDir();
-		const result = await complete(
-			projectDir,
-			{ type: "epic", name: input.epic },
-			{ type: "epic", verificationResults: input.verificationResults, learnings: input.learnings },
-		);
+		try {
+			const result = await appendEvent({
+				eventsPath: ctx.epicEventsPath,
+				scope: "epic",
+				scopeRef: ctx.epicName,
+				actor: { kind: "cli", id: "gp:epic:complete" },
+				branch: ctx.branch,
+				commitHint: ctx.commitHint,
+				domain: "entity-lifecycle",
+				type: "epic-completed",
+				payload: {},
+				beforeAppend: ctx.beforeAppend,
+			});
 
-		if (args.json || args.query) {
-			output(result, args);
-		} else if (!args.quiet) {
-			output(`${pc.bold(result.entity)}: ${result.previousStatus} ${pc.dim("->")} ${pc.green(result.newStatus)}`, args);
+			if (args.json || args.query) {
+				output({ ok: true, event: result.event.id, entity: `epic:${ctx.epicName}` }, args);
+			} else if (!args.quiet) {
+				output(`Completed epic ${pc.bold(ctx.epicName)}`, args);
+			}
+		} catch (error) {
+			handleInvariantError(error, args);
 		}
 	},
 });

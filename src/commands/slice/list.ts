@@ -1,28 +1,56 @@
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { defineCommand } from "citty";
 import pc from "picocolors";
-import { loadState } from "../../core/data/load.js";
 import { resolveProjectDir } from "../../core/data/project.js";
-import { getJson } from "../../core/tree.js";
-import type { SliceOverviewItem, UnifiedOverview } from "../../schemas/entities/overview.js";
-import type { Project } from "../../schemas/entities/project.js";
+import { computeDerivedState } from "../../engine/derived-state/compute.js";
+import { replayAllScopes } from "../../engine/derived-state/replay-all-scopes.js";
+import { replayEvents } from "../../engine/events/replay.js";
+import type { SliceState } from "../../schemas/entities/derived-state.js";
 import { output } from "../../util/output.js";
 import { applyPagination, formatPaginationFooter } from "../../util/pagination.js";
 import { globalArgs, listArgs } from "../global-args.js";
 
-type SliceWithEpic = SliceOverviewItem & { epic: string };
+/**
+ * Serialized slice summary for list output.
+ * Maps -> Records for JSON serialization.
+ */
+interface SliceListItem {
+	dir: string;
+	phase: string;
+	abandoned: boolean;
+	epic: string;
+}
 
 /**
- * `gp slice:list [--epic <name>] [--all]` — list slices.
+ * Convert DerivedState slice entries to list items.
+ */
+function sliceStateToListItems(
+	slices: ReadonlyMap<string, SliceState>,
+	epicName: string,
+): SliceListItem[] {
+	const items: SliceListItem[] = [];
+	for (const [dir, slice] of slices) {
+		items.push({
+			dir,
+			phase: slice.phase,
+			abandoned: slice.abandoned,
+			epic: epicName,
+		});
+	}
+	return items;
+}
+
+/**
+ * `gp slice:list [--epic <name>] [--all]` — list slices from event-sourced state.
  *
- * Read-only: goes directly to the data layer, no RPC.
- * Reads overview.json and returns embedded slice arrays from epics.
- * Default: slices for --epic (or active epic). --all: all slices across all epics.
+ * Default: slices for --epic (required unless --all is set).
+ * --all: slices across all epics via replayAllScopes.
  */
 export const sliceListCommand = defineCommand({
 	meta: {
 		name: "slice:list",
-		description:
-			"List slices. Default: active epic's slices. --epic filters by epic. --all shows all epics.",
+		description: "List slices. --epic filters by epic. --all shows all epics.",
 	},
 	args: {
 		...globalArgs,
@@ -39,35 +67,38 @@ export const sliceListCommand = defineCommand({
 	},
 	setup() {},
 	async run({ args }) {
-		const projectDir = resolveProjectDir();
-		const state = loadState(projectDir);
-
-		const overview = getJson<UnifiedOverview>(state, "overview.json");
-		const epicItems = overview?.epics ?? [];
-
-		const allItems: SliceWithEpic[] = [];
+		const goodplanDir = resolveProjectDir();
+		let allItems: SliceListItem[] = [];
 
 		if (args.all) {
-			// Flatten all epics' slices
-			for (const epicItem of epicItems) {
-				for (const slice of epicItem.slices) {
-					allItems.push({ ...slice, epic: epicItem.name });
-				}
+			// Replay all scopes and collect slices from every epic
+			const state = await replayAllScopes(goodplanDir);
+			for (const [epicName, epicState] of state.epics) {
+				allItems.push(...sliceStateToListItems(epicState.slices, epicName));
 			}
 		} else {
-			// Filter to a specific epic
-			let epicName = args.epic as string | undefined;
-			if (epicName === undefined) {
-				// Default to active epic from project.json
-				const project = getJson<Project>(state, "project.json");
-				epicName = project?.activeEpic ?? undefined;
+			const epicName = args.epic as string | undefined;
+			if (epicName === undefined || epicName === "") {
+				const errorOutput = {
+					ok: false,
+					error: "Epic name is required via --epic flag (or use --all)",
+					code: "VALIDATION_INVALID_INPUT",
+				};
+				if (args.json || args.query) {
+					output(errorOutput, args);
+				} else {
+					process.stderr.write("Error: Epic name is required via --epic flag (or use --all)\n");
+				}
+				process.exit(1);
 			}
-			if (epicName !== undefined) {
-				const epicEntry = epicItems.find((e) => e.name === epicName);
-				if (epicEntry !== undefined) {
-					for (const slice of epicEntry.slices) {
-						allItems.push({ ...slice, epic: epicName });
-					}
+
+			const epicEventsPath = path.join(goodplanDir, "epics", epicName, "events.jsonl");
+			if (fs.existsSync(epicEventsPath)) {
+				const { events } = await replayEvents({ eventsPath: epicEventsPath });
+				const state = computeDerivedState(events);
+				const epicState = state.epics.get(epicName);
+				if (epicState !== undefined) {
+					allItems = sliceStateToListItems(epicState.slices, epicName);
 				}
 			}
 		}
@@ -87,9 +118,8 @@ export const sliceListCommand = defineCommand({
 				}
 				output(lines.join("\n"), args);
 			} else if (args.all) {
-				// Group by epic — derive headers from the paginated subset.
-				// Note: epic groups may be partial when paginated (expected behavior).
-				const byEpic = new Map<string, SliceWithEpic[]>();
+				// Group by epic
+				const byEpic = new Map<string, SliceListItem[]>();
 				for (const item of paginated.items) {
 					const group = byEpic.get(item.epic) ?? [];
 					group.push(item);
@@ -99,8 +129,8 @@ export const sliceListCommand = defineCommand({
 				for (const [epicName, slices] of byEpic) {
 					lines.push(pc.bold(epicName));
 					for (const item of slices) {
-						const completedStr = item.completed !== null ? ` (completed ${item.completed})` : "";
-						lines.push(`  ${pc.bold(item.name)}  ${item.status}${completedStr}`);
+						const status = item.abandoned ? pc.yellow("abandoned") : pc.dim(item.phase);
+						lines.push(`  ${pc.bold(item.dir)}  ${status}`);
 					}
 				}
 				const footer = formatPaginationFooter(paginated);
@@ -111,8 +141,8 @@ export const sliceListCommand = defineCommand({
 			} else {
 				const lines: string[] = [];
 				for (const item of paginated.items) {
-					const completedStr = item.completed !== null ? ` (completed ${item.completed})` : "";
-					lines.push(`  ${pc.bold(item.name)}  ${item.status}${completedStr}`);
+					const status = item.abandoned ? pc.yellow("abandoned") : pc.dim(item.phase);
+					lines.push(`  ${pc.bold(item.dir)}  ${status}`);
 				}
 				const footer = formatPaginationFooter(paginated);
 				if (footer !== undefined) {

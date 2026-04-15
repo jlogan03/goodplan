@@ -75,10 +75,8 @@ describe("assembleState", () => {
 		const state = assembleState(projectDir());
 		const entry = state.contents["project.json"];
 		expect(entry).toBeDefined();
-		expect(entry!.type).toBe("json");
-		expect((entry as JsonEntry<unknown>).content).toEqual(
-			JSON.parse(validProject),
-		);
+		expect(entry?.type).toBe("json");
+		expect((entry as JsonEntry<unknown>).content).toEqual(JSON.parse(validProject));
 	});
 
 	it("assembles activity-log.jsonl as JsonlEntry", () => {
@@ -87,7 +85,7 @@ describe("assembleState", () => {
 		const state = assembleState(projectDir());
 		const entry = state.contents["activity-log.jsonl"];
 		expect(entry).toBeDefined();
-		expect(entry!.type).toBe("jsonl");
+		expect(entry?.type).toBe("jsonl");
 		expect((entry as JsonlEntry<unknown>).content).toHaveLength(1);
 	});
 
@@ -97,29 +95,32 @@ describe("assembleState", () => {
 		const state = assembleState(projectDir());
 		const entry = state.contents["readme.md"];
 		expect(entry).toBeDefined();
-		expect(entry!.type).toBe("markdown");
+		expect(entry?.type).toBe("markdown");
 		expect((entry as MarkdownEntry).content).toBe("# Hello World");
 	});
 
 	it("assembles nested directories", () => {
-		writeFixture("epics/test-epic/epic.json", JSON.stringify({
-			name: "test-epic",
-			goal: "Test",
-			status: "created",
-			verifications: [],
-			refinement: null,
-			created: "2026-01-01T00:00:00.000Z",
-			updated: "2026-01-01T00:00:00.000Z",
-			activated: null,
-		}));
+		writeFixture(
+			"epics/test-epic/epic.json",
+			JSON.stringify({
+				name: "test-epic",
+				goal: "Test",
+				status: "created",
+				verifications: [],
+				refinement: null,
+				created: "2026-01-01T00:00:00.000Z",
+				updated: "2026-01-01T00:00:00.000Z",
+				activated: null,
+			}),
+		);
 
 		const state = assembleState(projectDir());
-		const epicsDir = state.contents["epics"];
+		const epicsDir = state.contents.epics;
 		expect(epicsDir).toBeDefined();
-		expect(epicsDir!.type).toBe("directory");
+		expect(epicsDir?.type).toBe("directory");
 		const testEpicDir = (epicsDir as DirectoryEntry).contents["test-epic"];
 		expect(testEpicDir).toBeDefined();
-		expect(testEpicDir!.type).toBe("directory");
+		expect(testEpicDir?.type).toBe("directory");
 	});
 
 	it("silently skips unregistered .json files", () => {
@@ -163,7 +164,7 @@ describe("assembleState", () => {
 			const errors = e.detail.errors as Array<{ file: string; message: string }>;
 			const jsonError = errors.find((e) => e.file === "project.json");
 			expect(jsonError).toBeDefined();
-			expect(jsonError!.message).toContain("Invalid JSON");
+			expect(jsonError?.message).toContain("Invalid JSON");
 		}
 	});
 
@@ -221,7 +222,7 @@ describe("assembleState", () => {
 			const errors = e.detail.errors as Array<{ file: string; message: string }>;
 			const jsonlError = errors.find((e) => e.file === "activity-log.jsonl");
 			expect(jsonlError).toBeDefined();
-			expect(jsonlError!.message).toContain("line 2");
+			expect(jsonlError?.message).toContain("line 2");
 		}
 	});
 
@@ -237,7 +238,7 @@ describe("assembleState", () => {
 			const errors = e.detail.errors as Array<{ file: string; message: string }>;
 			const jsonlError = errors.find((e) => e.file === "activity-log.jsonl");
 			expect(jsonlError).toBeDefined();
-			expect(jsonlError!.message).toContain("line 2");
+			expect(jsonlError?.message).toContain("line 2");
 		}
 	});
 
@@ -246,11 +247,14 @@ describe("assembleState", () => {
 		writeFixture("activity-log.jsonl", `${validActivityEntry}\n`);
 		writeFixture("decisions.jsonl", "");
 		writeFixture("learnings.jsonl", "");
-		writeFixture("overview.json", JSON.stringify({
-			epics: [],
-			quests: [],
-			tasks: [],
-		}));
+		writeFixture(
+			"overview.json",
+			JSON.stringify({
+				epics: [],
+				quests: [],
+				tasks: [],
+			}),
+		);
 		writeFixture("notes.md", "# Notes");
 
 		const state = assembleState(projectDir());

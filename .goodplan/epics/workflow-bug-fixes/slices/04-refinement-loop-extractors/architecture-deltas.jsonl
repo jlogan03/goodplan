@@ -1,0 +1,3 @@
+{"description":"Dependencies reduced from remark ecosystem to gray-matter + js-yaml","subsystem":"trust/extractors","ts":"2026-04-10T15:26:50.479Z","type":"modify"}
+{"description":"ReviewerFinding added dimension field, removed location. CircuitBreakerReason uses findingKey not findingId. evaluateConvergence uses ConvergenceConfig object.","subsystem":"trust/convergence","ts":"2026-04-10T15:26:50.479Z","type":"modify"}
+{"description":"ScoredEvent, SynthesizedFeedback, RoundCompleteData emergent types added as inter-component contracts","subsystem":"trust","ts":"2026-04-10T15:26:50.479Z","type":"add"}

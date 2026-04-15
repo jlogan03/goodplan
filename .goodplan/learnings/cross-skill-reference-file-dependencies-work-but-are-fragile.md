@@ -1,1 +1,0 @@
-Referencing another skill's reference files (e.g., define-architecture's guidance.md for CLAUDE.md format) saves size but requires SKILL.md to explicitly instruct reading both files. Consider a shared reference file for formats used by multiple skills.

@@ -1,0 +1,8 @@
+{
+	"context": {},
+	"created": "2026-04-12T19:31:55.773Z",
+	"description": "src/trust/reviewers/routing.ts accepts maxMaturity but ignores it (_maxMaturity). Either implement maturity-based reviewer filtering or remove the param when the routing function is next touched.",
+	"name": "maxmaturity-routing-param",
+	"status": "open",
+	"title": "Remove or implement maxMaturity param in routeReviewers"
+}

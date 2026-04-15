@@ -1,1 +1,0 @@
-Running /audit-docs found 13 real findings (task entity missing from docs, stale primer). Running /audit-tests found 15 findings (untested helpers.ts, stale event counts). Real codebase verification beats grep-based file existence checks.
