@@ -71,7 +71,10 @@ const deletedSkills = [
 	"migrate",
 	"project-status",
 ];
-const expectedSkillCount = 13;
+const expectedSkillNames = readdirSync(join(repoRoot, "plugin", "skills"), { withFileTypes: true })
+	.filter((entry) => entry.isDirectory() && !entry.name.startsWith("_"))
+	.map((entry) => entry.name)
+	.sort();
 const expectedCodexCommands = [
 	"audit.md",
 	"complete-epic.md",
@@ -365,6 +368,7 @@ function copySharedAssets() {
 	ensureDir(pluginRoot);
 	copyDir(join(repoRoot, "plugin", "skills"), join(pluginRoot, "skills"));
 	copyDir(join(repoRoot, "plugin", "agents"), join(pluginRoot, "agents"));
+	copyDir(join(repoRoot, "plugin", "rubrics"), join(pluginRoot, "rubrics"));
 	if (target === "claude") {
 		copyDir(join(repoRoot, "plugin", "hooks"), join(pluginRoot, "hooks"));
 	}
@@ -501,15 +505,20 @@ function rewriteCodexSpecificFiles() {
 		'    GP="$PATH_GP"',
 		"  fi",
 		"fi",
+		'GP_PLUGIN_ROOT=""',
+		'if [ -n "$GP" ]; then',
+		'  GP_PLUGIN_ROOT="$(CDPATH= cd -- "$(dirname -- "$GP")/.." && pwd)"',
+		"fi",
 	].join("\n");
 	const codexCliResolutionBlock = [
 		"Resolve the bundled CLI and store it as `$GP`.",
+		"Also store the plugin root as `$GP_PLUGIN_ROOT` for bundled assets such as rubrics.",
 		"",
 		"In Codex, do not assume `gp` is on PATH. Use this detection snippet:",
 		"",
 		"```bash",
 		codexCliSearchSnippet,
-		'if [ -z "$GP" ]; then',
+		'if [ -z "$GP" ] || [ -z "$GP_PLUGIN_ROOT" ]; then',
 		'  echo "gp: command not found" >&2',
 		"  exit 127",
 		"fi",
@@ -583,7 +592,7 @@ function rewriteCodexSpecificFiles() {
 			"",
 			"```bash",
 			codexCliSearchSnippet,
-			'if [ -z "$GP" ]; then',
+			'if [ -z "$GP" ] || [ -z "$GP_PLUGIN_ROOT" ]; then',
 			'  echo "gp: command not found" >&2',
 			"  exit 127",
 			"fi",
@@ -591,7 +600,7 @@ function rewriteCodexSpecificFiles() {
 			"# Returns: { \"version\": \"1.0.0\" }",
 			"```",
 			"",
-			"Use `$GP` for all subsequent invocations within that skill.",
+			"Use `$GP` for all subsequent invocations within that skill, and `$GP_PLUGIN_ROOT` for bundled asset paths.",
 		].join("\n"),
 	);
 	cliInteraction = cliInteraction.replace(
@@ -617,7 +626,7 @@ function rewriteCodexSpecificFiles() {
 		[
 			"```bash",
 			codexCliSearchSnippet,
-			'if [ -z "$GP" ]; then',
+			'if [ -z "$GP" ] || [ -z "$GP_PLUGIN_ROOT" ]; then',
 			'  echo "gp: command not found" >&2',
 			"  exit 127",
 			"fi",
@@ -672,6 +681,7 @@ function rewriteCodexMarkdown() {
 			const targetFile = join(pluginRoot, pluginRelativePath);
 			return `@${ensureRelativeMarkdownPath(file, targetFile)}`;
 		});
+		text = text.replace(/\$\{CLAUDE_PLUGIN_ROOT\}\/([^ )`>\n]+)/g, "${GP_PLUGIN_ROOT}/$1");
 		saveText(file, text);
 	}
 }
@@ -692,6 +702,7 @@ function validateSkillPackaging({ prefixedNames }) {
 	console.log("  skills/_references/cli-interaction.md: present");
 
 	let skillCount = 0;
+	const packagedSkillNames = [];
 	for (const entry of readdirSync(skillsRoot, { withFileTypes: true })) {
 		if (!entry.isDirectory() || entry.name.startsWith("_")) continue;
 		const skillFile = join(skillsRoot, entry.name, "SKILL.md");
@@ -713,6 +724,7 @@ function validateSkillPackaging({ prefixedNames }) {
 		if (!frontmatter.includes("description:")) {
 			throw new Error(`FAIL: ${normalizePath(relative(pluginRoot, skillFile))} missing description field`);
 		}
+		packagedSkillNames.push(entry.name);
 		skillCount += 1;
 	}
 	console.log("  frontmatter validation: all skills pass");
@@ -732,8 +744,17 @@ function validateSkillPackaging({ prefixedNames }) {
 	}
 	console.log("  .DS_Store check: clean");
 
-	if (skillCount !== expectedSkillCount) {
-		throw new Error(`FAIL: expected ${expectedSkillCount} skills, got ${skillCount}`);
+	packagedSkillNames.sort();
+	const missingSkills = expectedSkillNames.filter((name) => !packagedSkillNames.includes(name));
+	const unexpectedSkills = packagedSkillNames.filter((name) => !expectedSkillNames.includes(name));
+	if (missingSkills.length > 0 || unexpectedSkills.length > 0) {
+		const details = [
+			missingSkills.length > 0 ? `missing: ${missingSkills.join(", ")}` : "",
+			unexpectedSkills.length > 0 ? `unexpected: ${unexpectedSkills.join(", ")}` : "",
+		]
+			.filter(Boolean)
+			.join("; ");
+		throw new Error(`FAIL: packaged skills do not match plugin/skills source (${details})`);
 	}
 	for (const deletedSkill of deletedSkills) {
 		if (existsSync(join(skillsRoot, deletedSkill))) {
@@ -817,11 +838,13 @@ function validateClaudeArtifacts() {
 	JSON.parse(loadText(join(pluginRoot, "hooks", "hooks.json")));
 	statSync(join(pluginRoot, "hooks", "protect-state.sh"));
 	statSync(join(pluginRoot, "hooks", "warn-bash-state.sh"));
+	statSync(join(pluginRoot, "rubrics", "implementation-plan.yaml"));
 	validateCompiledBinaries();
 	statSync(join(pluginRoot, "bin", "gp"));
 	console.log("  plugin.json: valid JSON");
 	console.log("  hooks.json: valid JSON");
 	console.log("  hook scripts: present");
+	console.log("  rubrics: present");
 	console.log(`  binaries: present (${buildPlatforms.map((buildPlatform) => buildPlatform.binaryDir).join(", ")})`);
 	console.log("  bin/gp launcher: present");
 }
@@ -829,6 +852,7 @@ function validateClaudeArtifacts() {
 function validateCodexArtifacts() {
 	console.log("\nValidating Codex plugin artifacts...");
 	const manifest = JSON.parse(loadText(join(pluginRoot, ".codex-plugin", "plugin.json")));
+	statSync(join(pluginRoot, "rubrics", "implementation-plan.yaml"));
 	validateCompiledBinaries();
 	if (manifest.name !== codexPluginName) {
 		throw new Error(`FAIL: Codex plugin manifest name must be ${codexPluginName}`);
@@ -871,6 +895,7 @@ function validateCodexArtifacts() {
 		throw new Error("FAIL: Codex status skill still contains Expertise output templates");
 	}
 	console.log("  plugin.json: valid JSON");
+	console.log("  rubrics: present");
 	console.log(`  binaries: present (${buildPlatforms.map((buildPlatform) => buildPlatform.binaryDir).join(", ")})`);
 	console.log(`  marketplace.json: points to ${codexMarketplaceSourcePath}`);
 	console.log("  Claude-only placeholders: clean");

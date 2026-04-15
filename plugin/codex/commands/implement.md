@@ -1,5 +1,5 @@
 # /implement
 
-Run the goodplan implement workflow.
+Run the goodplan implement-slice workflow.
 
-@../skills/implement/SKILL.md
+@../skills/implement-slice/SKILL.md
