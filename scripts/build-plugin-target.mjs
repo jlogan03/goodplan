@@ -14,6 +14,7 @@ import {
 } from "node:fs";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import yaml from "js-yaml";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -185,7 +186,11 @@ function normalizeFrontmatterScalar({ key, value }) {
 	if (
 		trimmed === "" ||
 		trimmed === ">" ||
-		trimmed === "|"
+		trimmed === ">-" ||
+		trimmed === ">+" ||
+		trimmed === "|" ||
+		trimmed === "|-" ||
+		trimmed === "|+"
 	) {
 		return trimmed;
 	}
@@ -686,6 +691,23 @@ function rewriteCodexMarkdown() {
 	}
 }
 
+function parseFrontmatterYaml(path) {
+	const frontmatter = extractFrontmatter(path);
+	if (!frontmatter) {
+		throw new Error(`FAIL: ${normalizePath(relative(pluginRoot, path))} has no valid YAML frontmatter`);
+	}
+	try {
+		const parsed = yaml.load(frontmatter);
+		if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+			throw new Error("frontmatter must be a mapping");
+		}
+		return parsed;
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		throw new Error(`FAIL: ${normalizePath(relative(pluginRoot, path))} has invalid YAML frontmatter: ${message}`);
+	}
+}
+
 function extractFrontmatter(path) {
 	const text = loadText(path);
 	const match = text.match(/^---\n([\s\S]*?)\n---\n/);
@@ -709,19 +731,15 @@ function validateSkillPackaging({ prefixedNames }) {
 		if (!existsSync(skillFile)) {
 			throw new Error(`FAIL: ${normalizePath(relative(pluginRoot, skillFile))} missing`);
 		}
-		const frontmatter = extractFrontmatter(skillFile);
-		if (!frontmatter) {
-			throw new Error(`FAIL: ${normalizePath(relative(pluginRoot, skillFile))} has no valid YAML frontmatter`);
-		}
-		const nameMatch = frontmatter.match(/^name:\s*(.+)$/m);
-		const nameValue = stripYamlQuotes(nameMatch?.[1]?.trim() ?? "");
+		const frontmatter = parseFrontmatterYaml(skillFile);
+		const nameValue = typeof frontmatter.name === "string" ? frontmatter.name : "";
 		if (!nameValue) {
 			throw new Error(`FAIL: ${normalizePath(relative(pluginRoot, skillFile))} missing name field`);
 		}
 		if (prefixedNames && !nameValue.startsWith("gp:")) {
 			throw new Error(`FAIL: ${normalizePath(relative(pluginRoot, skillFile))} has incorrect name field`);
 		}
-		if (!frontmatter.includes("description:")) {
+		if (typeof frontmatter.description !== "string" || frontmatter.description.trim() === "") {
 			throw new Error(`FAIL: ${normalizePath(relative(pluginRoot, skillFile))} missing description field`);
 		}
 		packagedSkillNames.push(entry.name);
@@ -778,8 +796,8 @@ function validateAgents() {
 	for (const file of readdirSync(agentsRoot)) {
 		const fullPath = join(agentsRoot, file);
 		if (!file.endsWith(".md") || !statSync(fullPath).isFile()) continue;
-		const frontmatter = extractFrontmatter(fullPath);
-		if (!frontmatter.includes("name:") || !frontmatter.includes("description:")) {
+		const frontmatter = parseFrontmatterYaml(fullPath);
+		if (typeof frontmatter.name !== "string" || typeof frontmatter.description !== "string") {
 			throw new Error(`FAIL: agents/${file} missing required frontmatter`);
 		}
 		count += 1;
